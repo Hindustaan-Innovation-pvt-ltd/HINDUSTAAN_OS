@@ -56,8 +56,8 @@ export function EmployeeCalendar() {
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="p-5 flex flex-col items-center flex-1 w-full justify-between overflow-hidden">
-        <div className="w-full max-w-[280px] mx-auto flex flex-col items-center flex-1 justify-center">
+      <CardContent className="p-5 flex flex-col items-center flex-1 w-full overflow-hidden">
+        <div className="w-full max-w-[280px] mx-auto flex flex-col items-center justify-start mt-2">
           <TooltipProvider delayDuration={100}>
             <Calendar 
               mode="single"
@@ -135,13 +135,13 @@ export function EmployeeCalendar() {
         </div>
         
         {/* Legend */}
-        <div className="w-full flex items-center justify-center gap-4 mt-2 mb-2 text-[10px] font-bold text-slate-500 uppercase">
+        <div className="w-full flex items-center justify-center gap-4 mt-auto pt-6 pb-2 text-[10px] font-bold text-slate-500 uppercase">
           <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-emerald-500" />Completed</div>
           <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-orange-500" />In Progress</div>
           <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-rose-500" />Overdue</div>
         </div>
         
-        <div className="w-full pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 shrink-0">
+        <div className="w-full pt-4 mt-2 border-t border-slate-100 dark:border-slate-800 shrink-0">
           <div className="flex justify-between text-xs font-bold text-slate-700 dark:text-slate-300 mb-2.5">
             <span>Internship Progress</span>
             <span className="text-orange-600 dark:text-orange-400">Week 2 of 12</span>

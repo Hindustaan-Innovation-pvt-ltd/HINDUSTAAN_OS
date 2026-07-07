@@ -362,7 +362,7 @@ export function ProjectCalendarWidget() {
               </ScrollArea>
               
               <div className="p-4 border-t border-slate-100 dark:border-slate-800/60 bg-white dark:bg-slate-950">
-                <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md">
+                <Button onClick={() => setIsSheetOpen(false)} className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md">
                   Close Details
                 </Button>
               </div>

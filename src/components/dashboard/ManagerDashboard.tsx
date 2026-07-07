@@ -90,9 +90,9 @@ export default function ManagerDashboard() {
 
   const getStatusBadgeStyles = (status: string) => {
     switch(status) {
-      case 'On Track': return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 hover:bg-emerald-50';
-      case 'At Risk': return 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 hover:bg-rose-50';
-      case 'Completed': return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-100';
+      case 'On Track': return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/20';
+      case 'At Risk': return 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/20';
+      case 'Completed': return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700';
       default: return '';
     }
   };
@@ -104,7 +104,7 @@ export default function ManagerDashboard() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            {greeting}, Amanda <span className="inline-block animate-wave origin-bottom-right">👋</span>
+            {greeting}, Aakash <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">
             Manage projects, monitor team performance, and track progress from one place.
@@ -353,7 +353,7 @@ export default function ManagerDashboard() {
                 <div className="space-y-6 pt-2 pl-2 border-l-2 border-slate-100 dark:border-slate-800 ml-3">
                   {ACTIVITY_FEED.map((activity) => (
                     <div key={activity.id} className="relative pl-6">
-                      <div className="absolute -left-[25px] top-1.5 h-3 w-3 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-white dark:border-slate-900" />
+                      <div className="absolute -left-[25px] top-1.5 h-3 w-3 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-white dark:border-slate-950" />
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3">
                           <Avatar className="h-8 w-8 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
@@ -436,26 +436,26 @@ export default function ManagerDashboard() {
                 </div>
                 <Separator orientation="vertical" className="h-8" />
                 <div className="flex flex-col items-center">
-                  <span className="text-2xl font-extrabold text-slate-300 dark:text-slate-600">2</span>
+                  <span className="text-2xl font-extrabold text-slate-600 dark:text-slate-400">2</span>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Leave</span>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 overflow-hidden">
                 {TEAM_MEMBERS.map((member) => (
                   <div key={member.id} className="relative">
-                    <Avatar className="h-8 w-8 rounded-full border-2 border-white dark:border-slate-900">
+                    <Avatar className="h-8 w-8 rounded-full border-2 border-white dark:border-slate-950">
                       <AvatarFallback className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-xs font-bold">
                         {member.initials}
                       </AvatarFallback>
                     </Avatar>
                     <span className={cn(
-                      "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white dark:border-slate-900",
+                      "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white dark:border-slate-950",
                       member.status === 'online' ? 'bg-emerald-500' :
                       member.status === 'busy' ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-600'
                     )} />
                   </div>
                 ))}
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800 border-2 border-white dark:border-slate-900 text-[10px] font-bold text-slate-500">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800 border-2 border-white dark:border-slate-950 text-[10px] font-bold text-slate-500">
                   +25
                 </div>
               </div>

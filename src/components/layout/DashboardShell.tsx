@@ -148,10 +148,12 @@ export default function DashboardShell({
               <button className="w-full flex items-center justify-between rounded-xl p-2 transition-all hover:bg-slate-50 dark:hover:bg-slate-900/40 outline-none focus:ring-2 focus:ring-orange-500/20 group">
                 <div className="flex items-center text-left">
                   <div className="flex items-center justify-center h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 font-bold shadow-sm ring-2 ring-white dark:ring-slate-900">
-                    TP
+                    {role === 'manager' ? 'AG' : 'TP'}
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:text-white">Tanvy Pandey</p>
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:text-white">
+                      {role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'}
+                    </p>
                     <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{role === 'manager' ? 'Manager' : 'Employee'}</p>
                   </div>
                 </div>
@@ -219,7 +221,7 @@ export default function DashboardShell({
                   <Search className="h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden="true" />
                 </div>
                 <div
-                  className="flex items-center justify-between h-9 w-full rounded-full border border-slate-200 dark:border-slate-700/60 bg-white/50 pl-10 pr-3 text-sm text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-900 transition-all shadow-sm cursor-text cursor-pointer"
+                  className="flex items-center justify-between h-9 w-full rounded-full border border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/50 pl-10 pr-3 text-sm text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm cursor-text cursor-pointer"
                 >
                   <span className="truncate">Search workspace...</span>
                   <div className="flex items-center gap-1 shrink-0 ml-2">
