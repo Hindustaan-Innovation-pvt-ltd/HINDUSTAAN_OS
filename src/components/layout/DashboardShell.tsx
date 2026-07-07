@@ -26,6 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
 import { GlobalSearch } from '../dashboard/GlobalSearch';
+import { NotificationCenter } from '../dashboard/NotificationCenter';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -167,18 +168,8 @@ export default function DashboardShell({
             <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl rounded-xl">
               <DropdownMenuLabel className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">My Account</DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
-              <DropdownMenuItem className="cursor-pointer focus:bg-slate-50 dark:focus:bg-slate-800 focus:text-slate-900 dark:focus:text-white text-sm font-semibold rounded-lg">
-                My Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer focus:bg-slate-50 dark:focus:bg-slate-800 focus:text-slate-900 dark:focus:text-white text-sm font-semibold rounded-lg">
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer focus:bg-slate-50 dark:focus:bg-slate-800 focus:text-slate-900 dark:focus:text-white text-sm font-semibold rounded-lg">
-                Help
-              </DropdownMenuItem>
               {onSignOut && (
                 <>
-                  <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
                   <DropdownMenuItem 
                     onClick={onSignOut}
                     className="cursor-pointer text-rose-600 dark:text-rose-400 focus:bg-rose-50 dark:focus:bg-rose-500/10 focus:text-rose-600 dark:focus:text-rose-400 text-sm font-bold rounded-lg flex items-center justify-between"
@@ -248,11 +239,7 @@ export default function DashboardShell({
                   {isDark ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
                 </button>
 
-                <button type="button" className="-m-2.5 p-2.5 text-slate-400 hover:text-slate-500 dark:text-slate-500 dark:hover:text-slate-400 relative transition-colors duration-200">
-                  <span className="sr-only">View notifications</span>
-                  <Bell className="h-6 w-6" aria-hidden="true" />
-                  <span className="absolute top-2 right-2.5 block h-2 w-2 rounded-full bg-rose-500 dark:bg-rose-500/100 ring-2 ring-white" />
-                </button>
+                <NotificationCenter />
               </div>
               
             </div>
@@ -260,10 +247,15 @@ export default function DashboardShell({
         </header>
 
         {/* Viewport Container */}
-        <main className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-slate-900/30">
-          <div className="mx-auto max-w-screen-2xl">
+        <main className="flex-1 overflow-y-auto flex flex-col bg-slate-50/50 dark:bg-slate-900/30">
+          <div className="mx-auto max-w-screen-2xl flex-1 w-full">
             {children}
           </div>
+          {/* Global Footer */}
+          <footer className="w-full py-4 px-6 mt-auto border-t border-slate-200/60 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-semibold text-slate-400 dark:text-slate-500 bg-white/30 dark:bg-slate-950/30 shrink-0">
+            <p>Hindustaan Innovations Pvt. Ltd.</p>
+            <p>&copy; 2026 @hindustaanOS All rights reserved</p>
+          </footer>
         </main>
 
         <GlobalSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />

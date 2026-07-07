@@ -51,7 +51,7 @@ export default function InternDashboard() {
   const endDate = new Date(2026, 9, 1);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 min-h-screen">
+    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-4 md:space-y-5 animate-in fade-in duration-500 min-h-screen">
       
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -145,14 +145,14 @@ export default function InternDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5">
         
         {/* Left Column (8) */}
-        <div className="lg:col-span-8 flex flex-col gap-8">
+        <div className="lg:col-span-8 flex flex-col gap-4 md:gap-5">
           
           {/* My Today's Tasks */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
-            <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+            <CardHeader className="flex flex-row items-center justify-between p-4 md:p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
               <CardTitle className="text-lg font-bold flex items-center text-slate-900 dark:text-white">
                 <CheckCircle2 className="h-5 w-5 text-orange-500 mr-2" />
                 My Today's Tasks
@@ -164,7 +164,7 @@ export default function InternDashboard() {
             <CardContent className="p-0">
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {TASKS.length > 0 ? TASKS.map(task => (
-                  <div key={task.id} className="p-5 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
+                  <div key={task.id} className="p-4 md:p-5 py-2.5 md:py-3 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1.5">
                         <h4 className="text-base font-bold text-slate-900 dark:text-white truncate group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{task.title}</h4>
@@ -208,22 +208,22 @@ export default function InternDashboard() {
           </Card>
 
           {/* Contribution Progress & Upcoming Deadlines Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 flex-1">
             
             {/* Contribution Progress */}
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col min-h-[320px]">
-              <CardHeader className="pb-2">
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+              <CardHeader className="p-4 md:p-5 pb-3">
                 <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
                   <Target className="mr-2 h-4 w-4 text-orange-500" />
                   Contribution Breakdown
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-center">
-                <div className="flex items-end gap-2 mb-6">
+              <CardContent className="flex-1 flex flex-col p-4 md:p-5 pt-0">
+                <div className="flex items-end gap-2 mb-4">
                   <span className="text-5xl font-black text-slate-900 dark:text-white">88%</span>
                   <span className="text-sm font-bold text-slate-500 mb-1">Overall Score</span>
                 </div>
-                <div className="space-y-6">
+                <div className="space-y-3">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
                       <span>Tasks Completed</span>
@@ -250,32 +250,32 @@ export default function InternDashboard() {
             </Card>
 
             {/* Upcoming Deadlines */}
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col min-h-[320px] overflow-hidden">
-              <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800">
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
+              <CardHeader className="p-4 md:p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
                 <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
                   <AlertCircle className="mr-2 h-4 w-4 text-orange-500" />
                   Upcoming Deadlines
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-0 flex-1 relative min-h-[260px]">
+              <CardContent className="p-0 flex-1 relative h-[250px]">
                 <ScrollArea className="absolute inset-0 h-full w-full">
-                  <div className="p-6 space-y-7">
-                    <div className="relative pl-6 before:absolute before:left-2 before:top-1.5 before:bottom-[-28px] before:w-px before:bg-slate-200 dark:before:bg-slate-700">
-                      <div className="absolute left-0 top-1.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950 bg-rose-500" />
-                      <span className="text-xs font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-1 block">Today</span>
+                  <div className="p-4 md:p-5 space-y-4">
+                    <div className="relative pl-6 py-1 before:absolute before:left-2 before:top-2.5 before:bottom-[-16px] before:w-px before:bg-slate-200 dark:before:bg-slate-700">
+                      <div className="absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950 bg-rose-500" />
+                      <span className="text-xs font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-0.5 block">Today</span>
                       <p className="text-sm font-bold text-slate-900 dark:text-white">Dashboard Review</p>
-                      <Badge variant="outline" className="mt-2 text-[10px] border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-900/20 font-bold uppercase tracking-wider">High Priority</Badge>
+                      <Badge variant="outline" className="mt-1.5 text-[10px] border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-900/20 font-bold uppercase tracking-wider">High Priority</Badge>
                     </div>
                     
-                    <div className="relative pl-6 before:absolute before:left-2 before:top-1.5 before:bottom-[-28px] before:w-px before:bg-slate-200 dark:before:bg-slate-700">
-                      <div className="absolute left-0 top-1.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950 bg-amber-500" />
-                      <span className="text-xs font-black text-amber-600 dark:text-amber-500 uppercase tracking-wider mb-1 block">Tomorrow</span>
+                    <div className="relative pl-6 py-1 before:absolute before:left-2 before:top-2.5 before:bottom-[-16px] before:w-px before:bg-slate-200 dark:before:bg-slate-700">
+                      <div className="absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950 bg-amber-500" />
+                      <span className="text-xs font-black text-amber-600 dark:text-amber-500 uppercase tracking-wider mb-0.5 block">Tomorrow</span>
                       <p className="text-sm font-bold text-slate-900 dark:text-white">Login UI Adjustments</p>
                     </div>
                     
-                    <div className="relative pl-6">
-                      <div className="absolute left-0 top-1.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950 bg-slate-300 dark:bg-slate-600" />
-                      <span className="text-xs font-black text-slate-500 uppercase tracking-wider mb-1 block">Friday</span>
+                    <div className="relative pl-6 py-1">
+                      <div className="absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950 bg-slate-300 dark:bg-slate-600" />
+                      <span className="text-xs font-black text-slate-500 uppercase tracking-wider mb-0.5 block">Friday</span>
                       <p className="text-sm font-bold text-slate-900 dark:text-white">Sprint Demo Prep</p>
                     </div>
                   </div>
@@ -287,34 +287,32 @@ export default function InternDashboard() {
         </div>
 
         {/* Right Column (4) */}
-        <div className="lg:col-span-4 flex flex-col gap-8">
+        <div className="lg:col-span-4 flex flex-col gap-4 md:gap-5">
 
 
           {/* Refactored Training Calendar */}
           <EmployeeCalendar />
 
           {/* Recent Activity */}
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col flex-1 min-h-[320px] overflow-hidden">
-            <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800">
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col flex-1 overflow-hidden">
+            <CardHeader className="p-4 md:p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
               <CardTitle className="text-base font-bold flex items-center text-slate-900 dark:text-white">
                 <Activity className="h-4 w-4 text-orange-500 mr-2" />
                 Recent Activity
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 flex-1 relative min-h-[250px]">
-              <ScrollArea className="absolute inset-0 h-full w-full">
-                <div className="p-6 space-y-7">
-                  {RECENT_ACTIVITY.map((act, i) => (
-                    <div key={act.id} className="relative pl-6 before:absolute before:left-2 before:top-2 before:bottom-[-28px] before:w-px before:bg-slate-100 dark:before:bg-slate-800 last:before:hidden">
-                      <div className="absolute left-[3px] top-1.5 h-2.5 w-2.5 rounded-full bg-slate-200 dark:bg-slate-700 ring-4 ring-white dark:ring-slate-950" />
-                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-tight">
-                        {act.action} {act.target && <span className="font-bold text-slate-900 dark:text-white">{act.target}</span>}
-                      </p>
-                      <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">{act.time}</p>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
+            <CardContent className="p-4 md:p-5 pt-0">
+              <div className="space-y-4 pt-4">
+                {RECENT_ACTIVITY.map((act, i) => (
+                  <div key={act.id} className="relative pl-6 py-1 before:absolute before:left-2 before:top-3 before:bottom-[-16px] before:w-px before:bg-slate-100 dark:before:bg-slate-800 last:before:hidden">
+                    <div className="absolute left-[3px] top-2 h-2.5 w-2.5 rounded-full bg-slate-200 dark:bg-slate-700 ring-4 ring-white dark:ring-slate-950" />
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-tight">
+                      {act.action} {act.target && <span className="font-bold text-slate-900 dark:text-white">{act.target}</span>}
+                    </p>
+                    <p className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wider">{act.time}</p>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
 
