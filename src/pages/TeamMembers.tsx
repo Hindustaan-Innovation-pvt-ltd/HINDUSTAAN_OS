@@ -227,9 +227,30 @@ export default function TeamMembers({ session }: { session?: any }) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="online">Online</SelectItem>
-                <SelectItem value="busy">Busy</SelectItem>
-                <SelectItem value="leave">Leave</SelectItem>
+                <SelectItem value="online">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                    Online
+                  </div>
+                </SelectItem>
+                <SelectItem value="busy">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-rose-500" />
+                    Busy
+                  </div>
+                </SelectItem>
+                <SelectItem value="leave">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-amber-500" />
+                    Leave
+                  </div>
+                </SelectItem>
+                <SelectItem value="offline">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-slate-400" />
+                    Offline
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" size="icon" className="rounded-xl shrink-0">

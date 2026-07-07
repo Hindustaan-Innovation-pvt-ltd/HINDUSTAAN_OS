@@ -129,14 +129,14 @@ export default function DashboardShell({
                   className={cn(
                     "w-full group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200",
                     isCurrent
-                      ? "bg-amber-50 text-amber-700 dark:text-amber-300"
-                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-900/40 hover:text-slate-900 dark:text-white"
+                      ? "bg-amber-50 text-amber-700 dark:bg-white dark:text-slate-900"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white dark:hover:text-slate-900"
                   )}
                 >
                   <item.icon
                     className={cn(
                       "mr-3 h-5 w-5 shrink-0 transition-colors duration-200",
-                      isCurrent ? "text-amber-600 dark:text-amber-400" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:text-slate-300"
+                      isCurrent ? "text-amber-600 dark:text-slate-900" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-900"
                     )}
                     aria-hidden="true"
                   />
