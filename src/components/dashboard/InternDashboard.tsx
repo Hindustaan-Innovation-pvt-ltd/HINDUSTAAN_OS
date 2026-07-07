@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { WhatsAppBroadcastDialog } from "./WhatsAppBroadcastDialog";
 import { FigjamDialog } from "./FigjamDialog";
+import { EmployeeCalendar } from "./EmployeeCalendar";
 
 // MOCK DATA
 const TASKS = [
@@ -270,7 +271,7 @@ export default function InternDashboard() {
             </Card>
 
             {/* Upcoming Deadlines */}
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col min-h-[320px]">
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col min-h-[320px] overflow-hidden">
               <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800">
                 <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
                   <AlertCircle className="mr-2 h-4 w-4 text-orange-500" />
@@ -310,53 +311,11 @@ export default function InternDashboard() {
         <div className="lg:col-span-4 flex flex-col gap-8">
 
 
-          {/* Training Calendar */}
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
-            <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-              <CardTitle className="text-base font-bold flex items-center text-slate-900 dark:text-white">
-                <CalendarIcon className="h-4 w-4 text-orange-500 mr-2" />
-                Training Calendar
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 flex flex-col items-center">
-              <Calendar 
-                mode="single"
-                selected={today}
-                month={selectedMonth}
-                onMonthChange={setSelectedMonth}
-                startMonth={startDate}
-                endMonth={endDate}
-                className="w-full pointer-events-none border-0 p-0 mb-2"
-                classNames={{
-                  weekday: "text-slate-500 dark:text-slate-400 rounded-md w-10 font-bold text-[10px] uppercase",
-                  day: "h-10 w-10 p-0 font-bold aria-selected:opacity-100 rounded-xl text-slate-700 dark:text-slate-300 transition-colors",
-                  today: "bg-orange-500 text-white font-bold rounded-xl shadow-sm shadow-orange-500/20",
-                }}
-                modifiers={{
-                  done: (d: Date) => {
-                    const checkDate = new Date(d); checkDate.setHours(0,0,0,0);
-                    return checkDate < today && checkDate >= startDate && checkDate.getDay() !== 0;
-                  },
-                }}
-                modifiersClassNames={{
-                  done: "relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-emerald-500 after:rounded-full",
-                }}
-              />
-              <div className="w-full mt-2 pt-5 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex justify-between text-xs font-bold text-slate-700 dark:text-slate-300 mb-2.5">
-                  <span>Internship Progress</span>
-                  <span className="text-orange-600 dark:text-orange-400">Week 2 of 12</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Progress value={18} className="h-2 flex-1 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
-                  <span className="text-xs font-black text-slate-900 dark:text-white">18%</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Refactored Training Calendar */}
+          <EmployeeCalendar />
 
           {/* Recent Activity */}
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col flex-1 min-h-[320px]">
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col flex-1 min-h-[320px] overflow-hidden">
             <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800">
               <CardTitle className="text-base font-bold flex items-center text-slate-900 dark:text-white">
                 <Activity className="h-4 w-4 text-orange-500 mr-2" />
