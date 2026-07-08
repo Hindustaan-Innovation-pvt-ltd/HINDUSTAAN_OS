@@ -24,8 +24,8 @@ export const GLOBAL_PROJECTS = [
       { id: 5, title: 'Beta Testing', status: 'pending', date: 'Dec 05' },
     ],
     tasks: [
-      { id: 't1', title: 'Design System Setup', status: 'Done', assignee: 'Amanda Smith' },
-      { id: 't2', title: 'Authentication Flow', status: 'Done', assignee: 'Rahul Sharma' },
+      { id: 't1', title: 'Design System Setup', status: 'Done', assignee: 'Amanda Smith', completedAt: '2026-07-06' },
+      { id: 't2', title: 'Authentication Flow', status: 'Done', assignee: 'Rahul Sharma', completedAt: '2026-07-07' },
       { id: 't3', title: 'Dashboard Layout', status: 'In Progress', assignee: 'Priya Patel' },
       { id: 't4', title: 'API Integration', status: 'In Progress', assignee: 'Rohan Gupta' },
       { id: 't5', title: 'User Profile Page', status: 'To Do', assignee: 'Unassigned' },
@@ -49,10 +49,10 @@ export const GLOBAL_PROJECTS = [
       { id: 4, title: 'App Store Review', status: 'in-progress', date: 'Nov 25' },
     ],
     tasks: [
-      { id: 't1', title: 'Expo Init', status: 'Done', assignee: 'Rahul Sharma' },
-      { id: 't2', title: 'Navigation Container', status: 'Done', assignee: 'Amanda Smith' },
-      { id: 't3', title: 'Login Screen', status: 'Done', assignee: 'Rahul Sharma' },
-      { id: 't4', title: 'Push Notifications', status: 'Done', assignee: 'Rohan Gupta' },
+      { id: 't1', title: 'Expo Init', status: 'Done', assignee: 'Rahul Sharma', completedAt: '2026-07-02' },
+      { id: 't2', title: 'Navigation Container', status: 'Done', assignee: 'Amanda Smith', completedAt: '2026-07-04' },
+      { id: 't3', title: 'Login Screen', status: 'Done', assignee: 'Rahul Sharma', completedAt: '2026-07-05' },
+      { id: 't4', title: 'Push Notifications', status: 'Done', assignee: 'Rohan Gupta', completedAt: '2026-07-07' },
       { id: 't5', title: 'Apple Guidelines Check', status: 'Blocked', assignee: 'Priya Patel' },
     ]
   },
@@ -71,7 +71,7 @@ export const GLOBAL_PROJECTS = [
       { id: 3, title: 'Deployment', status: 'pending', date: 'Oct 20' },
     ],
     tasks: [
-      { id: 't1', title: 'Landing Page Copy', status: 'Done', assignee: 'Priya Patel' },
+      { id: 't1', title: 'Landing Page Copy', status: 'Done', assignee: 'Priya Patel', completedAt: '2026-07-03' },
       { id: 't2', title: 'Meta Tags', status: 'In Progress', assignee: 'Priya Patel' },
       { id: 't3', title: 'Vercel Setup', status: 'To Do', assignee: 'Rohan Gupta' },
     ]
@@ -91,9 +91,9 @@ export const GLOBAL_PROJECTS = [
       { id: 3, title: 'Component Library', status: 'completed', date: 'Sep 10' },
     ],
     tasks: [
-      { id: 't1', title: 'Tailwind Config', status: 'Done', assignee: 'Aiden Chen' },
-      { id: 't2', title: 'Button Variants', status: 'Done', assignee: 'Aiden Chen' },
-      { id: 't3', title: 'Input Fields', status: 'Done', assignee: 'Aiden Chen' },
+      { id: 't1', title: 'Tailwind Config', status: 'Done', assignee: 'Aiden Chen', completedAt: '2026-07-01' },
+      { id: 't2', title: 'Button Variants', status: 'Done', assignee: 'Aiden Chen', completedAt: '2026-07-02' },
+      { id: 't3', title: 'Input Fields', status: 'Done', assignee: 'Aiden Chen', completedAt: '2026-07-03' },
     ]
   }
 ];

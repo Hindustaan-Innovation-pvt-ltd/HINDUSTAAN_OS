@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Target, TrendingUp, CheckCircle, Clock, AlertOctagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -40,24 +40,29 @@ export default function ProgressTracker({ session }: { session?: any }) {
     };
   }, [activeProject]);
 
-  const completionTrendData = useMemo(() => {
-    const currentProgress = metrics.rawOverallProgress;
-    return Array.from({ length: 7 }).map((_, i) => {
+  const productivityData = useMemo(() => {
+    // Map strictly to accurate task completion dates from the project
+    const rawData = Array.from({ length: 7 }).map((_, i) => {
       const daysAgo = 6 - i;
-      const progressRatio = Math.pow((i + 1) / 7, 1.2);
-      const startProgress = currentProgress * 0.4; // Start at 40% of current progress a week ago
-      const progress = startProgress + (currentProgress - startProgress) * progressRatio;
-      
       const date = new Date();
       date.setDate(date.getDate() - daysAgo);
-      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+      const dateString = date.toISOString().split('T')[0];
+      
+      const tasksCompleted = activeProject.tasks.filter(
+        (t: any) => t.status === 'Done' && t.completedAt === dateString
+      ).length;
       
       return {
-        day: dayName,
-        progress: Math.round(progress)
-      }
+        day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        tasks: tasksCompleted
+      };
     });
-  }, [metrics.rawOverallProgress]);
+
+    const max = Math.max(...rawData.map(d => d.tasks));
+    const min = Math.min(...rawData.map(d => d.tasks));
+
+    return { data: rawData, max, min };
+  }, [activeProject]);
 
   return (
     <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8">
@@ -107,24 +112,24 @@ export default function ProgressTracker({ session }: { session?: any }) {
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700/60 flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Project Completion Trend</h3>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tracking cumulative progress over the last 7 days.</p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Daily Productivity Velocity</h3>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tasks resolved by the team over the last 7 days.</p>
             </div>
             <div className="flex items-center gap-4 text-xs font-bold text-slate-600 dark:text-slate-300">
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-emerald-500" /> Completion %</div>
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-500" /> Tasks Completed</div>
             </div>
           </div>
           
           <div className="flex-1 w-full h-[300px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={completionTrendData}
-                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                data={productivityData.data}
+                margin={{ top: 20, right: 30, left: -20, bottom: 0 }}
               >
                 <defs>
-                  <linearGradient id="colorProgress" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  <linearGradient id="colorTasks" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800 opacity-50" />
@@ -139,7 +144,6 @@ export default function ProgressTracker({ session }: { session?: any }) {
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fontSize: 10, fill: axisColor }} 
-                  tickFormatter={(value) => `${value}%`}
                   dx={-10}
                 />
                 <RechartsTooltip 
@@ -152,19 +156,31 @@ export default function ProgressTracker({ session }: { session?: any }) {
                     color: theme === 'dark' ? '#f8fafc' : '#0f172a',
                     padding: '12px'
                   }}
-                  itemStyle={{ fontWeight: 'bold', color: '#10b981' }}
+                  itemStyle={{ fontWeight: 'bold', color: '#3b82f6' }}
                   labelStyle={{ color: theme === 'dark' ? '#94a3b8' : '#64748b', fontWeight: 'bold', marginBottom: '8px' }}
-                  formatter={(value: number) => [`${value}%`, 'Progress']}
+                  formatter={(value: number) => [`${value} Tasks`, 'Completed']}
+                />
+                <ReferenceLine 
+                  y={productivityData.max} 
+                  stroke="#10b981" 
+                  strokeDasharray="3 3" 
+                  label={{ position: 'top', value: 'High', fill: '#10b981', fontSize: 10, fontWeight: 'bold' }} 
+                />
+                <ReferenceLine 
+                  y={productivityData.min} 
+                  stroke="#ef4444" 
+                  strokeDasharray="3 3" 
+                  label={{ position: 'bottom', value: 'Low', fill: '#ef4444', fontSize: 10, fontWeight: 'bold' }} 
                 />
                 <Area 
                   type="monotone" 
-                  name="Progress" 
-                  dataKey="progress" 
-                  stroke="#10b981" 
+                  name="Tasks Completed" 
+                  dataKey="tasks" 
+                  stroke="#3b82f6" 
                   strokeWidth={4}
                   fillOpacity={1} 
-                  fill="url(#colorProgress)"
-                  activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981', style: { filter: 'drop-shadow(0px 4px 6px rgba(16, 185, 129, 0.5))' } }} 
+                  fill="url(#colorTasks)"
+                  activeDot={{ r: 6, strokeWidth: 0, fill: '#3b82f6', style: { filter: 'drop-shadow(0px 4px 6px rgba(59, 130, 246, 0.5))' } }} 
                 />
               </AreaChart>
             </ResponsiveContainer>
