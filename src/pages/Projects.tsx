@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CalendarDays, LayoutTemplate, Briefcase, LayoutGrid, CheckSquare, Target, ListTodo, Plus, X, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ProjectDetails from '@/components/projects/ProjectDetails';
+import { Badge } from '@/components/ui/badge';
 
 // --- Mock Data ---
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -14,16 +15,11 @@ const GANTT_TASKS = [
   { id: '5', name: 'Marketing Launch', start: 5, duration: 2, color: 'bg-rose-500 dark:bg-rose-600', assignee: 'Rohan G.' }
 ];
 
-const INITIAL_PROJECTS = [
-  { id: 'p1', name: 'ProjectOS Redesign', tasks: 12, status: 'In Progress', progress: 68, iconColor: 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400', strokeColor: '#e11d48', manager: 'Amanda S.', deadline: 'Dec 15', budget: '$15k' },
-  { id: 'p2', name: 'Mobile App', tasks: 8, status: 'In Progress', progress: 45, iconColor: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400', strokeColor: '#2563eb', manager: 'Rahul S.', deadline: 'Nov 30', budget: '$20k' },
-  { id: 'p3', name: 'Marketing Website', tasks: 6, status: 'On Hold', progress: 20, iconColor: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400', strokeColor: '#d97706', manager: 'Priya P.', deadline: 'Oct 20', budget: '$5k' },
-  { id: 'p4', name: 'Design System', tasks: 10, status: 'Completed', progress: 100, iconColor: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', strokeColor: '#059669', manager: 'Rohan G.', deadline: 'Sep 10', budget: '$8k' }
-];
+import { GLOBAL_PROJECTS } from '@/data/mockData';
 
 export default function Projects({ session }: { session?: any }) {
   const [activeTab, setActiveTab] = useState('All');
-  const [projects, setProjects] = useState(INITIAL_PROJECTS);
+  const [projects, setProjects] = useState(GLOBAL_PROJECTS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [newProject, setNewProject] = useState({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium' });
@@ -44,7 +40,8 @@ export default function Projects({ session }: { session?: any }) {
     const project = {
       id: Date.now().toString(),
       name: newProject.name,
-      tasks: 0,
+      tasks: [],
+      milestones: [],
       status: 'Not Started',
       progress: 0,
       iconColor: randomColor.iconColor,
@@ -107,54 +104,86 @@ export default function Projects({ session }: { session?: any }) {
           </div>
         </div>
 
-        <div className="divide-y divide-slate-100 dark:divide-slate-800">
-          {displayedProjects.map((project) => (
-            <div 
-              key={project.id} 
-              onClick={() => setSelectedProject(project)}
-              className="p-6 flex items-center justify-between transition-colors group cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-900/30"
-            >
-              <div className="flex items-center space-x-4">
-                <div className={cn("p-4 rounded-2xl shadow-sm", project.iconColor)}>
-                  <LayoutGrid className="h-6 w-6" />
-                </div>
-                <div>
-                  <h4 className="text-base font-bold text-slate-900 dark:text-white">{project.name}</h4>
-                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1 flex items-center flex-wrap gap-2">
-                    <span className="flex items-center"><ListTodo className="h-4 w-4 mr-1" /> {project.tasks} tasks</span>
-                    <span>• {project.status}</span>
-                    {project.manager && <span>• Lead: {project.manager}</span>}
-                    {project.deadline && <span>• Due: {project.deadline}</span>}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                {/* Radial Progress */}
-                <div className="relative flex items-center justify-center w-16 h-16 shrink-0">
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-slate-100 dark:text-slate-800" />
-                    <circle 
-                      cx="32" cy="32" r="28" fill="transparent" 
-                      stroke={project.strokeColor} strokeWidth="6" 
-                      strokeDasharray="175.9" 
-                      strokeDashoffset={175.9 - (175.9 * project.progress) / 100} 
-                      strokeLinecap="round" 
-                      className="transition-all duration-1000 ease-out" 
-                    />
-                  </svg>
-                  <div className="absolute flex flex-col items-center justify-center">
-                    <span className="text-xs font-bold text-slate-900 dark:text-white">{project.progress}%</span>
-                  </div>
-                </div>
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-slate-800">
+                <th className="p-4 text-xs font-black uppercase text-slate-400">Project</th>
+                <th className="p-4 text-xs font-black uppercase text-slate-400">Lead</th>
+                <th className="p-4 text-xs font-black uppercase text-slate-400">Deadline</th>
+                <th className="p-4 text-xs font-black uppercase text-slate-400">Status</th>
+                <th className="p-4 text-xs font-black uppercase text-slate-400">Progress</th>
+                <th className="p-4"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {displayedProjects.map((project) => {
+                const completedTasks = project.tasks.filter(t => t.status === 'Done').length;
+                const totalTasks = project.tasks.length;
+                const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
-                {/* Arrow to indicate clickability */}
-                <div className="flex items-center justify-center h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:bg-orange-100 group-hover:text-orange-600 dark:group-hover:bg-orange-500/20 dark:group-hover:text-orange-400 transition-colors shrink-0">
-                  <ChevronRight className="h-5 w-5" />
-                </div>
-              </div>
-            </div>
-          ))}
+                return (
+                  <tr 
+                    key={project.id} 
+                    className="group border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                    onClick={() => setSelectedProject(project)}
+                  >
+                    <td className="p-4">
+                      <div className="flex items-center space-x-4">
+                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-white dark:border-slate-800", project.iconColor)}>
+                          <LayoutTemplate className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{project.name}</p>
+                          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">{totalTasks} tasks • {project.budget}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{project.manager}</span>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">{project.deadline}</span>
+                    </td>
+                    <td className="p-4">
+                      <Badge variant={
+                        project.status === 'Completed' ? 'default' : 
+                        project.status === 'In Progress' ? 'secondary' : 
+                        'outline'
+                      } className={cn(
+                        "font-bold tracking-wider uppercase text-[10px]",
+                        project.status === 'Completed' && "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400",
+                        project.status === 'In Progress' && "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-500/20 dark:text-blue-400",
+                        project.status === 'On Hold' && "bg-amber-100 text-amber-700 hover:bg-amber-200 border-transparent dark:bg-amber-500/20 dark:text-amber-400",
+                        project.status === 'Not Started' && "bg-slate-100 text-slate-700 hover:bg-slate-200 border-transparent dark:bg-slate-800 dark:text-slate-400"
+                      )}>
+                        {project.status}
+                      </Badge>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-2 w-24 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full rounded-full transition-all duration-1000 ease-out" 
+                            style={{ 
+                              width: `${progress}%`,
+                              backgroundColor: project.strokeColor
+                            }} 
+                          />
+                        </div>
+                        <span className="text-xs font-bold text-slate-500">{progress}%</span>
+                      </div>
+                    </td>
+                    <td className="p-4 text-right">
+                      <button className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 

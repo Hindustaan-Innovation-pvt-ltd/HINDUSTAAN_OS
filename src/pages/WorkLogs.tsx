@@ -15,22 +15,10 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-const INITIAL_LOGS = [
-  { id: '1', name: 'Anurag', initials: 'TP', date: 'Oct 12, 2026', hours: 4.5, task: 'Dashboard Analytics UI', project: 'Frontend Core', status: 'Approved' },
-  { id: '2', name: 'Rahul Sharma', initials: 'RS', date: 'Oct 12, 2026', hours: 6.0, task: 'Redis Caching Setup', project: 'Backend', status: 'Approved' },
-  { id: '3', name: 'Amanda Smith', initials: 'AS', date: 'Oct 11, 2026', hours: 3.5, task: 'Tailwind v4 Migration', project: 'Frontend Core', status: 'Pending' },
-  { id: '4', name: 'Priya Patel', initials: 'PP', date: 'Oct 11, 2026', hours: 8.0, task: 'API Documentation', project: 'Documentation', status: 'Approved' },
-  { id: '5', name: 'Preeti', initials: 'TP', date: 'Oct 10, 2026', hours: 5.0, task: 'Create User Onboarding', project: 'Product', status: 'Rejected' },
-];
-
-const ONLINE_TEAM_MEMBERS = [
-  { id: 'tm1', name: 'Rahul Sharma', initials: 'RS', role: 'Backend Developer', task: 'Database Optimization', project: 'Backend Core', color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' },
-  { id: 'tm2', name: 'Amanda Smith', initials: 'AS', role: 'Frontend Lead', task: 'Component Refactoring', project: 'Frontend Core', color: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
-  { id: 'tm3', name: 'Priya Patel', initials: 'PP', role: 'Technical Writer', task: 'API Documentation V2', project: 'Documentation', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' },
-];
+import { GLOBAL_LOGS, GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 
 export default function WorkLogs({ session }: { session?: any }) {
-  const [logs, setLogs] = useState(INITIAL_LOGS);
+  const [logs, setLogs] = useState(GLOBAL_LOGS);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
@@ -132,7 +120,7 @@ export default function WorkLogs({ session }: { session?: any }) {
           Live Active Sessions
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {ONLINE_TEAM_MEMBERS.map(member => (
+          {GLOBAL_TEAM_MEMBERS.filter(m => m.status === 'online').map(member => (
             <div key={member.id} className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600 transform origin-left transition-transform duration-1000" />
               
@@ -159,10 +147,10 @@ export default function WorkLogs({ session }: { session?: any }) {
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Working On</span>
                   <Badge variant="secondary" className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] uppercase font-black tracking-wider">
-                    {member.project}
+                    Assigned Task
                   </Badge>
                 </div>
-                <p className="font-bold text-slate-700 dark:text-slate-300 line-clamp-1">{member.task}</p>
+                <p className="font-bold text-slate-700 dark:text-slate-300 line-clamp-1">Current Active Task</p>
               </div>
             </div>
           ))}

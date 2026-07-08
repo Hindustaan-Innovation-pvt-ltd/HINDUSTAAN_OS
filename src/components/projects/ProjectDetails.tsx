@@ -4,24 +4,8 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
 export default function ProjectDetails({ project, onBack }: { project: any, onBack: () => void }) {
-  // Mock Milestones
-  const milestones = [
-    { id: 1, title: 'Requirement Gathering', status: 'completed', date: 'Oct 01' },
-    { id: 2, title: 'UI/UX Design', status: 'completed', date: 'Oct 15' },
-    { id: 3, title: 'Frontend Development', status: 'in-progress', date: 'Nov 10' },
-    { id: 4, title: 'Backend Integration', status: 'pending', date: 'Nov 25' },
-    { id: 5, title: 'Beta Testing', status: 'pending', date: 'Dec 05' },
-  ];
-
-  // Mock Tasks
-  const tasks = [
-    { id: 't1', title: 'Design System Setup', status: 'Done', assignee: 'Amanda S.' },
-    { id: 't2', title: 'Authentication Flow', status: 'Done', assignee: 'Rahul S.' },
-    { id: 't3', title: 'Dashboard Layout', status: 'In Progress', assignee: 'Priya P.' },
-    { id: 't4', title: 'API Integration', status: 'In Progress', assignee: 'Rohan G.' },
-    { id: 't5', title: 'User Profile Page', status: 'To Do', assignee: 'Unassigned' },
-    { id: 't6', title: 'Email Notifications', status: 'To Do', assignee: 'Unassigned' },
-  ];
+  const milestones = project.milestones || [];
+  const tasks = project.tasks || [];
 
   const completedTasks = tasks.filter(t => t.status === 'Done').length;
   const totalTasks = tasks.length;

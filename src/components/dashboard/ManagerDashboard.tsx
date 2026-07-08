@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  FolderKanban, 
-  CheckSquare, 
-  Clock, 
-  Users, 
-  AlertTriangle, 
+import {
+  FolderKanban,
+  CheckSquare,
+  Clock,
+  Users,
+  AlertTriangle,
   TrendingUp,
   Plus,
   ArrowRight,
@@ -79,7 +79,7 @@ export default function ManagerDashboard() {
   else if (hour < 18) greeting = 'Good Afternoon';
 
   const getStatusBadgeVariant = (status: string) => {
-    switch(status) {
+    switch (status) {
       case 'On Track': return 'secondary';
       case 'At Risk': return 'destructive';
       case 'Completed': return 'default';
@@ -88,7 +88,7 @@ export default function ManagerDashboard() {
   };
 
   const getStatusBadgeStyles = (status: string) => {
-    switch(status) {
+    switch (status) {
       case 'On Track': return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/20';
       case 'At Risk': return 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/20';
       case 'Completed': return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700';
@@ -98,22 +98,22 @@ export default function ManagerDashboard() {
 
   if (selectedProject) {
     return (
-      <ProjectDetails 
+      <ProjectDetails
         project={{
-          ...selectedProject, 
+          ...selectedProject,
           deadline: selectedProject.dueDate,
           manager: 'Aakash Gupta',
           strokeColor: '#f97316',
           iconColor: 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400'
-        }} 
-        onBack={() => setSelectedProject(null)} 
+        }}
+        onBack={() => setSelectedProject(null)}
       />
     );
   }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
-      
+
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
@@ -128,7 +128,7 @@ export default function ManagerDashboard() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        
+
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
           <CardContent className="p-5 flex flex-col justify-between h-full gap-4">
             <div className="flex items-center justify-between">
@@ -223,10 +223,10 @@ export default function ManagerDashboard() {
 
       {/* Main Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         {/* Left Column (8 cols) */}
         <div className="lg:col-span-8 space-y-8">
-          
+
           {/* Modern Project Calendar Widget */}
           <ProjectCalendarWidget />
 
@@ -266,7 +266,7 @@ export default function ManagerDashboard() {
                         <Progress value={project.progress} className={cn("h-2 flex-1", project.status === 'At Risk' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
                         <div className="flex items-center gap-1 justify-end w-16 shrink-0">
                           <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{project.progress}%</span>
-                          <button 
+                          <button
                             onClick={() => setSelectedProject(project)}
                             className="flex items-center justify-center h-6 w-6 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-orange-600 transition-colors shrink-0"
                           >
@@ -297,12 +297,12 @@ export default function ManagerDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                
+
                 <div className="flex flex-col gap-2 p-3.5 rounded-xl border border-rose-100 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-500/5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
-                         <AvatarFallback className="bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 text-[10px] font-bold">AS</AvatarFallback>
+                        <AvatarFallback className="bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 text-[10px] font-bold">AS</AvatarFallback>
                       </Avatar>
                       <span className="font-bold text-sm text-slate-900 dark:text-white">Amanda Smith</span>
                     </div>
@@ -312,8 +312,8 @@ export default function ManagerDashboard() {
                     Figma API token expired and waiting for renewal. Cannot proceed with design implementation.
                   </p>
                   <div className="flex items-center gap-3 ml-8 mt-1">
-                     <Button variant="ghost" size="sm" className="h-7 text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-100 dark:hover:bg-rose-500/20 px-2 font-bold">Resolve</Button>
-                     <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold">Message</Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-100 dark:hover:bg-rose-500/20 px-2 font-bold">Resolve</Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold">Message</Button>
                   </div>
                 </div>
 
@@ -321,7 +321,7 @@ export default function ManagerDashboard() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
-                         <AvatarFallback className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 text-[10px] font-bold">PP</AvatarFallback>
+                        <AvatarFallback className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 text-[10px] font-bold">PP</AvatarFallback>
                       </Avatar>
                       <span className="font-bold text-sm text-slate-900 dark:text-white">Priya Patel</span>
                     </div>
@@ -331,8 +331,8 @@ export default function ManagerDashboard() {
                     Waiting for data engineering team to provide the cleaned dataset for ML model training.
                   </p>
                   <div className="flex items-center gap-3 ml-8 mt-1">
-                     <Button variant="ghost" size="sm" className="h-7 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-500/20 px-2 font-bold">Resolve</Button>
-                     <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold">Message</Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-500/20 px-2 font-bold">Resolve</Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold">Message</Button>
                   </div>
                 </div>
 
@@ -459,7 +459,7 @@ export default function ManagerDashboard() {
                     <span className={cn(
                       "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white dark:border-slate-950",
                       member.status === 'online' ? 'bg-emerald-500' :
-                      member.status === 'busy' ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-600'
+                        member.status === 'busy' ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-600'
                     )} />
                   </div>
                 ))}
@@ -502,7 +502,7 @@ export default function ManagerDashboard() {
 
         </div>
       </div>
-      
+
       <AssignTaskDialog open={isAssignTaskOpen} onOpenChange={setIsAssignTaskOpen} />
     </div>
   );
