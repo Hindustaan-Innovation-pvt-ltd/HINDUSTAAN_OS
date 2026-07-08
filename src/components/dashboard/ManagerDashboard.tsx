@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import {
-  FolderKanban,
-  CheckSquare,
-  Clock,
-  Users,
+import React, { useState, useEffect } from 'react';
+import { 
+  FolderKanban, 
+  CheckSquare, 
+  Clock, 
+  Users, 
   AlertTriangle,
   TrendingUp,
   Plus,
@@ -15,7 +15,9 @@ import {
   Megaphone,
   BellRing,
   MoreVertical,
-  ChevronRight
+  ChevronRight,
+  Timer,
+  X
 } from 'lucide-react';
 import ProjectDetails from '../projects/ProjectDetails';
 import { cn } from '@/lib/utils';
@@ -37,6 +39,13 @@ const TEAM_MEMBERS = [
   { id: '3', name: 'Priya Patel', role: 'Data Sci', status: 'leave', initials: 'PP' },
   { id: '4', name: 'Rohan Gupta', role: 'DevOps', status: 'online', initials: 'RG' },
   { id: '5', name: 'Aiden Chen', role: 'Design', status: 'offline', initials: 'AC' },
+];
+
+const ONLINE_TEAM_MEMBERS_MANAGER = [
+  { id: 'u-1', name: 'Amanda Smith', initials: 'AS', role: 'Frontend Lead', color: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
+  { id: 'u-2', name: 'Rahul Sharma', initials: 'RS', role: 'Backend Developer', color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' },
+  { id: 'u-3', name: 'Priya Patel', initials: 'PP', role: 'Technical Writer', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' },
+  { id: 'u-4', name: 'Tanvy Pandey', initials: 'TP', role: 'Intern Developer', color: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400' },
 ];
 
 const PROJECTS = [
@@ -72,6 +81,43 @@ export default function ManagerDashboard() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [isActiveInternsModalOpen, setIsActiveInternsModalOpen] = useState(false);
+
+  const [activeSessions, setActiveSessions] = useState<{ [key: string]: number }>({});
+
+  useEffect(() => {
+    const teamMembers = [
+      { id: 'u-1', defaultOffset: 2 * 3600 + 15 * 60 + 30 }, // Amanda Smith
+      { id: 'u-2', defaultOffset: 3600 + 45 * 60 + 12 },    // Rahul Sharma
+      { id: 'u-3', defaultOffset: 45 * 60 + 5 },            // Priya Patel
+      { id: 'u-4', defaultOffset: 3 * 3600 + 10 * 60 + 40 } // Tanvy Pandey
+    ];
+
+    const updateSessions = () => {
+      const sessions: { [key: string]: number } = {};
+      teamMembers.forEach(member => {
+        const loginTimeStr = localStorage.getItem(`login_time_${member.id}`);
+        if (loginTimeStr) {
+          const startTime = parseInt(loginTimeStr, 10);
+          sessions[member.id] = Math.floor((Date.now() - startTime) / 1000);
+        } else {
+          sessions[member.id] = member.defaultOffset;
+        }
+      });
+      setActiveSessions(sessions);
+    };
+
+    updateSessions();
+    const interval = setInterval(updateSessions, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTime = (totalSeconds: number) => {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   const hour = new Date().getHours();
   let greeting = 'Good Evening';
@@ -174,7 +220,10 @@ export default function ManagerDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+        <Card 
+          onClick={() => setIsActiveInternsModalOpen(true)}
+          className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md cursor-pointer hover:border-blue-500/30 active:scale-98"
+        >
           <CardContent className="p-5 flex flex-col justify-between h-full gap-4">
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
@@ -426,46 +475,38 @@ export default function ManagerDashboard() {
             </CardContent>
           </Card>
 
-          {/* Team Availability */}
+          {/* Live Active Sessions */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm shrink-0">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-slate-900 dark:text-white">Team Availability</CardTitle>
+            <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+              <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
+                <Clock className="h-4 w-4 text-emerald-500 mr-2 animate-pulse" />
+                Live Active Sessions
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex flex-col items-center">
-                  <span className="text-2xl font-extrabold text-slate-900 dark:text-white">24</span>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Online</span>
-                </div>
-                <Separator orientation="vertical" className="h-8" />
-                <div className="flex flex-col items-center">
-                  <span className="text-2xl font-extrabold text-amber-500">4</span>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Busy</span>
-                </div>
-                <Separator orientation="vertical" className="h-8" />
-                <div className="flex flex-col items-center">
-                  <span className="text-2xl font-extrabold text-slate-600 dark:text-slate-400">2</span>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Leave</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 overflow-hidden">
-                {TEAM_MEMBERS.map((member) => (
-                  <div key={member.id} className="relative">
-                    <Avatar className="h-8 w-8 rounded-full border-2 border-white dark:border-slate-950">
-                      <AvatarFallback className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-xs font-bold">
-                        {member.initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className={cn(
-                      "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white dark:border-slate-950",
-                      member.status === 'online' ? 'bg-emerald-500' :
-                        member.status === 'busy' ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-600'
-                    )} />
+            <CardContent className="p-0">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {ONLINE_TEAM_MEMBERS_MANAGER.map((member) => (
+                  <div key={member.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <Avatar className="h-8 w-8 rounded-full border-2 border-white dark:border-slate-950">
+                          <AvatarFallback className={cn("text-xs font-bold", member.color)}>
+                            {member.initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-950 animate-pulse" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
+                        <span className="text-[10px] text-slate-500 font-semibold">{member.role}</span>
+                      </div>
+                    </div>
+                    <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold">
+                      <Timer className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
+                      <span>{formatTime(activeSessions[member.id] || 0)}</span>
+                    </div>
                   </div>
                 ))}
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800 border-2 border-white dark:border-slate-950 text-[10px] font-bold text-slate-500">
-                  +25
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -502,6 +543,56 @@ export default function ManagerDashboard() {
 
         </div>
       </div>
+
+      {/* Active Interns Modal */}
+      {isActiveInternsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setIsActiveInternsModalOpen(false)}
+          />
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-2xl w-full max-w-md overflow-hidden relative z-10 animate-in fade-in zoom-in duration-300">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Interns</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Names and online status of active interns</p>
+              </div>
+              <button 
+                onClick={() => setIsActiveInternsModalOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 max-h-[300px] overflow-y-auto space-y-4">
+              {ONLINE_TEAM_MEMBERS_MANAGER.map((member) => (
+                <div key={member.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all">
+                  <div className="flex items-center gap-3">
+                    <Avatar className={cn("h-9 w-9 border-2 border-white dark:border-slate-900", member.color)}>
+                      <AvatarFallback className="font-bold text-xs">{member.initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
+                      <span className="text-xs text-slate-500 font-medium">{member.role}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Online</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <Button onClick={() => setIsActiveInternsModalOpen(false)} className="rounded-xl bg-slate-900 dark:bg-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-white font-bold px-4 py-2 cursor-pointer">
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AssignTaskDialog open={isAssignTaskOpen} onOpenChange={setIsAssignTaskOpen} />
     </div>

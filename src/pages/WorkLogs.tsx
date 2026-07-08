@@ -15,33 +15,114 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-import { GLOBAL_LOGS, GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
+import { GLOBAL_LOGS } from '@/data/mockData';
+
+const ONLINE_TEAM_MEMBERS = [
+  { id: 'u-1', name: 'Amanda Smith', initials: 'AS', role: 'Frontend Lead', task: 'Component Refactoring', project: 'Frontend Core', color: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
+  { id: 'u-2', name: 'Rahul Sharma', initials: 'RS', role: 'Backend Developer', task: 'Database Optimization', project: 'Backend Core', color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' },
+  { id: 'u-3', name: 'Priya Patel', initials: 'PP', role: 'Technical Writer', task: 'API Documentation V2', project: 'Documentation', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' },
+  { id: 'u-4', name: 'Tanvy Pandey', initials: 'TP', role: 'Intern Developer', task: 'Kanban Board & Work Logs', project: 'Frontend Core', color: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400' },
+];
+
+const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
 export default function WorkLogs({ session }: { session?: any }) {
-  const [logs, setLogs] = useState(GLOBAL_LOGS);
+  const [logs, setLogs] = useState(() => {
+    const saved = localStorage.getItem('work_logs_list');
+    return saved ? JSON.parse(saved) : GLOBAL_LOGS;
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-
-  const [activeSessions, setActiveSessions] = useState<{ [key: string]: number }>(() => {
-    return {
-      'tm1': 3600 + 45 * 60 + 12,
-      'tm2': 2 * 3600 + 15 * 60 + 30,
-      'tm3': 45 * 60 + 5,
-    };
-  });
+  const [isActiveMembersModalOpen, setIsActiveMembersModalOpen] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveSessions(prev => {
-        const next = { ...prev };
-        Object.keys(next).forEach(key => {
-          next[key] += 1;
-        });
-        return next;
-      });
-    }, 1000);
+    localStorage.setItem('work_logs_list', JSON.stringify(logs));
+  }, [logs]);
+
+  // Resolve current user based on session
+  const role = session?.user?.user_metadata?.role || 'manager';
+  const email = session?.user?.email || 'user@hindustaan.in';
+  
+  let currentUserId = 'manager-1';
+  let currentUserName = 'Admin User';
+  
+  if (role === 'intern') {
+    if (email.toLowerCase().includes('amanda')) {
+      currentUserId = 'u-1';
+      currentUserName = 'Amanda Smith';
+    } else if (email.toLowerCase().includes('rahul')) {
+      currentUserId = 'u-2';
+      currentUserName = 'Rahul Sharma';
+    } else if (email.toLowerCase().includes('priya')) {
+      currentUserId = 'u-3';
+      currentUserName = 'Priya Patel';
+    } else {
+      currentUserId = 'u-4';
+      currentUserName = 'Tanvy Pandey';
+    }
+  }
+
+  const currentUser = {
+    id: currentUserId,
+    role: role as 'manager' | 'intern',
+    name: currentUserName
+  };
+
+  // Active session timer for logged-in user
+  const loginKey = `login_time_${currentUser.id}`;
+  const [secondsElapsed, setSecondsElapsed] = useState(0);
+
+  useEffect(() => {
+    if (currentUser.role !== 'intern') return;
+
+    let loginTime = localStorage.getItem(loginKey);
+    if (!loginTime) {
+      loginTime = Date.now().toString();
+      localStorage.setItem(loginKey, loginTime);
+    }
+    const startTime = parseInt(loginTime, 10);
+
+    const updateTimer = () => {
+      setSecondsElapsed(Math.floor((Date.now() - startTime) / 1000));
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentUser.id, loginKey, currentUser.role]);
+
+  const [activeSessions, setActiveSessions] = useState<{ [key: string]: number }>({});
+
+  useEffect(() => {
+    const teamMembers = [
+      { id: 'u-1', defaultOffset: 2 * 3600 + 15 * 60 + 30 }, // Amanda Smith
+      { id: 'u-2', defaultOffset: 3600 + 45 * 60 + 12 },    // Rahul Sharma
+      { id: 'u-3', defaultOffset: 45 * 60 + 5 },            // Priya Patel
+      { id: 'u-4', defaultOffset: 3 * 3600 + 10 * 60 + 40 } // Tanvy Pandey
+    ];
+
+    const updateSessions = () => {
+      const sessions: { [key: string]: number } = {};
+      teamMembers.forEach(member => {
+        if (member.id === currentUser.id) {
+          sessions[member.id] = secondsElapsed;
+        } else {
+          const loginTimeStr = localStorage.getItem(`login_time_${member.id}`);
+          if (loginTimeStr) {
+            const startTime = parseInt(loginTimeStr, 10);
+            sessions[member.id] = Math.floor((Date.now() - startTime) / 1000);
+          } else {
+            sessions[member.id] = member.defaultOffset;
+          }
+        }
+      });
+      setActiveSessions(sessions);
+    };
+
+    updateSessions();
+    const interval = setInterval(updateSessions, 1000);
+    return () => clearInterval(interval);
+  }, [currentUser.id, secondsElapsed]);
 
   const formatTime = (totalSeconds: number) => {
     const h = Math.floor(totalSeconds / 3600);
@@ -50,15 +131,21 @@ export default function WorkLogs({ session }: { session?: any }) {
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  const userBaseLogs = useMemo(() => {
+    return currentUser.role === 'intern'
+      ? logs.filter(log => log.name.toLowerCase().includes(currentUser.name.split(' ')[0].toLowerCase()))
+      : logs;
+  }, [logs, currentUser]);
+
   const filteredLogs = useMemo(() => {
-    return logs.filter(log => {
+    return userBaseLogs.filter(log => {
       const matchesSearch = log.task.toLowerCase().includes(searchQuery.toLowerCase()) ||
         log.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         log.project.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'All' || log.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [logs, searchQuery, statusFilter]);
+  }, [userBaseLogs, searchQuery, statusFilter]);
 
   const handleStatusChange = (id: string, newStatus: string) => {
     setLogs(logs.map(log => log.id === id ? { ...log, status: newStatus } : log));
@@ -68,11 +155,11 @@ export default function WorkLogs({ session }: { session?: any }) {
     setLogs(logs.filter(log => log.id !== id));
   };
 
-  const totalHours = useMemo(() => logs.reduce((acc, log) => acc + log.hours, 0), [logs]);
-  const pendingHours = useMemo(() => logs.filter(l => l.status === 'Pending').reduce((acc, log) => acc + log.hours, 0), [logs]);
+  const totalHours = useMemo(() => userBaseLogs.reduce((acc, log) => acc + log.hours, 0), [userBaseLogs]);
+  const pendingHours = useMemo(() => userBaseLogs.filter(l => l.status === 'Pending').reduce((acc, log) => acc + log.hours, 0), [userBaseLogs]);
 
   return (
-    <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8 relative">
+    <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8 relative animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
@@ -113,49 +200,81 @@ export default function WorkLogs({ session }: { session?: any }) {
         </div>
       </div>
 
-      {/* Live Employee Sessions */}
-      <div className="mb-8">
-        <h3 className="text-lg font-black tracking-tight text-slate-900 dark:text-white mb-4 flex items-center">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
-          Live Active Sessions
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {GLOBAL_TEAM_MEMBERS.filter(m => m.status === 'online').map(member => (
-            <div key={member.id} className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600 transform origin-left transition-transform duration-1000" />
-              
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="relative">
-                    <Avatar className={cn("h-10 w-10 border-2 border-white dark:border-slate-900", member.color)}>
-                      <AvatarFallback className="font-bold">{member.initials}</AvatarFallback>
-                    </Avatar>
-                    <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{member.name}</h4>
-                    <p className="text-xs font-semibold text-slate-500">{member.role}</p>
-                  </div>
-                </div>
-                <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1.5 animate-pulse">
-                  <Timer className="h-3.5 w-3.5" />
-                  <span className="text-sm font-bold font-mono tracking-wider">{formatTime(activeSessions[member.id] || 0)}</span>
-                </div>
-              </div>
-
-              <div className="bg-slate-50 dark:bg-slate-950/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Working On</span>
-                  <Badge variant="secondary" className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] uppercase font-black tracking-wider">
-                    Assigned Task
-                  </Badge>
-                </div>
-                <p className="font-bold text-slate-700 dark:text-slate-300 line-clamp-1">Current Active Task</p>
-              </div>
+      {/* Employee Active Session Timer Widget */}
+      {currentUser.role === 'intern' && (
+        <div className="mb-8 bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 rounded-2xl p-6 text-white shadow-lg shadow-orange-500/15 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+          
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="p-3 bg-white/20 rounded-2xl border border-white/20">
+              <Clock className="h-7 w-7 text-white animate-pulse" />
             </div>
-          ))}
+            <div>
+              <h3 className="text-lg font-black tracking-tight">Active Work Session</h3>
+              <p className="text-xs text-orange-100 mt-0.5 font-medium">Session started automatically upon login.</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="flex flex-col text-right">
+              <span className="text-3xl font-black font-mono tracking-widest">{formatTime(secondsElapsed)}</span>
+              <span className="text-[10px] font-bold text-orange-100 uppercase tracking-widest mt-1">Logged Time Today</span>
+            </div>
+            <div className="h-10 w-[1px] bg-white/20 hidden md:block" />
+            <div className="px-3.5 py-1.5 bg-white/20 border border-white/20 rounded-xl flex items-center gap-1.5 text-xs font-bold">
+              <span className="h-2.5 w-2.5 bg-emerald-400 rounded-full animate-ping" />
+              <span>Session Running</span>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Live Employee Sessions (Manager Only) */}
+      {currentUser.role === 'manager' && (
+        <div className="mb-8">
+          <h3 className="text-lg font-black tracking-tight text-slate-900 dark:text-white mb-4 flex items-center">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
+            Live Active Sessions
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {ONLINE_TEAM_MEMBERS.map(member => (
+              <div key={member.id} className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600 transform origin-left transition-transform duration-1000" />
+                
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <Avatar className={cn("h-10 w-10 border-2 border-white dark:border-slate-900", member.color)}>
+                        <AvatarFallback className="font-bold">{member.initials}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{member.name}</h4>
+                      <p className="text-xs font-semibold text-slate-500">{member.role}</p>
+                    </div>
+                  </div>
+                  <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1.5 animate-pulse">
+                    <Timer className="h-3.5 w-3.5" />
+                    <span className="text-sm font-bold font-mono tracking-wider">{formatTime(activeSessions[member.id] || 0)}</span>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-slate-950/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Working On</span>
+                    <Badge variant="secondary" className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] uppercase font-black tracking-wider">
+                      {member.project}
+                    </Badge>
+                  </div>
+                  <p className="font-bold text-slate-700 dark:text-slate-300 line-clamp-1">{member.task}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
@@ -178,13 +297,16 @@ export default function WorkLogs({ session }: { session?: any }) {
           <p className="text-xs font-semibold text-slate-500 mt-2">Requires manager review</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-shadow">
+        <div 
+          onClick={() => setIsActiveMembersModalOpen(true)}
+          className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all cursor-pointer hover:border-emerald-500/30 group/card active:scale-98"
+        >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400">Active Members</h3>
+            <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 group-hover/card:text-emerald-500 transition-colors">Active Members</h3>
             <div className="flex -space-x-2">
-              <Avatar className="h-8 w-8 border-2 border-white dark:border-slate-900"><AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs font-bold">TP</AvatarFallback></Avatar>
-              <Avatar className="h-8 w-8 border-2 border-white dark:border-slate-900"><AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-bold">RS</AvatarFallback></Avatar>
-              <Avatar className="h-8 w-8 border-2 border-white dark:border-slate-900"><AvatarFallback className="bg-orange-100 text-orange-700 text-xs font-bold">AS</AvatarFallback></Avatar>
+              <Avatar className="h-8 w-8 border-2 border-white dark:border-slate-900 shadow-sm"><AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs font-bold">TP</AvatarFallback></Avatar>
+              <Avatar className="h-8 w-8 border-2 border-white dark:border-slate-900 shadow-sm"><AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-bold">RS</AvatarFallback></Avatar>
+              <Avatar className="h-8 w-8 border-2 border-white dark:border-slate-900 shadow-sm"><AvatarFallback className="bg-orange-100 text-orange-700 text-xs font-bold">AS</AvatarFallback></Avatar>
             </div>
           </div>
           <p className="text-4xl font-black text-slate-900 dark:text-white">4</p>
@@ -284,6 +406,55 @@ export default function WorkLogs({ session }: { session?: any }) {
         </div>
       </div>
 
+      {/* Active Members Modal */}
+      {isActiveMembersModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setIsActiveMembersModalOpen(false)}
+          />
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-2xl w-full max-w-md overflow-hidden relative z-10 animate-in fade-in zoom-in duration-300">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Team Members</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Currently contributing in the workspace</p>
+              </div>
+              <button 
+                onClick={() => setIsActiveMembersModalOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 max-h-[300px] overflow-y-auto space-y-4">
+              {ONLINE_TEAM_MEMBERS.map((member) => (
+                <div key={member.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all">
+                  <div className="flex items-center gap-3">
+                    <Avatar className={cn("h-9 w-9 border-2 border-white dark:border-slate-900", member.color)}>
+                      <AvatarFallback className="font-bold text-xs">{member.initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
+                      <span className="text-xs text-slate-500 font-medium">{member.role}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Active</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <Button onClick={() => setIsActiveMembersModalOpen(false)} className="rounded-xl bg-slate-900 dark:bg-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-white font-bold px-4 py-2 cursor-pointer">
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
