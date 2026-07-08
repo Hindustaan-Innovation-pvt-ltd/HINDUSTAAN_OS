@@ -29,6 +29,7 @@ function App() {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState('Dashboard');
+  const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -63,6 +64,8 @@ function App() {
             currentView={currentView}
             onNavigate={setCurrentView}
             role={session.user?.user_metadata?.role || 'intern'}
+            isMinimized={isSidebarMinimized}
+            onMinimizeChange={setIsSidebarMinimized}
             onSignOut={() => {
               if (supabaseUrl.includes('placeholder')) {
                 setSession(null);
@@ -72,7 +75,9 @@ function App() {
             }}
           >
             {currentView === 'Dashboard' && <RoleBasedRouter session={session} />}
-            {(currentView === 'Tasks' || currentView === 'My Tasks') && <TaskBoard session={session} />}
+            {(currentView === 'Tasks' || currentView === 'My Tasks') && (
+              <TaskBoard session={session} isSidebarMinimized={isSidebarMinimized} />
+            )}
             {currentView === 'Time Tracking' && <TimeAndStandup session={session} />}
             {currentView === 'Milestones' && <Milestones session={session} />}
             {(currentView === 'Projects' || currentView === 'My Projects') && <Projects session={session} />}

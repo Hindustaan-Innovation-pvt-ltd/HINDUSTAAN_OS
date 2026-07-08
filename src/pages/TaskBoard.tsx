@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayCircle, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import TaskDetailsModal from '../components/dashboard/TaskDetailsModal';
 import CreateTaskModal from '../components/dashboard/CreateTaskModal';
@@ -219,7 +219,7 @@ const EmptyColumnPlaceholder = ({ status }: { status: Status }) => {
 
 // --- Main Page Component ---
 
-export default function TaskBoard({ session }: { session?: any }) {
+export default function TaskBoard({ session, isSidebarMinimized = false }: { session?: any; isSidebarMinimized?: boolean }) {
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -256,12 +256,6 @@ export default function TaskBoard({ session }: { session?: any }) {
     name: currentUserName
   };
 
-  // Filter States
-  const [projectFilter, setProjectFilter] = useState('All');
-  const [assigneeFilter, setAssigneeFilter] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
-
   // Base tasks. If intern, only show tasks of the project he/she is working on of that particular employee
   const baseTasks = currentUser.role === 'intern'
     ? tasks.filter(task => task.assignee_id === currentUser.id || task.assignee_name === currentUser.name)
@@ -270,6 +264,45 @@ export default function TaskBoard({ session }: { session?: any }) {
   // Extract unique filter options dynamically based on the baseTasks visible to this user
   const projects = ['All', ...Array.from(new Set(baseTasks.map(t => t.project_tag)))];
   const assignees = ['All', ...Array.from(new Set(baseTasks.map(t => t.assignee_name)))];
+
+  // Filter States
+  const [projectFilter, setProjectFilter] = useState('All');
+  const [assigneeFilter, setAssigneeFilter] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+
+  // Scroll Ref for Kanban Columns
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 340; // width of one column + gap
+      scrollContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const checkOverflow = () => {
+      setIsOverflowing(container.scrollWidth > container.clientWidth);
+    };
+
+    const observer = new ResizeObserver(checkOverflow);
+    observer.observe(container);
+
+    // Initial check
+    checkOverflow();
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [baseTasks, projectFilter, assigneeFilter, searchQuery, isSidebarMinimized]);
 
   const filteredTasks = baseTasks.filter(task => {
     if (projectFilter !== 'All' && task.project_tag !== projectFilter) return false;
@@ -365,15 +398,49 @@ export default function TaskBoard({ session }: { session?: any }) {
         </div>
       </div>
 
-      {/* Kanban Columns Layout */}
-      <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory h-fit w-full">
-        {COLUMNS.map(columnStatus => {
+      {/* Kanban Columns Layout Wrapper with scroll buttons */}
+      <div className="relative group/board w-full">
+        {/* Left Scroll Arrow */}
+        {isOverflowing && (
+          <button
+            onClick={() => scroll('left')}
+            className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all opacity-0 group-hover/board:opacity-100 cursor-pointer"
+            title="Scroll Left"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+        )}
+
+        {/* Right Scroll Arrow */}
+        {isOverflowing && (
+          <button
+            onClick={() => scroll('right')}
+            className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all opacity-0 group-hover/board:opacity-100 cursor-pointer"
+            title="Scroll Right"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        )}
+
+        <div 
+          ref={scrollContainerRef}
+          className={cn(
+            "flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory h-fit w-full scrollbar-hide",
+            isSidebarMinimized && "lg:grid lg:grid-cols-4 lg:overflow-x-visible lg:pb-0"
+          )}
+        >
+          {COLUMNS.map(columnStatus => {
           const columnTasks = filteredTasks.filter(t => t.status === columnStatus);
           
           return (
             <div 
               key={columnStatus} 
-              className="flex flex-col min-w-[320px] max-w-[320px] w-full shrink-0 snap-start"
+              className={cn(
+                "flex flex-col w-full snap-start",
+                isSidebarMinimized 
+                  ? "min-w-[250px] lg:min-w-0 max-w-[380px] lg:max-w-none flex-1" 
+                  : "min-w-[320px] max-w-[320px] shrink-0"
+              )}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, columnStatus)}
             >
@@ -433,7 +500,7 @@ export default function TaskBoard({ session }: { session?: any }) {
                         <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 mt-auto">
                           <div className="flex items-center space-x-1.5 text-slate-400 dark:text-slate-500">
                             <Calendar className="h-3.5 w-3.5" />
-                            <span className="text-xs font-semibold">{task.due_date}</span>
+                            <span className="text-xs font-semibold">Deadline: {task.due_date}</span>
                           </div>
                           
                           <div 
@@ -452,6 +519,7 @@ export default function TaskBoard({ session }: { session?: any }) {
           );
         })}
       </div>
+    </div>
 
       <TaskDetailsModal 
         task={selectedTask}
