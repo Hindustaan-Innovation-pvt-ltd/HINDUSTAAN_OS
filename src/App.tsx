@@ -79,27 +79,21 @@ function App() {
             {currentView === 'About Us' && <AboutUs />}
             {currentView === 'Settings' && <Settings session={session} />}
             {currentView === 'Team Members' && <TeamMembers session={session} />}
-            {currentView === 'Contribution Scores' && <ContributionScores />}
+            
+            {/* New Pages */}
+            {currentView === 'Gantt Timeline' && <GanttTimeline session={session} />}
+            {currentView === 'Progress Tracker' && <ProgressTracker session={session} />}
+            {currentView === 'Work Logs' && <WorkLogs session={session} />}
+            {(currentView === 'Daily Standups' || currentView === 'Daily Standup') && <DailyStandups session={session} />}
+            {(currentView === 'Contribution Scores' || currentView === 'My Performance') && <ContributionScores />}
 
-<<<<<<< HEAD
-  {/* New Pages */ }
-  { currentView === 'Gantt Timeline' && <GanttTimeline session={session} /> }
-  { currentView === 'Progress Tracker' && <ProgressTracker session={session} /> }
-  { currentView === 'Work Logs' && <WorkLogs session={session} /> }
-  { (currentView === 'Daily Standups' || currentView === 'Daily Standup') && <DailyStandups session={session} /> }
-  { (currentView === 'Contribution Scores' || currentView === 'My Performance') && <ContributionScores session={session} /> }
-
-  {/* Fallback for anything else */ }
-  {
-    ![
-      'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
-      'Projects', 'My Projects', 'About Us', 'Settings', 'Team Members',
-      'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
-      'Contribution Scores', 'My Performance'
-    ].includes(currentView) && (
-=======
-            {currentView !== 'Dashboard' && currentView !== 'Tasks' && currentView !== 'Time Tracking' && currentView !== 'Milestones' && currentView !== 'Projects' && currentView !== 'About Us' && currentView !== 'Settings' && currentView !== 'Team Members' && currentView !== 'Contribution Scores' && (
->>>>>>> c425027a5332abfe289dec02ea1092e4c9ec446d
+            {/* Fallback for anything else */}
+            {![
+              'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
+              'Projects', 'My Projects', 'About Us', 'Settings', 'Team Members',
+              'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
+              'Contribution Scores', 'My Performance'
+            ].includes(currentView) && (
       <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
         <p>Module "{currentView}" is under construction.</p>
       </div>
