@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayCircle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import TaskDetailsModal from '../components/dashboard/TaskDetailsModal';
 import CreateTaskModal from '../components/dashboard/CreateTaskModal';
@@ -175,6 +175,48 @@ const PriorityBadge = ({ priority }: { priority: Priority }) => {
 
 const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
+const EmptyColumnPlaceholder = ({ status }: { status: Status }) => {
+  const placeholders = {
+    'To Do': {
+      icon: CheckSquare,
+      title: 'No tasks to do',
+      desc: 'All caught up! Drag tasks here to plan them.',
+      color: 'text-blue-600 dark:text-blue-400 bg-blue-50/70 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/30'
+    },
+    'In Progress': {
+      icon: PlayCircle,
+      title: 'Nothing in progress',
+      desc: 'Select a task and drag it here to get started.',
+      color: 'text-amber-600 dark:text-amber-400 bg-amber-50/70 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/30'
+    },
+    'In Review': {
+      icon: Eye,
+      title: 'No tasks in review',
+      desc: 'Finished work goes here for approval.',
+      color: 'text-purple-600 dark:text-purple-400 bg-purple-50/70 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900/30'
+    },
+    'Done': {
+      icon: CheckCircle2,
+      title: 'No completed tasks',
+      desc: 'Finish tasks to see them celebrated here.',
+      color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30'
+    }
+  };
+
+  const { icon: Icon, title, desc, color } = placeholders[status];
+
+  return (
+    <div className={cn(
+      "flex flex-col items-center justify-center p-6 text-center rounded-2xl border-2 border-dashed h-[180px] mt-2 transition-all duration-300 shadow-sm",
+      color
+    )}>
+      <Icon className="h-7 w-7 mb-2.5 opacity-90 animate-pulse" />
+      <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100">{title}</h4>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[220px] leading-normal font-medium">{desc}</p>
+    </div>
+  );
+};
+
 // --- Main Page Component ---
 
 export default function TaskBoard({ session }: { session?: any }) {
@@ -184,10 +226,34 @@ export default function TaskBoard({ session }: { session?: any }) {
   
   // Mock current user based on session
   const role = session?.user?.user_metadata?.role || 'manager';
+  
+  // Resolve intern profile dynamically based on session email/metadata
+  const email = session?.user?.email || 'user@hindustaan.in';
+  
+  let currentUserId = 'manager-1';
+  let currentUserName = 'Admin User';
+  
+  if (role === 'intern') {
+    if (email.toLowerCase().includes('amanda')) {
+      currentUserId = 'u-1';
+      currentUserName = 'Amanda Smith';
+    } else if (email.toLowerCase().includes('rahul')) {
+      currentUserId = 'u-2';
+      currentUserName = 'Rahul Sharma';
+    } else if (email.toLowerCase().includes('priya')) {
+      currentUserId = 'u-3';
+      currentUserName = 'Priya Patel';
+    } else {
+      // Default to Tanvy (since "Good Morning, Tanvy" is in the dashboard and settings show "Tanvy Pandey")
+      currentUserId = 'u-4';
+      currentUserName = 'Tanvy';
+    }
+  }
+
   const currentUser = {
-    id: role === 'intern' ? 'u-1' : 'manager-1', // Default intern to 'Amanda Smith' for testing
+    id: currentUserId,
     role: role as 'manager' | 'intern',
-    name: role === 'intern' ? 'Amanda Smith' : 'Admin User'
+    name: currentUserName
   };
 
   // Filter States
@@ -196,11 +262,16 @@ export default function TaskBoard({ session }: { session?: any }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
-  // Extract unique filter options dynamically
-  const projects = ['All', ...Array.from(new Set(INITIAL_TASKS.map(t => t.project_tag)))];
-  const assignees = ['All', ...Array.from(new Set(INITIAL_TASKS.map(t => t.assignee_name)))];
+  // Base tasks. If intern, only show tasks of the project he/she is working on of that particular employee
+  const baseTasks = currentUser.role === 'intern'
+    ? tasks.filter(task => task.assignee_id === currentUser.id || task.assignee_name === currentUser.name)
+    : tasks;
 
-  const filteredTasks = tasks.filter(task => {
+  // Extract unique filter options dynamically based on the baseTasks visible to this user
+  const projects = ['All', ...Array.from(new Set(baseTasks.map(t => t.project_tag)))];
+  const assignees = ['All', ...Array.from(new Set(baseTasks.map(t => t.assignee_name)))];
+
+  const filteredTasks = baseTasks.filter(task => {
     if (projectFilter !== 'All' && task.project_tag !== projectFilter) return false;
     if (assigneeFilter !== 'All' && task.assignee_name !== assigneeFilter) return false;
     if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
@@ -249,7 +320,7 @@ export default function TaskBoard({ session }: { session?: any }) {
       {/* Header & Interactive Toolbar Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Sprint Board</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Kanban Board</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Manage cohort sprint velocity and track active tasks.</p>
         </div>
         
@@ -280,14 +351,6 @@ export default function TaskBoard({ session }: { session?: any }) {
             >
               {projects.map(p => <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={p} value={p}>{p === 'All' ? 'All Projects' : p}</option>)}
             </select>
-
-            <select 
-              className="text-sm font-medium text-slate-700 dark:text-slate-200 bg-transparent border-none focus:ring-0 cursor-pointer outline-none px-2"
-              value={assigneeFilter}
-              onChange={(e) => setAssigneeFilter(e.target.value)}
-            >
-              {assignees.map(a => <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={a} value={a}>{a === 'All' ? 'All Assignees' : a}</option>)}
-            </select>
           </div>
 
           {/* Create Task Button (Managers Only) */}
@@ -303,7 +366,7 @@ export default function TaskBoard({ session }: { session?: any }) {
       </div>
 
       {/* Kanban Columns Layout */}
-      <div className="flex flex-1 gap-6 overflow-x-auto pb-4 snap-x snap-mandatory">
+      <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory h-fit w-full">
         {COLUMNS.map(columnStatus => {
           const columnTasks = filteredTasks.filter(t => t.status === columnStatus);
           
@@ -328,56 +391,62 @@ export default function TaskBoard({ session }: { session?: any }) {
               </div>
 
               {/* Column Track */}
-              <div className="flex-1 flex flex-col gap-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-2xl p-3 border border-slate-200 dark:border-slate-700/60 min-h-[500px]">
-                {columnTasks.map(task => (
-                  <div
-                    key={task.id}
-                    draggable
-                    onClick={() => setSelectedTask(task)}
-                    onDragStart={(e) => handleDragStart(e, task.id)}
-                    onDragEnd={handleDragEnd}
-                    className={cn(
-                      "group relative bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all cursor-pointer active:cursor-grabbing",
-                      draggedTaskId === task.id ? "opacity-50 border-dashed border-orange-400 shadow-none" : "opacity-100"
-                    )}
-                  >
-                    {/* Top Row: Checkbox & Priority */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        <div className="flex h-5 w-5 items-center justify-center rounded border border-slate-300 text-transparent hover:border-orange-500 hover:text-orange-500 transition-colors cursor-pointer">
-                          <CheckSquare className="h-3.5 w-3.5" />
-                        </div>
-                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate max-w-[120px]">
-                          {task.project_tag}
-                        </span>
-                      </div>
-                      <PriorityBadge priority={task.priority} />
-                    </div>
-
-                    {/* Title & Description */}
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1 leading-tight group-hover:text-orange-600 dark:text-orange-400 transition-colors">
-                      {task.title}
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 line-clamp-2 mb-4">
-                      {task.description}
-                    </p>
-
-                    {/* Bottom Row: Date & Assignee */}
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 mt-auto">
-                      <div className="flex items-center space-x-1.5 text-slate-400 dark:text-slate-500">
-                        <Calendar className="h-3.5 w-3.5" />
-                        <span className="text-xs font-medium">{task.due_date}</span>
-                      </div>
-                      
-                      <div 
-                        className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-500/20 text-[10px] font-bold text-orange-700 dark:text-orange-300 ring-2 ring-white"
-                        title={task.assignee_name}
+              <div className="flex-1 flex flex-col gap-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-2xl p-3 border border-slate-200 dark:border-slate-700/60 min-h-[150px]">
+                {columnTasks.length === 0 ? (
+                  <EmptyColumnPlaceholder status={columnStatus} />
+                ) : (
+                  columnTasks.map(task => {
+                    return (
+                      <div
+                        key={task.id}
+                        draggable
+                        onClick={() => setSelectedTask(task)}
+                        onDragStart={(e) => handleDragStart(e, task.id)}
+                        onDragEnd={handleDragEnd}
+                        className={cn(
+                          "group relative bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer active:cursor-grabbing",
+                          draggedTaskId === task.id ? "opacity-50 border-dashed border-orange-400 shadow-none" : "opacity-100"
+                        )}
                       >
-                        {getInitials(task.assignee_name)}
+                        {/* Top Row: Checkbox & Priority */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            <div className="flex h-5 w-5 items-center justify-center rounded border border-slate-300 dark:border-slate-700 text-transparent hover:border-orange-500 hover:text-orange-500 transition-colors cursor-pointer">
+                              <CheckSquare className="h-3.5 w-3.5" />
+                            </div>
+                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate max-w-[120px]">
+                              {task.project_tag}
+                            </span>
+                          </div>
+                          <PriorityBadge priority={task.priority} />
+                        </div>
+
+                        {/* Title & Description */}
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1 leading-tight group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                          {task.title}
+                        </h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4">
+                          {task.description}
+                        </p>
+
+                        {/* Bottom Row: Date & Assignee */}
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 mt-auto">
+                          <div className="flex items-center space-x-1.5 text-slate-400 dark:text-slate-500">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span className="text-xs font-semibold">{task.due_date}</span>
+                          </div>
+                          
+                          <div 
+                            className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-500/20 text-[10px] font-bold text-orange-700 dark:text-orange-300 ring-2 ring-white dark:ring-slate-900"
+                            title={task.assignee_name}
+                          >
+                            {getInitials(task.assignee_name)}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })
+                )}
               </div>
             </div>
           );
