@@ -11,7 +11,12 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import TaskDetailsModal from './TaskDetailsModal';
 
 type Priority = 'Critical' | 'Important' | 'Success' | 'Information';
 
@@ -144,6 +149,20 @@ const INITIAL_NOTIFICATIONS = [
 export function EmployeeNotificationCenter() {
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [activeTab, setActiveTab] = useState('All');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+
+  const MOCK_TASK = {
+    id: 'nt-2',
+    title: 'Dashboard Analytics UI',
+    description: 'Design the new charts layout for the analytics page using recharts.',
+    project_tag: 'Frontend Core',
+    assignee_name: 'Employee',
+    assignee_id: 'u-1',
+    priority: 'Normal',
+    due_date: 'Oct 15, 2026',
+    status: 'In Progress',
+  };
 
   const unreadCount = notifications.filter(n => n.unread).length;
 
@@ -191,6 +210,7 @@ export function EmployeeNotificationCenter() {
   };
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button 
@@ -312,7 +332,15 @@ export function EmployeeNotificationCenter() {
                                       "h-7 text-xs font-bold rounded-lg px-3",
                                       action.primary ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200" : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
                                     )}
-                                    onClick={(e) => { e.stopPropagation(); markAsRead(notification.id); }}
+                                    onClick={(e) => { 
+                                      e.stopPropagation(); 
+                                      if (action.label === 'View Task') {
+                                        setSelectedTask(MOCK_TASK);
+                                      } else {
+                                        toast.success(`Action "${action.label}" executed successfully!`);
+                                      }
+                                      markAsRead(notification.id); 
+                                    }}
                                   >
                                     {action.label}
                                   </Button>
@@ -332,15 +360,59 @@ export function EmployeeNotificationCenter() {
 
         {/* Footer Actions */}
         <div className="p-2 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50 grid grid-cols-2 gap-2">
-          <Button variant="ghost" size="sm" className="h-8 text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-lg">
+          <Button variant="ghost" size="sm" onClick={() => toast.info('Navigating to all notifications...')} className="h-8 text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-lg">
             <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> View All Notifications
           </Button>
-          <Button variant="ghost" size="sm" className="h-8 text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-lg">
+          <Button variant="ghost" size="sm" onClick={() => setIsSettingsOpen(true)} className="h-8 text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-lg">
             <Settings className="mr-1.5 h-3.5 w-3.5" /> Notification Settings
           </Button>
         </div>
 
       </DropdownMenuContent>
     </DropdownMenu>
+
+    {/* Settings Dialog */}
+    <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+      <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Notification Settings</DialogTitle>
+          <DialogDescription className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Manage how you receive alerts and updates.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label className="text-sm font-bold text-slate-900 dark:text-white">Push Notifications</Label>
+              <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Receive alerts inside the app.</p>
+            </div>
+            <Switch defaultChecked onCheckedChange={(checked) => toast.success(`Push notifications ${checked ? 'enabled' : 'disabled'}`)} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label className="text-sm font-bold text-slate-900 dark:text-white">Email Digests</Label>
+              <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Receive daily summary emails.</p>
+            </div>
+            <Switch defaultChecked onCheckedChange={(checked) => toast.success(`Email digests ${checked ? 'enabled' : 'disabled'}`)} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label className="text-sm font-bold text-slate-900 dark:text-white">Mention Alerts</Label>
+              <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Notify me when someone mentions me.</p>
+            </div>
+            <Switch defaultChecked onCheckedChange={(checked) => toast.success(`Mention alerts ${checked ? 'enabled' : 'disabled'}`)} />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Task Details Modal */}
+    <TaskDetailsModal 
+      task={selectedTask}
+      currentUser={{ id: 'u-1', role: 'intern', name: 'Employee' }}
+      isOpen={!!selectedTask}
+      onClose={() => setSelectedTask(null)}
+    />
+    </>
   );
 }

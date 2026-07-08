@@ -120,10 +120,10 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
   return (
     <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0 border-slate-200 dark:border-slate-700/60 custom-scrollbar">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden bg-white dark:bg-slate-950 p-0 gap-0 border-slate-200 dark:border-slate-700/60 rounded-xl shadow-2xl flex flex-col">
         
         {/* Header Section */}
-        <DialogHeader className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 sticky top-0 z-10 shrink-0 text-left">
+        <DialogHeader className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 shrink-0 text-left">
           <DialogTitle className="sr-only">Task Details</DialogTitle>
           <DialogDescription className="sr-only">View and edit task details.</DialogDescription>
           
@@ -157,7 +157,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
         </DialogHeader>
 
         {/* Scrollable Content Body */}
-        <div className="p-6 space-y-8">
+        <div className="p-6 space-y-8 overflow-y-auto custom-scrollbar">
           
           {/* Status Tracker Segment */}
           <div>
@@ -237,8 +237,9 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                     onChange={(e) => {
                       const selected = MOCK_TEAM.find(u => u.id === e.target.value);
                       if (selected) {
-                        handleUpdateField('assignee_id', selected.id);
-                        handleUpdateField('assignee_name', selected.name);
+                        const updated = { ...editedTask, assignee_id: selected.id, assignee_name: selected.name } as Task;
+                        setEditedTask(updated);
+                        if (onUpdateTask) onUpdateTask(updated);
                       }
                     }}
                     className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"

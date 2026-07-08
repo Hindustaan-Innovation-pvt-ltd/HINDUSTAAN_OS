@@ -9,6 +9,11 @@ import AboutUs from './pages/AboutUs';
 import Projects from './pages/Projects';
 import Settings from './pages/Settings';
 import TeamMembers from './pages/TeamMembers';
+import GanttTimeline from './pages/GanttTimeline';
+import ProgressTracker from './pages/ProgressTracker';
+import WorkLogs from './pages/WorkLogs';
+import DailyStandups from './pages/DailyStandups';
+import ContributionScores from './pages/ContributionScores';
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client to listen for real-time auth states
@@ -67,17 +72,30 @@ function App() {
             }}
           >
             {currentView === 'Dashboard' && <RoleBasedRouter session={session} />}
-            {currentView === 'Tasks' && <TaskBoard session={session} />}
+            {(currentView === 'Tasks' || currentView === 'My Tasks') && <TaskBoard session={session} />}
             {currentView === 'Time Tracking' && <TimeAndStandup session={session} />}
             {currentView === 'Milestones' && <Milestones session={session} />}
-            {currentView === 'Projects' && <Projects session={session} />}
+            {(currentView === 'Projects' || currentView === 'My Projects') && <Projects session={session} />}
             {currentView === 'About Us' && <AboutUs />}
             {currentView === 'Settings' && <Settings session={session} />}
             {currentView === 'Team Members' && <TeamMembers session={session} />}
             
-            {currentView !== 'Dashboard' && currentView !== 'Tasks' && currentView !== 'Time Tracking' && currentView !== 'Milestones' && currentView !== 'Projects' && currentView !== 'About Us' && currentView !== 'Settings' && currentView !== 'Team Members' && (
+            {/* New Pages */}
+            {currentView === 'Gantt Timeline' && <GanttTimeline session={session} />}
+            {currentView === 'Progress Tracker' && <ProgressTracker session={session} />}
+            {currentView === 'Work Logs' && <WorkLogs session={session} />}
+            {(currentView === 'Daily Standups' || currentView === 'Daily Standup') && <DailyStandups session={session} />}
+            {(currentView === 'Contribution Scores' || currentView === 'My Performance') && <ContributionScores session={session} />}
+            
+            {/* Fallback for anything else */}
+            {![
+              'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones', 
+              'Projects', 'My Projects', 'About Us', 'Settings', 'Team Members',
+              'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
+              'Contribution Scores', 'My Performance'
+            ].includes(currentView) && (
               <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
-                <p>Module "{currentView}" is under construction (Week 4).</p>
+                <p>Module "{currentView}" is under construction.</p>
               </div>
             )}
           </DashboardShell>
