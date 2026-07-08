@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CalendarDays, LayoutTemplate, Briefcase, LayoutGrid, CheckSquare, Target, ListTodo, Plus } from 'lucide-react';
+import { CalendarDays, LayoutTemplate, Briefcase, LayoutGrid, CheckSquare, Target, ListTodo, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // --- Mock Data ---
@@ -13,18 +13,49 @@ const GANTT_TASKS = [
   { id: '5', name: 'Marketing Launch', start: 5, duration: 2, color: 'bg-rose-500 dark:bg-rose-600', assignee: 'Rohan G.' }
 ];
 
-const PROJECT_LIST = [
-  { id: 'p1', name: 'ProjectOS Redesign', tasks: 12, status: 'In Progress', progress: 68, iconColor: 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400', strokeColor: '#e11d48' },
-  { id: 'p2', name: 'Mobile App', tasks: 8, status: 'In Progress', progress: 45, iconColor: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400', strokeColor: '#2563eb' },
-  { id: 'p3', name: 'Marketing Website', tasks: 6, status: 'On Hold', progress: 20, iconColor: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400', strokeColor: '#d97706' },
-  { id: 'p4', name: 'Design System', tasks: 10, status: 'Completed', progress: 100, iconColor: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', strokeColor: '#059669' }
+const INITIAL_PROJECTS = [
+  { id: 'p1', name: 'ProjectOS Redesign', tasks: 12, status: 'In Progress', progress: 68, iconColor: 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400', strokeColor: '#e11d48', manager: 'Amanda S.', deadline: 'Dec 15', budget: '$15k' },
+  { id: 'p2', name: 'Mobile App', tasks: 8, status: 'In Progress', progress: 45, iconColor: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400', strokeColor: '#2563eb', manager: 'Rahul S.', deadline: 'Nov 30', budget: '$20k' },
+  { id: 'p3', name: 'Marketing Website', tasks: 6, status: 'On Hold', progress: 20, iconColor: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400', strokeColor: '#d97706', manager: 'Priya P.', deadline: 'Oct 20', budget: '$5k' },
+  { id: 'p4', name: 'Design System', tasks: 10, status: 'Completed', progress: 100, iconColor: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', strokeColor: '#059669', manager: 'Rohan G.', deadline: 'Sep 10', budget: '$8k' }
 ];
 
 export default function Projects({ session }: { session?: any }) {
   const [activeTab, setActiveTab] = useState('All');
+  const [projects, setProjects] = useState(INITIAL_PROJECTS);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newProject, setNewProject] = useState({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium' });
+  
   const role = session?.user?.user_metadata?.role || 'intern';
   
-  const baseProjects = role === 'manager' ? PROJECT_LIST : [PROJECT_LIST[0]];
+  const baseProjects = role === 'manager' ? projects : [projects[0]];
+
+  const handleCreateProject = () => {
+    if (!newProject.name) return;
+    const colors = [
+      { iconColor: 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400', strokeColor: '#9333ea' },
+      { iconColor: 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400', strokeColor: '#0891b2' },
+      { iconColor: 'bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400', strokeColor: '#db2777' }
+    ];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    
+    const project = {
+      id: Date.now().toString(),
+      name: newProject.name,
+      tasks: 0,
+      status: 'Not Started',
+      progress: 0,
+      iconColor: randomColor.iconColor,
+      strokeColor: randomColor.strokeColor,
+      manager: newProject.manager || 'Unassigned',
+      deadline: newProject.deadline || 'TBD',
+      budget: newProject.budget ? `$${newProject.budget}` : 'TBD'
+    };
+    
+    setProjects([project, ...projects]);
+    setIsModalOpen(false);
+    setNewProject({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium' });
+  };
   const displayedProjects = baseProjects.filter(p => {
     if (activeTab === 'Active') return p.status !== 'Completed';
     if (activeTab === 'Completed') return p.status === 'Completed';
@@ -40,7 +71,7 @@ export default function Projects({ session }: { session?: any }) {
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">High-level Gantt chart outlining task execution over the current week.</p>
         </div>
         {role === 'manager' && (
-          <button className="flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 shrink-0">
+          <button onClick={() => setIsModalOpen(true)} className="flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 shrink-0">
             <Plus className="h-4 w-4 mr-1.5" /> New Project
           </button>
         )}
@@ -78,8 +109,11 @@ export default function Projects({ session }: { session?: any }) {
                 </div>
                 <div>
                   <h4 className="text-base font-bold text-slate-900 dark:text-white">{project.name}</h4>
-                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1 flex items-center">
-                    <ListTodo className="h-4 w-4 mr-1.5" /> {project.tasks} tasks • {project.status}
+                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1 flex items-center flex-wrap gap-2">
+                    <span className="flex items-center"><ListTodo className="h-4 w-4 mr-1" /> {project.tasks} tasks</span>
+                    <span>• {project.status}</span>
+                    {project.manager && <span>• Lead: {project.manager}</span>}
+                    {project.deadline && <span>• Due: {project.deadline}</span>}
                   </p>
                 </div>
               </div>
@@ -178,6 +212,109 @@ export default function Projects({ session }: { session?: any }) {
         </div>
 
       </div>
+
+      {/* New Project Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">Create New Project</h3>
+                <p className="text-sm font-semibold text-slate-500 mt-1">Setup project details for the team.</p>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Project Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Q4 Marketing Campaign"
+                  value={newProject.name}
+                  onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+                  className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Project Lead</label>
+                  <div className="relative">
+                    <select
+                      value={newProject.manager}
+                      onChange={(e) => setNewProject({ ...newProject, manager: e.target.value })}
+                      className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
+                    >
+                      <option value="Amanda S.">Amanda S.</option>
+                      <option value="Rahul S.">Rahul S.</option>
+                      <option value="Priya P.">Priya P.</option>
+                      <option value="Rohan G.">Rohan G.</option>
+                      <option value="Unassigned">Unassigned</option>
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Priority</label>
+                  <div className="relative">
+                    <select
+                      value={newProject.priority}
+                      onChange={(e) => setNewProject({ ...newProject, priority: e.target.value })}
+                      className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
+                    >
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Deadline</label>
+                  <input
+                    type="date"
+                    value={newProject.deadline}
+                    onChange={(e) => setNewProject({ ...newProject, deadline: e.target.value })}
+                    className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Estimated Budget</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
+                    <input
+                      type="number"
+                      placeholder="e.g. 15000"
+                      value={newProject.budget}
+                      onChange={(e) => setNewProject({ ...newProject, budget: e.target.value })}
+                      className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 pt-0 flex gap-3 mt-4">
+              <button className="flex-1 h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" onClick={() => setIsModalOpen(false)}>
+                Cancel
+              </button>
+              <button 
+                className="flex-1 h-12 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-md shadow-orange-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                onClick={handleCreateProject}
+                disabled={!newProject.name.trim()}
+              >
+                Launch Project
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

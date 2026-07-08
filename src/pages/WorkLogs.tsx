@@ -29,7 +29,7 @@ export default function WorkLogs({ session }: { session?: any }) {
   const [statusFilter, setStatusFilter] = useState('All');
 
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-  const [newLog, setNewLog] = useState({ project: '', task: '', hours: '', date: '' });
+  const [newLog, setNewLog] = useState({ name: '', project: '', task: '', hours: '', date: '' });
 
   const filteredLogs = useMemo(() => {
     return logs.filter(log => {
@@ -50,12 +50,13 @@ export default function WorkLogs({ session }: { session?: any }) {
   };
 
   const handleSaveLog = () => {
-    if (!newLog.project || !newLog.task || !newLog.hours) return;
+    if (!newLog.name || !newLog.project || !newLog.task || !newLog.hours) return;
+    const initials = newLog.name.split(' ').map(n => n[0]).filter(Boolean).join('').toUpperCase().substring(0, 2) || 'U';
     const log = {
       id: Date.now().toString(),
-      name: 'Anurag Dubey',
-      initials: 'AD',
-      date: newLog.date || 'Oct 12, 2026',
+      name: newLog.name,
+      initials,
+      date: newLog.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       hours: parseFloat(newLog.hours),
       task: newLog.task,
       project: newLog.project,
@@ -63,7 +64,7 @@ export default function WorkLogs({ session }: { session?: any }) {
     };
     setLogs([log, ...logs]);
     setIsLogModalOpen(false);
-    setNewLog({ project: '', task: '', hours: '', date: '' });
+    setNewLog({ name: '', project: '', task: '', hours: '', date: '' });
   };
 
   const totalHours = useMemo(() => logs.reduce((acc, log) => acc + log.hours, 0), [logs]);
@@ -256,6 +257,16 @@ export default function WorkLogs({ session }: { session?: any }) {
             </div>
 
             <div className="p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Employee Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Anurag Dubey"
+                  value={newLog.name}
+                  onChange={(e) => setNewLog({ ...newLog, name: e.target.value })}
+                  className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Project</label>
                 <input
