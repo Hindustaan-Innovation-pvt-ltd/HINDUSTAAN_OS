@@ -157,7 +157,7 @@ export default function DashboardShell({
                     {role === 'manager' ? 'AG' : 'TP'}
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:text-white">
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">
                       {role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'}
                     </p>
                     <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{role === 'manager' ? 'Manager' : 'Employee'}</p>
