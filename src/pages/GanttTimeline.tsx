@@ -511,10 +511,10 @@ export default function GanttTimeline({ session }: { session?: any }) {
                 // if (visibleTasks.length === 0 && project.tasks.length > 0) return null;
 
                 return (
-                  <div key={project.id} className={cn("group relative z-10 border-b-4 border-slate-900/5 dark:border-slate-800", isOdd ? "bg-slate-50/50 dark:bg-slate-800/20" : "")}>
+                  <div key={project.id} className="group relative z-10 mb-6 border-y border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-900/20 shadow-sm">
                     {/* Project Row */}
-                    <div className={cn("flex items-stretch border-b border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer", isOdd ? "bg-slate-100/50 dark:bg-slate-800/40" : "bg-slate-50/80 dark:bg-slate-900/40")} onClick={() => toggleProject(project.id)}>
-                      <div className={cn("w-72 shrink-0 p-3 pl-4 border-r border-slate-200 dark:border-slate-800 sticky left-0 z-30 transition-colors flex items-center justify-between shadow-[1px_0_0_0_rgba(0,0,0,0.05)]", isOdd ? "bg-slate-100/95 dark:bg-slate-800/95" : "bg-slate-50/95 dark:bg-slate-900/95")}>
+                    <div className="flex items-stretch border-b border-slate-200 dark:border-slate-800 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-colors cursor-pointer bg-slate-50/80 dark:bg-slate-900/40" onClick={() => toggleProject(project.id)}>
+                      <div className="w-72 shrink-0 p-3 pl-4 border-r border-slate-200 dark:border-slate-800 sticky left-0 z-30 transition-colors flex items-center justify-between shadow-[1px_0_0_0_rgba(0,0,0,0.05)] bg-slate-50/95 dark:bg-slate-900/95">
                         <div className="flex items-center gap-3 overflow-hidden pr-2">
                           <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-500 shrink-0">
                             {isCollapsed ? <ChevronRightIcon className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -543,7 +543,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
 
                         return (
                           <div key={task.id} className="flex items-stretch border-b border-slate-100 dark:border-slate-800/60 last:border-0 hover:bg-slate-100/50 dark:hover:bg-slate-800/40 transition-colors">
-                            <div className={cn("w-72 shrink-0 p-3 pl-12 border-r border-slate-200 dark:border-slate-800 sticky left-0 z-20 backdrop-blur-sm shadow-[1px_0_0_0_rgba(0,0,0,0.02)] flex items-center justify-between group/task", isOdd ? "bg-slate-50/95 dark:bg-slate-800/95" : "bg-white/95 dark:bg-slate-900/95")}>
+                            <div className="w-72 shrink-0 p-3 pl-12 border-r border-slate-200 dark:border-slate-800 sticky left-0 z-20 backdrop-blur-sm shadow-[1px_0_0_0_rgba(0,0,0,0.02)] flex items-center justify-between group/task bg-white/95 dark:bg-slate-900/95">
                               <div className="flex items-center gap-3 overflow-hidden">
                                 {getStatusIcon(task.status)}
                                 <span className={cn("text-xs font-bold truncate", isMilestone ? "text-amber-600 dark:text-amber-500" : "text-slate-700 dark:text-slate-300")}>{task.name}</span>

@@ -79,6 +79,7 @@ function App() {
             {currentView === 'About Us' && <AboutUs />}
             {currentView === 'Settings' && <Settings session={session} />}
             {currentView === 'Team Members' && <TeamMembers session={session} />}
+
             {/* New Pages */}
             {currentView === 'Gantt Timeline' && <GanttTimeline session={session} />}
             {currentView === 'Progress Tracker' && <ProgressTracker session={session} />}
@@ -87,7 +88,8 @@ function App() {
             {(currentView === 'Contribution Scores' || currentView === 'My Performance') && <ContributionScores session={session} />}
 
             {/* Fallback for anything else */}
-            {!['Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
+            {![
+              'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
               'Projects', 'My Projects', 'About Us', 'Settings', 'Team Members',
               'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
               'Contribution Scores', 'My Performance'
@@ -97,7 +99,8 @@ function App() {
               </div>
             )}
           </DashboardShell>
-        )}
+        )
+      }
 <Toaster position="top-right" richColors />
       </TooltipProvider >
     </ThemeProvider >

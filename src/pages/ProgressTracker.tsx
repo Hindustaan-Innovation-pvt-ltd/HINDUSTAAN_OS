@@ -1,8 +1,32 @@
 import React from 'react';
 import { Target, TrendingUp, CheckCircle, Clock, AlertOctagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
+} from 'recharts';
+import { useTheme } from '@/context/ThemeContext';
+
+const burndownData = [
+  { day: 'Day 1', ideal: 100, actual: 100 },
+  { day: 'Day 2', ideal: 92, actual: 95 },
+  { day: 'Day 3', ideal: 85, actual: 88 },
+  { day: 'Day 4', ideal: 77, actual: 82 },
+  { day: 'Day 5', ideal: 69, actual: 70 },
+  { day: 'Day 6', ideal: 62, actual: 75 }, // unexpected scope added
+  { day: 'Day 7', ideal: 54, actual: 65 },
+  { day: 'Day 8', ideal: 46, actual: 50 },
+  { day: 'Day 9', ideal: 38, actual: null }, 
+  { day: 'Day 10', ideal: 31, actual: null },
+  { day: 'Day 11', ideal: 23, actual: null },
+  { day: 'Day 12', ideal: 15, actual: null },
+  { day: 'Day 13', ideal: 8, actual: null },
+  { day: 'Day 14', ideal: 0, actual: null },
+];
 
 export default function ProgressTracker({ session }: { session?: any }) {
+  const { theme } = useTheme();
+  const axisColor = theme === 'dark' ? '#94a3b8' : '#64748b'; // slate-400 in dark mode, slate-500 in light mode
+
   return (
     <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8">
       {/* Header */}
@@ -43,43 +67,61 @@ export default function ProgressTracker({ session }: { session?: any }) {
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">Sprint Burndown</h3>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Remaining effort across all projects.</p>
             </div>
-            <div className="flex items-center gap-4 text-xs font-bold">
+            <div className="flex items-center gap-4 text-xs font-bold text-slate-600 dark:text-slate-300">
               <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-orange-500" /> Ideal</div>
               <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-500" /> Actual</div>
             </div>
           </div>
           
-          <div className="flex-1 relative flex items-end justify-between pt-10 min-h-[250px]">
-            {/* Grid Lines */}
-            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8">
-              {[100, 75, 50, 25, 0].map(val => (
-                <div key={val} className="border-t border-dashed border-slate-200 dark:border-slate-800 w-full flex-1 relative">
-                  <span className="absolute -left-1 -top-2.5 bg-white dark:bg-slate-900 pr-2 text-[10px] font-bold text-slate-400">{val}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Chart Bars */}
-            {[...Array(14)].map((_, i) => {
-              const idealHeight = 100 - (i * (100/14));
-              const actualHeight = Math.max(0, idealHeight + (Math.random() * 20 - 5));
-              const isPast = i < 8; // mockup current day
-              
-              return (
-                <div key={i} className="relative flex flex-col items-center flex-1 h-full justify-end z-10 pb-8 group">
-                  {/* Ideal Line (mocked as bar behind) */}
-                  <div className="absolute bottom-8 w-2 bg-orange-500/20 rounded-t-sm" style={{ height: `${idealHeight}%` }} />
-                  
-                  {/* Actual Line */}
-                  {isPast && (
-                    <div className="absolute bottom-8 w-1.5 bg-blue-500 rounded-t-sm shadow-sm transition-all group-hover:bg-blue-400" style={{ height: `${actualHeight}%` }} />
-                  )}
-
-                  {/* Day Label */}
-                  <span className="absolute bottom-0 text-[10px] font-bold text-slate-500 dark:text-slate-400">Day {i+1}</span>
-                </div>
-              );
-            })}
+          <div className="flex-1 w-full h-[300px] mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={burndownData}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
+                <XAxis 
+                  dataKey="day" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fill: axisColor }} 
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fill: axisColor }} 
+                />
+                <RechartsTooltip 
+                  contentStyle={{ 
+                    borderRadius: '12px', 
+                    border: 'none', 
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', 
+                    backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff',
+                    color: theme === 'dark' ? '#f8fafc' : '#0f172a'
+                  }}
+                  itemStyle={{ fontWeight: 'bold' }}
+                  labelStyle={{ color: theme === 'dark' ? '#94a3b8' : '#64748b', fontWeight: 'bold', marginBottom: '4px' }}
+                />
+                <Line 
+                  type="monotone" 
+                  name="Ideal Tasks Remaining" 
+                  dataKey="ideal" 
+                  stroke="#f97316" 
+                  strokeWidth={3} 
+                  strokeDasharray="5 5" 
+                  dot={false} 
+                />
+                <Line 
+                  type="monotone" 
+                  name="Actual Tasks Remaining" 
+                  dataKey="actual" 
+                  stroke="#3b82f6" 
+                  strokeWidth={4}
+                  dot={{ r: 4, strokeWidth: 2 }} 
+                  activeDot={{ r: 6 }} 
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
