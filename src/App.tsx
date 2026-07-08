@@ -79,13 +79,13 @@ function App() {
             {currentView === 'About Us' && <AboutUs />}
             {currentView === 'Settings' && <Settings session={session} />}
             {currentView === 'Team Members' && <TeamMembers session={session} />}
-            
+
             {/* New Pages */}
             {currentView === 'Gantt Timeline' && <GanttTimeline session={session} />}
             {currentView === 'Progress Tracker' && <ProgressTracker session={session} />}
             {currentView === 'Work Logs' && <WorkLogs session={session} />}
             {(currentView === 'Daily Standups' || currentView === 'Daily Standup') && <DailyStandups session={session} />}
-            {(currentView === 'Contribution Scores' || currentView === 'My Performance') && <ContributionScores />}
+            {(currentView === 'Contribution Scores' || currentView === 'My Performance') && <ContributionScores session={session} />}
 
             {/* Fallback for anything else */}
             {![
@@ -94,14 +94,13 @@ function App() {
               'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
               'Contribution Scores', 'My Performance'
             ].includes(currentView) && (
-      <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
-        <p>Module "{currentView}" is under construction.</p>
-      </div>
-    )
-  }
-          </DashboardShell >
+              <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
+                <p>Module "{currentView}" is under construction.</p>
+              </div>
+            )}
+          </DashboardShell>
         )
-}
+      }
 <Toaster position="top-right" richColors />
       </TooltipProvider >
     </ThemeProvider >
