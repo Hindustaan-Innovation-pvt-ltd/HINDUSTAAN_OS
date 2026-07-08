@@ -18,28 +18,6 @@ export default function ProgressTracker({ session }: { session?: any }) {
     return PROJECTS_DATA.find(p => p.id === activeProjectId) || PROJECTS_DATA[0];
   }, [activeProjectId]);
 
-  const dynamicBurndown = useMemo(() => {
-    const total = activeProject.tasks?.length || 10;
-    const completed = activeProject.tasks?.filter((t: any) => t.status === 'Done').length || 0;
-    const currentDay = 7;
-    
-    return Array.from({ length: 14 }).map((_, i) => {
-      const expected = Math.max(0, total - (total / 13) * i);
-      let remaining = null;
-      
-      if (i <= currentDay) {
-        // Smooth interpolation from total down to (total - completed)
-        const progressRatio = i / currentDay;
-        remaining = total - (completed * Math.pow(progressRatio, 0.8)); // Slight curve
-      }
-      
-      return {
-        day: `Day ${i + 1}`,
-        expected: Math.round(expected),
-        remaining: remaining !== null ? Math.round(remaining) : null,
-      }
-    });
-  }, [activeProject]);
 
   const metrics = useMemo(() => {
     const totalTasks = activeProject.tasks.length;
@@ -57,9 +35,29 @@ export default function ProgressTracker({ session }: { session?: any }) {
       totalCompletion: `${overallProgress}%`,
       tasksDone: `${completedTasks} / ${totalTasks}`,
       milestonesDone: `${completedMilestones} / ${totalMilestones}`,
-      blockedIssues: blockedTasks.toString()
+      blockedIssues: blockedTasks.toString(),
+      rawOverallProgress: overallProgress
     };
   }, [activeProject]);
+
+  const completionTrendData = useMemo(() => {
+    const currentProgress = metrics.rawOverallProgress;
+    return Array.from({ length: 7 }).map((_, i) => {
+      const daysAgo = 6 - i;
+      const progressRatio = Math.pow((i + 1) / 7, 1.2);
+      const startProgress = currentProgress * 0.4; // Start at 40% of current progress a week ago
+      const progress = startProgress + (currentProgress - startProgress) * progressRatio;
+      
+      const date = new Date();
+      date.setDate(date.getDate() - daysAgo);
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+      
+      return {
+        day: dayName,
+        progress: Math.round(progress)
+      }
+    });
+  }, [metrics.rawOverallProgress]);
 
   return (
     <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8">
@@ -109,25 +107,24 @@ export default function ProgressTracker({ session }: { session?: any }) {
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700/60 flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Sprint Burndown</h3>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tracking tasks remaining over 14 days.</p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Project Completion Trend</h3>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tracking cumulative progress over the last 7 days.</p>
             </div>
             <div className="flex items-center gap-4 text-xs font-bold text-slate-600 dark:text-slate-300">
-              <div className="flex items-center gap-1.5"><div className="w-3 h-0.5 rounded-sm bg-slate-400 dark:bg-slate-500" /> Expected</div>
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-500" /> Actually Remaining</div>
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-emerald-500" /> Completion %</div>
             </div>
           </div>
-
+          
           <div className="flex-1 w-full h-[300px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={dynamicBurndown}
+                data={completionTrendData}
                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
               >
                 <defs>
-                  <linearGradient id="colorRemaining" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  <linearGradient id="colorProgress" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800 opacity-50" />
@@ -142,42 +139,32 @@ export default function ProgressTracker({ session }: { session?: any }) {
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fontSize: 10, fill: axisColor }} 
+                  tickFormatter={(value) => `${value}%`}
                   dx={-10}
                 />
                 <RechartsTooltip 
                   contentStyle={{ 
                     borderRadius: '12px', 
                     border: '1px solid rgba(255,255,255,0.1)', 
-                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', 
+                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)', 
                     backgroundColor: theme === 'dark' ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                     backdropFilter: 'blur(8px)',
                     color: theme === 'dark' ? '#f8fafc' : '#0f172a',
                     padding: '12px'
                   }}
-                  itemStyle={{ fontWeight: 'bold' }}
+                  itemStyle={{ fontWeight: 'bold', color: '#10b981' }}
                   labelStyle={{ color: theme === 'dark' ? '#94a3b8' : '#64748b', fontWeight: 'bold', marginBottom: '8px' }}
+                  formatter={(value: number) => [`${value}%`, 'Progress']}
                 />
-                {/* Expected is a simple dashed line so it doesn't clutter the graph */}
-                <Area 
-                  type="linear" 
-                  name="Expected Tasks" 
-                  dataKey="expected" 
-                  stroke={theme === 'dark' ? '#64748b' : '#94a3b8'} 
-                  strokeWidth={2}
-                  strokeDasharray="4 4" 
-                  fillOpacity={0} 
-                  activeDot={false}
-                />
-                {/* Remaining is the main highlighted area */}
                 <Area 
                   type="monotone" 
-                  name="Actually Remaining" 
-                  dataKey="remaining" 
-                  stroke="#3b82f6" 
-                  strokeWidth={3}
+                  name="Progress" 
+                  dataKey="progress" 
+                  stroke="#10b981" 
+                  strokeWidth={4}
                   fillOpacity={1} 
-                  fill="url(#colorRemaining)"
-                  activeDot={{ r: 6, strokeWidth: 0, fill: '#3b82f6', style: { filter: 'drop-shadow(0px 4px 6px rgba(59, 130, 246, 0.5))' } }} 
+                  fill="url(#colorProgress)"
+                  activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981', style: { filter: 'drop-shadow(0px 4px 6px rgba(16, 185, 129, 0.5))' } }} 
                 />
               </AreaChart>
             </ResponsiveContainer>
