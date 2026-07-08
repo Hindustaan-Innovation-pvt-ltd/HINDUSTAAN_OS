@@ -86,7 +86,67 @@ export default function DashboardShell({
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
 
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem('sidebar_width');
+    if (saved) return parseInt(saved, 10);
+    return 288; // Default w-72 equivalent
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const sidebarWidthRef = React.useRef(sidebarWidth);
+  sidebarWidthRef.current = sidebarWidth;
+
+  const startResizing = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  // Sync the initial minimized state to the parent based on the initial sidebarWidth
+  useEffect(() => {
+    if (role === 'intern') {
+      onMinimizeChange(sidebarWidth <= 200);
+    }
+  }, [role, onMinimizeChange]);
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      let newWidth = e.clientX;
+      if (newWidth < 200) {
+        newWidth = 200;
+      } else if (newWidth > 480) {
+        newWidth = 480;
+      }
+      setSidebarWidth(newWidth);
+      onMinimizeChange(newWidth <= 200);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      localStorage.setItem('sidebar_width', sidebarWidthRef.current.toString());
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, onMinimizeChange]);
+
   const activeNavigation = role === 'manager' ? managerNavigation : internNavigation;
+  const isSidebarCollapsed = false;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-950 transition-colors duration-500">
@@ -100,21 +160,27 @@ export default function DashboardShell({
       )}
 
       {/* Left Desktop Sidebar */}
-      <div className={cn(
-        "fixed inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 transition-all duration-300 ease-in-out lg:static lg:translate-x-0",
-        role === 'intern' && isMinimized ? "w-20" : "w-72",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
+      <div 
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 lg:static lg:translate-x-0 relative",
+          isDragging ? "transition-none" : "transition-all duration-300 ease-in-out",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full",
+          (isMobile || role !== 'intern') && "w-72"
+        )}
+        style={{
+          width: (!isMobile && role === 'intern') ? `${sidebarWidth}px` : undefined,
+        }}
+      >
         {/* Branding Badge */}
         <div className={cn(
           "flex h-16 shrink-0 items-center border-b border-slate-100 dark:border-slate-800 justify-between",
-          role === 'intern' && isMinimized ? "px-4 justify-center" : "px-6 lg:justify-start"
+          role === 'intern' && isSidebarCollapsed ? "px-4 justify-center" : "px-6 lg:justify-start"
         )}>
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 dark:bg-orange-500/100 text-white shadow-sm shrink-0">
               <Compass className="h-5 w-5" />
             </div>
-            {!(role === 'intern' && isMinimized) && (
+            {!(role === 'intern' && isSidebarCollapsed) && (
               <span className="text-lg font-bold text-slate-900 dark:text-white tracking-tight animate-in fade-in duration-200">Hindustaan OS</span>
             )}
           </div>
@@ -129,7 +195,7 @@ export default function DashboardShell({
         {/* Vertical Navigation Rows */}
         <div className={cn(
           "flex flex-1 flex-col overflow-y-auto py-6",
-          role === 'intern' && isMinimized ? "px-2" : "px-4"
+          role === 'intern' && isSidebarCollapsed ? "px-2" : "px-4"
         )}>
           <nav className="flex-1 space-y-1">
             {activeNavigation.map((item) => {
@@ -141,10 +207,10 @@ export default function DashboardShell({
                     onNavigate(item.name);
                     setSidebarOpen(false);
                   }}
-                  title={role === 'intern' && isMinimized ? item.name : undefined}
+                  title={role === 'intern' && isSidebarCollapsed ? item.name : undefined}
                   className={cn(
                     "w-full group flex items-center text-sm font-medium rounded-xl transition-all duration-200",
-                    role === 'intern' && isMinimized ? "px-3 py-3 justify-center" : "px-3 py-2.5",
+                    role === 'intern' && isSidebarCollapsed ? "px-3 py-3 justify-center" : "px-3 py-2.5",
                     isCurrent
                       ? "bg-amber-50 text-amber-700 dark:bg-white dark:text-slate-900"
                       : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white dark:hover:text-slate-900"
@@ -153,12 +219,12 @@ export default function DashboardShell({
                   <item.icon
                     className={cn(
                       "h-5 w-5 shrink-0 transition-colors duration-200",
-                      !(role === 'intern' && isMinimized) && "mr-3",
+                      !(role === 'intern' && isSidebarCollapsed) && "mr-3",
                       isCurrent ? "text-amber-600 dark:text-slate-900" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-900"
                     )}
                     aria-hidden="true"
                   />
-                  {!(role === 'intern' && isMinimized) && (
+                  {!(role === 'intern' && isSidebarCollapsed) && (
                     <span className="truncate">{item.name}</span>
                   )}
                 </button>
@@ -167,42 +233,22 @@ export default function DashboardShell({
           </nav>
         </div>
 
-        {/* Collapse Toggle Button (Above User Name) */}
-        {role === 'intern' && (
-          <div className={cn(
-            "px-4 py-2 flex",
-            isMinimized ? "justify-center animate-in fade-in zoom-in duration-200" : "justify-end"
-          )}>
-            <button
-              onClick={() => onMinimizeChange(!isMinimized)}
-              className="flex items-center justify-center h-8 w-8 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:scale-110 active:scale-95 transition-all shadow-sm cursor-pointer"
-              title={isMinimized ? "Expand Sidebar" : "Collapse Sidebar"}
-            >
-              {isMinimized ? (
-                <ChevronRight className="h-4 w-4" />
-              ) : (
-                <ChevronLeft className="h-4 w-4" />
-              )}
-            </button>
-          </div>
-        )}
-
         {/* User Profile Card */}
         <div className={cn(
           "shrink-0 border-t border-slate-200 dark:border-slate-700/60",
-          role === 'intern' && isMinimized ? "p-2" : "p-4"
+          role === 'intern' && isSidebarCollapsed ? "p-2" : "p-4"
         )}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className={cn(
                 "w-full flex items-center rounded-xl transition-all hover:bg-slate-50 dark:hover:bg-slate-900/40 outline-none focus:ring-2 focus:ring-orange-500/20 group",
-                role === 'intern' && isMinimized ? "p-1.5 justify-center" : "p-2 justify-between"
+                role === 'intern' && isSidebarCollapsed ? "p-1.5 justify-center" : "p-2 justify-between"
               )}>
                 <div className="flex items-center text-left">
                   <div className="flex items-center justify-center h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 font-bold shadow-sm ring-2 ring-white dark:ring-slate-900 shrink-0">
                     {role === 'manager' ? 'AG' : 'TP'}
                   </div>
-                  {!(role === 'intern' && isMinimized) && (
+                  {!(role === 'intern' && isSidebarCollapsed) && (
                     <div className="ml-3">
                       <p className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">
                         {role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'}
@@ -211,7 +257,7 @@ export default function DashboardShell({
                     </div>
                   )}
                 </div>
-                {!(role === 'intern' && isMinimized) && (
+                {!(role === 'intern' && isSidebarCollapsed) && (
                   <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
                 )}
               </button>
@@ -233,6 +279,19 @@ export default function DashboardShell({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {/* Resize Handle */}
+        {!isMobile && role === 'intern' && (
+          <div
+            onMouseDown={startResizing}
+            className="absolute top-0 -right-1 bottom-0 w-2 cursor-col-resize group/resize z-50"
+          >
+            <div className={cn(
+              "w-1 h-full mx-auto transition-colors duration-200",
+              isDragging ? "bg-orange-500" : "bg-transparent group-hover/resize:bg-orange-500/30"
+            )} />
+          </div>
+        )}
       </div>
 
       {/* Main Context Body */}
