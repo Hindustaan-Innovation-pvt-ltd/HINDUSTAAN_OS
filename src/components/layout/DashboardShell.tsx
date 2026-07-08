@@ -21,7 +21,9 @@ import {
   Users,
   Settings,
   ChevronDown,
-  User
+  User,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
@@ -67,12 +69,16 @@ export default function DashboardShell({
   currentView = 'Time Tracking',
   role = 'intern',
   onNavigate = () => {},
+  isMinimized = false,
+  onMinimizeChange = () => {},
   onSignOut
 }: { 
   children: React.ReactNode;
   currentView?: string;
   role?: string;
   onNavigate?: (view: string) => void;
+  isMinimized?: boolean;
+  onMinimizeChange?: (minimized: boolean) => void;
   onSignOut?: () => void;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -95,16 +101,22 @@ export default function DashboardShell({
 
       {/* Left Desktop Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 transition-all duration-300 ease-in-out lg:static lg:translate-x-0",
+        role === 'intern' && isMinimized ? "w-20" : "w-72",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Branding Badge */}
-        <div className="flex h-16 shrink-0 items-center px-6 border-b border-slate-100 dark:border-slate-800 justify-between lg:justify-start">
+        <div className={cn(
+          "flex h-16 shrink-0 items-center border-b border-slate-100 dark:border-slate-800 justify-between",
+          role === 'intern' && isMinimized ? "px-4 justify-center" : "px-6 lg:justify-start"
+        )}>
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 dark:bg-orange-500/100 text-white shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 dark:bg-orange-500/100 text-white shadow-sm shrink-0">
               <Compass className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Hindustaan OS</span>
+            {!(role === 'intern' && isMinimized) && (
+              <span className="text-lg font-bold text-slate-900 dark:text-white tracking-tight animate-in fade-in duration-200">Hindustaan OS</span>
+            )}
           </div>
           <button 
             className="lg:hidden text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300"
@@ -115,7 +127,10 @@ export default function DashboardShell({
         </div>
 
         {/* Vertical Navigation Rows */}
-        <div className="flex flex-1 flex-col overflow-y-auto px-4 py-6">
+        <div className={cn(
+          "flex flex-1 flex-col overflow-y-auto py-6",
+          role === 'intern' && isMinimized ? "px-2" : "px-4"
+        )}>
           <nav className="flex-1 space-y-1">
             {activeNavigation.map((item) => {
               const isCurrent = currentView === item.name;
@@ -126,8 +141,10 @@ export default function DashboardShell({
                     onNavigate(item.name);
                     setSidebarOpen(false);
                   }}
+                  title={role === 'intern' && isMinimized ? item.name : undefined}
                   className={cn(
-                    "w-full group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200",
+                    "w-full group flex items-center text-sm font-medium rounded-xl transition-all duration-200",
+                    role === 'intern' && isMinimized ? "px-3 py-3 justify-center" : "px-3 py-2.5",
                     isCurrent
                       ? "bg-amber-50 text-amber-700 dark:bg-white dark:text-slate-900"
                       : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white dark:hover:text-slate-900"
@@ -135,35 +152,68 @@ export default function DashboardShell({
                 >
                   <item.icon
                     className={cn(
-                      "mr-3 h-5 w-5 shrink-0 transition-colors duration-200",
+                      "h-5 w-5 shrink-0 transition-colors duration-200",
+                      !(role === 'intern' && isMinimized) && "mr-3",
                       isCurrent ? "text-amber-600 dark:text-slate-900" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-900"
                     )}
                     aria-hidden="true"
                   />
-                  {item.name}
+                  {!(role === 'intern' && isMinimized) && (
+                    <span className="truncate">{item.name}</span>
+                  )}
                 </button>
               );
             })}
           </nav>
         </div>
 
+        {/* Collapse Toggle Button (Above User Name) */}
+        {role === 'intern' && (
+          <div className={cn(
+            "px-4 py-2 flex",
+            isMinimized ? "justify-center animate-in fade-in zoom-in duration-200" : "justify-end"
+          )}>
+            <button
+              onClick={() => onMinimizeChange(!isMinimized)}
+              className="flex items-center justify-center h-8 w-8 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:scale-110 active:scale-95 transition-all shadow-sm cursor-pointer"
+              title={isMinimized ? "Expand Sidebar" : "Collapse Sidebar"}
+            >
+              {isMinimized ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+        )}
+
         {/* User Profile Card */}
-        <div className="shrink-0 border-t border-slate-200 dark:border-slate-700/60 p-4">
+        <div className={cn(
+          "shrink-0 border-t border-slate-200 dark:border-slate-700/60",
+          role === 'intern' && isMinimized ? "p-2" : "p-4"
+        )}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-full flex items-center justify-between rounded-xl p-2 transition-all hover:bg-slate-50 dark:hover:bg-slate-900/40 outline-none focus:ring-2 focus:ring-orange-500/20 group">
+              <button className={cn(
+                "w-full flex items-center rounded-xl transition-all hover:bg-slate-50 dark:hover:bg-slate-900/40 outline-none focus:ring-2 focus:ring-orange-500/20 group",
+                role === 'intern' && isMinimized ? "p-1.5 justify-center" : "p-2 justify-between"
+              )}>
                 <div className="flex items-center text-left">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 font-bold shadow-sm ring-2 ring-white dark:ring-slate-900">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 font-bold shadow-sm ring-2 ring-white dark:ring-slate-900 shrink-0">
                     {role === 'manager' ? 'AG' : 'TP'}
                   </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">
-                      {role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'}
-                    </p>
-                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{role === 'manager' ? 'Manager' : 'Employee'}</p>
-                  </div>
+                  {!(role === 'intern' && isMinimized) && (
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">
+                        {role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'}
+                      </p>
+                      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{role === 'manager' ? 'Manager' : 'Employee'}</p>
+                    </div>
+                  )}
                 </div>
-                <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
+                {!(role === 'intern' && isMinimized) && (
+                  <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
+                )}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl rounded-xl">
