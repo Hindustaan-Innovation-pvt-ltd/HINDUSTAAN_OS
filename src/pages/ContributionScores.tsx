@@ -95,7 +95,7 @@ const COLORS = {
   orange: '#f97316' // orange-500
 };
 
-export default function ContributionScores() {
+export default function ContributionScores({ session }: { session?: any }) {
   const [selectedIntern, setSelectedIntern] = useState<typeof MOCK_INTERNS[0] | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
