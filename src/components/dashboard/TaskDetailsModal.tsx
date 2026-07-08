@@ -55,6 +55,15 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
   const [editedTask, setEditedTask] = useState<Task | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
+
+  const handleSaveEditComment = (commentId: string) => {
+    if (!editingText.trim()) return;
+    setComments(prev => prev.map(c => c.id === commentId ? { ...c, text: editingText } : c));
+    setEditingCommentId(null);
+    setEditingText('');
+  };
 
   // Sync internal state when a new task is opened
   useEffect(() => {
@@ -159,35 +168,6 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
         {/* Scrollable Content Body */}
         <div className="p-6 space-y-8 overflow-y-auto custom-scrollbar">
           
-          {/* Status Tracker Segment */}
-          <div>
-            <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Workflow State</label>
-            <div className="flex flex-wrap gap-2">
-              {STATUSES.map(status => {
-                const isActive = editedTask.status === status;
-                return (
-                  <Button
-                    key={status}
-                    onClick={() => handleStatusChange(status)}
-                    disabled={!canEditStatus}
-                    variant={isActive ? "default" : "outline"}
-                    className={cn(
-                      "rounded-xl font-semibold flex-1 justify-center whitespace-nowrap min-w-[120px]",
-                      isActive && "ring-2 ring-slate-900 dark:ring-slate-700 ring-offset-2 dark:ring-offset-slate-900"
-                    )}
-                  >
-                    {isActive && <CheckCircle2 className="h-4 w-4 mr-2" />}
-                    {status}
-                  </Button>
-                )
-              })}
-            </div>
-            {!canEditStatus && (
-              <p className="text-[10px] text-amber-600 dark:text-amber-500 font-semibold mt-2 flex items-center">
-                * You can only modify the state of tasks explicitly assigned to you.
-              </p>
-            )}
-          </div>
 
           {/* Metadata Grid Layer */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 rounded-2xl p-5">
@@ -307,12 +287,57 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                   <div className="absolute -left-[25px] top-1.5 h-3 w-3 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-white dark:border-slate-900"></div>
                   
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{comment.author_name}</span>
-                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">{comment.timestamp}</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{comment.author_name}</span>
+                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">{comment.timestamp}</span>
+                    </div>
+                    {comment.author_name === currentUser.name && editingCommentId !== comment.id && (
+                      <button 
+                        onClick={() => {
+                          setEditingCommentId(comment.id);
+                          setEditingText(comment.text);
+                        }}
+                        className="text-[10px] font-bold text-slate-400 hover:text-orange-500 transition-colors uppercase tracking-wider cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                    )}
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-r-xl rounded-bl-xl p-3 text-sm text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800">
-                    {comment.text}
-                  </div>
+                  {editingCommentId === comment.id ? (
+                    <div className="flex flex-col gap-2 mt-1">
+                      <textarea
+                        value={editingText}
+                        onChange={(e) => setEditingText(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 text-sm text-slate-900 dark:text-white focus:border-orange-500 outline-none transition-all resize-none font-medium"
+                        rows={2}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            setEditingCommentId(null);
+                            setEditingText('');
+                          }}
+                          className="h-8 rounded-lg text-xs font-bold"
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          size="sm"
+                          onClick={() => handleSaveEditComment(comment.id)}
+                          disabled={!editingText.trim()}
+                          className="h-8 rounded-lg text-xs font-bold"
+                        >
+                          Save
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-r-xl rounded-bl-xl p-3 text-sm text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800">
+                      {comment.text}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
