@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { CalendarDays, LayoutTemplate, Briefcase, LayoutGrid, CheckSquare, Target, ListTodo, Plus, X } from 'lucide-react';
+import { CalendarDays, LayoutTemplate, Briefcase, LayoutGrid, CheckSquare, Target, ListTodo, Plus, X, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ProjectDetails from '@/components/projects/ProjectDetails';
 
 // --- Mock Data ---
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -24,6 +25,7 @@ export default function Projects({ session }: { session?: any }) {
   const [activeTab, setActiveTab] = useState('All');
   const [projects, setProjects] = useState(INITIAL_PROJECTS);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<any>(null);
   const [newProject, setNewProject] = useState({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium' });
   
   const role = session?.user?.user_metadata?.role || 'intern';
@@ -61,6 +63,11 @@ export default function Projects({ session }: { session?: any }) {
     if (activeTab === 'Completed') return p.status === 'Completed';
     return true;
   });
+
+  if (selectedProject) {
+    return <ProjectDetails project={selectedProject} onBack={() => setSelectedProject(null)} />;
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
       
@@ -102,7 +109,11 @@ export default function Projects({ session }: { session?: any }) {
 
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {displayedProjects.map((project) => (
-            <div key={project.id} className="p-6 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+            <div 
+              key={project.id} 
+              onClick={() => setSelectedProject(project)}
+              className="p-6 flex items-center justify-between transition-colors group cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-900/30"
+            >
               <div className="flex items-center space-x-4">
                 <div className={cn("p-4 rounded-2xl shadow-sm", project.iconColor)}>
                   <LayoutGrid className="h-6 w-6" />
@@ -118,21 +129,28 @@ export default function Projects({ session }: { session?: any }) {
                 </div>
               </div>
               
-              {/* Radial Progress */}
-              <div className="relative flex items-center justify-center w-16 h-16 shrink-0">
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-slate-100 dark:text-slate-800" />
-                  <circle 
-                    cx="32" cy="32" r="28" fill="transparent" 
-                    stroke={project.strokeColor} strokeWidth="6" 
-                    strokeDasharray="175.9" 
-                    strokeDashoffset={175.9 - (175.9 * project.progress) / 100} 
-                    strokeLinecap="round" 
-                    className="transition-all duration-1000 ease-out" 
-                  />
-                </svg>
-                <div className="absolute flex flex-col items-center justify-center">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">{project.progress}%</span>
+              <div className="flex items-center gap-4">
+                {/* Radial Progress */}
+                <div className="relative flex items-center justify-center w-16 h-16 shrink-0">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-slate-100 dark:text-slate-800" />
+                    <circle 
+                      cx="32" cy="32" r="28" fill="transparent" 
+                      stroke={project.strokeColor} strokeWidth="6" 
+                      strokeDasharray="175.9" 
+                      strokeDashoffset={175.9 - (175.9 * project.progress) / 100} 
+                      strokeLinecap="round" 
+                      className="transition-all duration-1000 ease-out" 
+                    />
+                  </svg>
+                  <div className="absolute flex flex-col items-center justify-center">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">{project.progress}%</span>
+                  </div>
+                </div>
+
+                {/* Arrow to indicate clickability */}
+                <div className="flex items-center justify-center h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:bg-orange-100 group-hover:text-orange-600 dark:group-hover:bg-orange-500/20 dark:group-hover:text-orange-400 transition-colors shrink-0">
+                  <ChevronRight className="h-5 w-5" />
                 </div>
               </div>
             </div>

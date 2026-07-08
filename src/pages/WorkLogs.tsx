@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Clock, Download, Plus, Search, Calendar as CalendarIcon,
-  CheckCircle2, Filter, MoreHorizontal, FileEdit, Trash2, X, CheckCircle, AlertCircle, XCircle
+  CheckCircle2, Filter, MoreHorizontal, FileEdit, Trash2, X, CheckCircle, AlertCircle, XCircle, Play, Square, Timer
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,13 +23,44 @@ const INITIAL_LOGS = [
   { id: '5', name: 'Preeti', initials: 'TP', date: 'Oct 10, 2026', hours: 5.0, task: 'Create User Onboarding', project: 'Product', status: 'Rejected' },
 ];
 
+const ONLINE_TEAM_MEMBERS = [
+  { id: 'tm1', name: 'Rahul Sharma', initials: 'RS', role: 'Backend Developer', task: 'Database Optimization', project: 'Backend Core', color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' },
+  { id: 'tm2', name: 'Amanda Smith', initials: 'AS', role: 'Frontend Lead', task: 'Component Refactoring', project: 'Frontend Core', color: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
+  { id: 'tm3', name: 'Priya Patel', initials: 'PP', role: 'Technical Writer', task: 'API Documentation V2', project: 'Documentation', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' },
+];
+
 export default function WorkLogs({ session }: { session?: any }) {
   const [logs, setLogs] = useState(INITIAL_LOGS);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-  const [newLog, setNewLog] = useState({ name: '', project: '', task: '', hours: '', date: '' });
+  const [activeSessions, setActiveSessions] = useState<{ [key: string]: number }>(() => {
+    return {
+      'tm1': 3600 + 45 * 60 + 12,
+      'tm2': 2 * 3600 + 15 * 60 + 30,
+      'tm3': 45 * 60 + 5,
+    };
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveSessions(prev => {
+        const next = { ...prev };
+        Object.keys(next).forEach(key => {
+          next[key] += 1;
+        });
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTime = (totalSeconds: number) => {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   const filteredLogs = useMemo(() => {
     return logs.filter(log => {
@@ -47,24 +78,6 @@ export default function WorkLogs({ session }: { session?: any }) {
 
   const handleDelete = (id: string) => {
     setLogs(logs.filter(log => log.id !== id));
-  };
-
-  const handleSaveLog = () => {
-    if (!newLog.name || !newLog.project || !newLog.task || !newLog.hours) return;
-    const initials = newLog.name.split(' ').map(n => n[0]).filter(Boolean).join('').toUpperCase().substring(0, 2) || 'U';
-    const log = {
-      id: Date.now().toString(),
-      name: newLog.name,
-      initials,
-      date: newLog.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      hours: parseFloat(newLog.hours),
-      task: newLog.task,
-      project: newLog.project,
-      status: 'Pending'
-    };
-    setLogs([log, ...logs]);
-    setIsLogModalOpen(false);
-    setNewLog({ name: '', project: '', task: '', hours: '', date: '' });
   };
 
   const totalHours = useMemo(() => logs.reduce((acc, log) => acc + log.hours, 0), [logs]);
@@ -109,9 +122,50 @@ export default function WorkLogs({ session }: { session?: any }) {
           <Button variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hidden md:flex">
             <Download className="h-4 w-4 mr-2 text-slate-400" /> Export
           </Button>
-          <Button onClick={() => setIsLogModalOpen(true)} className="h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-500/20">
-            <Plus className="h-4 w-4 mr-2" /> Log Hours
-          </Button>
+        </div>
+      </div>
+
+      {/* Live Employee Sessions */}
+      <div className="mb-8">
+        <h3 className="text-lg font-black tracking-tight text-slate-900 dark:text-white mb-4 flex items-center">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
+          Live Active Sessions
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {ONLINE_TEAM_MEMBERS.map(member => (
+            <div key={member.id} className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600 transform origin-left transition-transform duration-1000" />
+              
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <Avatar className={cn("h-10 w-10 border-2 border-white dark:border-slate-900", member.color)}>
+                      <AvatarFallback className="font-bold">{member.initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{member.name}</h4>
+                    <p className="text-xs font-semibold text-slate-500">{member.role}</p>
+                  </div>
+                </div>
+                <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1.5 animate-pulse">
+                  <Timer className="h-3.5 w-3.5" />
+                  <span className="text-sm font-bold font-mono tracking-wider">{formatTime(activeSessions[member.id] || 0)}</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-950/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Working On</span>
+                  <Badge variant="secondary" className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] uppercase font-black tracking-wider">
+                    {member.project}
+                  </Badge>
+                </div>
+                <p className="font-bold text-slate-700 dark:text-slate-300 line-clamp-1">{member.task}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -242,87 +296,6 @@ export default function WorkLogs({ session }: { session?: any }) {
         </div>
       </div>
 
-      {/* Log Hours Modal Overlay */}
-      {isLogModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white">Log Work Hours</h3>
-                <p className="text-sm font-semibold text-slate-500 mt-1">Submit your timesheet entry.</p>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => setIsLogModalOpen(false)} className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Employee Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Anurag Dubey"
-                  value={newLog.name}
-                  onChange={(e) => setNewLog({ ...newLog, name: e.target.value })}
-                  className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-colors"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Project</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Frontend Core"
-                  value={newLog.project}
-                  onChange={(e) => setNewLog({ ...newLog, project: e.target.value })}
-                  className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-colors"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Task Description</label>
-                <input
-                  type="text"
-                  placeholder="What did you work on?"
-                  value={newLog.task}
-                  onChange={(e) => setNewLog({ ...newLog, task: e.target.value })}
-                  className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-colors"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Hours</label>
-                  <input
-                    type="number"
-                    placeholder="0.0"
-                    step="0.5"
-                    value={newLog.hours}
-                    onChange={(e) => setNewLog({ ...newLog, hours: e.target.value })}
-                    className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-colors"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Date</label>
-                  <input
-                    type="text"
-                    placeholder="Oct 12, 2026"
-                    value={newLog.date}
-                    onChange={(e) => setNewLog({ ...newLog, date: e.target.value })}
-                    className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 pt-0 flex gap-3">
-              <Button variant="outline" className="flex-1 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-transparent font-bold hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setIsLogModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button className="flex-1 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-500/20" onClick={handleSaveLog}>
-                Submit Log
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

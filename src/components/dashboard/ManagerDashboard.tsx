@@ -14,8 +14,10 @@ import {
   ChevronDown,
   Megaphone,
   BellRing,
-  MoreVertical
+  MoreVertical,
+  ChevronRight
 } from 'lucide-react';
+import ProjectDetails from '../projects/ProjectDetails';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -69,6 +71,7 @@ const DEADLINES = [
 export default function ManagerDashboard() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<any>(null);
 
   const hour = new Date().getHours();
   let greeting = 'Good Evening';
@@ -92,6 +95,21 @@ export default function ManagerDashboard() {
       default: return '';
     }
   };
+
+  if (selectedProject) {
+    return (
+      <ProjectDetails 
+        project={{
+          ...selectedProject, 
+          deadline: selectedProject.dueDate,
+          manager: 'Aakash Gupta',
+          strokeColor: '#f97316',
+          iconColor: 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400'
+        }} 
+        onBack={() => setSelectedProject(null)} 
+      />
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
@@ -246,7 +264,15 @@ export default function ManagerDashboard() {
                       </div>
                       <div className="flex items-center gap-4">
                         <Progress value={project.progress} className={cn("h-2 flex-1", project.status === 'At Risk' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
-                        <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 w-8 text-right">{project.progress}%</span>
+                        <div className="flex items-center gap-1 justify-end w-16 shrink-0">
+                          <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{project.progress}%</span>
+                          <button 
+                            onClick={() => setSelectedProject(project)}
+                            className="flex items-center justify-center h-6 w-6 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-orange-600 transition-colors shrink-0"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
