@@ -27,7 +27,7 @@ const ONLINE_TEAM_MEMBERS = [
 const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
 export default function WorkLogs({ session }: { session?: any }) {
-  const [logs, setLogs] = useState(() => {
+  const [logs, setLogs] = useState<any[]>(() => {
     const saved = localStorage.getItem('work_logs_list');
     return saved ? JSON.parse(saved) : GLOBAL_LOGS;
   });

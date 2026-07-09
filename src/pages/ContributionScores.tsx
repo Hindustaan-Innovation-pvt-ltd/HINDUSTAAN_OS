@@ -21,17 +21,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-<<<<<<< HEAD
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
-=======
-import { format } from 'date-fns';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { jsPDF } from 'jspdf';
->>>>>>> cfacf240213bd6a71bb56e1f849fdae372f6c291
 import autoTable from 'jspdf-autotable';
 
 // -- MOCK DATA GENERATOR --
@@ -117,11 +110,7 @@ export default function ContributionScores({ session }: { session?: any }) {
   else if (email.toLowerCase().includes('priya')) currentUserName = 'Priya Patel';
 
   const [searchTerm, setSearchTerm] = useState('');
-<<<<<<< HEAD
   const [date, setDate] = useState<Date>(new Date());
-=======
-  const [date, setDate] = useState<Date | undefined>(new Date());
->>>>>>> cfacf240213bd6a71bb56e1f849fdae372f6c291
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const filteredInterns = MOCK_INTERNS.filter(intern =>
@@ -300,32 +289,6 @@ export default function ContributionScores({ session }: { session?: any }) {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className={cn("rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm font-bold justify-start text-left", !date && "text-slate-500")}>
-                <Calendar className="mr-2 h-4 w-4 text-slate-400" />
-                {date ? format(date, "PPP") : "Pick a date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <CalendarComponent
-                mode="single"
-                selected={date}
-                onSelect={setDate as any}
-              />
-            </PopoverContent>
-          </Popover>
-
-          <Button variant="outline" onClick={handleExportPDF} className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm font-bold">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-          <Button onClick={handleRefresh} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-sm font-bold">
-            <RefreshCw className={cn("mr-2 h-4 w-4", isRefreshing && "animate-spin")} />
-            Refresh
-          </Button>
-        </div>
       </div>
 
       {/* KPI Cards */}
@@ -400,8 +363,8 @@ export default function ContributionScores({ session }: { session?: any }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         {/* Left Column - Main Table */}
-        <div className="lg:col-span-8 space-y-6">
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-full">
+        <div className="lg:col-span-8 flex flex-col min-w-0">
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col flex-1">
             <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Team Performance Overview</CardTitle>
@@ -417,8 +380,8 @@ export default function ContributionScores({ session }: { session?: any }) {
                 />
               </div>
             </CardHeader>
-            <CardContent className="p-0 overflow-auto max-h-[600px] scrollbar-hide relative">
-              <table className="w-full text-sm text-left relative">
+            <CardContent className="p-0 overflow-auto flex-1 min-h-0 relative">
+              <table className="w-full min-w-[800px] text-sm text-left relative">
                 <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-20">
                   <tr>
                     <th className="px-6 py-4 rounded-tl-xl">Rank</th>
