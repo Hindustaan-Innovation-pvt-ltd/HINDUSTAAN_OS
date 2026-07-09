@@ -9,7 +9,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
 
   const completedTasks = tasks.filter((t: any) => t.status === 'Done').length;
   const totalTasks = tasks.length;
-  const progress = Math.round((completedTasks / totalTasks) * 100);
+  const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
