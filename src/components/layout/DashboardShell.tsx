@@ -254,7 +254,7 @@ export default function DashboardShell({
     <div className="flex h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-950 transition-colors duration-500">
       {/* Left Desktop Sidebar */}
       <div className="hidden lg:flex inset-y-0 left-0 z-50 flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 lg:w-[260px] shrink-0">
-        <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} />
+        <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} userName={userName} userEmail={userEmail} userInitials={userInitials} />
       </div>
 
       {/* Main Context Body */}
@@ -274,7 +274,7 @@ export default function DashboardShell({
               </button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-[260px] border-r border-slate-200 dark:border-slate-700/60">
-              <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} />
+              <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} userName={userName} userEmail={userEmail} userInitials={userInitials} />
             </SheetContent>
           </Sheet>
 
