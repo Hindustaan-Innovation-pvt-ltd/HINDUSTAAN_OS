@@ -26,6 +26,8 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { toast } from 'sonner';
+import { AssignTaskDialog } from '../components/dashboard/AssignTaskDialog';
 
 // -- MOCK DATA GENERATOR --
 const generateData = () => {
@@ -112,6 +114,8 @@ export default function ContributionScores({ session }: { session?: any }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [date, setDate] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
+  const [analyticsIntern, setAnalyticsIntern] = useState<any>(null);
 
   const filteredInterns = MOCK_INTERNS.filter(intern =>
     intern.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -326,7 +330,7 @@ export default function ContributionScores({ session }: { session?: any }) {
           <Card key={i} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
             <CardContent className="p-4 lg:p-5 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] lg:text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 truncate">{kpi.title}</p>
+                <p className="text-[10px] lg:text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 leading-tight break-words whitespace-normal">{kpi.title}</p>
                 <p className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white">{kpi.val}</p>
               </div>
               <div className="h-10 w-10 lg:h-12 lg:w-12 shrink-0 relative flex items-center justify-center">
@@ -343,7 +347,7 @@ export default function ContributionScores({ session }: { session?: any }) {
 
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
           <CardContent className="p-4 lg:p-5 min-w-0">
-            <p className="text-[10px] lg:text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 truncate">Highest Score</p>
+            <p className="text-[10px] lg:text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 leading-tight break-words whitespace-normal">Highest Score</p>
             <div className="flex items-center gap-3 min-w-0">
               <Avatar className="h-8 w-8 lg:h-10 lg:w-10 border-2 border-white dark:border-slate-900 shadow-sm shrink-0">
                 <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-xs lg:text-sm">
@@ -351,7 +355,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{highestScorer.name}</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight break-words whitespace-normal">{highestScorer.name}</p>
                 <p className="text-base lg:text-lg font-black text-emerald-600">{highestScorer.score}%</p>
               </div>
             </div>
@@ -457,10 +461,10 @@ export default function ContributionScores({ session }: { session?: any }) {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem><BarChart2 className="mr-2 h-4 w-4" /> View Analytics</DropdownMenuItem>
-                            <DropdownMenuItem><CheckCircle2 className="mr-2 h-4 w-4" /> Assign Task</DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer" onClick={() => setAnalyticsIntern(intern)}><BarChart2 className="mr-2 h-4 w-4" /> View Analytics</DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer" onClick={() => setIsAssignTaskOpen(true)}><CheckCircle2 className="mr-2 h-4 w-4" /> Assign Task</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-rose-600"><AlertTriangle className="mr-2 h-4 w-4" /> Flag Performance</DropdownMenuItem>
+                            <DropdownMenuItem className="text-rose-600 cursor-pointer" onClick={() => toast.success(`Performance flagged for ${intern.name}`)}><AlertTriangle className="mr-2 h-4 w-4" /> Flag Performance</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -563,7 +567,94 @@ export default function ContributionScores({ session }: { session?: any }) {
         </div>
       </div>
 
+      <AssignTaskDialog open={isAssignTaskOpen} onOpenChange={setIsAssignTaskOpen} />
+      
+      {/* Analytics Sheet */}
+      <Sheet open={!!analyticsIntern} onOpenChange={(open) => !open && setAnalyticsIntern(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-md lg:max-w-lg overflow-y-auto bg-slate-50 dark:bg-slate-950 p-0 border-l border-slate-200 dark:border-slate-800">
+          {analyticsIntern && (
+            <div className="flex flex-col min-h-full">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-10 shadow-sm">
+                <SheetTitle className="text-xl sm:text-2xl font-black flex items-center gap-4">
+                  <Avatar className="h-14 w-14 border-2 border-white dark:border-slate-800 shadow-sm">
+                    <AvatarFallback className="bg-orange-100 text-orange-600 text-lg">
+                      {analyticsIntern.name.split(' ').map((n: string) => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    {analyticsIntern.name}
+                    <p className="text-sm font-medium text-slate-500 mt-1">{analyticsIntern.department} Intern</p>
+                  </div>
+                </SheetTitle>
+              </div>
+              
+              <div className="p-6 space-y-6 flex-1">
+                <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                  <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Final Contribution Score</p>
+                  <div className="h-48 w-48 relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadialBarChart innerRadius="80%" outerRadius="100%" data={[{ value: analyticsIntern.score, fill: COLORS.orange }]} startAngle={90} endAngle={-270}>
+                        <RadialBar background={{ fill: 'var(--color-slate-100)' }} dataKey="value" cornerRadius={20} />
+                      </RadialBarChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-5xl font-black text-slate-900 dark:text-white">{analyticsIntern.score}</span>
+                      <span className="text-sm font-bold text-slate-500 mt-1">/ 100</span>
+                    </div>
+                  </div>
+                </div>
 
+                <div className="space-y-4">
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Formula Breakdown</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"><Target className="h-6 w-6" /></div>
+                        <div>
+                          <p className="text-base font-bold text-slate-900 dark:text-white">Task Performance</p>
+                          <p className="text-xs font-semibold text-slate-500 mt-0.5">40% Weightage</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-black text-slate-900 dark:text-white">{analyticsIntern.taskScore}</span>
+                        <span className="text-sm font-bold text-slate-500"> / 40</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"><Clock className="h-6 w-6" /></div>
+                        <div>
+                          <p className="text-base font-bold text-slate-900 dark:text-white">Work Log Consistency</p>
+                          <p className="text-xs font-semibold text-slate-500 mt-0.5">35% Weightage</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-black text-slate-900 dark:text-white">{analyticsIntern.logScore}</span>
+                        <span className="text-sm font-bold text-slate-500"> / 35</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-2xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400"><Mic className="h-6 w-6" /></div>
+                        <div>
+                          <p className="text-base font-bold text-slate-900 dark:text-white">Standup Completion</p>
+                          <p className="text-xs font-semibold text-slate-500 mt-0.5">25% Weightage</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-black text-slate-900 dark:text-white">{analyticsIntern.standupScore}</span>
+                        <span className="text-sm font-bold text-slate-500"> / 25</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
 
     </div>
   );
