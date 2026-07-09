@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { CalendarDays, LayoutTemplate, Briefcase, LayoutGrid, CheckSquare, Target, ListTodo, Plus, X, ChevronRight } from 'lucide-react';
+import { CalendarDays, LayoutTemplate, Briefcase, LayoutGrid, CheckSquare, Target, ListTodo, Plus, X, ChevronRight, MoreVertical, Edit2, Trash2, RotateCcw } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import ProjectDetails from '@/components/projects/ProjectDetails';
 import { Badge } from '@/components/ui/badge';
@@ -16,47 +20,89 @@ const GANTT_TASKS = [
 ];
 
 import { GLOBAL_PROJECTS } from '@/data/mockData';
+import { useProjects } from '@/context/ProjectContext';
 
 export default function Projects({ session }: { session?: any }) {
   const [activeTab, setActiveTab] = useState('All');
-  const [projects, setProjects] = useState(GLOBAL_PROJECTS);
+  const { projects, addProject, updateProject, deleteProject } = useProjects();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [newProject, setNewProject] = useState({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium' });
+  const [selectedWeekDate, setSelectedWeekDate] = useState<Date>(new Date());
   
   const role = session?.user?.user_metadata?.role || 'intern';
   
   const baseProjects = role === 'manager' ? projects : [projects[0]];
 
-  const handleCreateProject = () => {
+  const handleSaveProject = () => {
     if (!newProject.name) return;
-    const colors = [
-      { iconColor: 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400', strokeColor: '#9333ea' },
-      { iconColor: 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400', strokeColor: '#0891b2' },
-      { iconColor: 'bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400', strokeColor: '#db2777' }
-    ];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
     
-    const project = {
-      id: Date.now().toString(),
-      name: newProject.name,
-      tasks: [],
-      milestones: [],
-      status: 'Not Started',
-      progress: 0,
-      iconColor: randomColor.iconColor,
-      strokeColor: randomColor.strokeColor,
-      manager: newProject.manager || 'Unassigned',
-      deadline: newProject.deadline || 'TBD',
-      budget: newProject.budget ? `$${newProject.budget}` : 'TBD'
-    };
+    if (editingProjectId) {
+      updateProject(editingProjectId, {
+        name: newProject.name,
+        manager: newProject.manager,
+        deadline: newProject.deadline,
+        budget: newProject.budget ? (newProject.budget.toString().startsWith('$') ? newProject.budget : `$${newProject.budget}`) : 'TBD'
+      });
+    } else {
+      const colors = [
+        { iconColor: 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400', strokeColor: '#9333ea' },
+        { iconColor: 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400', strokeColor: '#0891b2' },
+        { iconColor: 'bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400', strokeColor: '#db2777' }
+      ];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      
+      const project = {
+        id: Date.now().toString(),
+        name: newProject.name,
+        tasks: [],
+        milestones: [],
+        status: 'Not Started',
+        progress: 0,
+        iconColor: randomColor.iconColor,
+        strokeColor: randomColor.strokeColor,
+        manager: newProject.manager || 'Unassigned',
+        deadline: newProject.deadline || 'TBD',
+        budget: newProject.budget ? `$${newProject.budget}` : 'TBD'
+      };
+      
+      addProject(project);
+    }
     
-    setProjects([project, ...projects]);
     setIsModalOpen(false);
+    setEditingProjectId(null);
     setNewProject({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium' });
   };
+
+  const startOfCurrentWeek = startOfWeek(selectedWeekDate, { weekStartsOn: 1 });
+  const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(startOfCurrentWeek, i));
+
+  const dynamicTasks = React.useMemo(() => {
+    const seed = selectedWeekDate.getDate();
+    let taskList: any[] = [];
+    projects.forEach((p, pIndex) => {
+      p.tasks?.forEach((t: any, tIndex: number) => {
+        if (t.status === 'Done' && seed % 2 === 0) return;
+        const start = (t.id.charCodeAt(t.id.length-1) + pIndex + seed) % 6;
+        const duration = (t.id.charCodeAt(0) % 3) + 2;
+        const colors = ['bg-emerald-500 dark:bg-emerald-600', 'bg-blue-500 dark:bg-blue-600', 'bg-purple-500 dark:bg-purple-600', 'bg-amber-500 dark:bg-amber-600', 'bg-rose-500 dark:bg-rose-600'];
+        const color = colors[(pIndex + tIndex + seed) % colors.length];
+        
+        taskList.push({
+          id: t.id + seed + tIndex,
+          name: t.title,
+          start,
+          duration,
+          color,
+          assignee: t.assignee
+        });
+      });
+    });
+    return taskList.slice(0, 6);
+  }, [projects, selectedWeekDate]);
   const displayedProjects = baseProjects.filter(p => {
-    if (activeTab === 'Active') return p.status !== 'Completed';
+    if (activeTab === 'Active') return p.status !== 'Completed' && p.status !== 'Aborted';
     if (activeTab === 'Completed') return p.status === 'Completed';
     return true;
   });
@@ -75,7 +121,11 @@ export default function Projects({ session }: { session?: any }) {
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">High-level Gantt chart outlining task execution over the current week.</p>
         </div>
         {role === 'manager' && (
-          <button onClick={() => setIsModalOpen(true)} className="flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 shrink-0">
+          <button onClick={() => {
+            setEditingProjectId(null);
+            setNewProject({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium' });
+            setIsModalOpen(true);
+          }} className="flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 shrink-0">
             <Plus className="h-4 w-4 mr-1.5" /> New Project
           </button>
         )}
@@ -149,13 +199,15 @@ export default function Projects({ session }: { session?: any }) {
                       <Badge variant={
                         project.status === 'Completed' ? 'default' : 
                         project.status === 'In Progress' ? 'secondary' : 
+                        project.status === 'Aborted' ? 'destructive' :
                         'outline'
                       } className={cn(
                         "font-bold tracking-wider uppercase text-[10px]",
                         project.status === 'Completed' && "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400",
                         project.status === 'In Progress' && "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-500/20 dark:text-blue-400",
                         project.status === 'On Hold' && "bg-amber-100 text-amber-700 hover:bg-amber-200 border-transparent dark:bg-amber-500/20 dark:text-amber-400",
-                        project.status === 'Not Started' && "bg-slate-100 text-slate-700 hover:bg-slate-200 border-transparent dark:bg-slate-800 dark:text-slate-400"
+                        project.status === 'Not Started' && "bg-slate-100 text-slate-700 hover:bg-slate-200 border-transparent dark:bg-slate-800 dark:text-slate-400",
+                        project.status === 'Aborted' && "bg-red-100 text-red-700 hover:bg-red-200 border-transparent dark:bg-red-900/40 dark:text-red-400"
                       )}>
                         {project.status}
                       </Badge>
@@ -175,9 +227,48 @@ export default function Projects({ session }: { session?: any }) {
                       </div>
                     </td>
                     <td className="p-4 text-right">
-                      <button className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
-                        <ChevronRight className="h-5 w-5" />
-                      </button>
+                      <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => setSelectedProject(project)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                        {role === 'manager' && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
+                                <MoreVertical className="h-5 w-5" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40 rounded-xl border-slate-200 dark:border-slate-800 shadow-xl p-1 bg-white dark:bg-slate-950 z-[100]">
+                              <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => {
+                                setEditingProjectId(project.id);
+                                setNewProject({
+                                  name: project.name,
+                                  manager: project.manager,
+                                  deadline: project.deadline && project.deadline !== 'TBD' ? project.deadline : '',
+                                  budget: project.budget && project.budget !== 'TBD' ? project.budget.replace('$', '') : '',
+                                  priority: 'Medium'
+                                });
+                                setIsModalOpen(true);
+                              }}>
+                                <Edit2 className="mr-2 h-4 w-4" /> Edit
+                              </DropdownMenuItem>
+                              {project.status === 'Aborted' ? (
+                                <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg text-emerald-600 focus:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" onClick={() => {
+                                  updateProject(project.id, { status: 'In Progress' });
+                                }}>
+                                  <RotateCcw className="mr-2 h-4 w-4" /> Restore
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg text-red-600 focus:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => {
+                                  updateProject(project.id, { status: 'Aborted' });
+                                }}>
+                                  <Trash2 className="mr-2 h-4 w-4" /> Abort
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )
@@ -195,10 +286,22 @@ export default function Projects({ session }: { session?: any }) {
             <LayoutTemplate className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             <h3 className="font-bold text-slate-900 dark:text-white">Execution Timeline</h3>
           </div>
-          <div className="flex items-center text-xs font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <CalendarDays className="h-4 w-4 mr-1.5" />
-            Current Week
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex items-center text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                <CalendarDays className="h-4 w-4 mr-1.5 text-slate-400" />
+                {format(startOfCurrentWeek, 'MMM d')} - {format(addDays(startOfCurrentWeek, 6), 'MMM d')}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-auto p-0 rounded-2xl shadow-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 z-[100]">
+              <Calendar
+                mode="single"
+                selected={selectedWeekDate}
+                onSelect={(date) => date && setSelectedWeekDate(date)}
+                className="p-3"
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Gantt Chart Container */}
@@ -211,9 +314,10 @@ export default function Projects({ session }: { session?: any }) {
               <div className="w-48 shrink-0"></div>
               {/* Day Columns */}
               <div className="flex-1 grid grid-cols-7 gap-2">
-                {DAYS.map(day => (
-                  <div key={day} className="text-center pb-4 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                    {day}
+                {weekDays.map(day => (
+                  <div key={day.toISOString()} className="text-center pb-4 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    <div className="mb-1">{format(day, 'EEE')}</div>
+                    <div className={cn("text-xs", isSameDay(day, new Date()) && "text-orange-500 dark:text-orange-400")}>{format(day, 'd')}</div>
                   </div>
                 ))}
               </div>
@@ -232,8 +336,8 @@ export default function Projects({ session }: { session?: any }) {
               </div>
 
               {/* Task Bars */}
-              {GANTT_TASKS.map((task) => (
-                <div key={task.id} className="flex items-center relative z-10 group">
+              {dynamicTasks.map((task) => (
+                <div key={task.id} className="flex items-center relative z-10 group animate-in fade-in slide-in-from-right-4 duration-500">
                   {/* Task Name Label */}
                   <div className="w-48 shrink-0 pr-4">
                     <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{task.name}</p>
@@ -266,8 +370,8 @@ export default function Projects({ session }: { session?: any }) {
           <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white">Create New Project</h3>
-                <p className="text-sm font-semibold text-slate-500 mt-1">Setup project details for the team.</p>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">{editingProjectId ? 'Edit Project' : 'Create New Project'}</h3>
+                <p className="text-sm font-semibold text-slate-500 mt-1">{editingProjectId ? 'Update project details and execution parameters.' : 'Setup project details for the team.'}</p>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors">
                 <X className="h-5 w-5" />
@@ -353,10 +457,10 @@ export default function Projects({ session }: { session?: any }) {
               </button>
               <button 
                 className="flex-1 h-12 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-md shadow-orange-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
-                onClick={handleCreateProject}
+                onClick={handleSaveProject}
                 disabled={!newProject.name.trim()}
               >
-                Launch Project
+                {editingProjectId ? 'Save Changes' : 'Launch Project'}
               </button>
             </div>
           </div>

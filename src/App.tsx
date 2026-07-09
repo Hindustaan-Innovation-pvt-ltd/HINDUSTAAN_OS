@@ -22,6 +22,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 import { ThemeProvider } from './context/ThemeContext';
+import { ProjectProvider } from './context/ProjectContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { GLOBAL_LOGS } from '@/data/mockData';
@@ -79,7 +80,8 @@ function App() {
 
   return (
     <ThemeProvider>
-      <TooltipProvider>
+      <ProjectProvider>
+        <TooltipProvider>
         {!session ? (
           <Login onMockLogin={(role, email) => setSession({ user: { email: email || 'user@hindustaan.in', user_metadata: { role } } })} />
         ) : (
@@ -188,6 +190,7 @@ function App() {
       }
 <Toaster position="top-right" richColors />
       </TooltipProvider >
+      </ProjectProvider>
     </ThemeProvider >
   );
 }

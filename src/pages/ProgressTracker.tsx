@@ -1,35 +1,40 @@
 import React, { useState, useMemo } from 'react';
 import { Target, TrendingUp, CheckCircle, Clock, AlertOctagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
 import { useTheme } from '@/context/ThemeContext';
-
-import { GLOBAL_PROJECTS as PROJECTS_DATA } from '@/data/mockData';
+import { useProjects } from '@/context/ProjectContext';
 
 export default function ProgressTracker({ session }: { session?: any }) {
   const { theme } = useTheme();
+  const { projects } = useProjects();
   const axisColor = theme === 'dark' ? '#94a3b8' : '#64748b'; 
 
-  const [activeProjectId, setActiveProjectId] = useState(PROJECTS_DATA[0].id);
+  const [activeProjectId, setActiveProjectId] = useState(projects[0]?.id);
   
   const activeProject = useMemo(() => {
-    return PROJECTS_DATA.find(p => p.id === activeProjectId) || PROJECTS_DATA[0];
-  }, [activeProjectId]);
+    return projects.find(p => p.id === activeProjectId) || projects[0];
+  }, [activeProjectId, projects]);
+
+  const isAborted = activeProject?.status === 'Aborted';
+  const chartColor = isAborted ? '#ef4444' : '#3b82f6';
 
 
   const metrics = useMemo(() => {
-    const totalTasks = activeProject.tasks.length;
-    const completedTasks = activeProject.tasks.filter(t => t.status === 'Done').length;
+    if (!activeProject) return { totalCompletion: '0%', tasksDone: '0 / 0', milestonesDone: '0 / 0', blockedIssues: '0', rawOverallProgress: 0 };
+    const totalTasks = activeProject.tasks?.length || 0;
+    const completedTasks = activeProject.tasks?.filter((t: any) => t.status === 'Done').length || 0;
     const taskCompletion = totalTasks === 0 ? 0 : (completedTasks / totalTasks) * 100;
 
-    const totalMilestones = activeProject.milestones.length;
-    const completedMilestones = activeProject.milestones.filter(m => m.status === 'completed').length;
+    const totalMilestones = activeProject.milestones?.length || 0;
+    const completedMilestones = activeProject.milestones?.filter((m: any) => m.status === 'completed').length || 0;
     const milestoneCompletion = totalMilestones === 0 ? 0 : (completedMilestones / totalMilestones) * 100;
 
     const overallProgress = Math.round((taskCompletion + milestoneCompletion) / 2);
-    const blockedTasks = activeProject.tasks.filter(t => t.status === 'Blocked').length;
+    const blockedTasks = activeProject.tasks?.filter((t: any) => t.status === 'Blocked').length || 0;
 
     return {
       totalCompletion: `${overallProgress}%`,
@@ -41,6 +46,7 @@ export default function ProgressTracker({ session }: { session?: any }) {
   }, [activeProject]);
 
   const productivityData = useMemo(() => {
+    if (!activeProject) return { data: [], max: 0, min: 0 };
     // Map strictly to accurate task completion dates from the project
     const rawData = Array.from({ length: 7 }).map((_, i) => {
       const daysAgo = 6 - i;
@@ -48,9 +54,9 @@ export default function ProgressTracker({ session }: { session?: any }) {
       date.setDate(date.getDate() - daysAgo);
       const dateString = date.toISOString().split('T')[0];
       
-      const tasksCompleted = activeProject.tasks.filter(
+      const tasksCompleted = activeProject.tasks?.filter(
         (t: any) => t.status === 'Done' && t.completedAt === dateString
-      ).length;
+      ).length || 0;
       
       return {
         day: date.toLocaleDateString('en-US', { weekday: 'short' }),
@@ -58,8 +64,8 @@ export default function ProgressTracker({ session }: { session?: any }) {
       };
     });
 
-    const max = Math.max(...rawData.map(d => d.tasks));
-    const min = Math.min(...rawData.map(d => d.tasks));
+    const max = rawData.length > 0 ? Math.max(...rawData.map(d => d.tasks)) : 0;
+    const min = rawData.length > 0 ? Math.min(...rawData.map(d => d.tasks)) : 0;
 
     return { data: rawData, max, min };
   }, [activeProject]);
@@ -69,7 +75,14 @@ export default function ProgressTracker({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Progress Tracker</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Progress Tracker</h2>
+            {isAborted && (
+              <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-200 border-transparent dark:bg-red-900/40 dark:text-red-400 font-bold uppercase tracking-wider text-[10px]">
+                Aborted
+              </Badge>
+            )}
+          </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Real-time metrics calculated from active project data.</p>
         </div>
         <div>
@@ -78,7 +91,7 @@ export default function ProgressTracker({ session }: { session?: any }) {
             onChange={(e) => setActiveProjectId(e.target.value)}
             className="w-full sm:w-64 h-12 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-all font-bold text-sm shadow-sm"
           >
-            {PROJECTS_DATA.map(p => (
+            {projects.map(p => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
@@ -109,7 +122,9 @@ export default function ProgressTracker({ session }: { session?: any }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
 
         {/* Left Column - Burndown Chart Mockup */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700/60 flex flex-col">
+        <div className={cn("lg:col-span-2 rounded-2xl p-6 shadow-sm border flex flex-col transition-colors duration-500", 
+          isAborted ? "bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-900/30" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60"
+        )}>
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">Daily Productivity Velocity</h3>
@@ -128,8 +143,8 @@ export default function ProgressTracker({ session }: { session?: any }) {
               >
                 <defs>
                   <linearGradient id="colorTasks" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor={chartColor} stopOpacity={isAborted ? 0.35 : 0.25}/>
+                    <stop offset="95%" stopColor={chartColor} stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800 opacity-50" />
@@ -156,7 +171,7 @@ export default function ProgressTracker({ session }: { session?: any }) {
                     color: theme === 'dark' ? '#f8fafc' : '#0f172a',
                     padding: '12px'
                   }}
-                  itemStyle={{ fontWeight: 'bold', color: '#3b82f6' }}
+                  itemStyle={{ fontWeight: 'bold', color: chartColor }}
                   labelStyle={{ color: theme === 'dark' ? '#94a3b8' : '#64748b', fontWeight: 'bold', marginBottom: '8px' }}
                   formatter={(value: number) => [`${value} Tasks`, 'Completed']}
                 />
@@ -176,11 +191,11 @@ export default function ProgressTracker({ session }: { session?: any }) {
                   type="monotone" 
                   name="Tasks Completed" 
                   dataKey="tasks" 
-                  stroke="#3b82f6" 
+                  stroke={chartColor} 
                   strokeWidth={4}
                   fillOpacity={1} 
                   fill="url(#colorTasks)"
-                  activeDot={{ r: 6, strokeWidth: 0, fill: '#3b82f6', style: { filter: 'drop-shadow(0px 4px 6px rgba(59, 130, 246, 0.5))' } }} 
+                  activeDot={{ r: 6, strokeWidth: 0, fill: chartColor, style: { filter: `drop-shadow(0px 4px 6px ${isAborted ? 'rgba(239,68,68,0.5)' : 'rgba(59, 130, 246, 0.5)'})` } }} 
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -188,25 +203,27 @@ export default function ProgressTracker({ session }: { session?: any }) {
         </div>
 
         {/* Right Column - Milestone Timeline */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700/60 flex flex-col">
+        <div className={cn("rounded-2xl p-6 shadow-sm border flex flex-col transition-colors duration-500",
+          isAborted ? "bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-900/30" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60"
+        )}>
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="h-5 w-5 text-emerald-500" />
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">Project Milestones</h3>
           </div>
 
           <div className="flex-1 space-y-6 overflow-y-auto pr-2 custom-scrollbar">
-            {activeProject.milestones.map((m, i) => {
+            {activeProject?.milestones?.map((m: any, i: number) => {
               let progress = 0;
               let color = 'bg-slate-500';
               if (m.status === 'completed') {
                 progress = 100;
-                color = 'bg-emerald-500';
+                color = isAborted ? 'bg-red-500/80' : 'bg-emerald-500';
               } else if (m.status === 'in-progress') {
                 progress = 50;
-                color = 'bg-orange-500';
+                color = isAborted ? 'bg-red-400/80' : 'bg-orange-500';
               } else {
                 progress = 5; // tiny sliver just to show it's pending
-                color = 'bg-slate-300 dark:bg-slate-700';
+                color = isAborted ? 'bg-red-200 dark:bg-red-900/50' : 'bg-slate-300 dark:bg-slate-700';
               }
 
               return (
