@@ -3,6 +3,7 @@ import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayC
 import { cn } from '@/lib/utils';
 import TaskDetailsModal from '../components/dashboard/TaskDetailsModal';
 import CreateTaskModal from '../components/dashboard/CreateTaskModal';
+import { INITIAL_TASKS } from '@/data/mockData';
 
 // --- Types & Mock Data ---
 
@@ -19,141 +20,6 @@ interface Task {
   due_date: string;
   status: Status;
 }
-
-const INITIAL_TASKS: Task[] = [
-  {
-    id: 't-1',
-    title: 'Design Authentication Split Screen',
-    description: 'Implement the responsive split-screen layout for the login page using the new visual design specifications and Tailwind v4.',
-    project_tag: 'Frontend Core',
-    assignee_name: 'Amanda Smith',
-    assignee_id: 'u-1',
-    priority: 'High',
-    due_date: 'Oct 12, 2026',
-    status: 'Done',
-  },
-  {
-    id: 't-2',
-    title: 'Configure Supabase RLS Policies',
-    description: 'Lock down the tasks table so users can only read and update rows belonging to their assigned organization.',
-    project_tag: 'Backend Infrastructure',
-    assignee_name: 'Rahul Sharma',
-    assignee_id: 'u-2',
-    priority: 'High',
-    due_date: 'Oct 14, 2026',
-    status: 'In Progress',
-  },
-  {
-    id: 't-3',
-    title: 'Implement Kanban Drag-and-Drop',
-    description: 'Build native HTML5 drag and drop APIs without using heavy external libraries for smooth task transitions.',
-    project_tag: 'Frontend Core',
-    assignee_name: 'Amanda Smith',
-    assignee_id: 'u-1',
-    priority: 'Normal',
-    due_date: 'Oct 15, 2026',
-    status: 'In Review',
-  },
-  {
-    id: 't-4',
-    title: 'WhatsApp Bot Integration API',
-    description: 'Map webhooks from Twilio/WhatsApp API to the internal logging server to allow offline task updates.',
-    project_tag: 'Integrations',
-    assignee_name: 'Rahul Sharma',
-    assignee_id: 'u-2',
-    priority: 'Low',
-    due_date: 'Oct 20, 2026',
-    status: 'To Do',
-  },
-  {
-    id: 't-5',
-    title: 'Cohort Velocity Dashboard',
-    description: 'Aggregate nightly metric calculations to visualize the sprint burndown chart for the engineering cohorts.',
-    project_tag: 'Reporting',
-    assignee_name: 'Priya Patel',
-    assignee_id: 'u-3',
-    priority: 'Normal',
-    due_date: 'Oct 18, 2026',
-    status: 'To Do',
-  },
-  {
-    id: 't-6',
-    title: 'Migrate to Tailwind v4',
-    description: 'Update all legacy CSS and Tailwind config to the latest v4 specifications. Test all responsive breakpoints.',
-    project_tag: 'Frontend Core',
-    assignee_name: 'Amanda Smith',
-    assignee_id: 'u-1',
-    priority: 'Normal',
-    due_date: 'Oct 22, 2026',
-    status: 'In Progress',
-  },
-  {
-    id: 't-7',
-    title: 'Setup Redis Caching for API',
-    description: 'Implement Redis caching layer for the main user fetch API to reduce database load by 40%.',
-    project_tag: 'Backend Infrastructure',
-    assignee_name: 'Rahul Sharma',
-    assignee_id: 'u-2',
-    priority: 'High',
-    due_date: 'Oct 19, 2026',
-    status: 'To Do',
-  },
-  {
-    id: 't-8',
-    title: 'Create User Onboarding Flow',
-    description: 'Design and implement the 3-step onboarding modal for new workspace users.',
-    project_tag: 'Product',
-    assignee_name: 'Tanvy',
-    assignee_id: 'u-4',
-    priority: 'Normal',
-    due_date: 'Oct 25, 2026',
-    status: 'To Do',
-  },
-  {
-    id: 't-9',
-    title: 'Fix Navigation Bug on Safari',
-    description: 'Mobile navigation drawer does not close properly on Safari iOS 16. Needs immediate patching.',
-    project_tag: 'Bug Fix',
-    assignee_name: 'Amanda Smith',
-    assignee_id: 'u-1',
-    priority: 'High',
-    due_date: 'Oct 12, 2026',
-    status: 'In Progress',
-  },
-  {
-    id: 't-10',
-    title: 'Write API Documentation',
-    description: 'Update the Swagger docs to include the new webhook endpoints for the WhatsApp bot.',
-    project_tag: 'Documentation',
-    assignee_name: 'Priya Patel',
-    assignee_id: 'u-3',
-    priority: 'Low',
-    due_date: 'Oct 28, 2026',
-    status: 'To Do',
-  },
-  {
-    id: 't-11',
-    title: 'Optimize Webpack Build Size',
-    description: 'Analyze bundle size and implement code splitting for the charting libraries. Target: < 200kb initial load.',
-    project_tag: 'Performance',
-    assignee_name: 'Rahul Sharma',
-    assignee_id: 'u-2',
-    priority: 'Normal',
-    due_date: 'Oct 16, 2026',
-    status: 'In Review',
-  },
-  {
-    id: 't-12',
-    title: 'Update Brand Assets',
-    description: 'Replace all old logos and favicons with the new re-branded SVGs across the application.',
-    project_tag: 'Design',
-    assignee_name: 'Tanvy',
-    assignee_id: 'u-4',
-    priority: 'Low',
-    due_date: 'Oct 15, 2026',
-    status: 'Done',
-  }
-];
 
 const COLUMNS: Status[] = ['To Do', 'In Progress', 'In Review', 'Done'];
 
@@ -220,7 +86,25 @@ const EmptyColumnPlaceholder = ({ status }: { status: Status }) => {
 // --- Main Page Component ---
 
 export default function TaskBoard({ session, isSidebarMinimized = false }: { session?: any; isSidebarMinimized?: boolean }) {
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    const saved = localStorage.getItem('hindustaan_tasks_list');
+    return saved ? JSON.parse(saved) : INITIAL_TASKS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hindustaan_tasks_list', JSON.stringify(tasks));
+  }, [tasks]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hindustaan_tasks_list' && e.newValue) {
+        setTasks(JSON.parse(e.newValue));
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   

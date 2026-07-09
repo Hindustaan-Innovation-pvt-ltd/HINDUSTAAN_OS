@@ -32,6 +32,7 @@ import { ProjectCalendarWidget } from './ProjectCalendarWidget';
 import { Separator } from '@/components/ui/separator';
 import { AssignTaskDialog } from './AssignTaskDialog';
 import { useProjects } from '@/context/ProjectContext';
+import { INITIAL_TASKS } from '@/data/mockData';
 
 // --- Mock Data ---
 const TEAM_MEMBERS = [
@@ -77,6 +78,23 @@ export default function ManagerDashboard() {
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [isActiveInternsModalOpen, setIsActiveInternsModalOpen] = useState(false);
   const [activityFeed, setActivityFeed] = useState<any[]>(ACTIVITY_FEED_MOCK);
+  const [tasks, setTasks] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_tasks_list');
+    return saved ? JSON.parse(saved) : INITIAL_TASKS;
+  });
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hindustaan_tasks_list' && e.newValue) {
+        setTasks(JSON.parse(e.newValue));
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const totalTasksCount = tasks.length;
+  const dueTodayTasksCount = tasks.filter(t => t.due_date.toLowerCase().includes('today') || t.due_date.toLowerCase().includes('12') || t.due_date.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase())).length;
 
   const [activeSessions, setActiveSessions] = useState<{ [key: string]: { time: number; isOnline: boolean } }>({});
 
@@ -249,7 +267,7 @@ export default function ManagerDashboard() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10">High Pri</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">8</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dueTodayTasksCount}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tasks Due Today</p>
             </div>
           </CardContent>

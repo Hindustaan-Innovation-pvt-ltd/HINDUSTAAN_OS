@@ -48,6 +48,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { INITIAL_TASKS } from '@/data/mockData';
 
 // Mock Data
 const PROJECTS = [
@@ -59,11 +60,10 @@ const PROJECTS = [
 ];
 
 const INTERNS = [
-  { id: '1', name: 'Amanda Smith', role: 'Frontend', initials: 'AS' },
-  { id: '2', name: 'Rahul Sharma', role: 'Backend', initials: 'RS' },
-  { id: '3', name: 'Priya Patel', role: 'Data Sci', initials: 'PP' },
-  { id: '4', name: 'Rohan Gupta', role: 'DevOps', initials: 'RG' },
-  { id: '5', name: 'Aiden Chen', role: 'Design', initials: 'AC' },
+  { id: 'u-1', name: 'Amanda Smith', role: 'Frontend Lead', initials: 'AS' },
+  { id: 'u-2', name: 'Rahul Sharma', role: 'Backend Developer', initials: 'RS' },
+  { id: 'u-3', name: 'Priya Patel', role: 'Technical Writer', initials: 'PP' },
+  { id: 'u-4', name: 'Tanvy Pandey', role: 'Intern Developer', initials: 'TP' },
 ];
 
 const MILESTONES = [
@@ -114,11 +114,38 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
     setLoading(true);
     
     // Simulate API call to Supabase
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
+    const assignee = INTERNS.find(i => i.id === values.assigneeId);
+    const project = PROJECTS.find(p => p.id === values.projectId);
+    
+    const newTask = {
+      id: `t-${Date.now()}`,
+      title: values.title,
+      description: values.description || '',
+      project_tag: project ? project.name : 'General',
+      assignee_name: assignee ? assignee.name : 'Unassigned',
+      assignee_id: values.assigneeId,
+      priority: (values.priority || 'Normal') as 'High' | 'Normal' | 'Low',
+      due_date: values.dueDate ? format(values.dueDate, 'MMM dd, yyyy') : 'No Date',
+      status: (values.status || 'To Do') as 'To Do' | 'In Progress' | 'In Review' | 'Done',
+    };
+
+    const saved = localStorage.getItem('hindustaan_tasks_list');
+    const existingTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
+    const updatedTasks = [newTask, ...existingTasks];
+    
+    localStorage.setItem('hindustaan_tasks_list', JSON.stringify(updatedTasks));
+    
+    // Dispatch local StorageEvent for real-time tab updates
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'hindustaan_tasks_list',
+      newValue: JSON.stringify(updatedTasks)
+    }));
+
     setLoading(false);
     toast.success('Task assigned successfully.', {
-      description: `Amanda assigned '${values.title}' to ${INTERNS.find(i => i.id === values.assigneeId)?.name}.`
+      description: `Amanda assigned '${values.title}' to ${assignee?.name || 'Unassigned'}.`
     });
     
     form.reset();
