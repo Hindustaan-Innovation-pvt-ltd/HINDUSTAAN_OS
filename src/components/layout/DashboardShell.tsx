@@ -115,7 +115,7 @@ export default function DashboardShell({
 
   // Sync the initial minimized state to the parent based on the initial sidebarWidth
   useEffect(() => {
-    onMinimizeChange(sidebarWidth <= 200);
+    onMinimizeChange(sidebarWidth <= 120);
   }, [onMinimizeChange]);
 
   useEffect(() => {
@@ -123,13 +123,15 @@ export default function DashboardShell({
 
     const handleMouseMove = (e: MouseEvent) => {
       let newWidth = e.clientX;
-      if (newWidth < 200) {
-        newWidth = 200;
+      if (newWidth < 140) {
+        newWidth = 80;
+      } else if (newWidth < 240) {
+        newWidth = 240;
       } else if (newWidth > 480) {
         newWidth = 480;
       }
       setSidebarWidth(newWidth);
-      onMinimizeChange(newWidth <= 200);
+      onMinimizeChange(newWidth <= 120);
     };
 
     const handleMouseUp = () => {
@@ -146,7 +148,7 @@ export default function DashboardShell({
   }, [isDragging, onMinimizeChange]);
 
   const activeNavigation = role === 'manager' ? managerNavigation : employeeNavigation;
-  const isSidebarCollapsed = sidebarWidth <= 200;
+  const isSidebarCollapsed = sidebarWidth <= 120;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-950 transition-colors duration-500">

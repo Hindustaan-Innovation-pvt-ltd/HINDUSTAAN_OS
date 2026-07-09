@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useProjects } from '@/context/ProjectContext';
+import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 
 export default function ProjectDetails({ project, onBack }: { project: any, onBack: () => void }) {
   const { updateProject } = useProjects();
@@ -15,8 +16,15 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
     updateProject(project.id, { tasks: updatedTasks });
     setEditingTask(null);
   };
-  const milestones: any[] = project.milestones || [];
   const tasks: any[] = project.tasks || [];
+  
+  // Generate milestones dynamically from tasks
+  const milestones = tasks.map((task: any, index: number) => ({
+    id: task.id || `m-${index}`,
+    title: task.title,
+    status: task.status === 'Done' ? 'completed' : task.status === 'In Progress' ? 'in-progress' : 'pending',
+    date: task.due_date || `Task ${index + 1}`
+  }));
 
   const completedTasks = tasks.filter((t: any) => t.status === 'Done').length;
   const totalTasks = tasks.length;
@@ -206,10 +214,9 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                     className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
                   >
                     <option value="Unassigned">Unassigned</option>
-                    <option value="Amanda Smith">Amanda S.</option>
-                    <option value="Rahul Sharma">Rahul S.</option>
-                    <option value="Priya Patel">Priya P.</option>
-                    <option value="Rohan Gupta">Rohan G.</option>
+                    {GLOBAL_TEAM_MEMBERS.map(member => (
+                      <option key={member.id} value={member.name}>{member.name}</option>
+                    ))}
                   </select>
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
                 </div>

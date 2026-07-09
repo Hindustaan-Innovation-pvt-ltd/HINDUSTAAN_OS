@@ -7,6 +7,7 @@ import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import ProjectDetails from '@/components/projects/ProjectDetails';
 import { Badge } from '@/components/ui/badge';
+import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 
 // --- Mock Data ---
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -79,34 +80,36 @@ export default function Projects({ session }: { session?: any }) {
   const startOfCurrentWeek = startOfWeek(selectedWeekDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(startOfCurrentWeek, i));
 
-  const dynamicTasks = React.useMemo(() => {
-    const seed = selectedWeekDate.getDate();
-    let taskList: any[] = [];
-    projects.forEach((p, pIndex) => {
-      p.tasks?.forEach((t: any, tIndex: number) => {
-        if (t.status === 'Done' && seed % 2 === 0) return;
-        const start = (t.id.charCodeAt(t.id.length-1) + pIndex + seed) % 6;
-        const duration = (t.id.charCodeAt(0) % 3) + 2;
-        const colors = ['bg-emerald-500 dark:bg-emerald-600', 'bg-blue-500 dark:bg-blue-600', 'bg-purple-500 dark:bg-purple-600', 'bg-amber-500 dark:bg-amber-600', 'bg-rose-500 dark:bg-rose-600'];
-        const color = colors[(pIndex + tIndex + seed) % colors.length];
-        
-        taskList.push({
-          id: t.id + seed + tIndex,
-          name: t.title,
-          start,
-          duration,
-          color,
-          assignee: t.assignee
-        });
-      });
-    });
-    return taskList.slice(0, 6);
-  }, [projects, selectedWeekDate]);
   const displayedProjects = baseProjects.filter(p => {
     if (activeTab === 'Active') return p.status !== 'Completed' && p.status !== 'Aborted';
     if (activeTab === 'Completed') return p.status === 'Completed';
     return true;
   });
+
+  const groupedProjects = React.useMemo(() => {
+    const seed = selectedWeekDate.getDate();
+    return displayedProjects.map((p, pIndex) => {
+      const pTasks: any[] = [];
+      p.tasks?.forEach((t: any, tIndex: number) => {
+        if (t.status === 'Done' && seed % 2 === 0) return;
+        const start = (t.id.charCodeAt(t.id.length-1) + pIndex + seed) % 6;
+        const duration = (t.id.charCodeAt(0) % 3) + 2;
+        
+        pTasks.push({
+          id: t.id + seed + tIndex,
+          name: t.title,
+          start,
+          duration,
+          color: p.iconColor || 'bg-slate-500', // Match project color exactly
+          assignee: t.assignee
+        });
+      });
+      return {
+        ...p,
+        timelineTasks: pTasks.slice(0, 4) // Show up to 4 tasks per project
+      };
+    }).filter(p => p.timelineTasks.length > 0).slice(0, 3); // Show up to 3 active projects in this mini-view
+  }, [displayedProjects, selectedWeekDate]);
 
   if (selectedProject) {
     const liveProject = projects.find((p: any) => p.id === selectedProject.id) || selectedProject;
@@ -332,7 +335,7 @@ export default function Projects({ session }: { session?: any }) {
             </div>
 
             {/* Gantt Rows */}
-            <div className="mt-6 space-y-6 relative">
+            <div className="mt-6 space-y-8 relative">
               
               {/* Vertical Grid Lines */}
               <div className="absolute inset-0 flex ml-48 pointer-events-none">
@@ -343,26 +346,36 @@ export default function Projects({ session }: { session?: any }) {
                 </div>
               </div>
 
-              {/* Task Bars */}
-              {dynamicTasks.map((task) => (
-                <div key={task.id} className="flex items-center relative z-10 group animate-in fade-in slide-in-from-right-4 duration-500">
-                  {/* Task Name Label */}
-                  <div className="w-48 shrink-0 pr-4">
-                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{task.name}</p>
-                    <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">{task.assignee}</p>
+              {/* Grouped by Project */}
+              {groupedProjects.map((project) => (
+                <div key={project.id} className="relative z-10 space-y-3">
+                  {/* Project Header Divider */}
+                  <div className="w-48 shrink-0 pr-4 mb-2 border-b border-slate-200 dark:border-slate-700/80 pb-1">
+                    <p className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">{project.name}</p>
                   </div>
                   
-                  {/* Task Timeline Bar */}
-                  <div className="flex-1 grid grid-cols-7 gap-2">
-                    <div 
-                      className={cn("h-8 rounded-lg shadow-sm flex items-center px-3 text-xs font-bold text-white whitespace-nowrap overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md", task.color)}
-                      style={{ 
-                        gridColumn: `${task.start + 1} / span ${task.duration}` 
-                      }}
-                    >
-                      {task.name}
+                  {/* Task Bars */}
+                  {project.timelineTasks.map((task: any) => (
+                    <div key={task.id} className="flex items-center relative group animate-in fade-in slide-in-from-right-4 duration-500">
+                      {/* Task Name Label */}
+                      <div className={cn("w-48 shrink-0 pr-4 border-l-4 pl-3 py-1", project.iconColor ? project.iconColor.replace('bg-', 'border-') : 'border-transparent')}>
+                        <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{task.name}</p>
+                        <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">{task.assignee}</p>
+                      </div>
+                      
+                      {/* Task Timeline Bar */}
+                      <div className="flex-1 grid grid-cols-7 gap-2">
+                        <div 
+                          className={cn("h-8 rounded-lg shadow-sm flex items-center px-3 text-xs font-bold text-white whitespace-nowrap overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md", task.color)}
+                          style={{ 
+                            gridColumn: `${task.start + 1} / span ${task.duration}` 
+                          }}
+                        >
+                          {task.name}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
               ))}
 
@@ -407,11 +420,10 @@ export default function Projects({ session }: { session?: any }) {
                       onChange={(e) => setNewProject({ ...newProject, manager: e.target.value })}
                       className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
                     >
-                      <option value="Amanda S.">Amanda S.</option>
-                      <option value="Rahul S.">Rahul S.</option>
-                      <option value="Priya P.">Priya P.</option>
-                      <option value="Rohan G.">Rohan G.</option>
                       <option value="Unassigned">Unassigned</option>
+                      {GLOBAL_TEAM_MEMBERS.map(member => (
+                        <option key={member.id} value={member.name}>{member.name}</option>
+                      ))}
                     </select>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
                   </div>
@@ -493,10 +505,9 @@ export default function Projects({ session }: { session?: any }) {
                         className="w-full h-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
                       >
                         <option value="Unassigned">Unassigned</option>
-                        <option value="Amanda Smith">Amanda S.</option>
-                        <option value="Rahul Sharma">Rahul S.</option>
-                        <option value="Priya Patel">Priya P.</option>
-                        <option value="Rohan Gupta">Rohan G.</option>
+                        {GLOBAL_TEAM_MEMBERS.map(member => (
+                          <option key={member.id} value={member.name}>{member.name}</option>
+                        ))}
                       </select>
                     </div>
                     <button 
