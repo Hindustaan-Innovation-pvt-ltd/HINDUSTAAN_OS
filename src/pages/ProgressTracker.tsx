@@ -26,15 +26,15 @@ export default function ProgressTracker({ session }: { session?: any }) {
   const metrics = useMemo(() => {
     if (!activeProject) return { totalCompletion: '0%', tasksDone: '0 / 0', milestonesDone: '0 / 0', blockedIssues: '0', rawOverallProgress: 0 };
     const totalTasks = activeProject.tasks?.length || 0;
-    const completedTasks = activeProject.tasks?.filter((t: any) => t.status === 'Done').length || 0;
+    const completedTasks = activeProject.tasks?.filter((t: any) => t?.status === 'Done').length || 0;
     const taskCompletion = totalTasks === 0 ? 0 : (completedTasks / totalTasks) * 100;
 
     const totalMilestones = activeProject.milestones?.length || 0;
-    const completedMilestones = activeProject.milestones?.filter((m: any) => m.status === 'completed').length || 0;
+    const completedMilestones = activeProject.milestones?.filter((m: any) => m?.status === 'completed').length || 0;
     const milestoneCompletion = totalMilestones === 0 ? 0 : (completedMilestones / totalMilestones) * 100;
 
     const overallProgress = Math.round((taskCompletion + milestoneCompletion) / 2);
-    const blockedTasks = activeProject.tasks?.filter((t: any) => t.status === 'Blocked').length || 0;
+    const blockedTasks = activeProject.tasks?.filter((t: any) => t?.status === 'Blocked').length || 0;
 
     return {
       totalCompletion: `${overallProgress}%`,
@@ -55,7 +55,7 @@ export default function ProgressTracker({ session }: { session?: any }) {
       const dateString = date.toISOString().split('T')[0];
       
       const tasksCompleted = activeProject.tasks?.filter(
-        (t: any) => t.status === 'Done' && t.completedAt === dateString
+        (t: any) => t?.status === 'Done' && t?.completedAt === dateString
       ).length || 0;
       
       return {

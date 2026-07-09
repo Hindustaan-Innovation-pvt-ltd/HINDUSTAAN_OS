@@ -173,16 +173,16 @@ export default function DashboardShell({
       >
         {/* Branding Badge */}
         <div className={cn(
-          "flex min-h-[76px] shrink-0 items-center border-b border-slate-100 dark:border-slate-800 justify-between",
+          "flex min-h-[90px] shrink-0 items-center border-b border-slate-100 dark:border-slate-800 justify-between",
           isSidebarCollapsed ? "px-4 justify-center py-3" : "px-6 py-4 lg:justify-start"
         )}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 group cursor-pointer" onClick={() => onNavigate('Dashboard')}>
             <img
-              src="/logo.png"
+              src={isDark ? "/icon-dark.png" : "/icon.png"}
               alt="Hindustaan OS"
               className={cn(
-                "h-auto object-contain drop-shadow-[0_6px_16px_rgba(255,153,0,0.2)] shrink-0",
-                isSidebarCollapsed ? "w-10" : "w-[44px] md:w-[48px] lg:w-[56px]"
+                "h-auto object-contain transition-all duration-200 group-hover:scale-105 group-hover:drop-shadow-[0_0_12px_rgba(255,153,0,0.5)] shrink-0 rounded-full",
+                isSidebarCollapsed ? "w-10 md:w-11 lg:w-12" : "w-[46px] md:w-[52px] lg:w-[60px]"
               )}
             />
             {!isSidebarCollapsed && (

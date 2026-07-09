@@ -241,18 +241,18 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
       <div className="relative z-10 w-full max-w-md px-4 sm:px-6">
         <div className="rounded-[2rem] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-8 sm:p-10 shadow-2xl backdrop-blur-xl transition-all duration-500">
           
-          <div className="flex flex-col items-center text-center mb-8">
+          <div className="flex flex-col items-center text-center mb-[24px]">
             <img
-              src="/logo.png"
+              src={isDark ? "/logo-full-dark.png" : "/logo-full.png"}
               alt="Hindustaan OS Logo"
-              className="mx-auto w-[100px] sm:w-[120px] md:w-[150px] h-auto object-contain drop-shadow-[0_8px_20px_rgba(255,153,0,0.25)] mb-6"
+              className="mx-auto w-[120px] md:w-[150px] xl:w-[190px] h-auto object-contain transition-all duration-300"
+              style={{ filter: "drop-shadow(0 12px 30px rgba(255,153,0,.18)) drop-shadow(0 12px 30px rgba(34,197,94,.12))" }}
             />
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white transition-colors duration-300">
-              <span className="text-orange-500">Hi</span>ndustaan <span className="text-green-500">OS</span>
-            </h2>
-            <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">
-              Internal Workspace Portal
-            </p>
+            <div className="mt-[24px] flex flex-col items-center">
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                Internal Workspace Portal
+              </p>
+            </div>
           </div>
 
           <form className="space-y-6" onSubmit={isOTPMode ? handleOTPRequest : handlePasswordLogin}>

@@ -28,8 +28,8 @@ const MOCK_CALENDAR_TASKS: CalendarTask[] = [
 ];
 
 export function EmployeeCalendar() {
-  // Hardcoded to July 7, 2026 to guarantee the visual state requested by user
-  const today = new Date(2026, 6, 7); 
+  // Use dynamic current date
+  const today = new Date(); 
   const [selectedMonth, setSelectedMonth] = useState<Date>(today);
   const startDate = new Date(2026, 6, 1);
   const endDate = new Date(2026, 9, 1);

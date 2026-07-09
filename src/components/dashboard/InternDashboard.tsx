@@ -25,6 +25,15 @@ interface InternDashboardProps {
   session?: any;
 }
 
+// Monkey-patch localStorage.setItem ONCE globally for this module
+// so that different components/hooks can listen to same-tab storage events.
+const originalSetItem = localStorage.setItem;
+localStorage.setItem = function(key, value) {
+  originalSetItem.apply(this, arguments as any);
+  // Dispatch a custom event for same-tab updates
+  window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key, value } }));
+};
+
 export default function InternDashboard({ session }: InternDashboardProps) {
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   const [isFigjamOpen, setIsFigjamOpen] = useState(false);
@@ -49,23 +58,45 @@ export default function InternDashboard({ session }: InternDashboardProps) {
 
   const { projects } = useProjects();
   
-  // Extract dynamic tasks from projects
-  const tasks = React.useMemo(() => {
-    const allTasks = projects.flatMap((p: any) => p.tasks?.map((t: any) => ({
-      id: t.id + p.id,
-      title: t.title,
-      project_tag: p.name,
-      assignee_name: t.assignee || 'Unassigned',
-      priority: t.priority || 'Normal',
-      due_date: p.deadline || 'TBD',
-      status: t.status
-    })) || []);
-    
+  // Extract dynamic tasks from central task list (TaskBoard source)
+  const [tasks, setTasks] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_tasks_list');
+    const allTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
     return allTasks.filter((t: any) => 
       t.assignee_name === currentUserName || 
       (currentUserName.toLowerCase().includes('tanvy') && t.assignee_name?.toLowerCase().includes('tanvy'))
     );
-  }, [projects, currentUserName]);
+  });
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hindustaan_tasks_list' && e.newValue) {
+        const allTasks = JSON.parse(e.newValue);
+        setTasks(allTasks.filter((t: any) => 
+          t.assignee_name === currentUserName || 
+          (currentUserName.toLowerCase().includes('tanvy') && t.assignee_name?.toLowerCase().includes('tanvy'))
+        ));
+      }
+    };
+    
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'hindustaan_tasks_list') {
+        const allTasks = typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : INITIAL_TASKS;
+        setTasks(allTasks.filter((t: any) => 
+          t.assignee_name === currentUserName || 
+          (currentUserName.toLowerCase().includes('tanvy') && t.assignee_name?.toLowerCase().includes('tanvy'))
+        ));
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    };
+  }, [currentUserName]);
 
   // Read activity feed
   const [activityFeed, setActivityFeed] = useState<any[]>(() => {
@@ -79,8 +110,17 @@ export default function InternDashboard({ session }: InternDashboardProps) {
         setActivityFeed(JSON.parse(e.newValue));
       }
     };
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'hindustaan_activity_feed') {
+        setActivityFeed(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_ACTIVITY_FEED);
+      }
+    };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    };
   }, []);
   
   const userActivities = React.useMemo(() => {
@@ -96,24 +136,25 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   });
 
   useEffect(() => {
-    const handleLogsChange = () => {
-      const saved = localStorage.getItem('work_logs_list');
-      const logs = saved ? JSON.parse(saved) : GLOBAL_LOGS;
+    const handleLogsChange = (logsStr: string | null) => {
+      const logs = logsStr ? JSON.parse(logsStr) : GLOBAL_LOGS;
       const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes('tanvy') && log.name.toLowerCase().includes('tanvy')));
       setLoggedHours(userLogs.reduce((acc: number, log: any) => acc + log.hours, 0));
     };
-    window.addEventListener('storage', handleLogsChange);
-    // Listen to local log writes in same window too
-    const originalSetItem = localStorage.setItem;
-    localStorage.setItem = function(key, value) {
-      originalSetItem.apply(this, arguments as any);
-      if (key === 'work_logs_list') {
-        handleLogsChange();
-      }
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'work_logs_list') handleLogsChange(e.newValue);
     };
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'work_logs_list') handleLogsChange(e.detail.value);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    
     return () => {
-      localStorage.setItem = originalSetItem;
-      window.removeEventListener('storage', handleLogsChange);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
     };
   }, [currentUserName]);
 

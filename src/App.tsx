@@ -18,6 +18,7 @@ import ContributionScores from './pages/ContributionScores';
 
 import { ThemeProvider } from './context/ThemeContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { ProjectProvider } from './context/ProjectContext';
 import { Toaster } from '@/components/ui/sonner';
 import { GLOBAL_LOGS } from '@/data/mockData';
 
@@ -42,9 +43,13 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 animate-pulse">
-          Loading Hindustaan OS Workspace...
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="flex flex-col items-center justify-center gap-6 animate-pulse">
+          <img src="/logo-full.png" alt="Hindustaan OS" className="w-[150px] dark:hidden object-contain" />
+          <img src="/logo-full-dark.png" alt="Hindustaan OS" className="w-[150px] hidden dark:block object-contain" />
+          <div className="text-sm font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
+            Initializing Workspace...
+          </div>
         </div>
       </div>
     );
@@ -53,8 +58,9 @@ function App() {
   return (
     <ThemeProvider>
       <TooltipProvider>
-        {!session ? (
-          <Login onMockLogin={() => {
+        <ProjectProvider>
+          {!session ? (
+            <Login onMockLogin={() => {
             const userStr = localStorage.getItem('hindustaan_user');
             if (userStr) {
               const user = JSON.parse(userStr);
@@ -161,11 +167,11 @@ function App() {
               </div>
             )}
           </DashboardShell>
-        )
-      }
-<Toaster position="top-right" richColors />
-      </TooltipProvider >
-    </ThemeProvider >
+        )}
+        <Toaster position="top-right" richColors />
+        </ProjectProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   );
 }
 

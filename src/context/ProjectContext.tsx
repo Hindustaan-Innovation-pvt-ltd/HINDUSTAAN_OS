@@ -13,7 +13,12 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [projects, setProjects] = useState(() => {
     const saved = localStorage.getItem('hindustaan_projects');
-    return saved ? JSON.parse(saved) : GLOBAL_PROJECTS;
+    try {
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : GLOBAL_PROJECTS;
+    } catch (e) {
+      return GLOBAL_PROJECTS;
+    }
   });
 
   useEffect(() => {
