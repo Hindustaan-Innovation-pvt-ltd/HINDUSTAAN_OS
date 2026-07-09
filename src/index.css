@@ -2,12 +2,29 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+/* Custom Slim Scrollbar replacing completely hidden scrollbars */
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;
+  width: 4px;
+}
+.scrollbar-hide::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-hide::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.dark .scrollbar-hide::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+.scrollbar-hide::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.dark .scrollbar-hide::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 .scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 @keyframes shake {

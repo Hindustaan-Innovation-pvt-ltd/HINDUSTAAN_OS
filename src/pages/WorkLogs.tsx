@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
-  Clock, Download, Plus, Search, Calendar as CalendarIcon,
-  CheckCircle2, Filter, MoreHorizontal, FileEdit, Trash2, X, CheckCircle, AlertCircle, XCircle, Play, Square, Timer
+  Clock, Search, Calendar as CalendarIcon,
+  CheckCircle2, Filter, MoreHorizontal, Trash2, X, CheckCircle, XCircle, Timer,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,70 @@ const ONLINE_TEAM_MEMBERS = [
 ];
 
 const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+
+// ─── Active Session Widget ────────────────────────────────────────────────────
+interface ActiveSessionWidgetProps {
+  secondsElapsed: number;
+  formatTime: (s: number) => string;
+  currentUser: { id: string; name: string; role: string };
+}
+
+function ActiveSessionWidget({ secondsElapsed, formatTime, currentUser }: ActiveSessionWidgetProps) {
+  // Find current in-progress task
+  const savedTasksStr = localStorage.getItem('hindustaan_tasks_list');
+  const allTasks = savedTasksStr ? JSON.parse(savedTasksStr) : INITIAL_TASKS;
+  const inProgressTask = allTasks.find((t: any) =>
+    (t.assignee_id === currentUser.id ||
+     t.assignee_name?.toLowerCase().includes(currentUser.name.split(' ')[0].toLowerCase())) &&
+    t.status === 'In Progress'
+  );
+
+  return (
+    <div className="mb-8 rounded-2xl overflow-hidden shadow-xl shadow-orange-500/10 border border-orange-200/40 dark:border-orange-500/20">
+      <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 p-6 text-white relative overflow-hidden">
+        <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -left-8 -bottom-8 w-36 h-36 bg-amber-300/20 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+          {/* Left – label + task */}
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-white/20 rounded-2xl border border-white/25 shrink-0">
+              <Clock className="h-7 w-7 text-white animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <h3 className="text-lg font-black tracking-tight leading-tight">Active Work Session</h3>
+                <span className="flex items-center gap-1 px-2 py-0.5 bg-white/20 border border-white/25 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                  <span className="h-1.5 w-1.5 bg-emerald-300 rounded-full animate-ping" />
+                  Live
+                </span>
+              </div>
+              {inProgressTask ? (
+                <p className="text-sm text-orange-100 font-semibold line-clamp-1">
+                  📌 {inProgressTask.title}
+                  <span className="ml-1.5 text-orange-200/70 font-normal">· {inProgressTask.project_tag}</span>
+                </p>
+              ) : (
+                <p className="text-xs text-orange-100/80 font-medium">Session will be auto-logged on sign out.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Right – timer */}
+          <div className="text-right shrink-0">
+            <div className="text-4xl font-black font-mono tracking-widest tabular-nums drop-shadow">
+              {formatTime(secondsElapsed)}
+            </div>
+            <p className="text-[10px] font-bold text-orange-100 uppercase tracking-widest mt-0.5">Session Time</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+
 
 export default function WorkLogs({ session }: { session?: any }) {
   const [logs, setLogs] = useState<any[]>(() => {
@@ -51,7 +115,7 @@ export default function WorkLogs({ session }: { session?: any }) {
   let currentUserId = 'manager-1';
   let currentUserName = 'Admin User';
   
-  if (role === 'intern') {
+  if (role === 'employee') {
     if (email.toLowerCase().includes('amanda')) {
       currentUserId = 'u-1';
       currentUserName = 'Amanda Smith';
@@ -69,7 +133,7 @@ export default function WorkLogs({ session }: { session?: any }) {
 
   const currentUser = {
     id: currentUserId,
-    role: role as 'manager' | 'intern',
+    role: role as 'manager' | 'employee',
     name: currentUserName
   };
 
@@ -78,7 +142,7 @@ export default function WorkLogs({ session }: { session?: any }) {
   const [secondsElapsed, setSecondsElapsed] = useState(0);
 
   useEffect(() => {
-    if (currentUser.role !== 'intern') return;
+    if (currentUser.role !== 'employee') return;
 
     let loginTime = localStorage.getItem(loginKey);
     if (!loginTime) {
@@ -109,10 +173,10 @@ export default function WorkLogs({ session }: { session?: any }) {
     const updateSessions = () => {
       const sessions: { [key: string]: { time: number; isOnline: boolean } } = {};
       teamMembers.forEach(member => {
-        const isCurrentUserIntern = member.id === currentUser.id && currentUser.role === 'intern';
+        const isCurrentUserEmployee = member.id === currentUser.id && currentUser.role === 'employee';
         const loginTimeStr = localStorage.getItem(`login_time_${member.id}`);
         
-        if (isCurrentUserIntern) {
+        if (isCurrentUserEmployee) {
           sessions[member.id] = { time: secondsElapsed, isOnline: true };
         } else if (loginTimeStr) {
           const startTime = parseInt(loginTimeStr, 10);
@@ -137,7 +201,7 @@ export default function WorkLogs({ session }: { session?: any }) {
   };
 
   const userBaseLogs = useMemo(() => {
-    return currentUser.role === 'intern'
+    return currentUser.role === 'employee'
       ? logs.filter((log: any) => log.name.toLowerCase().includes(currentUser.name.split(' ')[0].toLowerCase()))
       : logs;
   }, [logs, currentUser]);
@@ -201,41 +265,18 @@ export default function WorkLogs({ session }: { session?: any }) {
             </DropdownMenu>
           )}
 
-          <Button variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hidden md:flex">
-            <Download className="h-4 w-4 mr-2 text-slate-400" /> Export
-          </Button>
         </div>
       </div>
 
       {/* Employee Active Session Timer Widget */}
-      {currentUser.role === 'intern' && (
-        <div className="mb-8 bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 rounded-2xl p-6 text-white shadow-lg shadow-orange-500/15 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none" />
-          
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="p-3 bg-white/20 rounded-2xl border border-white/20">
-              <Clock className="h-7 w-7 text-white animate-pulse" />
-            </div>
-            <div>
-              <h3 className="text-lg font-black tracking-tight">Active Work Session</h3>
-              <p className="text-xs text-orange-100 mt-0.5 font-medium">Session started automatically upon login.</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="flex flex-col text-right">
-              <span className="text-3xl font-black font-mono tracking-widest">{formatTime(secondsElapsed)}</span>
-              <span className="text-[10px] font-bold text-orange-100 uppercase tracking-widest mt-1">Logged Time Today</span>
-            </div>
-            <div className="h-10 w-[1px] bg-white/20 hidden md:block" />
-            <div className="px-3.5 py-1.5 bg-white/20 border border-white/20 rounded-xl flex items-center gap-1.5 text-xs font-bold">
-              <span className="h-2.5 w-2.5 bg-emerald-400 rounded-full animate-ping" />
-              <span>Session Running</span>
-            </div>
-          </div>
-        </div>
+      {currentUser.role === 'employee' && (
+        <ActiveSessionWidget
+          secondsElapsed={secondsElapsed}
+          formatTime={formatTime}
+          currentUser={currentUser}
+        />
       )}
+
 
       {/* Live Employee Sessions (Manager Only) */}
       {currentUser.role === 'manager' && (
@@ -378,13 +419,15 @@ export default function WorkLogs({ session }: { session?: any }) {
                 {currentUser.role === 'manager' && (
                   <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Status</th>
                 )}
-                <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                {currentUser.role === 'manager' && (
+                  <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={currentUser.role === 'manager' ? 7 : 6} className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
+                  <td colSpan={currentUser.role === 'manager' ? 7 : 5} className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
                     No logs found matching your criteria.
                   </td>
                 </tr>
@@ -427,33 +470,33 @@ export default function WorkLogs({ session }: { session?: any }) {
                         </Badge>
                       </td>
                     )}
-                    <td className="p-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                          {currentUser.role === 'manager' && log.status !== 'Approved' && (
-                            <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Approved')} className="cursor-pointer text-emerald-600 font-medium">
-                              <CheckCircle className="h-4 w-4 mr-2" /> Approve Log
-                            </DropdownMenuItem>
-                          )}
-                          {currentUser.role === 'manager' && log.status !== 'Rejected' && (
-                            <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Rejected')} className="cursor-pointer text-rose-600 font-medium">
-                              <XCircle className="h-4 w-4 mr-2" /> Reject Log
-                            </DropdownMenuItem>
-                          )}
-                          {currentUser.role === 'manager' && (
+                    {currentUser.role === 'manager' && (
+                      <td className="p-4 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                            {log.status !== 'Approved' && (
+                              <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Approved')} className="cursor-pointer text-emerald-600 font-medium">
+                                <CheckCircle className="h-4 w-4 mr-2" /> Approve Log
+                              </DropdownMenuItem>
+                            )}
+                            {log.status !== 'Rejected' && (
+                              <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Rejected')} className="cursor-pointer text-rose-600 font-medium">
+                                <XCircle className="h-4 w-4 mr-2" /> Reject Log
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
-                          )}
-                          <DropdownMenuItem onClick={() => handleDelete(log.id)} className="cursor-pointer text-red-600 font-medium">
-                            <Trash2 className="h-4 w-4 mr-2" /> Delete Entry
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
+                            <DropdownMenuItem onClick={() => handleDelete(log.id)} className="cursor-pointer text-red-600 font-medium">
+                              <Trash2 className="h-4 w-4 mr-2" /> Delete Entry
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

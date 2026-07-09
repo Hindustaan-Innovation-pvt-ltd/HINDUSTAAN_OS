@@ -3,6 +3,7 @@ import { CalendarDays, Filter, ChevronLeft, ChevronRight, Plus, ChevronDown, Che
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -13,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, isToday, isSameMonth, addDays, subMonths, addMonths, differenceInDays, isWeekend, setMonth, setYear } from 'date-fns';
+import { useProjects } from '@/context/ProjectContext';
 
 type ProjectTask = {
   id: string;
@@ -35,53 +37,55 @@ type Project = {
   members?: string[];
 };
 
-// Helper to generate realistic enterprise mock data
-const getMockProjects = (currentDate: Date): Project[] => {
+// Map global project state to Gantt timeline format
+const mapGlobalProjectsToGantt = (globalProjects: any[], currentDate: Date): Project[] => {
   const monthStart = startOfMonth(currentDate);
+  const colors = ['bg-indigo-500', 'bg-emerald-500', 'bg-rose-500', 'bg-blue-500', 'bg-purple-500', 'bg-amber-500'];
   
-  return [
-    {
-      id: 'p1',
-      name: 'Q3 Enterprise Architecture',
-      manager: 'Aakash Gupta',
-      color: 'bg-indigo-500',
-      tasks: [
-        { id: 't1', type: 'task', name: 'Infrastructure Audit', start: addDays(monthStart, 1), end: addDays(monthStart, 4), assignee: 'Tanvy P.', initials: 'TP', progress: 100, status: 'completed' },
-        { id: 't2', type: 'task', name: 'Cloud Migration Strategy', start: addDays(monthStart, 5), end: addDays(monthStart, 12), assignee: 'Rahul S.', initials: 'RS', progress: 65, status: 'on-track' },
-        { id: 't3', type: 'milestone', name: 'Strategy Approved', start: addDays(monthStart, 12), end: addDays(monthStart, 12), assignee: 'Aakash G.', initials: 'AG', progress: 0, status: 'pending' },
-        { id: 't4', type: 'task', name: 'Vendor Selection', start: addDays(monthStart, 13), end: addDays(monthStart, 18), assignee: 'Amanda S.', initials: 'AS', progress: 20, status: 'at-risk' },
-      ]
-    },
-    {
-      id: 'p2',
-      name: 'Security Compliance (SOC2)',
-      manager: 'Priya Patel',
-      color: 'bg-emerald-500',
-      tasks: [
-        { id: 't5', type: 'task', name: 'Policy Documentation', start: addDays(monthStart, 2), end: addDays(monthStart, 9), assignee: 'Priya P.', initials: 'PP', progress: 80, status: 'on-track' },
-        { id: 't6', type: 'task', name: 'Penetration Testing', start: addDays(monthStart, 10), end: addDays(monthStart, 14), assignee: 'Rahul S.', initials: 'RS', progress: 0, status: 'pending' },
-        { id: 't7', type: 'milestone', name: 'Audit Kickoff', start: addDays(monthStart, 15), end: addDays(monthStart, 15), assignee: 'Priya P.', initials: 'PP', progress: 0, status: 'pending' },
-      ]
-    },
-    {
-      id: 'p3',
-      name: 'Mobile App V2.0',
-      manager: 'Amanda Smith',
-      color: 'bg-rose-500',
-      tasks: [
-        { id: 't8', type: 'task', name: 'UI/UX Wireframing', start: addDays(monthStart, 1), end: addDays(monthStart, 8), assignee: 'Amanda S.', initials: 'AS', progress: 100, status: 'completed' },
-        { id: 't9', type: 'task', name: 'Component Library', start: addDays(monthStart, 9), end: addDays(monthStart, 16), assignee: 'Tanvy P.', initials: 'TP', progress: 45, status: 'on-track' },
-        { id: 't10', type: 'task', name: 'API Integration', start: addDays(monthStart, 15), end: addDays(monthStart, 22), assignee: 'Rahul S.', initials: 'RS', progress: 5, status: 'at-risk' },
-        { id: 't11', type: 'milestone', name: 'Beta Release', start: addDays(monthStart, 25), end: addDays(monthStart, 25), assignee: 'Aakash G.', initials: 'AG', progress: 0, status: 'pending' },
-      ]
-    }
-  ];
+  return globalProjects.map((p, pIndex) => {
+    return {
+      id: p.id,
+      name: p.name,
+      manager: p.manager || 'Unassigned',
+      color: p.color || colors[pIndex % colors.length],
+      members: p.members || [],
+      tasks: (p.tasks || []).map((t: any, tIndex: number) => {
+        // Fallback dates if missing
+        const endDate = t.due_date ? new Date(t.due_date) : addDays(monthStart, 5 + tIndex);
+        const startDate = t.start_date ? new Date(t.start_date) : subMonths(endDate, 0) > monthStart ? addDays(endDate, -5) : monthStart;
+        
+        let progress = 0;
+        let status = 'pending';
+        if (t.status === 'Done') { progress = 100; status = 'completed'; }
+        else if (t.status === 'In Progress') { progress = 50; status = 'on-track'; }
+        else if (t.status === 'Blocked') { progress = 20; status = 'at-risk'; }
+
+        const assignee = t.assignee || t.assignee_name || 'Unassigned';
+        const initials = assignee !== 'Unassigned' ? assignee.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : '??';
+
+        return {
+          id: t.id || `t-${p.id}-${tIndex}`,
+          type: 'task',
+          name: t.title || t.name || 'Unnamed Task',
+          start: startDate,
+          end: endDate,
+          assignee,
+          initials,
+          progress,
+          status
+        };
+      })
+    };
+  });
 };
 
 export default function GanttTimeline({ session }: { session?: any }) {
+  const { projects: globalProjects, addProject } = useProjects();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [collapsedProjects, setCollapsedProjects] = useState<Record<string, boolean>>({});
-  const [projects, setProjects] = useState<Project[]>(getMockProjects(new Date()));
+  
+  const projects = useMemo(() => mapGlobalProjectsToGantt(globalProjects, currentDate), [globalProjects, currentDate]);
+  
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // New Project State
@@ -135,16 +139,15 @@ export default function GanttTimeline({ session }: { session?: any }) {
   const handleAddProject = () => {
     if (!newProjectName || !newProjectManager) return;
     
-    const newProject: Project = {
+    addProject({
       id: `p-${Date.now()}`,
       name: newProjectName,
       manager: newProjectManager,
       color: newProjectColor,
-      tasks: [], // Empty tasks for new project
-      members: newProjectMembers
-    };
-    
-    setProjects([newProject, ...projects]);
+      tasks: [],
+      members: newProjectMembers,
+      status: 'In Progress'
+    });
     setNewProjectOpen(false);
     setNewProjectName('');
     setNewProjectManager('');
@@ -332,53 +335,86 @@ export default function GanttTimeline({ session }: { session?: any }) {
                   <Label htmlFor="manager" className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Team Leader</Label>
                   <Select value={newProjectManager} onValueChange={setNewProjectManager}>
                     <SelectTrigger className="h-11 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60 focus:ring-orange-500 font-bold text-slate-900 dark:text-white shadow-sm">
-                      <SelectValue placeholder="Select a team member" />
+                      <SelectValue placeholder="Select a team leader" />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800 shadow-xl">
-                      <SelectItem value="Aakash Gupta">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-6 w-6"><AvatarFallback className="text-[9px] font-black bg-orange-100 text-orange-700">AG</AvatarFallback></Avatar>
-                          <span className="font-bold">Aakash Gupta</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Priya Patel">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-6 w-6"><AvatarFallback className="text-[9px] font-black bg-emerald-100 text-emerald-700">PP</AvatarFallback></Avatar>
-                          <span className="font-bold">Priya Patel</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Amanda Smith">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-6 w-6"><AvatarFallback className="text-[9px] font-black bg-rose-100 text-rose-700">AS</AvatarFallback></Avatar>
-                          <span className="font-bold">Amanda Smith</span>
-                        </div>
-                      </SelectItem>
+                    <SelectContent position="popper" className="rounded-xl border-slate-200 dark:border-slate-800 shadow-xl max-h-[220px] overflow-y-auto scrollbar-hide">
+                      {GLOBAL_TEAM_MEMBERS.map(m => m.name).map((emp, i) => {
+                        const colors = ['bg-orange-100 text-orange-700', 'bg-emerald-100 text-emerald-700', 'bg-rose-100 text-rose-700', 'bg-blue-100 text-blue-700', 'bg-purple-100 text-purple-700'];
+                        const colorClass = colors[i % colors.length];
+                        return (
+                          <SelectItem key={emp} value={emp}>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-6 w-6"><AvatarFallback className={`text-[9px] font-black ${colorClass}`}>{emp.split(' ').map(n=>n[0]).join('')}</AvatarFallback></Avatar>
+                              <span className="font-bold">{emp}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="grid gap-2 mt-1">
                   <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Additional Team Members (Optional)</Label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {['Tanvy P.', 'Rahul S.', 'Anurag D.', 'Karan M.', 'Sneha R.'].map((member) => (
-                      <button
-                        key={member}
-                        onClick={() => {
-                          setNewProjectMembers(prev => 
-                            prev.includes(member) ? prev.filter(m => m !== member) : [...prev, member]
-                          )
-                        }}
-                        className={cn(
-                          "px-3 py-1.5 rounded-full text-xs font-bold transition-all border",
-                          newProjectMembers.includes(member) 
-                            ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm" 
-                            : "bg-white text-slate-500 border-slate-200 hover:border-slate-400 dark:bg-slate-900 dark:border-slate-700/60 dark:text-slate-400 dark:hover:border-slate-500"
-                        )}
-                      >
-                        {member}
-                      </button>
-                    ))}
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between h-auto min-h-[44px] rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60 font-bold text-slate-900 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 text-left">
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                          {newProjectMembers.length > 0 ? (
+                            newProjectMembers.map(member => (
+                              <Badge key={member} variant="secondary" className="rounded-md bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold border border-slate-200/50 dark:border-slate-700/50 px-2.5 py-1 flex items-center gap-1.5">
+                                {member}
+                                <div 
+                                  className="cursor-pointer rounded-full p-0.5 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors opacity-70 hover:opacity-100"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setNewProjectMembers(prev => prev.filter(m => m !== member));
+                                  }}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                </div>
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-slate-500 dark:text-slate-400 font-medium py-1">Select team members...</span>
+                          )}
+                        </div>
+                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1.5 rounded-xl border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-slate-950" align="start">
+                      <div className="flex flex-col max-h-[220px] overflow-y-auto scrollbar-hide">
+                        {GLOBAL_TEAM_MEMBERS.map(m => m.name).filter(m => m !== newProjectManager).map((member) => (
+                          <div
+                            key={member}
+                            onClick={() => {
+                              setNewProjectMembers(prev => 
+                                prev.includes(member) ? prev.filter(m => m !== member) : [...prev, member]
+                              )
+                            }}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors",
+                              newProjectMembers.includes(member) && "bg-slate-50 dark:bg-slate-900/40"
+                            )}
+                          >
+                            <div className={cn(
+                              "flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border shadow-sm transition-colors",
+                              newProjectMembers.includes(member)
+                                ? "bg-orange-500 border-orange-500 text-white"
+                                : "bg-white border-slate-300 dark:bg-slate-900 dark:border-slate-700"
+                            )}>
+                              {newProjectMembers.includes(member) && <CheckCircle2 className="h-3 w-3" />}
+                            </div>
+                            <span className={cn(
+                              "text-sm font-semibold",
+                              newProjectMembers.includes(member) ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-300"
+                            )}>{member}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 
                 <div className="grid gap-2">
@@ -543,12 +579,15 @@ export default function GanttTimeline({ session }: { session?: any }) {
 
                         return (
                           <div key={task.id} className="flex items-stretch border-b border-slate-100 dark:border-slate-800/60 last:border-0 hover:bg-slate-100/50 dark:hover:bg-slate-800/40 transition-colors">
-                            <div className="w-72 shrink-0 p-3 pl-12 border-r border-slate-200 dark:border-slate-800 sticky left-0 z-20 backdrop-blur-sm shadow-[1px_0_0_0_rgba(0,0,0,0.02)] flex items-center justify-between group/task bg-white/95 dark:bg-slate-900/95">
-                              <div className="flex items-center gap-3 overflow-hidden">
-                                {getStatusIcon(task.status)}
-                                <span className={cn("text-xs font-bold truncate", isMilestone ? "text-amber-600 dark:text-amber-500" : "text-slate-700 dark:text-slate-300")}>{task.name}</span>
+                            <div className={cn("w-72 shrink-0 p-3 pl-8 border-r border-slate-200 dark:border-slate-800 sticky left-0 z-20 backdrop-blur-sm shadow-[1px_0_0_0_rgba(0,0,0,0.02)] flex items-center justify-between group/task bg-white/95 dark:bg-slate-900/95 border-l-4", project.color ? project.color.replace('bg-', 'border-') : 'border-transparent')}>
+                              <div className="flex flex-col overflow-hidden w-full pr-2">
+                                <div className="flex items-center gap-2">
+                                  {getStatusIcon(task.status)}
+                                  <span className={cn("text-xs font-bold truncate", isMilestone ? "text-amber-600 dark:text-amber-500" : "text-slate-700 dark:text-slate-300")}>{task.name}</span>
+                                </div>
+                                <span className="text-[9px] font-bold text-slate-400 pl-5 uppercase tracking-wider truncate mt-0.5">{project.name}</span>
                               </div>
-                              <div className="flex items-center gap-2 opacity-0 group-hover/task:opacity-100 transition-opacity">
+                              <div className="flex items-center gap-2 opacity-0 group-hover/task:opacity-100 transition-opacity shrink-0">
                                 <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-blue-500">
                                   <Link2 className="h-3 w-3" />
                                 </Button>

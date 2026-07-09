@@ -59,13 +59,7 @@ const PROJECTS = [
   { id: 'p5', name: 'Email Notifications System' },
 ];
 
-const INTERNS = [
-  { id: 'u-1', name: 'Amanda Smith', role: 'Frontend Lead', initials: 'AS' },
-  { id: 'u-2', name: 'Rahul Sharma', role: 'Backend Developer', initials: 'RS' },
-  { id: 'u-3', name: 'Priya Patel', role: 'Technical Writer', initials: 'PP' },
-  { id: 'u-4', name: 'Tanvy Pandey', role: 'Intern Developer', initials: 'TP' },
-];
-
+import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 const MILESTONES = [
   { id: 'm1', name: 'Alpha Release' },
   { id: 'm2', name: 'Beta Testing' },
@@ -116,7 +110,7 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
     // Simulate API call to Supabase
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const assignee = INTERNS.find(i => i.id === values.assigneeId);
+    const assignee = GLOBAL_TEAM_MEMBERS.find(i => i.id === values.assigneeId);
     const project = PROJECTS.find(p => p.id === values.projectId);
     
     const newTask = {
@@ -250,10 +244,10 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
                                   <div className="flex items-center gap-2">
                                     <Avatar className="h-5 w-5">
                                       <AvatarFallback className="text-[9px] bg-orange-100 text-orange-700">
-                                        {INTERNS.find(i => i.id === field.value)?.initials}
+                                        {GLOBAL_TEAM_MEMBERS.find(i => i.id === field.value)?.initials}
                                       </AvatarFallback>
                                     </Avatar>
-                                    <span>{INTERNS.find(i => i.id === field.value)?.name}</span>
+                                    <span>{GLOBAL_TEAM_MEMBERS.find(i => i.id === field.value)?.name}</span>
                                   </div>
                                 )
                                 : "Select intern..."}
@@ -267,7 +261,7 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
                             <CommandList>
                               <CommandEmpty>No intern found.</CommandEmpty>
                               <CommandGroup>
-                                {INTERNS.map((intern) => (
+                                {GLOBAL_TEAM_MEMBERS.map((intern) => (
                                   <CommandItem
                                     value={intern.name}
                                     key={intern.id}

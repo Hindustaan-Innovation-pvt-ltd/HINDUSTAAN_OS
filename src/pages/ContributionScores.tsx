@@ -21,11 +21,12 @@ import {
   AlertTriangle, CheckCircle2, ChevronRight, BarChart2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/context/ThemeContext';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import jsPDF from 'jspdf';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
 import { AssignTaskDialog } from '../components/dashboard/AssignTaskDialog';
@@ -104,7 +105,12 @@ const COLORS = {
 };
 
 export default function ContributionScores({ session }: { session?: any }) {
-  const role = session?.user?.user_metadata?.role || 'intern';
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
+  const tickColor = isDarkMode ? '#94a3b8' : '#64748b'; // slate-400 for dark mode, slate-500 for light mode
+  const gridColor = isDarkMode ? '#334155' : '#e2e8f0'; // slate-700 for dark mode, slate-200 for light mode
+
+  const role = session?.user?.user_metadata?.role || 'employee';
   const email = session?.user?.email || 'user@hindustaan.in';
 
   const user = getCurrentUser();
@@ -115,7 +121,7 @@ export default function ContributionScores({ session }: { session?: any }) {
   else if (email.toLowerCase().includes('priya')) currentUserName = 'Priya Patel';
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [date, setDate] = useState<Date>(new Date());
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
   const [analyticsIntern, setAnalyticsIntern] = useState<any>(null);
@@ -175,111 +181,297 @@ export default function ContributionScores({ session }: { session?: any }) {
     doc.save(`Team_Contribution_Scores_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
-  if (role === 'intern') {
+  if (role === 'employee') {
     const myData = MOCK_INTERNS.find(i => i.name === currentUserName) || MOCK_INTERNS[0];
+
+    // Pull real counts from localStorage
+    const savedTasks = localStorage.getItem('hindustaan_tasks_list');
+    const allTasks = savedTasks ? JSON.parse(savedTasks) : [];
+    const firstName = currentUserName.split(' ')[0].toLowerCase();
+    const tasksCompleted = allTasks.filter((t: any) =>
+      t.status === 'Done' &&
+      t.assignee_name?.toLowerCase().includes(firstName)
+    ).length || myData.tasksCompleted;
+
+    const savedLogs = localStorage.getItem('work_logs_list');
+    const allLogs = savedLogs ? JSON.parse(savedLogs) : [];
+    const myLogEntries = allLogs.filter((l: any) =>
+      l.name?.toLowerCase().includes(firstName)
+    );
+    const myLogsCount = myLogEntries.length || myData.hoursLogged;
+
+    const savedStandups = localStorage.getItem('hindustaan_standups');
+    const allStandups = savedStandups ? JSON.parse(savedStandups) : [];
+    const myStandups = allStandups.filter((s: any) =>
+      s.author?.toLowerCase().includes(firstName)
+    ).length || Math.round((myData.standupScore / 25) * 12);
+
+    const savedProjects = localStorage.getItem('hindustaan_projects');
+    const allProjects = savedProjects ? JSON.parse(savedProjects) : [];
+    const milestonesAchieved = allProjects.reduce((acc: number, p: any) =>
+      acc + (p.milestones?.filter((m: any) => m.status === 'completed').length || 0), 0
+    ) || Math.round((myData.taskScore / 40) * 5);
+
+    const trendNum = parseFloat(myData.trend);
+
+    // Employee weekly trend (derived from score)
+    const myWeeklyTrend = [
+      { name: 'Week 1', score: Math.max(50, myData.score - 8) },
+      { name: 'Week 2', score: Math.max(50, myData.score - 5) },
+      { name: 'Week 3', score: Math.max(50, myData.score - 2) },
+      { name: 'Week 4', score: myData.score },
+    ];
+
+    // Recent log entries (last 5)
+    const recentLogs = myLogEntries.slice(0, 5);
+
     return (
-      <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
-        <div>
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
-            <Trophy className="mr-3 h-8 w-8 text-orange-500" />
-            My Performance
-          </h2>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
-            Your detailed contribution score and performance breakdown.
-          </p>
+      <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
+
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
+              <Trophy className="mr-3 h-8 w-8 text-orange-500" />
+              My Performance
+            </h2>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
+              Your personal contribution score and activity breakdown, {currentUserName.split(' ')[0]}.
+            </p>
+          </div>
         </div>
 
-        <Card className="rounded-3xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white dark:bg-slate-950">
-          <div className="p-6 md:p-10 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-              <div className="flex gap-5 items-center">
-                <Avatar className="h-20 w-20 border-4 border-white dark:border-slate-900 shadow-md">
-                  <AvatarFallback className="bg-orange-100 text-orange-600 font-bold text-2xl">
-                    {myData.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
+        {/* KPI Cards — same grid layout as manager view */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 md:gap-5">
+
+          {/* Wide card — Overall Performance */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm col-span-1 sm:col-span-2 lg:col-span-2 relative overflow-hidden group">
+            <div className="absolute right-0 top-0 h-full w-1/2 opacity-10 pointer-events-none">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={myWeeklyTrend}>
+                  <Area type="monotone" dataKey="score" stroke={COLORS.orange} fill={COLORS.orange} strokeWidth={4} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <CardContent className="p-6 relative z-10">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/40 text-orange-600">
+                  <BarChart2 className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Overall Performance</span>
+              </div>
+              <div className="flex items-end gap-3 mt-4">
+                <span className="text-5xl font-black text-slate-900 dark:text-white">{myData.score}%</span>
+                <span className={cn("flex items-center text-sm font-bold mb-1", trendNum >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                  {trendNum >= 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
+                  {trendNum >= 0 ? '+' : ''}{myData.trend}%
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 4 small KPI cards */}
+          {[
+            { title: 'Tasks Completed', val: String(tasksCompleted), icon: Target, color: COLORS.excellent },
+            { title: 'Work Logs',       val: String(myLogsCount),    icon: Clock,  color: COLORS.good },
+            { title: 'Standups',        val: String(myStandups),     icon: Mic,    color: COLORS.orange },
+            { title: 'Milestones',      val: String(milestonesAchieved), icon: Trophy, color: COLORS.average },
+          ].map((kpi, i) => (
+            <Card key={i} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+              <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <h3 className="text-3xl font-black text-slate-900 dark:text-white">{myData.name}</h3>
-                  <p className="text-base font-bold text-slate-500">{myData.department} Intern</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{kpi.title}</p>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">{kpi.val}</p>
                 </div>
-              </div>
-            </div>
+                <div className="h-12 w-12 shrink-0 relative flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
+                    <RadialBarChart
+                      innerRadius="70%" outerRadius="100%"
+                      data={[{ value: Math.min(100, parseInt(kpi.val) * 10 || 70), fill: kpi.color }]}
+                      startAngle={90} endAngle={-270}
+                    >
+                      <RadialBar background={{ fill: 'var(--color-slate-100)' }} dataKey="value" cornerRadius={10} />
+                    </RadialBarChart>
+                  </ResponsiveContainer>
+                  <kpi.icon className="h-4 w-4 relative z-10" style={{ color: kpi.color }} />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Main Content Grid — same 12-col layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          {/* Left — Weekly Score Trend + Recent Work Logs */}
+          <div className="lg:col-span-8 flex flex-col gap-6 min-w-0">
+
+            {/* Weekly trend chart */}
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60">
+                <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Weekly Score Trend</CardTitle>
+                <CardDescription className="font-medium mt-1">Your contribution score trajectory over the past 4 weeks.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-5">
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={myWeeklyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="empScoreGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={COLORS.orange} stopOpacity={0.2} />
+                          <stop offset="95%" stopColor={COLORS.orange} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: tickColor }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: tickColor }} domain={[50, 100]} />
+                      <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                      <Area type="monotone" dataKey="score" stroke={COLORS.orange} strokeWidth={3} fill="url(#empScoreGrad)" dot={{ fill: COLORS.orange, r: 5 }} activeDot={{ r: 7 }} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Work Logs */}
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col flex-1">
+              <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60">
+                <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Recent Work Logs</CardTitle>
+                <CardDescription className="font-medium mt-1">Your latest submitted work log entries.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0 overflow-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-10">
+                    <tr>
+                      <th className="px-5 py-3">Date</th>
+                      <th className="px-5 py-3">Task</th>
+                      <th className="px-5 py-3">Project</th>
+                      <th className="px-5 py-3 text-right">Hours</th>
+                      <th className="px-5 py-3 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {recentLogs.length > 0 ? recentLogs.map((log: any) => (
+                      <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                        <td className="px-5 py-3 font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">{log.date}</td>
+                        <td className="px-5 py-3 font-medium text-slate-800 dark:text-slate-200">{log.task}</td>
+                        <td className="px-5 py-3">
+                          <span className="text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-full">{log.project}</span>
+                        </td>
+                        <td className="px-5 py-3 text-right font-black text-orange-600">{log.hours?.toFixed(1)}h</td>
+                        <td className="px-5 py-3 text-right">
+                          <Badge variant="outline" className={cn(
+                            "border-0 font-bold text-xs",
+                            log.status === 'Approved' ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400" :
+                            log.status === 'Pending'  ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400" :
+                                                        "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400"
+                          )}>{log.status}</Badge>
+                        </td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={5} className="px-5 py-10 text-center text-slate-400 font-medium">No work logs found.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="p-6 md:p-10 space-y-10">
-            {/* Final Score Radial */}
-            <div className="flex flex-col items-center justify-center p-8 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-slate-800">
-              <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Final Contribution Score</p>
-              <div className="h-64 w-64 relative">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadialBarChart innerRadius="80%" outerRadius="100%" data={[{ value: myData.score, fill: COLORS.orange }]} startAngle={90} endAngle={-270}>
-                    <RadialBar background={{ fill: 'var(--color-slate-200)' }} dataKey="value" cornerRadius={20} />
-                  </RadialBarChart>
-                </ResponsiveContainer>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-7xl font-black text-slate-900 dark:text-white">{myData.score}</span>
-                  <span className="text-base font-bold text-slate-500 mt-1">/ 100</span>
-                </div>
-              </div>
-            </div>
+          {/* Right — Score Breakdown + Formula hint */}
+          <div className="lg:col-span-4 space-y-6">
 
-            <div className="space-y-6">
-              <h4 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">Formula Breakdown</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="flex flex-col items-center justify-center p-6 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-blue-500/50 transition-colors text-center">
-                  <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 mb-4">
-                    <Target className="h-8 w-8" />
-                  </div>
-                  <p className="text-base font-bold text-slate-900 dark:text-white">Task Performance</p>
-                  <p className="text-xs font-semibold text-slate-500 mb-4">40% Weightage</p>
-                  <div className="mt-auto">
-                    <span className="text-3xl font-black text-slate-900 dark:text-white">{myData.taskScore}</span>
-                    <span className="text-sm font-bold text-slate-500"> / 40</span>
+            {/* Radial score */}
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
+              <CardHeader className="p-5 pb-0">
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Contribution Score</CardTitle>
+              </CardHeader>
+              <CardContent className="p-5 flex flex-col items-center">
+                <div className="h-[160px] w-[160px] relative">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadialBarChart innerRadius="80%" outerRadius="100%" data={[{ value: myData.score, fill: COLORS.orange }]} startAngle={90} endAngle={-270}>
+                      <RadialBar background={{ fill: 'var(--color-slate-200)' }} dataKey="value" cornerRadius={20} />
+                    </RadialBarChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-4xl font-black text-slate-900 dark:text-white">{myData.score}</span>
+                    <span className="text-xs font-bold text-slate-500">/ 100</span>
                   </div>
                 </div>
+                <Badge className={cn(
+                  "mt-3 font-bold text-sm px-4 py-1 border-0",
+                  myData.status === 'Excellent'         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400" :
+                  myData.status === 'Good'              ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400" :
+                  myData.status === 'Average'           ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400" :
+                                                         "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400"
+                )}>{myData.status}</Badge>
+              </CardContent>
+            </Card>
 
-                <div className="flex flex-col items-center justify-center p-6 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-emerald-500/50 transition-colors text-center">
-                  <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 mb-4">
-                    <Clock className="h-8 w-8" />
+            {/* Score Breakdown bars */}
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
+              <CardHeader className="p-5 pb-2">
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Score Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent className="p-5 space-y-4">
+                {[
+                  { label: 'Task Performance', score: myData.taskScore, max: 40, color: 'bg-blue-500' },
+                  { label: 'Work Log Consistency', score: myData.logScore, max: 35, color: 'bg-emerald-500' },
+                  { label: 'Standup Completion', score: myData.standupScore, max: 25, color: 'bg-purple-500' },
+                ].map(item => (
+                  <div key={item.label}>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{item.label}</span>
+                      <span className="text-xs font-black text-slate-900 dark:text-white">{item.score} / {item.max}</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-full transition-all duration-700", item.color)}
+                        style={{ width: `${(item.score / item.max) * 100}%` }}
+                      />
+                    </div>
                   </div>
-                  <p className="text-base font-bold text-slate-900 dark:text-white">Work Log Consistency</p>
-                  <p className="text-xs font-semibold text-slate-500 mb-4">35% Weightage</p>
-                  <div className="mt-auto">
-                    <span className="text-3xl font-black text-slate-900 dark:text-white">{myData.logScore}</span>
-                    <span className="text-sm font-bold text-slate-500"> / 35</span>
-                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Formula hint */}
+            <Card className="rounded-2xl border-amber-200/50 dark:border-amber-800/50 shadow-sm bg-amber-50/50 dark:bg-amber-950/20">
+              <CardContent className="p-5 space-y-3">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">How is this calculated?</h4>
                 </div>
-
-                <div className="flex flex-col items-center justify-center p-6 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-purple-500/50 transition-colors text-center">
-                  <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 mb-4">
-                    <Mic className="h-8 w-8" />
-                  </div>
-                  <p className="text-base font-bold text-slate-900 dark:text-white">Standup Completion</p>
-                  <p className="text-xs font-semibold text-slate-500 mb-4">25% Weightage</p>
-                  <div className="mt-auto">
-                    <span className="text-3xl font-black text-slate-900 dark:text-white">{myData.standupScore}</span>
-                    <span className="text-sm font-bold text-slate-500"> / 25</span>
-                  </div>
+                <div className="text-xs space-y-2 text-slate-600 dark:text-slate-400 pl-8 leading-relaxed">
+                  <p>
+                    Your overall score (max 100%) is the sum of three weighted categories:
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>
+                      <strong className="text-slate-900 dark:text-slate-200">Task Performance (Max 40%):</strong> Based on your completed tasks on the Kanban board and resolved milestones.
+                    </li>
+                    <li>
+                      <strong className="text-slate-900 dark:text-slate-200">Work Log Consistency (Max 35%):</strong> Evaluated based on your active timesheets and logged work hours.
+                    </li>
+                    <li>
+                      <strong className="text-slate-900 dark:text-slate-200">Standup Completion (Max 25%):</strong> Measures the percentage of daily standups submitted and approved by managers.
+                    </li>
+                  </ul>
+                  <p className="pt-1 border-t border-amber-200/30 dark:border-amber-800/30 text-[11px] font-semibold italic text-amber-700 dark:text-amber-400">
+                    Formula: Overall Score = Task Score (40) + Work Log Score (35) + Standup Score (25)
+                  </p>
                 </div>
-              </div>
-            </div>
-
-            {/* Score Formula Hint */}
-            <div className="p-5 rounded-2xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/50 flex items-start gap-4">
-              <AlertTriangle className="h-6 w-6 text-amber-500 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">How is this calculated?</p>
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mt-1">
-                  Scores automatically recalculate daily at midnight based on tasks resolved on the board, timesheets submitted in Work Logs, and Standups approved by the manager.
-                </p>
-              </div>
-            </div>
-
+              </CardContent>
+            </Card>
           </div>
-        </Card>
+        </div>
       </div>
     );
   }
+
+
+
 
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">

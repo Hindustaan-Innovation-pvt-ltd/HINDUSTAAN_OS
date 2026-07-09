@@ -9,12 +9,7 @@ interface CreateTaskModalProps {
   onCreateTask: (task: Task) => void;
 }
 
-const MOCK_TEAM = [
-  { id: 'u-1', name: 'Amanda Smith' },
-  { id: 'u-2', name: 'Rahul Sharma' },
-  { id: 'u-3', name: 'Priya Patel' },
-  { id: 'u-4', name: 'Tanvy' },
-];
+import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 
 export default function CreateTaskModal({ isOpen, onClose, onCreateTask }: CreateTaskModalProps) {
   const [title, setTitle] = useState('');
@@ -30,7 +25,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask }: Creat
     e.preventDefault();
     
     // Assignee name lookup
-    const assignee = MOCK_TEAM.find(u => u.id === assigneeId);
+    const assignee = GLOBAL_TEAM_MEMBERS.find(u => u.id === assigneeId);
     
     const newTask: Task = {
       id: `t-${Date.now()}`,
@@ -127,7 +122,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask }: Creat
                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
               >
                 <option className="bg-white dark:bg-slate-800" value="" disabled>Select Assignee...</option>
-                {MOCK_TEAM.map(member => (
+                {GLOBAL_TEAM_MEMBERS.map(member => (
                   <option className="bg-white dark:bg-slate-800" key={member.id} value={member.id}>{member.name}</option>
                 ))}
               </select>

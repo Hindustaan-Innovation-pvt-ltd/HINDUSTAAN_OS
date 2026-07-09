@@ -3,7 +3,7 @@ import { Target, TrendingUp, CheckCircle, Clock, AlertOctagon } from 'lucide-rea
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import { useTheme } from '@/context/ThemeContext';
 import { useProjects } from '@/context/ProjectContext';
@@ -22,6 +22,28 @@ export default function ProgressTracker({ session }: { session?: any }) {
   const isAborted = activeProject?.status === 'Aborted';
   const chartColor = isAborted ? '#ef4444' : '#3b82f6';
 
+
+  const dynamicMilestones = useMemo(() => {
+    if (!activeProject) return [];
+    
+    // If milestones explicitly exist, use them
+    if (activeProject.milestones && activeProject.milestones.length > 0) {
+      return activeProject.milestones;
+    }
+
+    // Dynamic generation based on tasks
+    const totalTasks = activeProject.tasks?.length || 0;
+    if (totalTasks === 0) return []; 
+
+    const doneTasks = activeProject.tasks.filter((t:any) => t.status === 'Done').length;
+    const progress = (doneTasks / totalTasks) * 100;
+
+    return [
+      { id: 'dyn-m1', title: 'Phase 1: Planning & Setup', status: progress >= 33 ? 'completed' : (progress > 0 ? 'in-progress' : 'pending') },
+      { id: 'dyn-m2', title: 'Phase 2: Core Execution', status: progress >= 66 ? 'completed' : (progress > 33 ? 'in-progress' : 'pending') },
+      { id: 'dyn-m3', title: 'Phase 3: Finalization', status: progress >= 100 ? 'completed' : (progress > 66 ? 'in-progress' : 'pending') }
+    ];
+  }, [activeProject]);
 
   const metrics = useMemo(() => {
     if (!activeProject) return { totalCompletion: '0%', tasksDone: '0 / 0', milestonesDone: '0 / 0', blockedIssues: '0', rawOverallProgress: 0 };
@@ -45,30 +67,30 @@ export default function ProgressTracker({ session }: { session?: any }) {
     };
   }, [activeProject]);
 
-  const productivityData = useMemo(() => {
-    if (!activeProject) return { data: [], max: 0, min: 0 };
-    // Map strictly to accurate task completion dates from the project
-    const rawData = Array.from({ length: 7 }).map((_, i) => {
-      const daysAgo = 6 - i;
-      const date = new Date();
-      date.setDate(date.getDate() - daysAgo);
-      const dateString = date.toISOString().split('T')[0];
+  const teamWorkloadData = useMemo(() => {
+    if (!activeProject || !activeProject.tasks) return [];
+    
+    const assigneeMap = new Map<string, { name: string, Done: number, 'In Progress': number, 'To Do': number }>();
+    
+    activeProject.tasks.forEach((t: any) => {
+      const assignee = t.assignee || t.assignee_name || 'Unassigned';
+      // Use just the first name for cleaner chart labels
+      const shortName = assignee === 'Unassigned' ? 'Unassigned' : assignee.split(' ')[0];
       
       const tasksCompleted = activeProject.tasks?.filter(
         (t: any) => t?.status === 'Done' && t?.completedAt === dateString
       ).length || 0;
       
-      return {
-        day: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        tasks: tasksCompleted
-      };
+      const stats = assigneeMap.get(shortName)!;
+      if (t.status === 'Done') stats.Done++;
+      else if (t.status === 'In Progress') stats['In Progress']++;
+      else stats['To Do']++;
     });
-
-    const max = rawData.length > 0 ? Math.max(...rawData.map(d => d.tasks)) : 0;
-    const min = rawData.length > 0 ? Math.min(...rawData.map(d => d.tasks)) : 0;
-
-    return { data: rawData, max, min };
+    
+    return Array.from(assigneeMap.values());
   }, [activeProject]);
+
+
 
   return (
     <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8">
@@ -127,41 +149,35 @@ export default function ProgressTracker({ session }: { session?: any }) {
         )}>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Daily Productivity Velocity</h3>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tasks resolved by the team over the last 7 days.</p>
-            </div>
-            <div className="flex items-center gap-4 text-xs font-bold text-slate-600 dark:text-slate-300">
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-500" /> Tasks Completed</div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Team Workload Breakdown</h3>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Resource allocation and task status for {activeProject?.name}.</p>
             </div>
           </div>
           
           <div className="flex-1 w-full h-[300px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={productivityData.data}
+              {teamWorkloadData.length > 0 ? (
+                <BarChart
+                  data={teamWorkloadData}
                 margin={{ top: 20, right: 30, left: -20, bottom: 0 }}
               >
-                <defs>
-                  <linearGradient id="colorTasks" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={chartColor} stopOpacity={isAborted ? 0.35 : 0.25}/>
-                    <stop offset="95%" stopColor={chartColor} stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800 opacity-50" />
                 <XAxis 
-                  dataKey="day" 
+                  dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fill: axisColor }} 
+                  tick={{ fontSize: 11, fill: axisColor, fontWeight: 'bold' }} 
                   dy={10}
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fill: axisColor }} 
+                  tick={{ fontSize: 11, fill: axisColor, fontWeight: 'bold' }} 
                   dx={-10}
+                  allowDecimals={false}
                 />
                 <RechartsTooltip 
+                  cursor={{fill: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}}
                   contentStyle={{ 
                     borderRadius: '12px', 
                     border: '1px solid rgba(255,255,255,0.1)', 
@@ -171,33 +187,19 @@ export default function ProgressTracker({ session }: { session?: any }) {
                     color: theme === 'dark' ? '#f8fafc' : '#0f172a',
                     padding: '12px'
                   }}
-                  itemStyle={{ fontWeight: 'bold', color: chartColor }}
+                  itemStyle={{ fontWeight: 'bold' }}
                   labelStyle={{ color: theme === 'dark' ? '#94a3b8' : '#64748b', fontWeight: 'bold', marginBottom: '8px' }}
-                  formatter={(value: any) => [`${value ?? 0} Tasks`, 'Completed']}
                 />
-                <ReferenceLine 
-                  y={productivityData.max} 
-                  stroke="#10b981" 
-                  strokeDasharray="3 3" 
-                  label={{ position: 'top', value: 'High', fill: '#10b981', fontSize: 10, fontWeight: 'bold' }} 
-                />
-                <ReferenceLine 
-                  y={productivityData.min} 
-                  stroke="#ef4444" 
-                  strokeDasharray="3 3" 
-                  label={{ position: 'bottom', value: 'Low', fill: '#ef4444', fontSize: 10, fontWeight: 'bold' }} 
-                />
-                <Area 
-                  type="monotone" 
-                  name="Tasks Completed" 
-                  dataKey="tasks" 
-                  stroke={chartColor} 
-                  strokeWidth={4}
-                  fillOpacity={1} 
-                  fill="url(#colorTasks)"
-                  activeDot={{ r: 6, strokeWidth: 0, fill: chartColor, style: { filter: `drop-shadow(0px 4px 6px ${isAborted ? 'rgba(239,68,68,0.5)' : 'rgba(59, 130, 246, 0.5)'})` } }} 
-                />
-              </AreaChart>
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold', paddingTop: '20px' }} />
+                <Bar dataKey="Done" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                <Bar dataKey="In Progress" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                <Bar dataKey="To Do" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={40} />
+              </BarChart>
+              ) : (
+                <div className="flex items-center justify-center h-full w-full">
+                  <p className="text-slate-400 font-medium italic">No tasks assigned in this project.</p>
+                </div>
+              )}
             </ResponsiveContainer>
           </div>
         </div>
@@ -212,7 +214,7 @@ export default function ProgressTracker({ session }: { session?: any }) {
           </div>
 
           <div className="flex-1 space-y-6 overflow-y-auto pr-2 custom-scrollbar">
-            {activeProject?.milestones?.map((m: any, i: number) => {
+            {dynamicMilestones.length > 0 ? dynamicMilestones.map((m: any, i: number) => {
               let progress = 0;
               let color = 'bg-slate-500';
               if (m.status === 'completed') {
@@ -237,7 +239,11 @@ export default function ProgressTracker({ session }: { session?: any }) {
                   </div>
                 </div>
               );
-            })}
+            }) : (
+              <div className="flex items-center justify-center h-full text-center">
+                <p className="text-slate-400 font-medium italic text-sm">Add tasks to this project to track milestones.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

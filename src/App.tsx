@@ -18,6 +18,7 @@ import Register from './pages/Register';
 // Supabase client removed for mock auth implementation
 
 import { ThemeProvider } from './context/ThemeContext';
+import { ProjectProvider } from './context/ProjectContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ProjectProvider } from './context/ProjectContext';
 import { Toaster } from '@/components/ui/sonner';
@@ -60,6 +61,7 @@ function App() {
 
   return (
     <ThemeProvider>
+      <ProjectProvider>
       <TooltipProvider>
         <ProjectProvider>
           {!session ? (

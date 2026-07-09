@@ -7,6 +7,7 @@ import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import ProjectDetails from '@/components/projects/ProjectDetails';
 import { Badge } from '@/components/ui/badge';
+import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 
 // --- Mock Data ---
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -28,7 +29,7 @@ export default function Projects({ session }: { session?: any }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<any>(null);
-  const [newProject, setNewProject] = useState({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium' });
+  const [newProject, setNewProject] = useState({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium', tasks: [] as any[] });
   const [selectedWeekDate, setSelectedWeekDate] = useState<Date>(new Date());
   
   const role = session?.user?.user_metadata?.role || 'intern';
@@ -43,6 +44,7 @@ export default function Projects({ session }: { session?: any }) {
         name: newProject.name,
         manager: newProject.manager,
         deadline: newProject.deadline,
+        tasks: newProject.tasks,
         budget: newProject.budget ? (newProject.budget.toString().startsWith('$') ? newProject.budget : `$${newProject.budget}`) : 'TBD'
       });
     } else {
@@ -56,7 +58,7 @@ export default function Projects({ session }: { session?: any }) {
       const project = {
         id: Date.now().toString(),
         name: newProject.name,
-        tasks: [],
+        tasks: newProject.tasks.length > 0 ? newProject.tasks : [],
         milestones: [],
         status: 'Not Started',
         progress: 0,
@@ -72,43 +74,46 @@ export default function Projects({ session }: { session?: any }) {
     
     setIsModalOpen(false);
     setEditingProjectId(null);
-    setNewProject({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium' });
+    setNewProject({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium', tasks: [] });
   };
 
   const startOfCurrentWeek = startOfWeek(selectedWeekDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(startOfCurrentWeek, i));
 
-  const dynamicTasks = React.useMemo(() => {
-    const seed = selectedWeekDate.getDate();
-    let taskList: any[] = [];
-    projects.forEach((p, pIndex) => {
-      p.tasks?.forEach((t: any, tIndex: number) => {
-        if (t.status === 'Done' && seed % 2 === 0) return;
-        const start = (t.id.charCodeAt(t.id.length-1) + pIndex + seed) % 6;
-        const duration = (t.id.charCodeAt(0) % 3) + 2;
-        const colors = ['bg-emerald-500 dark:bg-emerald-600', 'bg-blue-500 dark:bg-blue-600', 'bg-purple-500 dark:bg-purple-600', 'bg-amber-500 dark:bg-amber-600', 'bg-rose-500 dark:bg-rose-600'];
-        const color = colors[(pIndex + tIndex + seed) % colors.length];
-        
-        taskList.push({
-          id: t.id + seed + tIndex,
-          name: t.title,
-          start,
-          duration,
-          color,
-          assignee: t.assignee
-        });
-      });
-    });
-    return taskList.slice(0, 6);
-  }, [projects, selectedWeekDate]);
   const displayedProjects = baseProjects.filter(p => {
     if (activeTab === 'Active') return p.status !== 'Completed' && p.status !== 'Aborted';
     if (activeTab === 'Completed') return p.status === 'Completed';
     return true;
   });
 
+  const groupedProjects = React.useMemo(() => {
+    const seed = selectedWeekDate.getDate();
+    return displayedProjects.map((p, pIndex) => {
+      const pTasks: any[] = [];
+      p.tasks?.forEach((t: any, tIndex: number) => {
+        if (t.status === 'Done' && seed % 2 === 0) return;
+        const start = (t.id.charCodeAt(t.id.length-1) + pIndex + seed) % 6;
+        const duration = (t.id.charCodeAt(0) % 3) + 2;
+        
+        pTasks.push({
+          id: t.id + seed + tIndex,
+          name: t.title,
+          start,
+          duration,
+          color: p.iconColor || 'bg-slate-500', // Match project color exactly
+          assignee: t.assignee
+        });
+      });
+      return {
+        ...p,
+        timelineTasks: pTasks.slice(0, 4) // Show up to 4 tasks per project
+      };
+    }).filter(p => p.timelineTasks.length > 0).slice(0, 3); // Show up to 3 active projects in this mini-view
+  }, [displayedProjects, selectedWeekDate]);
+
   if (selectedProject) {
-    return <ProjectDetails project={selectedProject} onBack={() => setSelectedProject(null)} />;
+    const liveProject = projects.find((p: any) => p.id === selectedProject.id) || selectedProject;
+    return <ProjectDetails project={liveProject} onBack={() => setSelectedProject(null)} />;
   }
 
   return (
@@ -123,7 +128,7 @@ export default function Projects({ session }: { session?: any }) {
         {role === 'manager' && (
           <button onClick={() => {
             setEditingProjectId(null);
-            setNewProject({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium' });
+            setNewProject({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium', tasks: [] });
             setIsModalOpen(true);
           }} className="flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 shrink-0">
             <Plus className="h-4 w-4 mr-1.5" /> New Project
@@ -246,7 +251,8 @@ export default function Projects({ session }: { session?: any }) {
                                   manager: project.manager,
                                   deadline: project.deadline && project.deadline !== 'TBD' ? project.deadline : '',
                                   budget: project.budget && project.budget !== 'TBD' ? project.budget.replace('$', '') : '',
-                                  priority: 'Medium'
+                                  priority: 'Medium',
+                                  tasks: project.tasks || []
                                 });
                                 setIsModalOpen(true);
                               }}>
@@ -259,12 +265,17 @@ export default function Projects({ session }: { session?: any }) {
                                   <RotateCcw className="mr-2 h-4 w-4" /> Restore
                                 </DropdownMenuItem>
                               ) : (
-                                <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg text-red-600 focus:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => {
+                                <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg text-amber-600 focus:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20" onClick={() => {
                                   updateProject(project.id, { status: 'Aborted' });
                                 }}>
-                                  <Trash2 className="mr-2 h-4 w-4" /> Abort
+                                  <X className="mr-2 h-4 w-4" /> Abort
                                 </DropdownMenuItem>
                               )}
+                              <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg text-red-600 focus:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => {
+                                deleteProject(project.id);
+                              }}>
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         )}
@@ -324,7 +335,7 @@ export default function Projects({ session }: { session?: any }) {
             </div>
 
             {/* Gantt Rows */}
-            <div className="mt-6 space-y-6 relative">
+            <div className="mt-6 space-y-8 relative">
               
               {/* Vertical Grid Lines */}
               <div className="absolute inset-0 flex ml-48 pointer-events-none">
@@ -335,26 +346,36 @@ export default function Projects({ session }: { session?: any }) {
                 </div>
               </div>
 
-              {/* Task Bars */}
-              {dynamicTasks.map((task) => (
-                <div key={task.id} className="flex items-center relative z-10 group animate-in fade-in slide-in-from-right-4 duration-500">
-                  {/* Task Name Label */}
-                  <div className="w-48 shrink-0 pr-4">
-                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{task.name}</p>
-                    <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">{task.assignee}</p>
+              {/* Grouped by Project */}
+              {groupedProjects.map((project) => (
+                <div key={project.id} className="relative z-10 space-y-3">
+                  {/* Project Header Divider */}
+                  <div className="w-48 shrink-0 pr-4 mb-2 border-b border-slate-200 dark:border-slate-700/80 pb-1">
+                    <p className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">{project.name}</p>
                   </div>
                   
-                  {/* Task Timeline Bar */}
-                  <div className="flex-1 grid grid-cols-7 gap-2">
-                    <div 
-                      className={cn("h-8 rounded-lg shadow-sm flex items-center px-3 text-xs font-bold text-white whitespace-nowrap overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md", task.color)}
-                      style={{ 
-                        gridColumn: `${task.start + 1} / span ${task.duration}` 
-                      }}
-                    >
-                      {task.name}
+                  {/* Task Bars */}
+                  {project.timelineTasks.map((task: any) => (
+                    <div key={task.id} className="flex items-center relative group animate-in fade-in slide-in-from-right-4 duration-500">
+                      {/* Task Name Label */}
+                      <div className={cn("w-48 shrink-0 pr-4 border-l-4 pl-3 py-1", project.iconColor ? project.iconColor.replace('bg-', 'border-') : 'border-transparent')}>
+                        <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{task.name}</p>
+                        <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">{task.assignee}</p>
+                      </div>
+                      
+                      {/* Task Timeline Bar */}
+                      <div className="flex-1 grid grid-cols-7 gap-2">
+                        <div 
+                          className={cn("h-8 rounded-lg shadow-sm flex items-center px-3 text-xs font-bold text-white whitespace-nowrap overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md", task.color)}
+                          style={{ 
+                            gridColumn: `${task.start + 1} / span ${task.duration}` 
+                          }}
+                        >
+                          {task.name}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
               ))}
 
@@ -399,11 +420,10 @@ export default function Projects({ session }: { session?: any }) {
                       onChange={(e) => setNewProject({ ...newProject, manager: e.target.value })}
                       className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
                     >
-                      <option value="Amanda S.">Amanda S.</option>
-                      <option value="Rahul S.">Rahul S.</option>
-                      <option value="Priya P.">Priya P.</option>
-                      <option value="Rohan G.">Rohan G.</option>
                       <option value="Unassigned">Unassigned</option>
+                      {GLOBAL_TEAM_MEMBERS.map(member => (
+                        <option key={member.id} value={member.name}>{member.name}</option>
+                      ))}
                     </select>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
                   </div>
@@ -448,6 +468,62 @@ export default function Projects({ session }: { session?: any }) {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Tasks & Assignees Section */}
+              <div className="space-y-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Tasks & Assignees</label>
+                  <button 
+                    className="text-xs font-bold text-orange-600 hover:text-orange-700 dark:text-orange-500 flex items-center"
+                    onClick={() => setNewProject({...newProject, tasks: [...newProject.tasks, { id: Date.now().toString(), title: '', assignee: 'Unassigned', status: 'To Do' }]})}
+                  >
+                    <Plus className="h-3 w-3 mr-1" /> Add Task
+                  </button>
+                </div>
+                {newProject.tasks.map((task, index) => (
+                  <div key={task.id} className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Design Dashboard"
+                      value={task.title}
+                      onChange={e => {
+                        const updated = [...newProject.tasks];
+                        updated[index].title = e.target.value;
+                        setNewProject({...newProject, tasks: updated});
+                      }}
+                      className="flex-1 h-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors"
+                    />
+                    <div className="relative w-36 shrink-0">
+                      <select 
+                        value={task.assignee}
+                        onChange={e => {
+                          const updated = [...newProject.tasks];
+                          updated[index].assignee = e.target.value;
+                          setNewProject({...newProject, tasks: updated});
+                        }}
+                        className="w-full h-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
+                      >
+                        <option value="Unassigned">Unassigned</option>
+                        {GLOBAL_TEAM_MEMBERS.map(member => (
+                          <option key={member.id} value={member.name}>{member.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        const updated = newProject.tasks.filter((_, i) => i !== index);
+                        setNewProject({...newProject, tasks: updated});
+                      }}
+                      className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+                {newProject.tasks.length === 0 && (
+                  <p className="text-xs text-slate-500 italic">No tasks added yet. Click "+ Add Task" to start assigning work.</p>
+                )}
               </div>
             </div>
 
