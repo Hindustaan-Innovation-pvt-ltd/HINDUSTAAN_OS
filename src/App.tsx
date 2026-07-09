@@ -17,6 +17,7 @@ import ContributionScores from './pages/ContributionScores';
 // Supabase client removed for mock auth implementation
 
 import { ThemeProvider } from './context/ThemeContext';
+import { ProjectProvider } from './context/ProjectContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { GLOBAL_LOGS } from '@/data/mockData';
@@ -52,6 +53,7 @@ function App() {
 
   return (
     <ThemeProvider>
+      <ProjectProvider>
       <TooltipProvider>
         {!session ? (
           <Login onMockLogin={() => {
@@ -165,7 +167,8 @@ function App() {
       }
 <Toaster position="top-right" richColors />
       </TooltipProvider >
-    </ThemeProvider >
+      </ProjectProvider>
+    </ThemeProvider>
   );
 }
 
