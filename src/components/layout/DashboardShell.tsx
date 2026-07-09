@@ -69,7 +69,7 @@ const managerNavigation = [
 
 
 const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen, activeNavigation, onSignOut }: any) => (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-white dark:bg-slate-900">
         {/* Branding Badge */}
 
         <div className="flex min-h-[90px] shrink-0 items-center border-b border-slate-100 dark:border-slate-800 justify-between px-6 py-4 lg:justify-start">
