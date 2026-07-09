@@ -15,8 +15,15 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
     updateProject(project.id, { tasks: updatedTasks });
     setEditingTask(null);
   };
-  const milestones: any[] = project.milestones || [];
   const tasks: any[] = project.tasks || [];
+  
+  // Generate milestones dynamically from tasks
+  const milestones = tasks.map((task: any, index: number) => ({
+    id: task.id || `m-${index}`,
+    title: task.title,
+    status: task.status === 'Done' ? 'completed' : task.status === 'In Progress' ? 'in-progress' : 'pending',
+    date: task.due_date || `Task ${index + 1}`
+  }));
 
   const completedTasks = tasks.filter((t: any) => t.status === 'Done').length;
   const totalTasks = tasks.length;
