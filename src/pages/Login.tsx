@@ -42,7 +42,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
   }, [isDark]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (showOTPDialog && otpState) {
       interval = setInterval(() => {
         const remaining = Math.max(0, Math.floor((otpState.expiresAt - Date.now()) / 1000));
@@ -78,70 +78,51 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
     setLoading(true);
     
     try {
-      if (supabaseUrl.includes('placeholder')) {
-        setTimeout(() => {
-          setStatusMessage({
-            type: 'success',
-            text: '✓ Access granted (Mock Mode). Initializing workspaces...',
-          });
-          
-          if (mockRole === 'intern') {
-            let userId = 'u-4';
-            let userName = 'Tanvy Pandey';
-            
-            if (email.toLowerCase().includes('amanda')) {
-              userId = 'u-1';
-              userName = 'Amanda Smith';
-            } else if (email.toLowerCase().includes('rahul')) {
-              userId = 'u-2';
-              userName = 'Rahul Sharma';
-            } else if (email.toLowerCase().includes('priya')) {
-              userId = 'u-3';
-              userName = 'Priya Patel';
-            }
-
-            // Track specific intern login for Manager Dashboard & WorkLogs
-            localStorage.setItem(`login_time_${userId}`, Date.now().toString());
-            
-            // Log activity to feed
-            const storedFeed = localStorage.getItem('hindustaan_activity_feed');
-            const feed = storedFeed ? JSON.parse(storedFeed) : [];
-            const newEvent = { 
-              id: Date.now().toString(), 
-              user: userName, 
-              action: 'logged into', 
-              target: 'Hindustaan OS', 
-              time: 'Just now', 
-              type: 'login' 
-            };
-            localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newEvent, ...feed].slice(0, 20)));
-          }
-          
-          if (onMockLogin) onMockLogin(mockRole, email);
-        }, 800);
-        return;
-      }
-
-      if (isMagicLink) {
-        const { error } = await supabase.auth.signInWithOtp({
-          email,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        setStatusMessage({
-          type: 'success',
-          text: '✨ Verification link dispatched! Check your email inbox.',
-        });
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
       
       const user = validateUser();
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      
+      if (user.role === 'intern') {
+        let userId = 'u-4';
+        let userName = 'Tanvy Pandey';
+        
+        if (email.toLowerCase().includes('amanda')) {
+          userId = 'u-1';
+          userName = 'Amanda Smith';
+        } else if (email.toLowerCase().includes('rahul')) {
+          userId = 'u-2';
+          userName = 'Rahul Sharma';
+        } else if (email.toLowerCase().includes('priya')) {
+          userId = 'u-3';
+          userName = 'Priya Patel';
+        }
+
+        // Track specific intern login for Manager Dashboard & WorkLogs
+        localStorage.setItem(`login_time_${userId}`, Date.now().toString());
+        
+        // Log activity to feed
+        const storedFeed = localStorage.getItem('hindustaan_activity_feed');
+        const feed = storedFeed ? JSON.parse(storedFeed) : [];
+        const newEvent = { 
+          id: Date.now().toString(), 
+          user: userName, 
+          action: 'logged into', 
+          target: 'Hindustaan OS', 
+          time: 'Just now', 
+          type: 'login' 
+        };
+        localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newEvent, ...feed].slice(0, 20)));
+      }
       
       localStorage.setItem('hindustaan_user', JSON.stringify(user));
       toast.success('Access granted.', { description: 'Initializing workspaces...' });
       
       if (onMockLogin) {
-        onMockLogin(user.role);
+        onMockLogin(user.role, email);
       } else {
         window.location.reload();
       }

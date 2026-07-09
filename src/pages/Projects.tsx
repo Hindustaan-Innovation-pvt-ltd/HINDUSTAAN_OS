@@ -168,7 +168,7 @@ export default function Projects({ session }: { session?: any }) {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {displayedProjects.map((project) => {
-                const completedTasks = project.tasks.filter(t => t.status === 'Done').length;
+                const completedTasks = project.tasks.filter((t: any) => t.status === 'Done').length;
                 const totalTasks = project.tasks.length;
                 const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 

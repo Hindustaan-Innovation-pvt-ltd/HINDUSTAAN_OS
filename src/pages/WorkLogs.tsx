@@ -138,12 +138,12 @@ export default function WorkLogs({ session }: { session?: any }) {
 
   const userBaseLogs = useMemo(() => {
     return currentUser.role === 'intern'
-      ? logs.filter(log => log.name.toLowerCase().includes(currentUser.name.split(' ')[0].toLowerCase()))
+      ? logs.filter((log: any) => log.name.toLowerCase().includes(currentUser.name.split(' ')[0].toLowerCase()))
       : logs;
   }, [logs, currentUser]);
 
   const filteredLogs = useMemo(() => {
-    return userBaseLogs.filter(log => {
+    return userBaseLogs.filter((log: any) => {
       const matchesSearch = log.task.toLowerCase().includes(searchQuery.toLowerCase()) ||
         log.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         log.project.toLowerCase().includes(searchQuery.toLowerCase());
@@ -153,15 +153,15 @@ export default function WorkLogs({ session }: { session?: any }) {
   }, [userBaseLogs, searchQuery, statusFilter]);
 
   const handleStatusChange = (id: string, newStatus: string) => {
-    setLogs(logs.map(log => log.id === id ? { ...log, status: newStatus } : log));
+    setLogs(logs.map((log: any) => log.id === id ? { ...log, status: newStatus } : log));
   };
 
   const handleDelete = (id: string) => {
-    setLogs(logs.filter(log => log.id !== id));
+    setLogs(logs.filter((log: any) => log.id !== id));
   };
 
-  const totalHours = useMemo(() => userBaseLogs.reduce((acc, log) => acc + log.hours, 0), [userBaseLogs]);
-  const pendingHours = useMemo(() => userBaseLogs.filter(l => l.status === 'Pending').reduce((acc, log) => acc + log.hours, 0), [userBaseLogs]);
+  const totalHours = useMemo(() => userBaseLogs.reduce((acc: number, log: any) => acc + log.hours, 0), [userBaseLogs]);
+  const pendingHours = useMemo(() => userBaseLogs.filter((l: any) => l.status === 'Pending').reduce((acc: number, log: any) => acc + log.hours, 0), [userBaseLogs]);
 
   return (
     <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8 relative animate-in fade-in duration-500">
@@ -389,7 +389,7 @@ export default function WorkLogs({ session }: { session?: any }) {
                   </td>
                 </tr>
               ) : (
-                filteredLogs.map(log => (
+                filteredLogs.map((log: any) => (
                   <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors group">
                     <td className="p-4">
                       <div className="flex items-center gap-3">

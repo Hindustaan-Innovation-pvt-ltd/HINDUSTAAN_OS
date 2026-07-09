@@ -21,6 +21,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // -- MOCK DATA GENERATOR --
 const generateData = () => {
@@ -105,6 +110,8 @@ export default function ContributionScores({ session }: { session?: any }) {
   else if (email.toLowerCase().includes('priya')) currentUserName = 'Priya Patel';
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [date, setDate] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const filteredInterns = MOCK_INTERNS.filter(intern =>
     intern.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -79,13 +79,6 @@ function App() {
         <TooltipProvider>
         {!session ? (
           <Login onMockLogin={(role, email) => setSession({ user: { email: email || 'user@hindustaan.in', user_metadata: { role } } })} />
-          <Login onMockLogin={() => {
-            const userStr = localStorage.getItem('hindustaan_user');
-            if (userStr) {
-              const user = JSON.parse(userStr);
-              setSession({ user: { email: user.email, user_metadata: { role: user.role } } });
-            }
-          }} />
         ) : (
           <DashboardShell
             currentView={currentView}
