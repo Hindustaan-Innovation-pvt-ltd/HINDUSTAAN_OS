@@ -381,7 +381,7 @@ export default function ContributionScores({ session }: { session?: any }) {
               </div>
             </CardHeader>
             <CardContent className="p-0 overflow-auto flex-1 min-h-0 relative">
-              <table className="w-full min-w-[800px] text-sm text-left relative">
+              <table className="w-full whitespace-nowrap text-sm text-left relative">
                 <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-20">
                   <tr>
                     <th className="px-6 py-4 rounded-tl-xl">Rank</th>

@@ -242,9 +242,11 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
         <div className="rounded-[2rem] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-8 sm:p-10 shadow-2xl backdrop-blur-xl transition-all duration-500">
           
           <div className="flex flex-col items-center text-center mb-8">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-green-600 text-white shadow-lg shadow-orange-500/30 mb-5">
-              <Compass className="h-7 w-7" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Hindustaan OS Logo"
+              className="mx-auto w-[100px] sm:w-[120px] md:w-[150px] h-auto object-contain drop-shadow-[0_8px_20px_rgba(255,153,0,0.25)] mb-6"
+            />
             <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white transition-colors duration-300">
               <span className="text-orange-500">Hi</span>ndustaan <span className="text-green-500">OS</span>
             </h2>

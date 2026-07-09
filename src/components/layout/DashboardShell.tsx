@@ -173,15 +173,22 @@ export default function DashboardShell({
       >
         {/* Branding Badge */}
         <div className={cn(
-          "flex h-16 shrink-0 items-center border-b border-slate-100 dark:border-slate-800 justify-between",
-          isSidebarCollapsed ? "px-4 justify-center" : "px-6 lg:justify-start"
+          "flex min-h-[76px] shrink-0 items-center border-b border-slate-100 dark:border-slate-800 justify-between",
+          isSidebarCollapsed ? "px-4 justify-center py-3" : "px-6 py-4 lg:justify-start"
         )}>
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 dark:bg-orange-500/100 text-white shadow-sm shrink-0">
-              <Compass className="h-5 w-5" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Hindustaan OS"
+              className={cn(
+                "h-auto object-contain drop-shadow-[0_6px_16px_rgba(255,153,0,0.2)] shrink-0",
+                isSidebarCollapsed ? "w-10" : "w-[44px] md:w-[48px] lg:w-[56px]"
+              )}
+            />
             {!isSidebarCollapsed && (
-              <span className="text-lg font-bold text-slate-900 dark:text-white tracking-tight animate-in fade-in duration-200">Hindustaan OS</span>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight animate-in fade-in duration-200">
+                Hindustaan <span className="text-green-500">OS</span>
+              </h1>
             )}
           </div>
           <button 
