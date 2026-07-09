@@ -155,6 +155,30 @@ export default function DailyStandups({ session }: { session?: any }) {
   const [sentReminders, setSentReminders] = useState<Set<string>>(new Set());
   const [viewingStandup, setViewingStandup] = useState<any | null>(null);
 
+  const handleUpdateSubmit = () => {
+    if (!formData.yesterday || !formData.today) {
+      toast.error('Please fill in your updates for yesterday and today.');
+      return;
+    }
+    const initials = currentUserName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+    const newStandup = {
+      id: `s-${Date.now()}`,
+      user: currentUserName,
+      initials,
+      role: role === 'manager' ? 'Product Manager' : 'Developer',
+      status: 'Submitted',
+      yesterday: formData.yesterday,
+      today: formData.today,
+      blockers: formData.blockers,
+      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+    };
+
+    setStandups([newStandup, ...standups.filter((s) => s.user !== currentUserName)]);
+    toast.success('Standup Update Submitted!');
+    setIsModalOpen(false);
+    setFormData({ yesterday: '', today: '', blockers: '' });
+  };
+
   // Quick Notes State
   const [note, setNote] = useState(() => {
     return localStorage.getItem(`hindustaan_notes_${currentUserName}`) || '';
@@ -456,7 +480,7 @@ export default function DailyStandups({ session }: { session?: any }) {
           <Button onClick={() => toast.success('Meeting Started', { description: "Joining your team's video room..."})} variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
             <Video className="h-4 w-4 mr-2 text-slate-400" /> Start Meeting
           </Button>
-          <Button onClick={() => toast('Opening Standup Form...')} className="h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-sm">
+          <Button onClick={() => setIsModalOpen(true)} className="h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-sm">
             <Mic className="h-4 w-4 mr-2" /> Submit My Update
           </Button>
           <Button 
@@ -838,6 +862,57 @@ export default function DailyStandups({ session }: { session?: any }) {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Submit Update Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[500px] p-0 border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] overflow-hidden rounded-2xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50">
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
+              Daily Standup
+            </DialogTitle>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              What did you work on, and what's next?
+            </p>
+          </DialogHeader>
+          <div className="p-6 space-y-6">
+            <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
+              <textarea 
+                value={formData.yesterday}
+                onChange={(e) => setFormData({...formData, yesterday: e.target.value})}
+                placeholder="e.g. Completed the UI for the dashboard..."
+                className="w-full h-20 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What will you do today?</label>
+              <textarea 
+                value={formData.today}
+                onChange={(e) => setFormData({...formData, today: e.target.value})}
+                placeholder="e.g. Start integrating the API endpoints..."
+                className="w-full h-20 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Any blockers? (Optional)</label>
+              <textarea 
+                value={formData.blockers}
+                onChange={(e) => setFormData({...formData, blockers: e.target.value})}
+                placeholder="e.g. Waiting for backend team to fix the auth endpoint..."
+                className="w-full h-16 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
+              />
+            </div>
+            <div className="pt-2 flex justify-between gap-3">
+              <Button onClick={() => setIsModalOpen(false)} variant="outline" className="flex-1 h-11 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold">
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateSubmit} className="flex-1 h-11 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-sm">
+                Submit Update
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
