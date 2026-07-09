@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, User, MessageSquare, Send, Tag, Clock, CheckCircle2, ChevronDown } from 'lucide-react';
+import { Calendar, User, MessageSquare, Send, Tag, Clock, CheckCircle2, ChevronDown, PlayCircle, Eye, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 // --- Types ---
 export type Role = 'manager' | 'intern';
@@ -235,7 +236,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
             </div>
 
             {/* Due Date */}
-            <div className="space-y-1.5 md:col-span-2">
+            <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
                 <Calendar className="h-3.5 w-3.5 mr-1.5" /> Target Deadline
               </label>
@@ -244,11 +245,38 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                   type="date"
                   value={editedTask.due_date ? new Date(editedTask.due_date).toISOString().split('T')[0] : ''}
                   onChange={(e) => handleUpdateField('due_date', e.target.value)} // Simplifying date format mapping for mockup
-                  className="w-full md:w-1/2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
                 />
               ) : (
                 <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 inline-block">
                   {editedTask.due_date}
+                </div>
+              )}
+            </div>
+
+            {/* Status */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
+                <Activity className="h-3.5 w-3.5 mr-1.5" /> Current Status
+              </label>
+              {isManager ? (
+                <div className="relative">
+                  <select 
+                    value={editedTask.status}
+                    onChange={(e) => handleStatusChange(e.target.value as Status)}
+                    className="appearance-none w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
+                  >
+                    {STATUSES.map(s => (
+                      <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none opacity-50" />
+                </div>
+              ) : (
+                <div className="mt-1">
+                  <span className="px-3 py-1 rounded-md text-sm font-semibold border inline-block bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700">
+                    {editedTask.status}
+                  </span>
                 </div>
               )}
             </div>
@@ -271,6 +299,43 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
               </div>
             )}
           </div>
+
+          {/* Status Automated Transitions for Interns */}
+          {!isManager && (currentUser.id === editedTask.assignee_id || currentUser.name === editedTask.assignee_name || (currentUser.name.toLowerCase().includes('tanvy') && editedTask.assignee_name.toLowerCase().includes('tanvy'))) && (
+            <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-xl p-4 mt-2">
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Quick Action</span>
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-300 mt-0.5">Update task status automatically</span>
+              </div>
+              
+              {editedTask.status === 'To Do' && (
+                <Button 
+                  onClick={() => handleStatusChange('In Progress')}
+                  className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-xl shadow-sm transition-all active:scale-95 flex items-center cursor-pointer"
+                >
+                  <PlayCircle className="h-4 w-4 mr-2" /> Start Working
+                </Button>
+              )}
+              {editedTask.status === 'In Progress' && (
+                <Button 
+                  onClick={() => handleStatusChange('In Review')}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl shadow-sm transition-all active:scale-95 flex items-center cursor-pointer"
+                >
+                  <Eye className="h-4 w-4 mr-2" /> Submit for Review
+                </Button>
+              )}
+              {editedTask.status === 'In Review' && (
+                <Badge variant="outline" className="border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:bg-amber-500/10 font-bold px-3 py-1.5 rounded-lg flex items-center">
+                  <Clock className="h-3.5 w-3.5 mr-1.5 animate-pulse" /> Pending Approval
+                </Badge>
+              )}
+              {editedTask.status === 'Done' && (
+                <Badge variant="outline" className="border-emerald-200 text-emerald-700 bg-emerald-50 dark:border-emerald-900/50 dark:text-emerald-400 dark:bg-emerald-500/10 font-bold px-3 py-1.5 rounded-lg flex items-center">
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Task Done
+                </Badge>
+              )}
+            </div>
+          )}
 
           {/* Comments Feed Expansion */}
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800">

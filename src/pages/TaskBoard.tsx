@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayCircle, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayCircle, CheckCircle2, ChevronLeft, ChevronRight, FolderKanban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import TaskDetailsModal from '../components/dashboard/TaskDetailsModal';
 import CreateTaskModal from '../components/dashboard/CreateTaskModal';
@@ -41,24 +41,25 @@ const PriorityBadge = ({ priority }: { priority: Priority }) => {
 
 const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
-const EmptyColumnPlaceholder = ({ status }: { status: Status }) => {
+const EmptyColumnPlaceholder = ({ status, role }: { status: Status; role: 'manager' | 'intern' }) => {
+  const isIntern = role === 'intern';
   const placeholders = {
     'To Do': {
       icon: CheckSquare,
       title: 'No tasks to do',
-      desc: 'All caught up! Drag tasks here to plan them.',
+      desc: isIntern ? 'All caught up! New tasks will appear here.' : 'All caught up! Drag tasks here to plan them.',
       color: 'text-blue-600 dark:text-blue-400 bg-blue-50/70 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/30'
     },
     'In Progress': {
       icon: PlayCircle,
       title: 'Nothing in progress',
-      desc: 'Select a task and drag it here to get started.',
+      desc: isIntern ? "Open a task and click 'Start Working' to begin." : 'Select a task and drag it here to get started.',
       color: 'text-amber-600 dark:text-amber-400 bg-amber-50/70 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/30'
     },
     'In Review': {
       icon: Eye,
       title: 'No tasks in review',
-      desc: 'Finished work goes here for approval.',
+      desc: isIntern ? 'Submit a task for review to see it here.' : 'Finished work goes here for approval.',
       color: 'text-purple-600 dark:text-purple-400 bg-purple-50/70 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900/30'
     },
     'Done': {
@@ -325,8 +326,8 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                   ? "min-w-[250px] lg:min-w-0 max-w-[380px] lg:max-w-none flex-1" 
                   : "min-w-[320px] max-w-[320px] shrink-0"
               )}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, columnStatus)}
+              onDragOver={currentUser.role === 'manager' ? handleDragOver : undefined}
+              onDrop={currentUser.role === 'manager' ? (e) => handleDrop(e, columnStatus) : undefined}
             >
               {/* Column Header */}
               <div className="flex items-center justify-between mb-4">
@@ -344,28 +345,27 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
               {/* Column Track */}
               <div className="flex-1 flex flex-col gap-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-2xl p-3 border border-slate-200 dark:border-slate-700/60 min-h-[150px]">
                 {columnTasks.length === 0 ? (
-                  <EmptyColumnPlaceholder status={columnStatus} />
+                  <EmptyColumnPlaceholder status={columnStatus} role={currentUser.role} />
                 ) : (
                   columnTasks.map(task => {
                     return (
                       <div
                         key={task.id}
-                        draggable
+                        draggable={currentUser.role === 'manager'}
                         onClick={() => setSelectedTask(task)}
-                        onDragStart={(e) => handleDragStart(e, task.id)}
-                        onDragEnd={handleDragEnd}
+                        onDragStart={currentUser.role === 'manager' ? (e) => handleDragStart(e, task.id) : undefined}
+                        onDragEnd={currentUser.role === 'manager' ? handleDragEnd : undefined}
                         className={cn(
-                          "group relative bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer active:cursor-grabbing",
+                          "group relative bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer",
+                          currentUser.role === 'manager' && "active:cursor-grabbing",
                           draggedTaskId === task.id ? "opacity-50 border-dashed border-orange-400 shadow-none" : "opacity-100"
                         )}
                       >
-                        {/* Top Row: Checkbox & Priority */}
+                        {/* Top Row: Priority & Project */}
                         <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center space-x-2">
-                            <div className="flex h-5 w-5 items-center justify-center rounded border border-slate-300 dark:border-slate-700 text-transparent hover:border-orange-500 hover:text-orange-500 transition-colors cursor-pointer">
-                              <CheckSquare className="h-3.5 w-3.5" />
-                            </div>
-                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate max-w-[120px]">
+                          <div className="flex items-center space-x-1.5 min-w-0">
+                            <FolderKanban className="h-3.5 w-3.5 text-orange-500/80 shrink-0" />
+                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate max-w-[130px]">
                               {task.project_tag}
                             </span>
                           </div>
