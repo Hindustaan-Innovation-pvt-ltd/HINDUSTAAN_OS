@@ -14,12 +14,7 @@ import ProgressTracker from './pages/ProgressTracker';
 import WorkLogs from './pages/WorkLogs';
 import DailyStandups from './pages/DailyStandups';
 import ContributionScores from './pages/ContributionScores';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client to listen for real-time auth states
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Supabase client removed for mock auth implementation
 
 import { ThemeProvider } from './context/ThemeContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -33,16 +28,16 @@ function App() {
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
+    const userStr = localStorage.getItem('hindustaan_user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setSession({ user: { email: user.email, user_metadata: { role: user.role } } });
+      } catch (e) {
+        localStorage.removeItem('hindustaan_user');
+      }
+    }
+    setLoading(false);
   }, []);
 
   if (loading) {
@@ -59,20 +54,26 @@ function App() {
     <ThemeProvider>
       <TooltipProvider>
         {!session ? (
-          <Login onMockLogin={(role) => setSession({ user: { email: 'user@hindustaan.in', user_metadata: { role } } })} />
+          <Login onMockLogin={() => {
+            const userStr = localStorage.getItem('hindustaan_user');
+            if (userStr) {
+              const user = JSON.parse(userStr);
+              setSession({ user: { email: user.email, user_metadata: { role: user.role } } });
+            }
+          }} />
         ) : (
           <DashboardShell
             currentView={currentView}
             onNavigate={setCurrentView}
-            role={session.user?.user_metadata?.role || 'intern'}
+            role={session.user?.user_metadata?.role || 'employee'}
             isMinimized={isSidebarMinimized}
             onMinimizeChange={setIsSidebarMinimized}
             onSignOut={() => {
               // 1. Calculate and save work log for current session before clearing
-              const role = session.user?.user_metadata?.role || 'intern';
+              const role = session.user?.user_metadata?.role || 'employee';
               const email = session.user?.email || 'user@hindustaan.in';
               
-              if (role === 'intern') {
+              if (role === 'employee') {
                 let currentUserId = 'u-4';
                 let currentUserName = 'Tanvy Pandey';
                 let currentProject = 'Frontend Core';
@@ -125,11 +126,8 @@ function App() {
                 localStorage.removeItem(`login_time_${currentUserId}`);
               }
               
-              if (supabaseUrl.includes('placeholder')) {
-                setSession(null);
-              } else {
-                supabase.auth.signOut();
-              }
+              localStorage.removeItem('hindustaan_user');
+              setSession(null);
             }}
           >
             {currentView === 'Dashboard' && <RoleBasedRouter session={session} />}
@@ -141,6 +139,7 @@ function App() {
             {(currentView === 'Projects' || currentView === 'My Projects') && <Projects session={session} />}
             {currentView === 'About Us' && <AboutUs />}
             {currentView === 'Settings' && <Settings session={session} />}
+            {currentView === 'My Profile' && <Settings session={session} defaultTab="profile" />}
             {currentView === 'Team Members' && <TeamMembers session={session} />}
 
             {/* New Pages */}
@@ -153,7 +152,7 @@ function App() {
             {/* Fallback for anything else */}
             {![
               'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
-              'Projects', 'My Projects', 'About Us', 'Settings', 'Team Members',
+              'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Team Members',
               'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
               'Contribution Scores', 'My Performance'
             ].includes(currentView) && (

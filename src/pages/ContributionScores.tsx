@@ -130,20 +130,7 @@ export default function ContributionScores({ session }: { session?: any }) {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm font-bold">
-            <Calendar className="mr-2 h-4 w-4 text-slate-400" />
-            This Month
-          </Button>
-          <Button variant="outline" className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm font-bold">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-          <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-sm font-bold">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
+
       </div>
 
       {/* KPI Cards */}
@@ -216,8 +203,8 @@ export default function ContributionScores({ session }: { session?: any }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         {/* Left Column - Main Table */}
-        <div className="lg:col-span-8 space-y-6">
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-full">
+        <div className="lg:col-span-8 flex flex-col min-w-0">
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col flex-1">
             <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Team Performance Overview</CardTitle>
@@ -233,8 +220,8 @@ export default function ContributionScores({ session }: { session?: any }) {
                 />
               </div>
             </CardHeader>
-            <CardContent className="p-0 overflow-auto max-h-[600px] relative">
-              <table className="w-full text-sm text-left relative">
+            <CardContent className="p-0 overflow-auto flex-1 min-h-0 relative">
+              <table className="w-full min-w-[800px] text-sm text-left relative">
                 <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-20">
                   <tr>
                     <th className="px-6 py-4 rounded-tl-xl">Rank</th>
