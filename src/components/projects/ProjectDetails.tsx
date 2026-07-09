@@ -1,9 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowLeft, CheckCircle2, Clock, Flag, LayoutGrid, Target, Users, CheckSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useProjects } from '@/context/ProjectContext';
 
 export default function ProjectDetails({ project, onBack }: { project: any, onBack: () => void }) {
+  const { updateProject } = useProjects();
+  const [editingTask, setEditingTask] = useState<any>(null);
+
+  const handleSaveTask = () => {
+    if (!editingTask || !editingTask.title.trim()) return;
+    const updatedTasks = (project.tasks || []).map((t: any) => t.id === editingTask.id ? editingTask : t);
+    updateProject(project.id, { tasks: updatedTasks });
+    setEditingTask(null);
+  };
   const milestones: any[] = project.milestones || [];
   const tasks: any[] = project.tasks || [];
 
@@ -141,12 +152,16 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                 </div>
                 <div className="space-y-3 flex-1">
                   {tasks.filter((t: any) => t.status === status).map((task: any) => (
-                    <div key={task.id} className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                    <div 
+                      key={task.id} 
+                      onClick={() => setEditingTask({...task})}
+                      className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-orange-200 dark:hover:border-orange-500/50 transition-all cursor-pointer"
+                    >
                       <p className="text-sm font-semibold text-slate-900 dark:text-white mb-3">{task.title}</p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                           <Users className="h-3 w-3 text-slate-400" />
-                          <span className="text-xs font-medium text-slate-500">{task.assignee}</span>
+                          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{task.assignee}</span>
                         </div>
                       </div>
                     </div>
@@ -163,6 +178,73 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
         </div>
 
       </div>
+
+      {/* Edit Task Modal */}
+      <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
+        {editingTask && (
+          <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-0">
+            <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50">
+              <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">Edit Task</DialogTitle>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Update task details or move its status.</p>
+            </DialogHeader>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Task Title</label>
+                <input
+                  type="text"
+                  value={editingTask.title}
+                  onChange={(e) => setEditingTask({ ...editingTask, title: e.target.value })}
+                  className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Assignee</label>
+                <div className="relative">
+                  <select
+                    value={editingTask.assignee}
+                    onChange={(e) => setEditingTask({ ...editingTask, assignee: e.target.value })}
+                    className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
+                  >
+                    <option value="Unassigned">Unassigned</option>
+                    <option value="Amanda Smith">Amanda S.</option>
+                    <option value="Rahul Sharma">Rahul S.</option>
+                    <option value="Priya Patel">Priya P.</option>
+                    <option value="Rohan Gupta">Rohan G.</option>
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</label>
+                <div className="relative">
+                  <select
+                    value={editingTask.status}
+                    onChange={(e) => setEditingTask({ ...editingTask, status: e.target.value })}
+                    className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
+                  >
+                    <option value="To Do">To Do</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Done">Done</option>
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 pt-0 flex gap-3 mt-2">
+              <button className="flex-1 h-11 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent font-bold text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" onClick={() => setEditingTask(null)}>
+                Cancel
+              </button>
+              <button 
+                className="flex-1 h-11 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-md shadow-orange-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                onClick={handleSaveTask}
+                disabled={!editingTask.title.trim()}
+              >
+                Save Changes
+              </button>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 }

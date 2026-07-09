@@ -109,7 +109,8 @@ export default function Projects({ session }: { session?: any }) {
   });
 
   if (selectedProject) {
-    return <ProjectDetails project={selectedProject} onBack={() => setSelectedProject(null)} />;
+    const liveProject = projects.find((p: any) => p.id === selectedProject.id) || selectedProject;
+    return <ProjectDetails project={liveProject} onBack={() => setSelectedProject(null)} />;
   }
 
   return (
