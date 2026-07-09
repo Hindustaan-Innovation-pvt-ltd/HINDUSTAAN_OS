@@ -41,8 +41,8 @@ const PriorityBadge = ({ priority }: { priority: Priority }) => {
 
 const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
-const EmptyColumnPlaceholder = ({ status, role }: { status: Status; role: 'manager' | 'employee' }) => {
-  const isEmployee = role === 'employee';
+const EmptyColumnPlaceholder = ({ status, role }: { status: Status; role: 'manager' | 'intern' }) => {
+  const isEmployee = role === 'intern';
   const placeholders = {
     'To Do': {
       icon: CheckSquare,
@@ -118,7 +118,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
   let currentUserId = 'manager-1';
   let currentUserName = 'Admin User';
   
-  if (role === 'employee') {
+  if (role === 'intern' || role === 'employee') {
     if (email.toLowerCase().includes('amanda')) {
       currentUserId = 'u-1';
       currentUserName = 'Amanda Smith';
@@ -136,12 +136,12 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
 
   const currentUser = {
     id: currentUserId,
-    role: role as 'manager' | 'employee',
+    role: (role === 'employee' ? 'intern' : role) as 'manager' | 'intern',
     name: currentUserName
   };
 
   // Base tasks. If intern, only show tasks of the project he/she is working on of that particular employee
-  const baseTasks = currentUser.role === 'employee'
+  const baseTasks = currentUser.role === 'intern'
     ? tasks.filter(task => task.assignee_id === currentUser.id || task.assignee_name === currentUser.name)
     : tasks;
 
