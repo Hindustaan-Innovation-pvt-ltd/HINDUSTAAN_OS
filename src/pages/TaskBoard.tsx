@@ -41,25 +41,25 @@ const PriorityBadge = ({ priority }: { priority: Priority }) => {
 
 const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
-const EmptyColumnPlaceholder = ({ status, role }: { status: Status; role: 'manager' | 'intern' }) => {
-  const isIntern = role === 'intern';
+const EmptyColumnPlaceholder = ({ status, role }: { status: Status; role: 'manager' | 'employee' }) => {
+  const isEmployee = role === 'employee';
   const placeholders = {
     'To Do': {
       icon: CheckSquare,
       title: 'No tasks to do',
-      desc: isIntern ? 'All caught up! New tasks will appear here.' : 'All caught up! Drag tasks here to plan them.',
+      desc: isEmployee ? 'All caught up! New tasks will appear here.' : 'All caught up! Drag tasks here to plan them.',
       color: 'text-blue-600 dark:text-blue-400 bg-blue-50/70 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/30'
     },
     'In Progress': {
       icon: PlayCircle,
       title: 'Nothing in progress',
-      desc: isIntern ? "Open a task and click 'Start Working' to begin." : 'Select a task and drag it here to get started.',
+      desc: isEmployee ? "Open a task and click 'Start Working' to begin." : 'Select a task and drag it here to get started.',
       color: 'text-amber-600 dark:text-amber-400 bg-amber-50/70 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/30'
     },
     'In Review': {
       icon: Eye,
       title: 'No tasks in review',
-      desc: isIntern ? 'Submit a task for review to see it here.' : 'Finished work goes here for approval.',
+      desc: isEmployee ? 'Submit a task for review to see it here.' : 'Finished work goes here for approval.',
       color: 'text-purple-600 dark:text-purple-400 bg-purple-50/70 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900/30'
     },
     'Done': {
@@ -118,7 +118,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
   let currentUserId = 'manager-1';
   let currentUserName = 'Admin User';
   
-  if (role === 'intern') {
+  if (role === 'employee') {
     if (email.toLowerCase().includes('amanda')) {
       currentUserId = 'u-1';
       currentUserName = 'Amanda Smith';
@@ -129,7 +129,6 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
       currentUserId = 'u-3';
       currentUserName = 'Priya Patel';
     } else {
-      // Default to Tanvy (since "Good Morning, Tanvy" is in the dashboard and settings show "Tanvy Pandey")
       currentUserId = 'u-4';
       currentUserName = 'Tanvy';
     }
@@ -137,12 +136,12 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
 
   const currentUser = {
     id: currentUserId,
-    role: role as 'manager' | 'intern',
+    role: role as 'manager' | 'employee',
     name: currentUserName
   };
 
   // Base tasks. If intern, only show tasks of the project he/she is working on of that particular employee
-  const baseTasks = currentUser.role === 'intern'
+  const baseTasks = currentUser.role === 'employee'
     ? tasks.filter(task => task.assignee_id === currentUser.id || task.assignee_name === currentUser.name)
     : tasks;
 

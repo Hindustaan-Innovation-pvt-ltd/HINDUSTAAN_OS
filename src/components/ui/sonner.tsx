@@ -1,5 +1,4 @@
-"use client"
-
+import React from "react"
 import {
   CircleCheckIcon,
   InfoIcon,
@@ -7,11 +6,11 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react"
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { useTheme } from "@/context/ThemeContext"
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  const { theme } = useTheme()
 
   return (
     <Sonner
