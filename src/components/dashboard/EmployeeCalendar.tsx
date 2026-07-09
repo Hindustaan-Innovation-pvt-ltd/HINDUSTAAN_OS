@@ -28,8 +28,8 @@ const MOCK_CALENDAR_TASKS: CalendarTask[] = [
 ];
 
 export function EmployeeCalendar() {
-  // Hardcoded to July 7, 2026 to guarantee the visual state requested by user
-  const today = new Date(2026, 6, 7); 
+  // Use dynamic current date
+  const today = new Date(); 
   const [selectedMonth, setSelectedMonth] = useState<Date>(today);
   const startDate = new Date(2026, 6, 1);
   const endDate = new Date(2026, 9, 1);
@@ -48,7 +48,7 @@ export function EmployeeCalendar() {
   };
 
   return (
-    <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+    <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-full">
       <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
         <CardTitle className="text-base font-bold flex items-center text-slate-900 dark:text-white">
           <CalendarIcon className="h-4 w-4 text-orange-500 mr-2" />
@@ -69,6 +69,11 @@ export function EmployeeCalendar() {
               className="w-full flex justify-center border-0 p-0"
               classNames={{
                 day: "h-9 w-9 p-0 text-sm font-bold rounded-xl text-slate-700 dark:text-slate-300 transition-colors cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center aria-selected:opacity-100",
+                caption_label: "text-sm font-bold text-slate-900 dark:text-white",
+                button_previous: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-slate-700 dark:text-slate-300 absolute left-1",
+                button_next: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-slate-700 dark:text-slate-300 absolute right-1",
+                weekday: "text-[0.8rem] font-bold text-slate-500 dark:text-slate-400 w-9 text-center",
+                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 text-slate-900 dark:text-white"
               }}
               components={{
                 DayButton: ({ day, modifiers, ...props }) => {

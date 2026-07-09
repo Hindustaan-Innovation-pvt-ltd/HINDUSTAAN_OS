@@ -1,4 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component } from 'react';
+
+class ManagerErrorBoundary extends Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-10 m-10 bg-rose-50 border border-rose-200 rounded-xl overflow-auto text-rose-900">
+          <h2 className="text-xl font-bold mb-4">Dashboard Crash Detected</h2>
+          <pre className="text-xs font-mono whitespace-pre-wrap">{this.state.error?.stack || this.state.error?.toString()}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 import { 
   FolderKanban, 
   CheckSquare, 
@@ -21,6 +43,7 @@ import {
 } from 'lucide-react';
 import ProjectDetails from '../projects/ProjectDetails';
 import { cn } from '@/lib/utils';
+import { getCurrentUser } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -71,7 +94,7 @@ const DEADLINES = [
   { id: 'd3', task: 'Client Presentation', priority: 'High', assignee: 'Amanda Smith' },
 ];
 
-export default function ManagerDashboard() {
+function ManagerDashboardInner() {
   const { projects } = useProjects();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
@@ -80,7 +103,12 @@ export default function ManagerDashboard() {
   const [activityFeed, setActivityFeed] = useState<any[]>(ACTIVITY_FEED_MOCK);
   const [tasks, setTasks] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_tasks_list');
-    return saved ? JSON.parse(saved) : INITIAL_TASKS;
+    try {
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : INITIAL_TASKS;
+    } catch (e) {
+      return INITIAL_TASKS;
+    }
   });
 
   useEffect(() => {
@@ -93,8 +121,8 @@ export default function ManagerDashboard() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const totalTasksCount = tasks.length;
-  const dueTodayTasksCount = tasks.filter(t => t.due_date.toLowerCase().includes('today') || t.due_date.toLowerCase().includes('12') || t.due_date.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase())).length;
+  const totalTasksCount = (tasks || []).length;
+  const dueTodayTasksCount = (tasks || []).filter(t => t?.due_date?.toLowerCase().includes('today') || t?.due_date?.toLowerCase().includes('12') || t?.due_date?.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase())).length;
 
   const [activeSessions, setActiveSessions] = useState<{ [key: string]: { time: number; isOnline: boolean } }>({});
 
@@ -121,10 +149,15 @@ export default function ManagerDashboard() {
       setActiveSessions(sessions);
       
       const storedActivity = localStorage.getItem('hindustaan_activity_feed');
-      if (storedActivity) {
-        setActivityFeed(JSON.parse(storedActivity));
-      } else {
-        localStorage.setItem('hindustaan_activity_feed', JSON.stringify(ACTIVITY_FEED_MOCK));
+      try {
+        if (storedActivity) {
+          const parsed = JSON.parse(storedActivity);
+          setActivityFeed(Array.isArray(parsed) ? parsed : ACTIVITY_FEED_MOCK);
+        } else {
+          localStorage.setItem('hindustaan_activity_feed', JSON.stringify(ACTIVITY_FEED_MOCK));
+        }
+      } catch (e) {
+        setActivityFeed(ACTIVITY_FEED_MOCK);
       }
     };
 
@@ -133,9 +166,10 @@ export default function ManagerDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const mappedProjects = projects.slice(0, 5).map(p => {
-    const completedTasks = p.tasks?.filter((t: any) => t.status === 'Done').length || 0;
-    const totalTasks = p.tasks?.length || 0;
+  const mappedProjects: any[] = (projects || []).slice(0, 5).map(p => {
+    if (!p) return null;
+    const completedTasks = (p.tasks || []).filter((t: any) => t?.status === 'Done').length || 0;
+    const totalTasks = (p.tasks || []).length || 0;
     const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
     return {
       id: p.id,
@@ -144,14 +178,15 @@ export default function ManagerDashboard() {
       dueDate: p.deadline || 'TBD',
       status: p.status
     };
-  });
+  }).filter(Boolean);
 
   const dynamicDeadlines = React.useMemo(() => {
-    let tasks: any[] = [];
-    projects.forEach(p => {
-      p.tasks?.forEach((t: any) => {
-        if (t.status !== 'Done') {
-          tasks.push({
+    let tasksList: any[] = [];
+    (projects || []).forEach(p => {
+      if (!p) return;
+      (p.tasks || []).forEach((t: any) => {
+        if (t && t.status !== 'Done') {
+          tasksList.push({
             id: t.id + p.id,
             task: t.title,
             priority: 'High',
@@ -160,7 +195,7 @@ export default function ManagerDashboard() {
         }
       });
     });
-    return tasks.slice(0, 4);
+    return tasksList.slice(0, 4);
   }, [projects]);
 
   const formatTime = (totalSeconds: number) => {
@@ -216,17 +251,17 @@ export default function ManagerDashboard() {
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            {greeting}, Aakash <span className="inline-block animate-wave origin-bottom-right">👋</span>
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
+            {greeting}, {getCurrentUser()?.name?.split(' ')[0] || 'Aakash'} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">
+          <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-2 font-medium break-words whitespace-normal">
             Manage projects, monitor team performance, and track progress from one place.
           </p>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
 
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
           <CardContent className="p-5 flex flex-col justify-between h-full gap-4">
@@ -237,7 +272,7 @@ export default function ManagerDashboard() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">Active</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{projects.length}</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{(projects || []).length}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Total Projects</p>
             </div>
           </CardContent>
@@ -252,7 +287,7 @@ export default function ManagerDashboard() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">All time</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{projects.reduce((acc, p) => acc + (p.tasks?.length || 0), 0)}</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{(projects || []).reduce((acc: number, p: any) => acc + (p.tasks?.length || 0), 0)}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Total Tasks</p>
             </div>
           </CardContent>
@@ -351,23 +386,23 @@ export default function ManagerDashboard() {
             <CardContent className="flex-1 overflow-hidden">
               <ScrollArea className="h-full pr-4">
                 <div className="space-y-6 pt-2">
-                  {mappedProjects.map((project) => (
-                    <div key={project.id} className="group flex flex-col gap-3">
+                  {mappedProjects.map((project: any) => (
+                    <div key={project?.id || Math.random()} className="group flex flex-col gap-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <span className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                            {project.name}
+                            {project?.name}
                           </span>
-                          <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", getStatusBadgeStyles(project.status))}>
-                            {project.status}
+                          <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", getStatusBadgeStyles(project?.status || 'Active'))}>
+                            {project?.status}
                           </Badge>
                         </div>
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Due: {project.dueDate}</span>
+                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Due: {project?.dueDate}</span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <Progress value={project.progress} className={cn("h-2 flex-1", project.status === 'Aborted' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
+                        <Progress value={project?.progress || 0} className={cn("h-2 flex-1", project?.status === 'Aborted' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
                         <div className="flex items-center gap-1 justify-end w-16 shrink-0">
-                          <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{project.progress}%</span>
+                          <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{project?.progress || 0}%</span>
                           <button
                             onClick={() => setSelectedProject(project)}
                             className="flex items-center justify-center h-6 w-6 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-orange-600 transition-colors shrink-0"
@@ -468,12 +503,12 @@ export default function ManagerDashboard() {
                         <div className="flex items-start gap-3">
                           <Avatar className="h-8 w-8 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                             <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300 text-xs font-bold rounded-lg">
-                              {activity.user.split(' ').map((n: string) => n[0]).join('')}
+                              {(activity.user || 'Unknown').split(' ').map((n: string) => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col">
                             <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-snug">
-                              <span className="font-bold text-slate-900 dark:text-white">{activity.user}</span> {activity.action} <span className="font-bold text-slate-900 dark:text-white">{activity.target}</span>
+                              <span className="font-bold text-slate-900 dark:text-white">{activity.user || 'Unknown User'}</span> {activity.action} <span className="font-bold text-slate-900 dark:text-white">{activity.target}</span>
                             </p>
                           </div>
                         </div>
@@ -505,10 +540,10 @@ export default function ManagerDashboard() {
                       <div className="flex items-center gap-2">
                         <Avatar className="h-5 w-5 rounded-full">
                           <AvatarFallback className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[8px] font-bold">
-                            {deadline.assignee.split(' ').map((n: string) => n[0]).join('')}
+                            {(deadline.assignee || 'Unassigned').split(' ').map((n: string) => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{deadline.assignee}</span>
+                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{deadline.assignee || 'Unassigned'}</span>
                       </div>
                     </div>
                     <DropdownMenu>
@@ -675,5 +710,13 @@ export default function ManagerDashboard() {
 
       <AssignTaskDialog open={isAssignTaskOpen} onOpenChange={setIsAssignTaskOpen} />
     </div>
+  );
+}
+
+export default function ManagerDashboard() {
+  return (
+    <ManagerErrorBoundary>
+      <ManagerDashboardInner />
+    </ManagerErrorBoundary>
   );
 }

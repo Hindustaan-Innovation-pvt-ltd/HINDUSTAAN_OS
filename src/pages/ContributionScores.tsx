@@ -14,6 +14,7 @@ import {
   ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis,
   CartesianGrid, RadialBarChart, RadialBar, AreaChart, Area
 } from 'recharts';
+import { getCurrentUser } from '@/lib/auth';
 import {
   Trophy, TrendingUp, TrendingDown, Target, Clock, Mic,
   Download, RefreshCw, Filter, Calendar, Search, MoreVertical,
@@ -27,6 +28,8 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { toast } from 'sonner';
+import { AssignTaskDialog } from '../components/dashboard/AssignTaskDialog';
 
 // -- MOCK DATA GENERATOR --
 const generateData = () => {
@@ -110,7 +113,9 @@ export default function ContributionScores({ session }: { session?: any }) {
   const role = session?.user?.user_metadata?.role || 'employee';
   const email = session?.user?.email || 'user@hindustaan.in';
 
-  let currentUserName = 'Tanvy Pandey';
+  const user = getCurrentUser();
+  const userName = user?.name || 'Tanvy Pandey';
+  let currentUserName = userName;
   if (email.toLowerCase().includes('amanda')) currentUserName = 'Amanda Smith';
   else if (email.toLowerCase().includes('rahul')) currentUserName = 'Rahul Sharma';
   else if (email.toLowerCase().includes('priya')) currentUserName = 'Priya Patel';
@@ -118,6 +123,8 @@ export default function ContributionScores({ session }: { session?: any }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
+  const [analyticsIntern, setAnalyticsIntern] = useState<any>(null);
 
   const filteredInterns = MOCK_INTERNS.filter(intern =>
     intern.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -484,8 +491,8 @@ export default function ContributionScores({ session }: { session?: any }) {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 md:gap-5">
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm col-span-1 sm:col-span-2 lg:col-span-2 relative overflow-hidden group">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-5">
+        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm col-span-1 sm:col-span-2 lg:col-span-4 xl:col-span-2 relative overflow-hidden group">
           <div className="absolute right-0 top-0 h-full w-1/2 opacity-10 pointer-events-none">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={weeklyTrendData}>
@@ -516,46 +523,44 @@ export default function ContributionScores({ session }: { session?: any }) {
           { title: "Standups", val: "89%", icon: Mic, color: COLORS.orange },
         ].map((kpi, i) => (
           <Card key={i} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
-            <CardContent className="p-5 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{kpi.title}</p>
-                <p className="text-2xl font-black text-slate-900 dark:text-white">{kpi.val}</p>
+            <CardContent className="p-4 lg:p-5 flex flex-col items-center justify-center text-center gap-2 lg:gap-3">
+              <div className="w-full flex flex-col items-center">
+                <p className="text-[9px] lg:text-[10px] 2xl:text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1 whitespace-nowrap overflow-visible">{kpi.title}</p>
+                <p className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white leading-none">{kpi.val}</p>
               </div>
-              <div className="h-12 w-12 shrink-0 relative flex items-center justify-center">
+              <div className="h-10 w-10 lg:h-12 lg:w-12 shrink-0 relative flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
                   <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: parseInt(kpi.val), fill: kpi.color }]} startAngle={90} endAngle={-270}>
                     <RadialBar background={{ fill: 'var(--color-slate-100)' }} dataKey="value" cornerRadius={10} />
                   </RadialBarChart>
                 </ResponsiveContainer>
-                <kpi.icon className="h-4 w-4 relative z-10" style={{ color: kpi.color }} />
+                <kpi.icon className="h-3 w-3 lg:h-4 lg:w-4 relative z-10" style={{ color: kpi.color }} />
               </div>
             </CardContent>
           </Card>
         ))}
 
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
-          <CardContent className="p-5">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Highest Score</p>
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-900 shadow-sm">
-                <AvatarFallback className="bg-orange-100 text-orange-700 font-bold">
-                  {highestScorer.name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">{highestScorer.name}</p>
-                <p className="text-lg font-black text-emerald-600">{highestScorer.score}%</p>
-              </div>
+          <CardContent className="p-4 lg:p-5 flex flex-col items-center justify-center text-center gap-2">
+            <p className="text-[9px] lg:text-[10px] 2xl:text-[11px] font-bold text-slate-500 uppercase tracking-tight whitespace-nowrap">Highest Score</p>
+            <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-900 shadow-sm shrink-0">
+              <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-xs lg:text-sm">
+                {highestScorer.name.split(' ').map(n => n[0]).join('')}
+              </AvatarFallback>
+            </Avatar>
+            <div className="w-full flex flex-col items-center">
+              <p className="text-xs lg:text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis max-w-full px-1">{highestScorer.name}</p>
+              <p className="text-base lg:text-lg font-black text-emerald-600 leading-none mt-1">{highestScorer.score}%</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
         {/* Left Column - Main Table */}
-        <div className="lg:col-span-8 flex flex-col min-w-0">
+        <div className="xl:col-span-8 flex flex-col min-w-0">
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col flex-1">
             <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -572,8 +577,8 @@ export default function ContributionScores({ session }: { session?: any }) {
                 />
               </div>
             </CardHeader>
-            <CardContent className="p-0 overflow-auto flex-1 min-h-0 relative">
-              <table className="w-full min-w-[800px] text-sm text-left relative">
+            <CardContent className="p-0 overflow-auto flex-1 relative">
+              <table className="w-full whitespace-nowrap text-sm text-left relative">
                 <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-20">
                   <tr>
                     <th className="px-6 py-4 rounded-tl-xl">Rank</th>
@@ -649,10 +654,10 @@ export default function ContributionScores({ session }: { session?: any }) {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem><BarChart2 className="mr-2 h-4 w-4" /> View Analytics</DropdownMenuItem>
-                            <DropdownMenuItem><CheckCircle2 className="mr-2 h-4 w-4" /> Assign Task</DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer" onClick={() => setAnalyticsIntern(intern)}><BarChart2 className="mr-2 h-4 w-4" /> View Analytics</DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer" onClick={() => setIsAssignTaskOpen(true)}><CheckCircle2 className="mr-2 h-4 w-4" /> Assign Task</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-rose-600"><AlertTriangle className="mr-2 h-4 w-4" /> Flag Performance</DropdownMenuItem>
+                            <DropdownMenuItem className="text-rose-600 cursor-pointer" onClick={() => toast.success(`Performance flagged for ${intern.name}`)}><AlertTriangle className="mr-2 h-4 w-4" /> Flag Performance</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -665,7 +670,7 @@ export default function ContributionScores({ session }: { session?: any }) {
         </div>
 
         {/* Right Column - Charts & Top Performers */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="xl:col-span-4 space-y-6 xl:sticky xl:top-24 h-fit">
 
           {/* Score Distribution Donut */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
@@ -716,9 +721,9 @@ export default function ContributionScores({ session }: { session?: any }) {
               <div className="h-[180px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={deptData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} domain={[60, 100]} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-slate-500 dark:text-slate-400" />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-slate-500 dark:text-slate-400" domain={[60, 100]} />
                     <RechartsTooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px' }} />
                     <Bar dataKey="score" fill={COLORS.orange} radius={[4, 4, 0, 0]} barSize={30} />
                   </BarChart>
@@ -755,7 +760,94 @@ export default function ContributionScores({ session }: { session?: any }) {
         </div>
       </div>
 
+      <AssignTaskDialog open={isAssignTaskOpen} onOpenChange={setIsAssignTaskOpen} />
+      
+      {/* Analytics Sheet */}
+      <Sheet open={!!analyticsIntern} onOpenChange={(open) => !open && setAnalyticsIntern(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-md lg:max-w-lg overflow-y-auto bg-slate-50 dark:bg-slate-950 p-0 border-l border-slate-200 dark:border-slate-800">
+          {analyticsIntern && (
+            <div className="flex flex-col min-h-full">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-10 shadow-sm">
+                <SheetTitle className="text-xl sm:text-2xl font-black flex items-center gap-4">
+                  <Avatar className="h-14 w-14 border-2 border-white dark:border-slate-800 shadow-sm">
+                    <AvatarFallback className="bg-orange-100 text-orange-600 text-lg">
+                      {analyticsIntern.name.split(' ').map((n: string) => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    {analyticsIntern.name}
+                    <p className="text-sm font-medium text-slate-500 mt-1">{analyticsIntern.department} Intern</p>
+                  </div>
+                </SheetTitle>
+              </div>
+              
+              <div className="p-6 space-y-6 flex-1">
+                <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                  <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Final Contribution Score</p>
+                  <div className="h-48 w-48 relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadialBarChart innerRadius="80%" outerRadius="100%" data={[{ value: analyticsIntern.score, fill: COLORS.orange }]} startAngle={90} endAngle={-270}>
+                        <RadialBar background={{ fill: 'var(--color-slate-100)' }} dataKey="value" cornerRadius={20} />
+                      </RadialBarChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-5xl font-black text-slate-900 dark:text-white">{analyticsIntern.score}</span>
+                      <span className="text-sm font-bold text-slate-500 mt-1">/ 100</span>
+                    </div>
+                  </div>
+                </div>
 
+                <div className="space-y-4">
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Formula Breakdown</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"><Target className="h-6 w-6" /></div>
+                        <div>
+                          <p className="text-base font-bold text-slate-900 dark:text-white">Task Performance</p>
+                          <p className="text-xs font-semibold text-slate-500 mt-0.5">40% Weightage</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-black text-slate-900 dark:text-white">{analyticsIntern.taskScore}</span>
+                        <span className="text-sm font-bold text-slate-500"> / 40</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"><Clock className="h-6 w-6" /></div>
+                        <div>
+                          <p className="text-base font-bold text-slate-900 dark:text-white">Work Log Consistency</p>
+                          <p className="text-xs font-semibold text-slate-500 mt-0.5">35% Weightage</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-black text-slate-900 dark:text-white">{analyticsIntern.logScore}</span>
+                        <span className="text-sm font-bold text-slate-500"> / 35</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-2xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400"><Mic className="h-6 w-6" /></div>
+                        <div>
+                          <p className="text-base font-bold text-slate-900 dark:text-white">Standup Completion</p>
+                          <p className="text-xs font-semibold text-slate-500 mt-0.5">25% Weightage</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-black text-slate-900 dark:text-white">{analyticsIntern.standupScore}</span>
+                        <span className="text-sm font-bold text-slate-500"> / 25</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
 
     </div>
   );

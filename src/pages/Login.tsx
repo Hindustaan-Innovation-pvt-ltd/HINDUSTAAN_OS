@@ -7,16 +7,14 @@ import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/comp
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { loginUser, getRegisteredUsers, initializeAuth } from '@/lib/auth';
+import { User as UserIcon } from 'lucide-react';
 
-export const approvedUsers = [
-  { id: "EMP001", name: "Employee One", email: "employee1@hindustaan.in", role: "employee" },
-  { id: "EMP002", name: "Employee Two", email: "employee2@hindustaan.in", role: "employee" },
-  { id: "MGR001", name: "Manager One", email: "manager1@hindustaan.in", role: "manager" }
-];
-
-export default function Login({ onMockLogin }: { onMockLogin?: (role: string, email?: string) => void }) {
+export default function Login({ onMockLogin, onNavigateToRegister }: { onMockLogin?: (role: string, email?: string) => void, onNavigateToRegister?: () => void }) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   
   // Authentication Modes
@@ -32,6 +30,10 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
   const [countdown, setCountdown] = useState(300);
 
   const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    initializeAuth();
+  }, []);
 
   useEffect(() => {
     if (isDark) {
@@ -54,7 +56,8 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
   }, [showOTPDialog, otpState]);
 
   const validateUser = () => {
-    const user = approvedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const users = getRegisteredUsers();
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     
     if (!user) {
       toast.error('Access Denied', {
@@ -80,13 +83,20 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
     try {
       await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
       
-      const user = validateUser();
-      if (!user) {
+      const validated = validateUser();
+      if (!validated) {
         setLoading(false);
         return;
       }
       
-      if (user.role === 'intern') {
+      const user = loginUser(email, password, rememberMe);
+      if (!user) {
+        toast.error('Authentication Error', { description: 'Incorrect password.' });
+        setLoading(false);
+        return;
+      }
+      
+      if (user.role === 'employee' || user.role === 'intern' as any) {
         let userId = 'u-4';
         let userName = 'Tanvy Pandey';
         
@@ -118,7 +128,6 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
         localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newEvent, ...feed].slice(0, 20)));
       }
       
-      localStorage.setItem('hindustaan_user', JSON.stringify(user));
       toast.success('Access granted.', { description: 'Initializing workspaces...' });
       
       if (onMockLogin) {
@@ -208,9 +217,8 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
     const success = await verifyOTP(email, otpValue);
     
     if (success) {
-      const user = approvedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+      const user = loginUser(email, undefined, rememberMe); // OTP login, no password needed
       if (user) {
-        localStorage.setItem('hindustaan_user', JSON.stringify(user));
         toast.success('Verification Successful', { description: 'Welcome back!' });
         setShowOTPDialog(false);
         if (onMockLogin) {
@@ -239,30 +247,55 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
       </button>
 
       <div className="relative z-10 w-full max-w-md px-4 sm:px-6">
-        <div className="rounded-[2rem] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-8 sm:p-10 shadow-2xl backdrop-blur-xl transition-all duration-500">
+        <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500">
           
-          <div className="flex flex-col items-center text-center mb-8">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-green-600 text-white shadow-lg shadow-orange-500/30 mb-5">
-              <Compass className="h-7 w-7" />
+          <div className="flex flex-col items-center text-center mb-4">
+            <img
+              src={isDark ? "/logo-full-dark.png" : "/logo-full.png"}
+              alt="Hindustaan OS Logo"
+              className="mx-auto w-[120px] md:w-[150px] xl:w-[190px] h-auto object-contain transition-all duration-300"
+              style={{ filter: "drop-shadow(0 12px 30px rgba(255,153,0,.18)) drop-shadow(0 12px 30px rgba(34,197,94,.12))" }}
+            />
+            <div className="mt-2 flex flex-col items-center">
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                Internal Workspace Portal
+              </p>
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white transition-colors duration-300">
-              <span className="text-orange-500">Hi</span>ndustaan <span className="text-green-500">OS</span>
-            </h2>
-            <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">
-              Internal Workspace Portal
-            </p>
           </div>
 
-          <form className="space-y-6" onSubmit={isOTPMode ? handleOTPRequest : handlePasswordLogin}>
-            <div className="space-y-5">
+          <form className="space-y-4" onSubmit={isOTPMode ? handleOTPRequest : handlePasswordLogin}>
+            <div className="space-y-3">
               
               <div>
-                <label htmlFor="email-address" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                <label htmlFor="name" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                    <UserIcon className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                  </div>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    minLength={3}
+                    maxLength={50}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="email-address" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
                   Email Address
                 </label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                    <Mail className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                    <Mail className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                   </div>
                   <input
                     id="email-address"
@@ -272,7 +305,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-3.5 pl-12 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
                     placeholder="name@hindustaan.in"
                   />
                 </div>
@@ -280,12 +313,12 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
 
               {!isOTPMode && (
                 <div className="transition-all duration-300 ease-in-out animate-in fade-in zoom-in-95">
-                  <label htmlFor="password" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                  <label htmlFor="password" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
                     Password
                   </label>
                   <div className="relative">
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                      <KeyRound className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                      <KeyRound className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                     </div>
                     <input
                       id="password"
@@ -295,7 +328,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
                       required={!isOTPMode}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-3.5 pl-12 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
+                      className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
                       placeholder="••••••••"
                     />
                   </div>
@@ -303,12 +336,25 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-1 pb-2">
+            <div className="flex items-center space-x-2 pt-0.5">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-3.5 h-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-900"
+              />
+              <label htmlFor="rememberMe" className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                Remember Me
+              </label>
+            </div>
+
+            <div className="flex items-center justify-between pt-0.5 pb-1">
               {!isOTPMode ? (
                 <button
                   type="button"
                   onClick={() => toast.success('Password reset link sent to your email.')}
-                  className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors uppercase tracking-wider"
+                  className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors uppercase tracking-wider"
                 >
                   Forgot Password?
                 </button>
@@ -318,18 +364,18 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
               <button
                 type="button"
                 onClick={() => setIsOTPMode(!isOTPMode)}
-                className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors uppercase tracking-wider"
+                className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors uppercase tracking-wider"
               >
-                {isOTPMode ? 'Use Password Instead' : 'Login with OTP'}
+                {isOTPMode ? 'Use Password' : 'Login with OTP'}
               </button>
             </div>
 
-            <div className="flex items-center justify-center space-x-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl w-full">
+            <div className="flex items-center justify-center space-x-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full">
               <button
                 type="button"
                 onClick={() => setMockRole('manager')}
                 className={cn(
-                  "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
+                  "flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all",
                   mockRole === 'manager' 
                     ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm" 
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
@@ -341,7 +387,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
                 type="button"
                 onClick={() => setMockRole('employee')}
                 className={cn(
-                  "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
+                  "flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all",
                   mockRole === 'employee' 
                     ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm" 
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
@@ -355,7 +401,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative flex w-full justify-center items-center space-x-2 rounded-xl bg-gradient-to-r from-orange-500 to-green-600 px-4 py-3.5 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-green-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:opacity-70 disabled:hover:scale-100 transition-all duration-200 ease-out"
+                className="group relative flex w-full justify-center items-center space-x-2 rounded-xl bg-gradient-to-r from-orange-500 to-green-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-green-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:opacity-70 disabled:hover:scale-100 transition-all duration-200 ease-out"
               >
                 {loading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -365,6 +411,17 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
                     <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </>
                 )}
+              </button>
+            </div>
+            
+            <div className="text-center pt-3 pb-1">
+              <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Don't have an account? </span>
+              <button 
+                type="button" 
+                onClick={onNavigateToRegister}
+                className="text-[13px] font-extrabold text-orange-600 hover:text-orange-700 hover:underline transition-all ml-1"
+              >
+                Create Account
               </button>
             </div>
           </form>

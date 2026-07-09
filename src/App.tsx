@@ -14,6 +14,7 @@ import ProgressTracker from './pages/ProgressTracker';
 import WorkLogs from './pages/WorkLogs';
 import DailyStandups from './pages/DailyStandups';
 import ContributionScores from './pages/ContributionScores';
+import Register from './pages/Register';
 // Supabase client removed for mock auth implementation
 
 import { ThemeProvider } from './context/ThemeContext';
@@ -27,15 +28,17 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState('Dashboard');
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
+  const [authView, setAuthView] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
-    const userStr = localStorage.getItem('hindustaan_user');
+    const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
-        setSession({ user: { email: user.email, user_metadata: { role: user.role } } });
+        setSession({ user: { email: user.email, user_metadata: { role: user.role, name: user.name, department: user.department } } });
       } catch (e) {
         localStorage.removeItem('hindustaan_user');
+        sessionStorage.removeItem('hindustaan_user');
       }
     }
     setLoading(false);
@@ -43,9 +46,13 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 animate-pulse">
-          Loading Hindustaan OS Workspace...
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="flex flex-col items-center justify-center gap-6 animate-pulse">
+          <img src="/logo-full.png" alt="Hindustaan OS" className="w-[150px] dark:hidden object-contain" />
+          <img src="/logo-full-dark.png" alt="Hindustaan OS" className="w-[150px] hidden dark:block object-contain" />
+          <div className="text-sm font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
+            Initializing Workspace...
+          </div>
         </div>
       </div>
     );
@@ -55,14 +62,21 @@ function App() {
     <ThemeProvider>
       <ProjectProvider>
       <TooltipProvider>
-        {!session ? (
-          <Login onMockLogin={() => {
-            const userStr = localStorage.getItem('hindustaan_user');
-            if (userStr) {
-              const user = JSON.parse(userStr);
-              setSession({ user: { email: user.email, user_metadata: { role: user.role } } });
-            }
-          }} />
+          {!session ? (
+            authView === 'login' ? (
+              <Login 
+                onMockLogin={(role, email) => {
+                  const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
+                  if (userStr) {
+                    const user = JSON.parse(userStr);
+                    setSession({ user: { email: user.email, user_metadata: { role: user.role, name: user.name, department: user.department } } });
+                  }
+                }}
+                onNavigateToRegister={() => setAuthView('register')}
+              />
+            ) : (
+              <Register onNavigateToLogin={() => setAuthView('login')} />
+            )
         ) : (
           <DashboardShell
             currentView={currentView}
@@ -77,7 +91,7 @@ function App() {
               
               if (role === 'employee') {
                 let currentUserId = 'u-4';
-                let currentUserName = 'Tanvy Pandey';
+                let currentUserName = session.user?.user_metadata?.name || 'Tanvy Pandey';
                 let currentProject = 'Frontend Core';
                 let currentTask = 'Kanban Board & Work Logs';
                 
@@ -106,7 +120,7 @@ function App() {
                   // Convert to hours (with minimum of 0.1 hours so short demo sessions show up nicely)
                   const hours = Math.max(0.1, Math.round((secondsElapsed / 3600) * 10) / 10);
                   
-                  const initials = currentUserName.split(' ').map(n => n[0]).join('').toUpperCase();
+                  const initials = currentUserName.split(' ').map((n: string) => n[0]).join('').toUpperCase();
                   const newLog = {
                     id: `session-${Date.now()}`,
                     name: currentUserName,
@@ -129,6 +143,7 @@ function App() {
               }
               
               localStorage.removeItem('hindustaan_user');
+              sessionStorage.removeItem('hindustaan_user');
               setSession(null);
             }}
           >
@@ -142,7 +157,7 @@ function App() {
             {currentView === 'About Us' && <AboutUs />}
             {currentView === 'Settings' && <Settings session={session} />}
             {currentView === 'My Profile' && <Settings session={session} defaultTab="profile" />}
-            {currentView === 'Team Members' && <TeamMembers session={session} />}
+            {currentView === 'Team Members' && <TeamMembers />}
 
             {/* New Pages */}
             {currentView === 'Gantt Timeline' && <GanttTimeline session={session} />}
@@ -163,10 +178,9 @@ function App() {
               </div>
             )}
           </DashboardShell>
-        )
-      }
-<Toaster position="top-right" richColors />
-      </TooltipProvider >
+        )}
+        <Toaster position="top-right" richColors />
+      </TooltipProvider>
       </ProjectProvider>
     </ThemeProvider>
   );

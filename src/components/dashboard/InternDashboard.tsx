@@ -17,13 +17,23 @@ import { Separator } from "@/components/ui/separator";
 import { WhatsAppBroadcastDialog } from "./WhatsAppBroadcastDialog";
 import { FigjamDialog } from "./FigjamDialog";
 import { EmployeeCalendar } from "./EmployeeCalendar";
-import { INITIAL_TASKS, GLOBAL_LOGS, GLOBAL_ACTIVITY_FEED } from '@/data/mockData';
+import { GLOBAL_ACTIVITY_FEED, INITIAL_TASKS, GLOBAL_LOGS } from '@/data/mockData';
+import { getCurrentUser } from '@/lib/auth';
 import { useProjects } from '@/context/ProjectContext';
 
 
 interface InternDashboardProps {
   session?: any;
 }
+
+// Monkey-patch localStorage.setItem ONCE globally for this module
+// so that different components/hooks can listen to same-tab storage events.
+const originalSetItem = localStorage.setItem;
+localStorage.setItem = function(key, value) {
+  originalSetItem.apply(this, arguments as any);
+  // Dispatch a custom event for same-tab updates
+  window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key, value } }));
+};
 
 export default function InternDashboard({ session }: InternDashboardProps) {
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
@@ -33,43 +43,55 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const role = session?.user?.user_metadata?.role || 'intern';
   const email = session?.user?.email || 'user@hindustaan.in';
   
-  let currentUserId = 'u-4';
-  let currentUserName = 'Tanvy Pandey';
-  
-  if (email.toLowerCase().includes('amanda')) {
-    currentUserId = 'u-1';
-    currentUserName = 'Amanda Smith';
-  } else if (email.toLowerCase().includes('rahul')) {
-    currentUserId = 'u-2';
-    currentUserName = 'Rahul Sharma';
-  } else if (email.toLowerCase().includes('priya')) {
-    currentUserId = 'u-3';
-    currentUserName = 'Priya Patel';
-  }
+  const user = getCurrentUser();
+  let currentUserId = user?.id || 'u-4';
+  let currentUserName = user?.name || 'User';
 
   const { projects } = useProjects();
   
-  // Extract dynamic tasks from projects
-  const tasks = React.useMemo(() => {
-    const allTasks = projects.flatMap((p: any) => p.tasks?.map((t: any) => ({
-      id: t.id + p.id,
-      title: t.title,
-      project_tag: p.name,
-      assignee_name: t.assignee || 'Unassigned',
-      priority: t.priority || 'Normal',
-      due_date: p.deadline || 'TBD',
-      status: t.status
-    })) || []);
-    
+  // Extract dynamic tasks from central task list (TaskBoard source)
+  const [tasks, setTasks] = useState<any[]>(() => {
+    const saved = null; // Bypass local storage to fix UI issues
+    const allTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
     return allTasks.filter((t: any) => 
       t.assignee_name === currentUserName || 
-      (currentUserName.toLowerCase().includes('tanvy') && t.assignee_name?.toLowerCase().includes('tanvy'))
+      (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
     );
-  }, [projects, currentUserName]);
+  });
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hindustaan_tasks_list' && e.newValue) {
+        const allTasks = JSON.parse(e.newValue);
+        setTasks(allTasks.filter((t: any) => 
+          t.assignee_name === currentUserName || 
+          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
+        ));
+      }
+    };
+    
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'hindustaan_tasks_list') {
+        const allTasks = typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : INITIAL_TASKS;
+        setTasks(allTasks.filter((t: any) => 
+          t.assignee_name === currentUserName || 
+          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
+        ));
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    };
+  }, [currentUserName]);
 
   // Read activity feed
   const [activityFeed, setActivityFeed] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_activity_feed');
+    const saved = null; // Bypass local storage
     return saved ? JSON.parse(saved) : GLOBAL_ACTIVITY_FEED;
   });
 
@@ -79,8 +101,17 @@ export default function InternDashboard({ session }: InternDashboardProps) {
         setActivityFeed(JSON.parse(e.newValue));
       }
     };
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'hindustaan_activity_feed') {
+        setActivityFeed(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_ACTIVITY_FEED);
+      }
+    };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    };
   }, []);
   
   const userActivities = React.useMemo(() => {
@@ -91,29 +122,30 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const [loggedHours, setLoggedHours] = useState(() => {
     const saved = localStorage.getItem('work_logs_list');
     const logs = saved ? JSON.parse(saved) : GLOBAL_LOGS;
-    const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes('tanvy') && log.name.toLowerCase().includes('tanvy')));
+    const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && log.name.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())));
     return userLogs.reduce((acc: number, log: any) => acc + log.hours, 0);
   });
 
   useEffect(() => {
-    const handleLogsChange = () => {
-      const saved = localStorage.getItem('work_logs_list');
-      const logs = saved ? JSON.parse(saved) : GLOBAL_LOGS;
-      const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes('tanvy') && log.name.toLowerCase().includes('tanvy')));
+    const handleLogsChange = (logsStr: string | null) => {
+      const logs = logsStr ? JSON.parse(logsStr) : GLOBAL_LOGS;
+      const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && log.name.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())));
       setLoggedHours(userLogs.reduce((acc: number, log: any) => acc + log.hours, 0));
     };
-    window.addEventListener('storage', handleLogsChange);
-    // Listen to local log writes in same window too
-    const originalSetItem = localStorage.setItem;
-    localStorage.setItem = function(key, value) {
-      originalSetItem.apply(this, arguments as any);
-      if (key === 'work_logs_list') {
-        handleLogsChange();
-      }
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'work_logs_list') handleLogsChange(e.newValue);
     };
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'work_logs_list') handleLogsChange(e.detail.value);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    
     return () => {
-      localStorage.setItem = originalSetItem;
-      window.removeEventListener('storage', handleLogsChange);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
     };
   }, [currentUserName]);
 
@@ -148,11 +180,11 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
-            {greeting}, {currentUserName.split(' ')[0]} <span className="animate-wave inline-block origin-bottom-right">👋</span>
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
+            {greeting}, {currentUserName.split(' ')[0]} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
-          <p className="text-lg font-medium text-orange-600 dark:text-orange-400 mt-1">Frontend Developer Intern</p>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">
+          <p className="text-base sm:text-lg font-medium text-orange-600 dark:text-orange-400 mt-1 break-words whitespace-normal">Frontend Developer Intern</p>
+          <p className="text-sm sm:text-base font-medium text-slate-500 dark:text-slate-400 mt-2 break-words whitespace-normal">
             You have <strong className="text-slate-700 dark:text-slate-200">{activeTasksCount} active tasks</strong>, <strong className="text-rose-600 dark:text-rose-400">{dueTodayCount} due today</strong>, and <strong>{loggedHours.toFixed(1)} hours</strong> logged total.
           </p>
         </div>
@@ -263,7 +295,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                         <Badge variant="outline" className={cn(
                           "text-[10px] uppercase tracking-wider font-bold rounded",
                           task.priority === 'High' ? "border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-500/10" : 
-                          task.priority === 'Normal' ? "border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:bg-amber-500/10" : 
+                          task.priority === 'Normal' || task.priority === 'Medium' ? "border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:bg-amber-500/10" : 
                           "border-slate-200 text-slate-600 bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:bg-slate-800"
                         )}>{task.priority}</Badge>
                       </div>
@@ -279,9 +311,9 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                           <span className={cn(
                             task.status === 'Done' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400 uppercase tracking-wider'
                           )}>{task.status}</span>
-                          <span className="text-slate-900 dark:text-white">{getProgress(task.status)}%</span>
+                          <span className="text-slate-900 dark:text-white">{task.progress ?? getProgress(task.status)}%</span>
                         </div>
-                        <Progress value={getProgress(task.status)} className="h-1.5 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
+                        <Progress value={task.progress ?? getProgress(task.status)} className="h-1.5 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
                       </div>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 shrink-0">
                         <MoreVertical className="h-4 w-4" />
@@ -298,100 +330,19 @@ export default function InternDashboard({ session }: InternDashboardProps) {
               </div>
             </CardContent>
           </Card>
-
           </div>
-        </div>
-      {/* 3-Column Grid for Metrics and Sidebar */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 items-start mt-4 md:mt-5">
-            
-        {/* Contribution Progress */}
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
-          <CardHeader className="p-4 md:p-5 pb-3">
-            <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
-              <Target className="mr-2 h-4 w-4 text-orange-500" />
-              Contribution Breakdown
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col p-4 md:p-5 pt-0">
-            <div className="flex items-end gap-2 mb-4">
-              <span className="text-5xl font-black text-slate-900 dark:text-white">88%</span>
-              <span className="text-sm font-bold text-slate-500 mb-1">Overall Score</span>
-            </div>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
-                  <span>Tasks Completed</span>
-                  <span>24 / 30</span>
-                </div>
-                <Progress value={80} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-emerald-500" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
-                  <span>Hours Logged</span>
-                  <span>42 / 50</span>
-                </div>
-                <Progress value={84} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-blue-500" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
-                  <span>Milestones</span>
-                  <span>2 / 3</span>
-                </div>
-                <Progress value={66} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-purple-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Upcoming Deadlines */}
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
-          <CardHeader className="p-4 md:p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
-              <AlertCircle className="mr-2 h-4 w-4 text-orange-500" />
-              Upcoming Deadlines
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 flex-1 relative h-[250px]">
-            <ScrollArea className="absolute inset-0 h-full w-full">
-              <div className="p-4 md:p-5 space-y-4">
-                {tasks.filter(t => t.status !== 'Done').slice(0, 3).map((task, idx) => (
-                  <div key={task.id} className="relative pl-6 py-1 before:absolute before:left-2 before:top-2.5 before:bottom-[-16px] before:w-px before:bg-slate-200 dark:before:bg-slate-700 last:before:hidden">
-                    <div className={cn(
-                      "absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950",
-                      idx === 0 ? "bg-rose-500" : idx === 1 ? "bg-amber-500" : "bg-slate-300 dark:bg-slate-600"
-                    )} />
-                    <span className={cn(
-                      "text-xs font-black uppercase tracking-wider mb-0.5 block",
-                      idx === 0 ? "text-rose-600 dark:text-rose-400" : idx === 1 ? "text-amber-600 dark:text-amber-500" : "text-slate-500"
-                    )}>{task.due_date}</span>
-                    <p className="text-sm font-bold text-slate-900 dark:text-white">{task.title}</p>
-                    {task.priority === 'High' && (
-                      <Badge variant="outline" className="mt-1.5 text-[10px] border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-900/20 font-bold uppercase tracking-wider">High Priority</Badge>
-                    )}
-                  </div>
-                ))}
-                {tasks.filter(t => t.status !== 'Done').length === 0 && (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No upcoming deadlines. 🎉</p>
-                )}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-
-        {/* Right Column Wrapper */}
-        <div className="space-y-4 md:space-y-5">
-          {/* Refactored Training Calendar */}
-          <EmployeeCalendar />
-
+        
+        {/* Right Column (4) */}
+        <div className="lg:col-span-4 flex flex-col gap-4 md:gap-5">
           {/* Recent Highlights */}
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col flex-1 min-h-[320px] overflow-hidden">
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col flex-1 h-full overflow-hidden">
             <CardHeader className="p-4 md:p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
               <CardTitle className="text-base font-bold flex items-center text-slate-900 dark:text-white">
                 <Activity className="h-4 w-4 text-orange-500 mr-2" />
                 Recent Highlights
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 flex-1 relative min-h-[250px]">
+            <CardContent className="p-0 flex-1 relative">
               <ScrollArea className="absolute inset-0 h-full w-full">
                 <div className="p-4 md:p-5 space-y-4">
                 {userActivities.length > 0 ? userActivities.map((act: any) => (
@@ -409,6 +360,94 @@ export default function InternDashboard({ session }: InternDashboardProps) {
               </ScrollArea>
             </CardContent>
           </Card>
+        </div>
+      </div>
+
+      {/* 3-Column Grid for Metrics and Sidebar */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 items-start mt-4 md:mt-5">
+            
+        <div className="space-y-4 md:space-y-5 h-full">
+          {/* Contribution Progress */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-full">
+            <CardHeader className="p-4 md:p-5 pb-3">
+              <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
+                <Target className="mr-2 h-4 w-4 text-orange-500" />
+                Contribution Breakdown
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col p-4 md:p-5 pt-0">
+              <div className="flex items-end gap-2 mb-4">
+                <span className="text-5xl font-black text-slate-900 dark:text-white">88%</span>
+                <span className="text-sm font-bold text-slate-500 mb-1">Overall Score</span>
+              </div>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
+                    <span>Tasks Completed</span>
+                    <span>24 / 30</span>
+                  </div>
+                  <Progress value={80} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-emerald-500" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
+                    <span>Hours Logged</span>
+                    <span>42 / 50</span>
+                  </div>
+                  <Progress value={84} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-blue-500" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
+                    <span>Milestones</span>
+                    <span>2 / 3</span>
+                  </div>
+                  <Progress value={66} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-purple-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-4 md:space-y-5 h-full">
+          {/* Upcoming Deadlines */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-full overflow-hidden">
+            <CardHeader className="p-4 md:p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
+                <AlertCircle className="mr-2 h-4 w-4 text-orange-500" />
+                Upcoming Deadlines
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 flex-1 relative min-h-0">
+              <ScrollArea className="absolute inset-0 h-full w-full">
+                <div className="p-4 md:p-5 space-y-4">
+                  {tasks.filter(t => t.status !== 'Done').slice(0, 3).map((task, idx) => (
+                    <div key={task.id} className="relative pl-6 py-1 before:absolute before:left-2 before:top-2.5 before:bottom-[-16px] before:w-px before:bg-slate-200 dark:before:bg-slate-700 last:before:hidden">
+                      <div className={cn(
+                        "absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950",
+                        idx === 0 ? "bg-rose-500" : idx === 1 ? "bg-amber-500" : "bg-slate-300 dark:bg-slate-600"
+                      )} />
+                      <span className={cn(
+                        "text-xs font-black uppercase tracking-wider mb-0.5 block",
+                        idx === 0 ? "text-rose-600 dark:text-rose-400" : idx === 1 ? "text-amber-600 dark:text-amber-500" : "text-slate-500"
+                      )}>{task.due_date}</span>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">{task.title}</p>
+                      {task.priority === 'High' && (
+                        <Badge variant="outline" className="mt-1.5 text-[10px] border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-900/20 font-bold uppercase tracking-wider">High Priority</Badge>
+                      )}
+                    </div>
+                  ))}
+                  {tasks.filter(t => t.status !== 'Done').length === 0 && (
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No upcoming deadlines. 🎉</p>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column Wrapper */}
+        <div className="space-y-4 md:space-y-5 h-full">
+          {/* Refactored Training Calendar */}
+          <EmployeeCalendar />
         </div>
       </div>
       

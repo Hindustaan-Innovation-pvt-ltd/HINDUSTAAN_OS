@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
@@ -14,6 +14,8 @@ import { cn } from '@/lib/utils';
 import { ConnectedApps } from '../components/dashboard/settings/ConnectedApps';
 import { Progress } from "@/components/ui/progress";
 import { useTheme } from '../context/ThemeContext';
+import { toast } from 'sonner';
+import { updatePassword, getCurrentUser } from '@/lib/auth';
 
 const SETTINGS_SECTIONS = [
   { id: 'profile', label: 'Profile Information', description: 'Manage your personal details and workspace identity.', icon: User },
@@ -27,7 +29,7 @@ const SETTINGS_SECTIONS = [
 ];
 
 export default function Settings({ session, defaultTab = null }: { session: any, defaultTab?: string | null }) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, themeMode, setThemeMode, toggleTheme, accentColor, setAccentColor, compactMode, setCompactMode } = useTheme();
   const role = session?.user?.user_metadata?.role || 'intern';
   
   const [activeTab, setActiveTab] = useState<string | null>(defaultTab);
@@ -42,6 +44,96 @@ export default function Settings({ session, defaultTab = null }: { session: any,
     twoFactor: false,
     compactMode: false
   });
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(() => localStorage.getItem('userAvatar'));
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 256;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          
+          setAvatarUrl(compressedDataUrl);
+          try {
+            localStorage.setItem('userAvatar', compressedDataUrl);
+            toast.success('Avatar Updated');
+            window.dispatchEvent(new Event('avatar-updated'));
+          } catch (err) {
+            toast.error('Error', { description: 'Image too large to save to profile.' });
+          }
+        };
+        img.src = result;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePasswordUpdate = async () => {
+    if (!currentPassword || !newPassword) {
+      toast.error('Missing fields', { description: 'Please fill in both current and new passwords.' });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('Weak password', { description: 'New password must be at least 6 characters.' });
+      return;
+    }
+    
+    setIsUpdatingPassword(true);
+    
+    // Simulate slight network delay
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
+    try {
+      const user = getCurrentUser();
+      if (!user) {
+        toast.error('Authentication Error', { description: 'Please log in again to change password.' });
+        return;
+      }
+      
+      const result = updatePassword(user.email, currentPassword, newPassword);
+      if (result.success) {
+        toast.success('Success', { description: result.message });
+        setCurrentPassword('');
+        setNewPassword('');
+      } else {
+        toast.error('Update Failed', { description: result.message });
+      }
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
 
   const handleToggle = (key: keyof typeof toggles) => {
     setToggles(prev => ({ ...prev, [key]: !prev[key] }));
@@ -62,11 +154,13 @@ export default function Settings({ session, defaultTab = null }: { session: any,
                 <div className="flex flex-col md:flex-row gap-8 items-start">
                   <div className="flex flex-col items-center gap-4 shrink-0">
                     <Avatar className="h-24 w-24 border-4 border-slate-50 dark:border-slate-900 shadow-md">
+                      {avatarUrl && <AvatarImage src={avatarUrl} />}
                       <AvatarFallback className="bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 text-2xl font-bold">
                         {role === 'manager' ? 'AG' : 'TP'}
                       </AvatarFallback>
                     </Avatar>
-                    <Button variant="outline" size="sm" className="rounded-xl font-bold border-slate-200 dark:border-slate-700">Change Avatar</Button>
+                    <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleAvatarChange} />
+                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="rounded-xl font-bold border-slate-200 dark:border-slate-700">Change Avatar</Button>
                   </div>
                   
                   <div className="flex-1 space-y-4 w-full">
@@ -115,7 +209,7 @@ export default function Settings({ session, defaultTab = null }: { session: any,
                         </div>
                         <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
                           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">End Date</span>
-                          <span className="text-sm font-bold text-slate-900 dark:text-white">Sep 1, 2026</span>
+                          <span className="text-sm font-bold text-slate-900 dark:text-white">Oct 1, 2026</span>
                         </div>
                       </div>
                     </div>
@@ -144,13 +238,15 @@ export default function Settings({ session, defaultTab = null }: { session: any,
               <CardContent className="space-y-4">
                 <div className="space-y-1.5 max-w-md">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Current Password</label>
-                  <Input type="password" placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700" />
+                  <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700" />
                 </div>
                 <div className="space-y-1.5 max-w-md">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">New Password</label>
-                  <Input type="password" placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700" />
+                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700" />
                 </div>
-                <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold mt-2">Update Password</Button>
+                <Button onClick={handlePasswordUpdate} disabled={isUpdatingPassword} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold mt-2">
+                  {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+                </Button>
               </CardContent>
             </Card>
 
@@ -269,34 +365,36 @@ export default function Settings({ session, defaultTab = null }: { session: any,
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Theme Preferences</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <button 
-                      onClick={() => theme !== 'light' && toggleTheme()}
+                      onClick={() => setThemeMode('light')}
                       className={cn(
                         "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all",
-                        theme === 'light' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
+                        themeMode === 'light' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
                       )}
                     >
-                      <Sun className={cn("h-8 w-8", theme === 'light' ? "text-orange-600" : "text-slate-400")} />
-                      <span className={cn("text-sm font-bold", theme === 'light' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Light Theme</span>
+                      <Sun className={cn("h-8 w-8", themeMode === 'light' ? "text-orange-600" : "text-slate-400")} />
+                      <span className={cn("text-sm font-bold", themeMode === 'light' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Light Theme</span>
                     </button>
                     
                     <button 
-                      onClick={() => theme !== 'dark' && toggleTheme()}
+                      onClick={() => setThemeMode('dark')}
                       className={cn(
                         "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all",
-                        theme === 'dark' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
+                        themeMode === 'dark' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
                       )}
                     >
-                      <Moon className={cn("h-8 w-8", theme === 'dark' ? "text-orange-600" : "text-slate-400")} />
-                      <span className={cn("text-sm font-bold", theme === 'dark' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Dark Theme</span>
+                      <Moon className={cn("h-8 w-8", themeMode === 'dark' ? "text-orange-600" : "text-slate-400")} />
+                      <span className={cn("text-sm font-bold", themeMode === 'dark' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Dark Theme</span>
                     </button>
 
                     <button 
+                      onClick={() => setThemeMode('system')}
                       className={cn(
-                        "flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 opacity-50 cursor-not-allowed"
+                        "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all",
+                        themeMode === 'system' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
                       )}
                     >
-                      <Monitor className="h-8 w-8 text-slate-400" />
-                      <span className="text-sm font-bold text-slate-600 dark:text-slate-400">System Theme</span>
+                      <Monitor className={cn("h-8 w-8", themeMode === 'system' ? "text-orange-600" : "text-slate-400")} />
+                      <span className={cn("text-sm font-bold", themeMode === 'system' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>System Theme</span>
                     </button>
                   </div>
                 </div>
@@ -304,11 +402,11 @@ export default function Settings({ session, defaultTab = null }: { session: any,
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Accent Color</h3>
                   <div className="flex items-center gap-3">
-                    <button className="h-8 w-8 rounded-full bg-orange-500 ring-4 ring-orange-500/20"></button>
-                    <button className="h-8 w-8 rounded-full bg-blue-500 hover:scale-110 transition-transform"></button>
-                    <button className="h-8 w-8 rounded-full bg-emerald-500 hover:scale-110 transition-transform"></button>
-                    <button className="h-8 w-8 rounded-full bg-rose-500 hover:scale-110 transition-transform"></button>
-                    <button className="h-8 w-8 rounded-full bg-purple-500 hover:scale-110 transition-transform"></button>
+                    <button onClick={() => setAccentColor('orange')} className={cn("h-8 w-8 rounded-full bg-[#f97316] hover:scale-110 transition-transform", accentColor === 'orange' && "ring-4 ring-[#f97316]/30 dark:ring-[#f97316]/50")}></button>
+                    <button onClick={() => setAccentColor('blue')} className={cn("h-8 w-8 rounded-full bg-[#3b82f6] hover:scale-110 transition-transform", accentColor === 'blue' && "ring-4 ring-[#3b82f6]/30 dark:ring-[#3b82f6]/50")}></button>
+                    <button onClick={() => setAccentColor('emerald')} className={cn("h-8 w-8 rounded-full bg-[#10b981] hover:scale-110 transition-transform", accentColor === 'emerald' && "ring-4 ring-[#10b981]/30 dark:ring-[#10b981]/50")}></button>
+                    <button onClick={() => setAccentColor('rose')} className={cn("h-8 w-8 rounded-full bg-[#f43f5e] hover:scale-110 transition-transform", accentColor === 'rose' && "ring-4 ring-[#f43f5e]/30 dark:ring-[#f43f5e]/50")}></button>
+                    <button onClick={() => setAccentColor('purple')} className={cn("h-8 w-8 rounded-full bg-[#a855f7] hover:scale-110 transition-transform", accentColor === 'purple' && "ring-4 ring-[#a855f7]/30 dark:ring-[#a855f7]/50")}></button>
                   </div>
                 </div>
 
@@ -317,7 +415,7 @@ export default function Settings({ session, defaultTab = null }: { session: any,
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">Compact Mode</h3>
                     <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Reduce spacing to fit more content on screen.</p>
                   </div>
-                  <Switch checked={toggles.compactMode} onCheckedChange={() => handleToggle('compactMode')} />
+                  <Switch checked={compactMode} onCheckedChange={setCompactMode} />
                 </div>
               </CardContent>
             </Card>

@@ -160,7 +160,7 @@ export default function Projects({ session }: { session?: any }) {
         </div>
 
         <div className="w-full overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-800">
                 <th className="p-4 text-xs font-black uppercase text-slate-400">Project</th>

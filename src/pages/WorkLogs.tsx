@@ -224,8 +224,8 @@ export default function WorkLogs({ session }: { session?: any }) {
     setLogs(logs.filter((log: any) => log.id !== id));
   };
 
-  const totalHours = useMemo(() => userBaseLogs.reduce((acc: number, log: any) => acc + log.hours, 0), [userBaseLogs]);
-  const pendingHours = useMemo(() => userBaseLogs.filter((l: any) => l.status === 'Pending').reduce((acc: number, log: any) => acc + log.hours, 0), [userBaseLogs]);
+  const totalHours = useMemo(() => (userBaseLogs || []).reduce((acc: number, log: any) => acc + (log?.hours || 0), 0), [userBaseLogs]);
+  const pendingHours = useMemo(() => (userBaseLogs || []).filter((l: any) => l?.status === 'Pending').reduce((acc: number, log: any) => acc + (log?.hours || 0), 0), [userBaseLogs]);
 
   return (
     <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8 relative animate-in fade-in duration-500">
