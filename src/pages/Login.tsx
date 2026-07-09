@@ -19,16 +19,6 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   
-  // Missing states and mock config variables
-  const [isMagicLink, setIsMagicLink] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | ''; text: string } | null>(null);
-  const supabaseUrl = 'https://placeholder.supabase.co';
-  const supabase = {
-    auth: {
-      signInWithOtp: async (args: any) => ({ data: {}, error: null })
-    }
-  };
-  
   // Authentication Modes
   const [isOTPMode, setIsOTPMode] = useState(false);
   const [mockRole, setMockRole] = useState('manager');
@@ -133,6 +123,8 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
       
       if (onMockLogin) {
         onMockLogin(user.role, email);
+      } else {
+        window.location.reload();
       }
     } catch (err: any) {
       toast.error('Authentication Error', { description: err.message });
@@ -222,7 +214,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
         toast.success('Verification Successful', { description: 'Welcome back!' });
         setShowOTPDialog(false);
         if (onMockLogin) {
-          onMockLogin(user.role);
+          onMockLogin(user.role, email);
         } else {
           window.location.reload();
         }

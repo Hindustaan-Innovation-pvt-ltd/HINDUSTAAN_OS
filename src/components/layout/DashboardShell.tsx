@@ -38,6 +38,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 const employeeNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
@@ -113,10 +115,8 @@ export default function DashboardShell({
 
   // Sync the initial minimized state to the parent based on the initial sidebarWidth
   useEffect(() => {
-    if (role === 'employee') {
-      onMinimizeChange(sidebarWidth <= 200);
-    }
-  }, [role, onMinimizeChange]);
+    onMinimizeChange(sidebarWidth <= 200);
+  }, [onMinimizeChange]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -146,7 +146,7 @@ export default function DashboardShell({
   }, [isDragging, onMinimizeChange]);
 
   const activeNavigation = role === 'manager' ? managerNavigation : employeeNavigation;
-  const isSidebarCollapsed = false;
+  const isSidebarCollapsed = sidebarWidth <= 200;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-950 transition-colors duration-500">
@@ -165,22 +165,22 @@ export default function DashboardShell({
           "fixed inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 lg:static lg:translate-x-0 relative",
           isDragging ? "transition-none" : "transition-all duration-300 ease-in-out",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
-          (isMobile || role !== 'employee') && "w-72"
+          isMobile && "w-72"
         )}
         style={{
-          width: (!isMobile && role === 'employee') ? `${sidebarWidth}px` : undefined,
+          width: !isMobile ? `${sidebarWidth}px` : undefined,
         }}
       >
         {/* Branding Badge */}
         <div className={cn(
           "flex h-16 shrink-0 items-center border-b border-slate-100 dark:border-slate-800 justify-between",
-          role === 'employee' && isSidebarCollapsed ? "px-4 justify-center" : "px-6 lg:justify-start"
+          isSidebarCollapsed ? "px-4 justify-center" : "px-6 lg:justify-start"
         )}>
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 dark:bg-orange-500/100 text-white shadow-sm shrink-0">
               <Compass className="h-5 w-5" />
             </div>
-            {!(role === 'employee' && isSidebarCollapsed) && (
+            {!isSidebarCollapsed && (
               <span className="text-lg font-bold text-slate-900 dark:text-white tracking-tight animate-in fade-in duration-200">Hindustaan OS</span>
             )}
           </div>
@@ -195,7 +195,7 @@ export default function DashboardShell({
         {/* Vertical Navigation Rows */}
         <div className={cn(
           "flex flex-1 flex-col overflow-y-auto py-6",
-          role === 'employee' && isSidebarCollapsed ? "px-2" : "px-4"
+          isSidebarCollapsed ? "px-2" : "px-4"
         )}>
           <nav className="flex-1 space-y-1">
             {activeNavigation.map((item) => {
@@ -207,10 +207,10 @@ export default function DashboardShell({
                     onNavigate(item.name);
                     setSidebarOpen(false);
                   }}
-                  title={role === 'employee' && isSidebarCollapsed ? item.name : undefined}
+                  title={isSidebarCollapsed ? item.name : undefined}
                   className={cn(
                     "w-full group flex items-center text-sm font-medium rounded-xl transition-all duration-200",
-                    role === 'employee' && isSidebarCollapsed ? "px-3 py-3 justify-center" : "px-3 py-2.5",
+                    isSidebarCollapsed ? "px-3 py-3 justify-center" : "px-3 py-2.5",
                     isCurrent
                       ? "bg-amber-50 text-amber-700 dark:bg-white dark:text-slate-900"
                       : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white dark:hover:text-slate-900"
@@ -219,12 +219,12 @@ export default function DashboardShell({
                   <item.icon
                     className={cn(
                       "h-5 w-5 shrink-0 transition-colors duration-200",
-                      !(role === 'employee' && isSidebarCollapsed) && "mr-3",
+                      !isSidebarCollapsed && "mr-3",
                       isCurrent ? "text-amber-600 dark:text-slate-900" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-900"
                     )}
                     aria-hidden="true"
                   />
-                  {!(role === 'employee' && isSidebarCollapsed) && (
+                  {!isSidebarCollapsed && (
                     <span className="truncate">{item.name}</span>
                   )}
                 </button>
@@ -236,19 +236,19 @@ export default function DashboardShell({
         {/* User Profile Card */}
         <div className={cn(
           "shrink-0 border-t border-slate-200 dark:border-slate-700/60",
-          role === 'employee' && isSidebarCollapsed ? "p-2" : "p-4"
+          isSidebarCollapsed ? "p-2" : "p-4"
         )}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className={cn(
                 "w-full flex items-center rounded-xl transition-all hover:bg-slate-50 dark:hover:bg-slate-900/40 outline-none focus:ring-2 focus:ring-orange-500/20 group",
-                role === 'employee' && isSidebarCollapsed ? "p-1.5 justify-center" : "p-2 justify-between"
+                isSidebarCollapsed ? "p-1.5 justify-center" : "p-2 justify-between"
               )}>
                 <div className="flex items-center text-left">
                   <div className="flex items-center justify-center h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 font-bold shadow-sm ring-2 ring-white dark:ring-slate-900 shrink-0">
                     {role === 'manager' ? 'AG' : 'TP'}
                   </div>
-                  {!(role === 'employee' && isSidebarCollapsed) && (
+                  {!isSidebarCollapsed && (
                     <div className="ml-3">
                       <p className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">
                         {role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'}
@@ -257,31 +257,70 @@ export default function DashboardShell({
                     </div>
                   )}
                 </div>
-                {!(role === 'employee' && isSidebarCollapsed) && (
+                {!isSidebarCollapsed && (
                   <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
                 )}
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl rounded-xl">
-              <DropdownMenuLabel className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+            <DropdownMenuContent align="center" side={isSidebarCollapsed ? "right" : "top"} sideOffset={12} className="w-64 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl rounded-xl p-2">
+              <DropdownMenuLabel className="font-normal p-0">
+                <div className="flex flex-col space-y-1 p-2 pb-3">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="relative">
+                      <Avatar className="h-10 w-10 border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <AvatarFallback className="bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 font-bold">
+                          {role === 'manager' ? 'AG' : 'TP'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"></span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-900 dark:text-white leading-none">
+                        {role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'}
+                      </span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        {role === 'manager' ? 'manager@hindustaan.in' : 'employee@hindustaan.in'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center mt-1">
+                    <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-500/20">
+                      {role === 'manager' ? 'Manager' : 'Employee'}
+                    </Badge>
+                  </div>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800 -mx-2" />
+              <DropdownMenuItem 
+                onClick={() => { onNavigate('My Profile'); setSidebarOpen(false); }}
+                className="cursor-pointer text-slate-700 dark:text-slate-300 focus:bg-slate-50 dark:focus:bg-slate-800 text-sm font-bold rounded-lg flex items-center py-2.5 mt-1"
+              >
+                <User className="h-4 w-4 mr-3 text-slate-400" />
+                My Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => { onNavigate('Settings'); setSidebarOpen(false); }}
+                className="cursor-pointer text-slate-700 dark:text-slate-300 focus:bg-slate-50 dark:focus:bg-slate-800 text-sm font-bold rounded-lg flex items-center py-2.5"
+              >
+                <Settings className="h-4 w-4 mr-3 text-slate-400" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800 -mx-2" />
               {onSignOut && (
-                <>
-                  <DropdownMenuItem 
-                    onClick={onSignOut}
-                    className="cursor-pointer text-rose-600 dark:text-rose-400 focus:bg-rose-50 dark:focus:bg-rose-500/10 focus:text-rose-600 dark:focus:text-rose-400 text-sm font-bold rounded-lg flex items-center justify-between"
-                  >
-                    Logout
-                    <LogOut className="h-4 w-4 ml-2" />
-                  </DropdownMenuItem>
-                </>
+                <DropdownMenuItem 
+                  onClick={onSignOut}
+                  className="cursor-pointer text-rose-600 dark:text-rose-400 focus:bg-rose-50 dark:focus:bg-rose-500/10 focus:text-rose-600 dark:focus:text-rose-400 text-sm font-bold rounded-lg flex items-center justify-between py-2.5 mb-1"
+                >
+                  Logout
+                  <LogOut className="h-4 w-4 ml-2" />
+                </DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
         {/* Resize Handle */}
-        {!isMobile && role === 'employee' && (
+        {!isMobile && (
           <div
             onMouseDown={startResizing}
             className="absolute top-0 -right-1 bottom-0 w-2 cursor-col-resize group/resize z-50"

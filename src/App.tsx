@@ -17,7 +17,6 @@ import ContributionScores from './pages/ContributionScores';
 // Supabase client removed for mock auth implementation
 
 import { ThemeProvider } from './context/ThemeContext';
-import { ProjectProvider } from './context/ProjectContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { GLOBAL_LOGS } from '@/data/mockData';
@@ -41,28 +40,6 @@ function App() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    if (session) {
-      const role = session.user?.user_metadata?.role || 'intern';
-      const email = session.user?.email || 'user@hindustaan.in';
-      if (role === 'intern') {
-        let currentUserId = 'u-4';
-        if (email.toLowerCase().includes('amanda')) {
-          currentUserId = 'u-1';
-        } else if (email.toLowerCase().includes('rahul')) {
-          currentUserId = 'u-2';
-        } else if (email.toLowerCase().includes('priya')) {
-          currentUserId = 'u-3';
-        }
-        
-        const loginKey = `login_time_${currentUserId}`;
-        if (!localStorage.getItem(loginKey)) {
-          localStorage.setItem(loginKey, Date.now().toString());
-        }
-      }
-    }
-  }, [session]);
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -75,10 +52,15 @@ function App() {
 
   return (
     <ThemeProvider>
-      <ProjectProvider>
-        <TooltipProvider>
+      <TooltipProvider>
         {!session ? (
-          <Login onMockLogin={(role, email) => setSession({ user: { email: email || 'user@hindustaan.in', user_metadata: { role } } })} />
+          <Login onMockLogin={() => {
+            const userStr = localStorage.getItem('hindustaan_user');
+            if (userStr) {
+              const user = JSON.parse(userStr);
+              setSession({ user: { email: user.email, user_metadata: { role: user.role } } });
+            }
+          }} />
         ) : (
           <DashboardShell
             currentView={currentView}
@@ -157,6 +139,7 @@ function App() {
             {(currentView === 'Projects' || currentView === 'My Projects') && <Projects session={session} />}
             {currentView === 'About Us' && <AboutUs />}
             {currentView === 'Settings' && <Settings session={session} />}
+            {currentView === 'My Profile' && <Settings session={session} defaultTab="profile" />}
             {currentView === 'Team Members' && <TeamMembers session={session} />}
 
             {/* New Pages */}
@@ -169,7 +152,7 @@ function App() {
             {/* Fallback for anything else */}
             {![
               'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
-              'Projects', 'My Projects', 'About Us', 'Settings', 'Team Members',
+              'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Team Members',
               'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
               'Contribution Scores', 'My Performance'
             ].includes(currentView) && (
@@ -182,7 +165,6 @@ function App() {
       }
 <Toaster position="top-right" richColors />
       </TooltipProvider >
-      </ProjectProvider>
     </ThemeProvider >
   );
 }
