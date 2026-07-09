@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Mic, Video, CheckCircle2, AlertCircle, MessageSquare, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 const MOCK_STANDUPS = [
   {
@@ -65,13 +69,50 @@ export default function DailyStandups({ session }: { session?: any }) {
     currentUserName = 'Priya Patel';
   }
 
+  const [standups, setStandups] = useState(MOCK_STANDUPS);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ yesterday: '', today: '', blockers: '' });
+  const [sentReminders, setSentReminders] = useState<Set<string>>(new Set());
+
   // Filter standups to show only logged in employee if role is not manager
   const displayStandups = role !== 'manager'
-    ? MOCK_STANDUPS.filter(s => s.user.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
-    : MOCK_STANDUPS;
+    ? standups.filter(s => s.user.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
+    : standups;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.yesterday || !formData.today) return;
+    
+    const newStandup = {
+      id: `s-${Date.now()}`,
+      user: currentUserName,
+      initials: currentUserName.split(' ').map(n=>n[0]).join(''),
+      role: role === 'manager' ? 'Product Manager' : 'Developer',
+      status: 'Submitted',
+      yesterday: formData.yesterday,
+      today: formData.today,
+      blockers: formData.blockers || 'None.',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    
+    // Replace the pending entry for this user, or just add it to the top
+    setStandups(prev => [newStandup, ...prev.filter(s => s.user !== currentUserName)]);
+    setIsModalOpen(false);
+    setFormData({ yesterday: '', today: '', blockers: '' });
+  };
 
   const submittedCount = displayStandups.filter(s => s.status === 'Submitted').length;
   const pendingCount = displayStandups.filter(s => s.status === 'Pending').length;
+
+  const handleRemindAll = () => {
+    toast.success(`Reminders sent to all ${pendingCount} pending team members!`);
+    setSentReminders(new Set(standups.filter(s => s.status === 'Pending').map(s => s.id)));
+  };
+
+  const handleSendReminder = (standup: any) => {
+    toast.success(`Reminder sent to ${standup.user}!`);
+    setSentReminders(prev => new Set(prev).add(standup.id));
+  };
 
   return (
     <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8">
@@ -87,12 +128,53 @@ export default function DailyStandups({ session }: { session?: any }) {
         </div>
         
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
+          {role === 'manager' && pendingCount > 0 && (
+            <Button 
+              onClick={handleRemindAll} 
+              disabled={sentReminders.size >= pendingCount}
+              className="h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-sm disabled:opacity-50"
+            >
+              {sentReminders.size >= pendingCount ? (
+                <><CheckCircle2 className="h-4 w-4 mr-2" /> Reminders Sent</>
+              ) : (
+                <><AlertCircle className="h-4 w-4 mr-2" /> Remind All ({pendingCount})</>
+              )}
+            </Button>
+          )}
+
+          <Button variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hidden sm:flex">
             <Video className="h-4 w-4 mr-2 text-slate-400" /> Start Meeting
           </Button>
-          <Button className="h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-sm">
-            <Mic className="h-4 w-4 mr-2" /> Submit My Update
-          </Button>
+
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <Button onClick={() => setIsModalOpen(true)} className={cn("h-10 rounded-xl font-bold shadow-sm transition-colors", role === 'manager' ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100" : "bg-orange-600 hover:bg-orange-700 text-white")}>
+              <Mic className="h-4 w-4 mr-2" /> Submit My Update
+            </Button>
+            <DialogContent className="sm:max-w-[500px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-0">
+              <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50">
+                <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">Daily Standup</DialogTitle>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">What did you work on, and what's next?</p>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="yesterday" className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</Label>
+                  <Textarea id="yesterday" required value={formData.yesterday} onChange={e => setFormData({...formData, yesterday: e.target.value})} placeholder="e.g. Completed the UI for the dashboard..." className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700/60 rounded-xl resize-none text-slate-900 dark:text-white" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="today" className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What will you do today?</Label>
+                  <Textarea id="today" required value={formData.today} onChange={e => setFormData({...formData, today: e.target.value})} placeholder="e.g. Start integrating the API endpoints..." className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700/60 rounded-xl resize-none text-slate-900 dark:text-white" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="blockers" className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Any blockers? (Optional)</Label>
+                  <Textarea id="blockers" value={formData.blockers} onChange={e => setFormData({...formData, blockers: e.target.value})} placeholder="e.g. Waiting for backend team to fix the auth endpoint..." className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700/60 rounded-xl resize-none text-slate-900 dark:text-white" />
+                </div>
+                <div className="pt-4 flex gap-3">
+                  <Button type="button" variant="outline" className="flex-1 h-11 rounded-xl text-slate-900 dark:text-white" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+                  <Button type="submit" className="flex-1 h-11 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold">Submit Update</Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -144,11 +226,11 @@ export default function DailyStandups({ session }: { session?: any }) {
               {standup.status === 'Submitted' ? (
                 <>
                   <div>
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Yesterday</h4>
+                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Yesterday</h4>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{standup.yesterday}</p>
                   </div>
                   <div>
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Today</h4>
+                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Today</h4>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{standup.today}</p>
                   </div>
                   {standup.blockers && standup.blockers !== 'None.' && (
@@ -159,8 +241,8 @@ export default function DailyStandups({ session }: { session?: any }) {
                   )}
                   {standup.blockers === 'None.' && (
                     <div className="mt-auto">
-                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Blockers</h4>
-                      <p className="text-sm font-medium text-slate-500 dark:text-slate-500">None.</p>
+                      <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Blockers</h4>
+                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">None.</p>
                     </div>
                   )}
                 </>
@@ -169,17 +251,32 @@ export default function DailyStandups({ session }: { session?: any }) {
                   <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
                     <Clock className="h-5 w-5 text-slate-400" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Has not submitted yet.</p>
+                  <p className={cn("text-sm font-semibold text-slate-500 dark:text-slate-400", role === 'manager' && "mb-4")}>Has not submitted yet.</p>
+                  {role === 'manager' && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleSendReminder(standup)}
+                      disabled={sentReminders.has(standup.id)}
+                      className="h-8 rounded-lg font-bold border-orange-200 text-orange-600 dark:border-orange-900/50 dark:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10 disabled:opacity-50 disabled:border-slate-200 disabled:text-slate-500 dark:disabled:border-slate-800 dark:disabled:text-slate-500"
+                    >
+                      {sentReminders.has(standup.id) ? (
+                        <><CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Sent!</>
+                      ) : (
+                        <><MessageSquare className="h-3.5 w-3.5 mr-1.5" /> Send Reminder</>
+                      )}
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
             
             {/* Card Footer */}
             {standup.status === 'Submitted' && (
-              <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="text-[10px] font-bold text-slate-400">{standup.time}</span>
+              <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50 flex items-center justify-between transition-opacity">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{standup.time}</span>
                 {role === 'manager' && (
-                  <Button variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-500 hover:text-orange-600">
+                  <Button variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-orange-600 dark:hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10">
                     <MessageSquare className="h-3 w-3 mr-1.5" /> Reply
                   </Button>
                 )}

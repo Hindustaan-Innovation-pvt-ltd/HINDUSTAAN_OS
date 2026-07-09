@@ -332,53 +332,86 @@ export default function GanttTimeline({ session }: { session?: any }) {
                   <Label htmlFor="manager" className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Team Leader</Label>
                   <Select value={newProjectManager} onValueChange={setNewProjectManager}>
                     <SelectTrigger className="h-11 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60 focus:ring-orange-500 font-bold text-slate-900 dark:text-white shadow-sm">
-                      <SelectValue placeholder="Select a team member" />
+                      <SelectValue placeholder="Select a team leader" />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800 shadow-xl">
-                      <SelectItem value="Aakash Gupta">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-6 w-6"><AvatarFallback className="text-[9px] font-black bg-orange-100 text-orange-700">AG</AvatarFallback></Avatar>
-                          <span className="font-bold">Aakash Gupta</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Priya Patel">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-6 w-6"><AvatarFallback className="text-[9px] font-black bg-emerald-100 text-emerald-700">PP</AvatarFallback></Avatar>
-                          <span className="font-bold">Priya Patel</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="Amanda Smith">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-6 w-6"><AvatarFallback className="text-[9px] font-black bg-rose-100 text-rose-700">AS</AvatarFallback></Avatar>
-                          <span className="font-bold">Amanda Smith</span>
-                        </div>
-                      </SelectItem>
+                    <SelectContent position="popper" className="rounded-xl border-slate-200 dark:border-slate-800 shadow-xl max-h-[220px] overflow-y-auto scrollbar-hide">
+                      {['Tanvy P.', 'Rahul S.', 'Anurag D.', 'Karan M.', 'Sneha R.', 'Priya P.', 'Aakash G.', 'Amanda S.'].map((emp, i) => {
+                        const colors = ['bg-orange-100 text-orange-700', 'bg-emerald-100 text-emerald-700', 'bg-rose-100 text-rose-700', 'bg-blue-100 text-blue-700', 'bg-purple-100 text-purple-700'];
+                        const colorClass = colors[i % colors.length];
+                        return (
+                          <SelectItem key={emp} value={emp}>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-6 w-6"><AvatarFallback className={`text-[9px] font-black ${colorClass}`}>{emp.split(' ').map(n=>n[0]).join('')}</AvatarFallback></Avatar>
+                              <span className="font-bold">{emp}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="grid gap-2 mt-1">
                   <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Additional Team Members (Optional)</Label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {['Tanvy P.', 'Rahul S.', 'Anurag D.', 'Karan M.', 'Sneha R.'].map((member) => (
-                      <button
-                        key={member}
-                        onClick={() => {
-                          setNewProjectMembers(prev => 
-                            prev.includes(member) ? prev.filter(m => m !== member) : [...prev, member]
-                          )
-                        }}
-                        className={cn(
-                          "px-3 py-1.5 rounded-full text-xs font-bold transition-all border",
-                          newProjectMembers.includes(member) 
-                            ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm" 
-                            : "bg-white text-slate-500 border-slate-200 hover:border-slate-400 dark:bg-slate-900 dark:border-slate-700/60 dark:text-slate-400 dark:hover:border-slate-500"
-                        )}
-                      >
-                        {member}
-                      </button>
-                    ))}
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between h-auto min-h-[44px] rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60 font-bold text-slate-900 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 text-left">
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                          {newProjectMembers.length > 0 ? (
+                            newProjectMembers.map(member => (
+                              <Badge key={member} variant="secondary" className="rounded-md bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold border border-slate-200/50 dark:border-slate-700/50 px-2.5 py-1 flex items-center gap-1.5">
+                                {member}
+                                <div 
+                                  className="cursor-pointer rounded-full p-0.5 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors opacity-70 hover:opacity-100"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setNewProjectMembers(prev => prev.filter(m => m !== member));
+                                  }}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                </div>
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-slate-500 dark:text-slate-400 font-medium py-1">Select team members...</span>
+                          )}
+                        </div>
+                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1.5 rounded-xl border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-slate-950" align="start">
+                      <div className="flex flex-col max-h-[220px] overflow-y-auto scrollbar-hide">
+                        {['Tanvy P.', 'Rahul S.', 'Anurag D.', 'Karan M.', 'Sneha R.', 'Priya P.', 'Aakash G.', 'Amanda S.'].filter(m => m !== newProjectManager).map((member) => (
+                          <div
+                            key={member}
+                            onClick={() => {
+                              setNewProjectMembers(prev => 
+                                prev.includes(member) ? prev.filter(m => m !== member) : [...prev, member]
+                              )
+                            }}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors",
+                              newProjectMembers.includes(member) && "bg-slate-50 dark:bg-slate-900/40"
+                            )}
+                          >
+                            <div className={cn(
+                              "flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border shadow-sm transition-colors",
+                              newProjectMembers.includes(member)
+                                ? "bg-orange-500 border-orange-500 text-white"
+                                : "bg-white border-slate-300 dark:bg-slate-900 dark:border-slate-700"
+                            )}>
+                              {newProjectMembers.includes(member) && <CheckCircle2 className="h-3 w-3" />}
+                            </div>
+                            <span className={cn(
+                              "text-sm font-semibold",
+                              newProjectMembers.includes(member) ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-300"
+                            )}>{member}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 
                 <div className="grid gap-2">
