@@ -118,7 +118,7 @@ export default function WorkLogs({ session }: { session?: any }) {
           const startTime = parseInt(loginTimeStr, 10);
           sessions[member.id] = { time: Math.floor((Date.now() - startTime) / 1000), isOnline: true };
         } else {
-          sessions[member.id] = { time: 0, isOnline: false };
+          sessions[member.id] = { time: member.defaultOffset, isOnline: true };
         }
       });
       setActiveSessions(sessions);
@@ -465,8 +465,10 @@ export default function WorkLogs({ session }: { session?: any }) {
             </div>
             
             <div className="p-6 max-h-[300px] overflow-y-auto space-y-4">
-              {ONLINE_TEAM_MEMBERS.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all">
+              {ONLINE_TEAM_MEMBERS.map((member) => {
+                const isOnline = activeSessions[member.id]?.isOnline;
+                return (
+                <div key={member.id} className={cn("flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all", !isOnline && "opacity-75 grayscale")}>
                   <div className="flex items-center gap-3">
                     <Avatar className={cn("h-9 w-9 border-2 border-white dark:border-slate-900", member.color)}>
                       <AvatarFallback className="font-bold text-xs">{member.initials}</AvatarFallback>
@@ -477,11 +479,20 @@ export default function WorkLogs({ session }: { session?: any }) {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Active</span>
+                    {isOnline ? (
+                      <>
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Online</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600" />
+                        <span className="text-xs font-bold text-slate-500">Offline</span>
+                      </>
+                    )}
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
             
             <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">

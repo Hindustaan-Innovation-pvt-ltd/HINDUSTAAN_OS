@@ -31,6 +31,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ProjectCalendarWidget } from './ProjectCalendarWidget';
 import { Separator } from '@/components/ui/separator';
 import { AssignTaskDialog } from './AssignTaskDialog';
+import { useProjects } from '@/context/ProjectContext';
 
 // --- Mock Data ---
 const TEAM_MEMBERS = [
@@ -48,15 +49,7 @@ const ONLINE_TEAM_MEMBERS_MANAGER = [
   { id: 'u-4', name: 'Tanvy Pandey', initials: 'TP', role: 'Intern Developer', color: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400' },
 ];
 
-const PROJECTS = [
-  { id: 'p1', name: 'Authentication Flow Pipeline', progress: 85, dueDate: 'Today', status: 'On Track' },
-  { id: 'p2', name: 'Dashboard UI Revamp', progress: 40, dueDate: 'Tomorrow', status: 'At Risk' },
-  { id: 'p3', name: 'Supabase Data Migration', progress: 95, dueDate: 'Aug 12', status: 'Completed' },
-  { id: 'p4', name: 'Role-Based Access Control', progress: 20, dueDate: 'Aug 15', status: 'On Track' },
-  { id: 'p5', name: 'Email Notifications System', progress: 60, dueDate: 'Aug 18', status: 'On Track' },
-];
-
-const ACTIVITY_FEED = [
+const ACTIVITY_FEED_MOCK = [
   { id: 'a1', user: 'Rahul Sharma', action: 'completed task', target: 'API Route Setup', time: '10m ago', type: 'task' },
   { id: 'a2', user: 'Amanda Smith', action: 'submitted work log', target: '8.5 hours', time: '1h ago', type: 'log' },
   { id: 'a3', user: 'System', action: 'created project', target: 'Dashboard UI Revamp', time: '2h ago', type: 'project' },
@@ -78,12 +71,14 @@ const DEADLINES = [
 ];
 
 export default function ManagerDashboard() {
+  const { projects } = useProjects();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [isActiveInternsModalOpen, setIsActiveInternsModalOpen] = useState(false);
+  const [activityFeed, setActivityFeed] = useState<any[]>(ACTIVITY_FEED_MOCK);
 
-  const [activeSessions, setActiveSessions] = useState<{ [key: string]: number }>({});
+  const [activeSessions, setActiveSessions] = useState<{ [key: string]: { time: number; isOnline: boolean } }>({});
 
   useEffect(() => {
     const teamMembers = [
@@ -94,23 +89,61 @@ export default function ManagerDashboard() {
     ];
 
     const updateSessions = () => {
-      const sessions: { [key: string]: number } = {};
+      const sessions: { [key: string]: { time: number; isOnline: boolean } } = {};
       teamMembers.forEach(member => {
         const loginTimeStr = localStorage.getItem(`login_time_${member.id}`);
         if (loginTimeStr) {
           const startTime = parseInt(loginTimeStr, 10);
-          sessions[member.id] = Math.floor((Date.now() - startTime) / 1000);
+          sessions[member.id] = { time: Math.floor((Date.now() - startTime) / 1000), isOnline: true };
         } else {
-          sessions[member.id] = member.defaultOffset;
+          // Default mock status so the workspace looks alive
+          sessions[member.id] = { time: member.defaultOffset, isOnline: true };
         }
       });
       setActiveSessions(sessions);
+      
+      const storedActivity = localStorage.getItem('hindustaan_activity_feed');
+      if (storedActivity) {
+        setActivityFeed(JSON.parse(storedActivity));
+      } else {
+        localStorage.setItem('hindustaan_activity_feed', JSON.stringify(ACTIVITY_FEED_MOCK));
+      }
     };
 
     updateSessions();
     const interval = setInterval(updateSessions, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const mappedProjects = projects.slice(0, 5).map(p => {
+    const completedTasks = p.tasks?.filter((t: any) => t.status === 'Done').length || 0;
+    const totalTasks = p.tasks?.length || 0;
+    const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+    return {
+      id: p.id,
+      name: p.name,
+      progress,
+      dueDate: p.deadline || 'TBD',
+      status: p.status
+    };
+  });
+
+  const dynamicDeadlines = React.useMemo(() => {
+    let tasks: any[] = [];
+    projects.forEach(p => {
+      p.tasks?.forEach((t: any) => {
+        if (t.status !== 'Done') {
+          tasks.push({
+            id: t.id + p.id,
+            task: t.title,
+            priority: 'High',
+            assignee: t.assignee || 'Unassigned'
+          });
+        }
+      });
+    });
+    return tasks.slice(0, 4);
+  }, [projects]);
 
   const formatTime = (totalSeconds: number) => {
     const h = Math.floor(totalSeconds / 3600);
@@ -138,7 +171,9 @@ export default function ManagerDashboard() {
       case 'On Track': return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/20';
       case 'At Risk': return 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/20';
       case 'Completed': return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700';
-      default: return '';
+      case 'Aborted': return 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/30';
+      case 'In Progress': return 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/20';
+      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
     }
   };
 
@@ -181,11 +216,11 @@ export default function ManagerDashboard() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400">
                 <FolderKanban className="h-5 w-5" />
               </div>
-              <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">+2 this wk</Badge>
+              <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">Active</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">12</p>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Active Projects</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{projects.length}</p>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Total Projects</p>
             </div>
           </CardContent>
         </Card>
@@ -199,7 +234,7 @@ export default function ManagerDashboard() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">All time</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">248</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{projects.reduce((acc, p) => acc + (p.tasks?.length || 0), 0)}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Total Tasks</p>
             </div>
           </CardContent>
@@ -298,7 +333,7 @@ export default function ManagerDashboard() {
             <CardContent className="flex-1 overflow-hidden">
               <ScrollArea className="h-full pr-4">
                 <div className="space-y-6 pt-2">
-                  {PROJECTS.map((project) => (
+                  {mappedProjects.map((project) => (
                     <div key={project.id} className="group flex flex-col gap-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -312,7 +347,7 @@ export default function ManagerDashboard() {
                         <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Due: {project.dueDate}</span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <Progress value={project.progress} className={cn("h-2 flex-1", project.status === 'At Risk' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
+                        <Progress value={project.progress} className={cn("h-2 flex-1", project.status === 'Aborted' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
                         <div className="flex items-center gap-1 justify-end w-16 shrink-0">
                           <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{project.progress}%</span>
                           <button
@@ -408,7 +443,7 @@ export default function ManagerDashboard() {
             <CardContent className="flex-1 overflow-hidden">
               <ScrollArea className="h-full pr-4">
                 <div className="space-y-6 pt-2 pl-2 border-l-2 border-slate-100 dark:border-slate-800 ml-3">
-                  {ACTIVITY_FEED.map((activity) => (
+                  {activityFeed.map((activity) => (
                     <div key={activity.id} className="relative pl-6">
                       <div className="absolute -left-[25px] top-1.5 h-3 w-3 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-white dark:border-slate-950" />
                       <div className="flex items-start justify-between gap-4">
@@ -445,7 +480,7 @@ export default function ManagerDashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {DEADLINES.map((deadline) => (
+                {dynamicDeadlines.map((deadline) => (
                   <div key={deadline.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
                     <div className="flex flex-col gap-1.5">
                       <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{deadline.task}</p>
@@ -485,28 +520,43 @@ export default function ManagerDashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {ONLINE_TEAM_MEMBERS_MANAGER.map((member) => (
-                  <div key={member.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                {ONLINE_TEAM_MEMBERS_MANAGER.map((member) => {
+                  const sessionInfo = activeSessions[member.id];
+                  const isOnline = sessionInfo?.isOnline;
+                  const sessionTime = sessionInfo?.time || 0;
+                  return (
+                  <div key={member.id} className={cn("p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors", !isOnline && "opacity-75")}>
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        <Avatar className="h-8 w-8 rounded-full border-2 border-white dark:border-slate-950">
+                        <Avatar className={cn("h-8 w-8 rounded-full border-2 border-white dark:border-slate-950", !isOnline && "grayscale opacity-80")}>
                           <AvatarFallback className={cn("text-xs font-bold", member.color)}>
                             {member.initials}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-950 animate-pulse" />
+                        {isOnline ? (
+                          <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-950 animate-pulse" />
+                        ) : (
+                          <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600 border-2 border-white dark:border-slate-950" />
+                        )}
                       </div>
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
                         <span className="text-[10px] text-slate-500 font-semibold">{member.role}</span>
                       </div>
                     </div>
-                    <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold">
-                      <Timer className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
-                      <span>{formatTime(activeSessions[member.id] || 0)}</span>
-                    </div>
+                    {isOnline ? (
+                      <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold animate-pulse">
+                        <Timer className="h-3.5 w-3.5 text-emerald-500" />
+                        <span>{formatTime(sessionTime)}</span>
+                      </div>
+                    ) : (
+                      <div className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold">
+                        <Timer className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" />
+                        <span className="uppercase tracking-wider text-[10px]">Offline</span>
+                      </div>
+                    )}
                   </div>
-                ))}
+                )})}
               </div>
             </CardContent>
           </Card>
@@ -566,8 +616,10 @@ export default function ManagerDashboard() {
             </div>
             
             <div className="p-6 max-h-[300px] overflow-y-auto space-y-4">
-              {ONLINE_TEAM_MEMBERS_MANAGER.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all">
+              {ONLINE_TEAM_MEMBERS_MANAGER.map((member) => {
+                const isOnline = activeSessions[member.id]?.isOnline;
+                return (
+                <div key={member.id} className={cn("flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all", !isOnline && "opacity-75 grayscale")}>
                   <div className="flex items-center gap-3">
                     <Avatar className={cn("h-9 w-9 border-2 border-white dark:border-slate-900", member.color)}>
                       <AvatarFallback className="font-bold text-xs">{member.initials}</AvatarFallback>
@@ -578,11 +630,20 @@ export default function ManagerDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Online</span>
+                    {isOnline ? (
+                      <>
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Online</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600" />
+                        <span className="text-xs font-bold text-slate-500">Offline</span>
+                      </>
+                    )}
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
             
             <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">
