@@ -26,11 +26,11 @@ const SETTINGS_SECTIONS = [
   { id: 'help', label: 'Help & Support', description: 'Get assistance and read documentation.', icon: HelpCircle },
 ];
 
-export default function Settings({ session }: { session: any }) {
+export default function Settings({ session, defaultTab = null }: { session: any, defaultTab?: string | null }) {
   const { theme, toggleTheme } = useTheme();
   const role = session?.user?.user_metadata?.role || 'intern';
   
-  const [activeTab, setActiveTab] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string | null>(defaultTab);
 
   const [toggles, setToggles] = useState({
     taskAssigned: true,

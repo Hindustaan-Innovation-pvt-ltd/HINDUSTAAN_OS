@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
 export default function ProjectDetails({ project, onBack }: { project: any, onBack: () => void }) {
-  const milestones = project.milestones || [];
-  const tasks = project.tasks || [];
+  const milestones: any[] = project.milestones || [];
+  const tasks: any[] = project.tasks || [];
 
   const completedTasks = tasks.filter((t: any) => t.status === 'Done').length;
   const totalTasks = tasks.length;

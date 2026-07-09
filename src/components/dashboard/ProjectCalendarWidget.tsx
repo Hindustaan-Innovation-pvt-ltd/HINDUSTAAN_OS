@@ -22,9 +22,9 @@ import { Separator } from '@/components/ui/separator';
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
-  TooltipProvider
-} from '@/components/ui/tooltip';
+} from "@/components/ui/tooltip";
 import {
   Sheet,
   SheetContent,
@@ -32,6 +32,24 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
 // Data Structures
 type EventType = 'deadline' | 'completed' | 'milestone' | 'leave';
@@ -42,6 +60,7 @@ interface ProjectEvent {
   type: EventType;
   title: string;
   description?: string;
+  time?: string;
   assignees?: { name: string; initials: string }[];
 }
 
@@ -60,6 +79,9 @@ export function ProjectCalendarWidget() {
   const [date, setDate] = useState<Date>(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(undefined);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [scheduleType, setScheduleType] = useState<'event'|'meeting'>('event');
+  const [events, setEvents] = useState<ProjectEvent[]>(MOCK_EVENTS);
 
   // Dynamic calculations based on today
   const today = new Date();
@@ -77,19 +99,48 @@ export function ProjectCalendarWidget() {
 
   // Upcoming events
   const upcomingEvents = useMemo(() => {
-    return MOCK_EVENTS
+    return events
       .filter(e => isAfter(e.date, startOfDay(today)) || isSameDay(e.date, startOfDay(today)))
       .sort((a, b) => a.date.getTime() - b.date.getTime())
       .slice(0, 3);
-  }, [today]);
+  }, [events, today]);
 
   const handleDayClick = (day: Date) => {
     setSelectedDay(day);
     setIsSheetOpen(true);
   };
 
+  const handleScheduleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const title = formData.get('title') as string;
+    const dateStr = formData.get('date') as string;
+    const timeStr = formData.get('time') as string;
+    const type = (formData.get('type') || (scheduleType === 'event' ? 'milestone' : 'sync')) as EventType;
+
+    if (!title || !dateStr) return;
+    
+    // Parse the local date string to avoid timezone shifts
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const newEvent: ProjectEvent = {
+      id: Math.random().toString(),
+      date: new Date(year, month - 1, day),
+      type: type,
+      title: title,
+      time: timeStr,
+      assignees: [{ name: 'Current User', initials: 'CU' }]
+    };
+
+    setEvents(prev => [...prev, newEvent]);
+
+    toast.success(`${scheduleType === 'event' ? 'Event' : 'Meeting'} Scheduled Successfully`, {
+      description: 'Your calendar has been updated with the new item.',
+    });
+    setIsScheduleOpen(false);
+  };
+
   const getDayEvents = (day: Date) => {
-    return MOCK_EVENTS.filter(e => isSameDay(e.date, day));
+    return events.filter(e => isSameDay(e.date, day));
   };
 
   const getEventColor = (type: EventType) => {
@@ -267,10 +318,20 @@ export function ProjectCalendarWidget() {
 
           {/* Quick Actions */}
           <div className="flex flex-col sm:flex-row gap-3 w-full mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/60">
-            <Button variant="outline" size="sm" className="flex-1 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold h-10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm whitespace-nowrap">
+            <Button 
+              onClick={() => { setScheduleType('event'); setIsScheduleOpen(true); }}
+              variant="outline" 
+              size="sm" 
+              className="flex-1 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold h-10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm whitespace-nowrap"
+            >
               <Plus className="mr-2 h-4 w-4 text-orange-500" /> New Event
             </Button>
-            <Button variant="outline" size="sm" className="flex-1 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold h-10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm whitespace-nowrap">
+            <Button 
+              onClick={() => { setScheduleType('meeting'); setIsScheduleOpen(true); }}
+              variant="outline" 
+              size="sm" 
+              className="flex-1 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold h-10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm whitespace-nowrap"
+            >
               <Video className="mr-2 h-4 w-4 text-orange-500" /> Meeting
             </Button>
           </div>
@@ -313,7 +374,15 @@ export function ProjectCalendarWidget() {
                                 <div className="flex justify-between items-start">
                                   <div>
                                     <h4 className="font-bold text-sm text-slate-900 dark:text-white">{evt.title}</h4>
-                                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{evt.type}</span>
+                                      <div className="flex items-center gap-1.5 mt-0.5">
+                                        <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{evt.type}</span>
+                                        {evt.time && (
+                                          <>
+                                            <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                                            <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400">{evt.time}</span>
+                                          </>
+                                        )}
+                                      </div>
                                   </div>
                                   {evt.assignees && (
                                     <div className="flex -space-x-1.5">
@@ -370,6 +439,88 @@ export function ProjectCalendarWidget() {
           )}
         </SheetContent>
       </Sheet>
+
+      <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
+              {scheduleType === 'event' ? <CalendarIcon className="mr-2 h-5 w-5 text-orange-500" /> : <Video className="mr-2 h-5 w-5 text-orange-500" />}
+              Schedule {scheduleType === 'event' ? 'New Event' : 'Team Meeting'}
+            </DialogTitle>
+            <DialogDescription className="text-slate-500 font-medium">
+              Add a new {scheduleType} to the project calendar. It will be visible to all assignees.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleScheduleSubmit} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Title</Label>
+              <Input id="title" name="title" placeholder={scheduleType === 'event' ? "e.g. Q3 Roadmap Review" : "e.g. Weekly Standup Sync"} required className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500" />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="date" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</Label>
+                <Input id="date" name="date" type="date" required className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="time" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Time</Label>
+                <Select name="time" defaultValue="09:00 AM">
+                  <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500">
+                    <SelectValue placeholder="Select time" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800 max-h-[200px]">
+                    {Array.from({ length: 48 }).map((_, i) => {
+                      const hour24 = Math.floor(i / 2);
+                      const minute = i % 2 === 0 ? '00' : '30';
+                      const ampm = hour24 >= 12 ? 'PM' : 'AM';
+                      const hour12 = hour24 % 12 || 12;
+                      const timeStr = `${hour12.toString().padStart(2, '0')}:${minute} ${ampm}`;
+                      return (
+                        <SelectItem key={timeStr} value={timeStr}>
+                          {timeStr}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Type</Label>
+              <Select name="type" defaultValue={scheduleType === 'event' ? 'milestone' : 'sync'}>
+                <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
+                  {scheduleType === 'event' ? (
+                    <>
+                      <SelectItem value="milestone">Milestone</SelectItem>
+                      <SelectItem value="deadline">Deadline</SelectItem>
+                      <SelectItem value="leave">Leave / OOO</SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="sync">Sync</SelectItem>
+                      <SelectItem value="review">Review</SelectItem>
+                      <SelectItem value="brainstorm">Brainstorming</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <DialogFooter className="pt-4 sm:justify-end">
+              <Button type="button" variant="outline" onClick={() => setIsScheduleOpen(false)} className="rounded-xl font-bold">
+                Cancel
+              </Button>
+              <Button type="submit" className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold">
+                Schedule {scheduleType === 'event' ? 'Event' : 'Meeting'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
