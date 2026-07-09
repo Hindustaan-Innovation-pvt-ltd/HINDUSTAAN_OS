@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Trophy, Target, Flag, Clock, CheckCircle2, Rocket } from 'lucide-react';
+import { Trophy, Target, Flag, Clock, CheckCircle2, Rocket, Award, HelpCircle, Zap, ShieldCheck, Star, Flame, TrendingUp } from 'lucide-react';
 import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { useTheme } from '@/context/ThemeContext';
 
 import { useProjects } from '@/context/ProjectContext';
 
@@ -31,10 +33,25 @@ function MetricCard({ name, data, period, onPeriodChange }: { name: string, data
           <CardDescription className="mt-1 font-semibold">{name}</CardDescription>
         </div>
         <Tabs value={period} onValueChange={onPeriodChange} className="w-full sm:w-auto">
-          <TabsList className="grid w-full grid-cols-3 sm:w-[300px]">
-            <TabsTrigger value="Today">Today</TabsTrigger>
-            <TabsTrigger value="This Week">This Week</TabsTrigger>
-            <TabsTrigger value="This Month">This Month</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 sm:w-[300px] bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+            <TabsTrigger 
+              value="Today"
+              className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
+            >
+              Today
+            </TabsTrigger>
+            <TabsTrigger 
+              value="This Week"
+              className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
+            >
+              This Week
+            </TabsTrigger>
+            <TabsTrigger 
+              value="This Month"
+              className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
+            >
+              This Month
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </CardHeader>
@@ -85,7 +102,12 @@ function MetricCard({ name, data, period, onPeriodChange }: { name: string, data
 export default function Milestones({ session }: { session?: any }) {
   const { projects } = useProjects();
   const [globalPeriod, setGlobalPeriod] = useState('Today');
-  const role = session?.user?.user_metadata?.role || 'intern';
+  const role = session?.user?.user_metadata?.role || 'employee';
+
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
+  const tickColor = isDarkMode ? '#94a3b8' : '#64748b';
+  const gridColor = isDarkMode ? '#334155' : '#e2e8f0';
 
   const derivedProjects = projects.map((p: any) => {
     const totalTasks = p.tasks?.length || 0;
@@ -203,12 +225,190 @@ export default function Milestones({ session }: { session?: any }) {
         </div>
         </>
       ) : (
-        <MetricCard 
-          name="My Contributions"
-          data={contributionData}
-          period={globalPeriod}
-          onPeriodChange={setGlobalPeriod}
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column: Contributions & Rules */}
+          <div className="lg:col-span-6 space-y-8 flex flex-col h-full">
+            <MetricCard 
+              name="My Contributions"
+              data={contributionData}
+              period={globalPeriod}
+              onPeriodChange={setGlobalPeriod}
+            />
+
+            {/* Milestones Stepper & Calculator */}
+            <Card className="shadow-sm border-slate-200 dark:border-slate-700/60 rounded-2xl flex-1 flex flex-col">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
+                <CardTitle className="text-base flex items-center">
+                  <Award className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
+                  Milestone Level & Rules
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Find out how milestones are calculated and track your journey to the next level.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-6 flex-grow flex flex-col justify-between">
+                {/* Highlight explanation box */}
+                <div className="p-4 rounded-xl bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 flex items-start gap-3">
+                  <HelpCircle className="h-5 w-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">How much task completion gets one Milestone?</h4>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                      Every <strong className="text-orange-600 dark:text-orange-400">5 resolved tasks</strong> on your Kanban board triggers <strong className="text-orange-600 dark:text-orange-400">1 Milestone</strong> level-up. Complete tasks to unlock badges and increase your final contribution score!
+                    </p>
+                  </div>
+                </div>
+
+                {/* Level Stepper */}
+                <div className="relative pl-6 border-l-2 border-slate-100 dark:border-slate-800 flex-grow flex flex-col justify-between gap-4 mt-6">
+                  {/* Step 1 */}
+                  <div className="relative">
+                    <div className="absolute -left-[25px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white ring-4 ring-white dark:ring-slate-950">
+                      <ShieldCheck className="h-3 w-3" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Level 1: Milestone Starter</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">Completed 5 tasks. (Unlocked)</p>
+                    </div>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className="relative">
+                    <div className="absolute -left-[25px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white ring-4 ring-white dark:ring-slate-950">
+                      <ShieldCheck className="h-3 w-3" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Level 2: Sprint Runner</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">Completed 10 tasks. (Unlocked)</p>
+                    </div>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="relative">
+                    <div className="absolute -left-[25px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-white ring-4 ring-white dark:ring-slate-950 animate-pulse">
+                      <Zap className="h-2.5 w-2.5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-950 dark:text-white">Level 3: Feature Builder (Active)</h4>
+                        <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950 px-2 py-0.5 rounded-full border border-orange-100 dark:border-orange-900/30">In Progress</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">Requires 15 completed tasks. You are currently at <strong className="text-slate-700 dark:text-slate-300">12 completions</strong> (3 tasks remaining).</p>
+                    </div>
+                  </div>
+
+                  {/* Step 4 */}
+                  <div className="relative">
+                    <div className="absolute -left-[25px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800 text-white ring-4 ring-white dark:ring-slate-950" />
+                    <div className="opacity-60">
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Level 4: Launch Master</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">Requires 20 completed tasks. (Locked)</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column: Project Tracking */}
+          <div className="lg:col-span-6 space-y-8">
+            {/* Project execution */}
+            <Card className="shadow-sm border-slate-200 dark:border-slate-700/60 rounded-2xl">
+              <CardHeader>
+                <CardTitle className="flex items-center text-base">
+                  <Rocket className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
+                  My Projects Execution
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {PROJECTS.slice(0, 2).map(project => (
+                    <div key={project.id}>
+                      <div className="flex justify-between text-sm font-bold mb-2">
+                        <span className="text-slate-700 dark:text-slate-200">{project.name}</span>
+                        <span className="text-slate-500 dark:text-slate-400">{project.progress}%</span>
+                      </div>
+                      <Progress value={project.progress} className={cn("h-3", `[&>div]:${project.color}`)} />
+                      <div className="mt-1 text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500 text-right">
+                        {project.status}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Card 1: Recent Achievements */}
+            <Card className="shadow-sm border-slate-200 dark:border-slate-700/60 rounded-2xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center">
+                  <Trophy className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
+                  Recent Achievements
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <div className="space-y-3">
+                  {[
+                    { title: "Completed 50 Tasks", desc: "2 days ago", icon: Trophy, color: "text-orange-500 bg-orange-50 dark:bg-orange-950/20" },
+                    { title: "7-Day Work Streak", desc: "This week", icon: Flame, color: "text-amber-500 bg-amber-50 dark:bg-amber-950/20" },
+                    { title: "Milestone Level Up", desc: "3 days ago", icon: Star, color: "text-yellow-500 bg-yellow-50 dark:bg-yellow-950/20" },
+                    { title: "First Project Delivered", desc: "Last week", icon: Target, color: "text-blue-500 bg-blue-50 dark:bg-blue-950/20" }
+                  ].map((ach, i) => (
+                    <div key={i} className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group">
+                      <div className="flex items-center gap-3">
+                        <div className={cn("p-2 rounded-lg", ach.color)}>
+                          <ach.icon className="h-4 w-4" />
+                        </div>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-orange-500 transition-colors">{ach.title}</span>
+                      </div>
+                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">{ach.desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Card 2: Contribution Trend */}
+            <Card className="shadow-sm border-slate-200 dark:border-slate-700/60 rounded-2xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center">
+                  <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
+                  Contribution Trend
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2 space-y-4">
+                <div className="h-[140px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={[
+                      { day: 'Mon', value: 65 },
+                      { day: 'Tue', value: 80 },
+                      { day: 'Wed', value: 72 },
+                      { day: 'Thu', value: 90 },
+                      { day: 'Fri', value: 85 },
+                      { day: 'Sat', value: 60 },
+                      { day: 'Sun', value: 75 }
+                    ]} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                      <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} domain={[0, 100]} />
+                      <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px' }} />
+                      <Bar dataKey="value" fill="#f97316" radius={[4, 4, 0, 0]} barSize={16} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="text-xs space-y-1 mt-2">
+                  <div className="flex justify-between items-center font-semibold text-slate-600 dark:text-slate-400">
+                    <span>Average Contribution:</span>
+                    <span className="font-extrabold text-slate-900 dark:text-white">75%</span>
+                  </div>
+                  <div className="flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    <span>+12% compared to last week</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       )}
     </div>
   );

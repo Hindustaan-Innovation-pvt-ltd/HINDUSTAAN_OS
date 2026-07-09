@@ -419,13 +419,15 @@ export default function WorkLogs({ session }: { session?: any }) {
                 {currentUser.role === 'manager' && (
                   <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Status</th>
                 )}
-                <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                {currentUser.role === 'manager' && (
+                  <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={currentUser.role === 'manager' ? 7 : 6} className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
+                  <td colSpan={currentUser.role === 'manager' ? 7 : 5} className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
                     No logs found matching your criteria.
                   </td>
                 </tr>
@@ -468,33 +470,33 @@ export default function WorkLogs({ session }: { session?: any }) {
                         </Badge>
                       </td>
                     )}
-                    <td className="p-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                          {currentUser.role === 'manager' && log.status !== 'Approved' && (
-                            <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Approved')} className="cursor-pointer text-emerald-600 font-medium">
-                              <CheckCircle className="h-4 w-4 mr-2" /> Approve Log
-                            </DropdownMenuItem>
-                          )}
-                          {currentUser.role === 'manager' && log.status !== 'Rejected' && (
-                            <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Rejected')} className="cursor-pointer text-rose-600 font-medium">
-                              <XCircle className="h-4 w-4 mr-2" /> Reject Log
-                            </DropdownMenuItem>
-                          )}
-                          {currentUser.role === 'manager' && (
+                    {currentUser.role === 'manager' && (
+                      <td className="p-4 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                            {log.status !== 'Approved' && (
+                              <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Approved')} className="cursor-pointer text-emerald-600 font-medium">
+                                <CheckCircle className="h-4 w-4 mr-2" /> Approve Log
+                              </DropdownMenuItem>
+                            )}
+                            {log.status !== 'Rejected' && (
+                              <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Rejected')} className="cursor-pointer text-rose-600 font-medium">
+                                <XCircle className="h-4 w-4 mr-2" /> Reject Log
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
-                          )}
-                          <DropdownMenuItem onClick={() => handleDelete(log.id)} className="cursor-pointer text-red-600 font-medium">
-                            <Trash2 className="h-4 w-4 mr-2" /> Delete Entry
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
+                            <DropdownMenuItem onClick={() => handleDelete(log.id)} className="cursor-pointer text-red-600 font-medium">
+                              <Trash2 className="h-4 w-4 mr-2" /> Delete Entry
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
