@@ -92,43 +92,23 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col md:flex-row font-sans transition-colors duration-500 overflow-y-auto">
-      {/* Left Panel - Branding (Hidden on mobile) */}
-      <div className="hidden md:flex flex-col justify-between w-1/2 p-12 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] dark:opacity-[0.05] pointer-events-none"></div>
-        <div className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-orange-500/10 dark:bg-orange-500/5 blur-3xl pointer-events-none"></div>
-        <div className="absolute -bottom-[20%] -right-[10%] w-[60%] h-[60%] rounded-full bg-emerald-500/10 dark:bg-emerald-500/5 blur-3xl pointer-events-none"></div>
-        
-        <div className="relative z-10 flex items-center space-x-4">
-          <img src="/logo-full.png" alt="Hindustaan OS" className="h-10 dark:hidden object-contain" />
-          <img src="/logo-full-dark.png" alt="Hindustaan OS" className="h-10 hidden dark:block object-contain" />
-        </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center font-sans transition-colors duration-500 overflow-y-auto relative">
+      {/* Background Ornaments */}
+      <div className="fixed inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] dark:opacity-[0.05] pointer-events-none"></div>
+      <div className="fixed -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-orange-500/10 dark:bg-orange-500/5 blur-3xl pointer-events-none"></div>
+      <div className="fixed -bottom-[20%] -right-[10%] w-[60%] h-[60%] rounded-full bg-emerald-500/10 dark:bg-emerald-500/5 blur-3xl pointer-events-none"></div>
 
-        <div className="relative z-10 max-w-md animate-in fade-in slide-in-from-left-8 duration-1000 delay-300 fill-mode-both">
-          <h1 className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-            Join the <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-600">Future</span> of Collaboration.
-          </h1>
-          <p className="mt-6 text-lg font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
-            Create an account to access Hindustaan OS. Connect with your team, track your milestones, and build great things together.
-          </p>
-        </div>
-
-        <div className="relative z-10 text-sm font-bold text-slate-400 dark:text-slate-500">
-          © {new Date().getFullYear()} Hindustaan Innovation Pvt Ltd
-        </div>
-      </div>
-
-      {/* Right Panel - Registration Form */}
-      <div className="flex-1 flex flex-col justify-center items-center p-6 md:p-12 relative min-h-screen">
-        <div className="w-full max-w-md space-y-8 relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+      {/* Registration Form */}
+      <div className="w-full max-w-md p-6 md:p-8 relative z-10">
+        <div className="bg-white/70 dark:bg-slate-900/60 rounded-[24px] p-6 sm:p-8 shadow-2xl backdrop-blur-xl border border-white/60 dark:border-slate-700/50 animate-in fade-in slide-in-from-bottom-8 duration-700">
           
-          <div className="text-center md:text-left md:hidden mb-8">
+          <div className="text-center mb-6">
             <img src="/logo-full.png" alt="Hindustaan OS" className="h-12 mx-auto dark:hidden object-contain" />
             <img src="/logo-full-dark.png" alt="Hindustaan OS" className="h-12 mx-auto hidden dark:block object-contain" />
           </div>
           
-          <div className="text-center md:text-left space-y-2">
-            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Create Account</h2>
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Create Account</h2>
             <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Join the Hindustaan OS Workspace.</p>
           </div>
 
