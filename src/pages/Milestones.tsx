@@ -321,7 +321,7 @@ export default function Milestones({ session }: { session?: any }) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {PROJECTS.slice(0, 2).map(project => (
+                  {derivedProjects.slice(0, 2).map(project => (
                     <div key={project.id}>
                       <div className="flex justify-between text-sm font-bold mb-2">
                         <span className="text-slate-700 dark:text-slate-200">{project.name}</span>
