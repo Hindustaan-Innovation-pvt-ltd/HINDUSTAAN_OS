@@ -452,12 +452,19 @@ export default function DailyStandups({ session }: { session?: any }) {
           </p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button onClick={() => toast.success('Meeting Started', { description: "Joining your team's video room..."})} variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
             <Video className="h-4 w-4 mr-2 text-slate-400" /> Start Meeting
           </Button>
           <Button onClick={() => toast('Opening Standup Form...')} className="h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-sm">
             <Mic className="h-4 w-4 mr-2" /> Submit My Update
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowHistory(true)}
+            className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold"
+          >
+            <Clock className="h-4 w-4 mr-2 text-slate-400" /> Standup History
           </Button>
         </div>
       </div>
@@ -482,13 +489,6 @@ export default function DailyStandups({ session }: { session?: any }) {
           </div>
         </div>
 
-        <Button 
-          variant="outline" 
-          onClick={() => setShowHistory(true)}
-          className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold"
-        >
-          <Clock className="h-4 w-4 mr-2 text-slate-400" /> Standup History
-        </Button>
       </div>
 
       {/* Standup Grid */}
