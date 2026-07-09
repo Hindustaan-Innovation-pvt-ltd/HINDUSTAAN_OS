@@ -21,17 +21,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-<<<<<<< HEAD
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import jsPDF from 'jspdf';
-=======
 import { format } from 'date-fns';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { jsPDF } from 'jspdf';
->>>>>>> cfacf240213bd6a71bb56e1f849fdae372f6c291
 import autoTable from 'jspdf-autotable';
 
 // -- MOCK DATA GENERATOR --
@@ -117,11 +110,7 @@ export default function ContributionScores({ session }: { session?: any }) {
   else if (email.toLowerCase().includes('priya')) currentUserName = 'Priya Patel';
 
   const [searchTerm, setSearchTerm] = useState('');
-<<<<<<< HEAD
-  const [date, setDate] = useState<Date>(new Date());
-=======
   const [date, setDate] = useState<Date | undefined>(new Date());
->>>>>>> cfacf240213bd6a71bb56e1f849fdae372f6c291
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const filteredInterns = MOCK_INTERNS.filter(intern =>
