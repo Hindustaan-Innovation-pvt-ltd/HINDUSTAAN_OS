@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayCircle, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayCircle, CheckCircle2, ChevronLeft, ChevronRight, FolderKanban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import TaskDetailsModal from '../components/dashboard/TaskDetailsModal';
 import CreateTaskModal from '../components/dashboard/CreateTaskModal';
+import { INITIAL_TASKS } from '@/data/mockData';
 
 // --- Types & Mock Data ---
 
@@ -19,141 +20,6 @@ interface Task {
   due_date: string;
   status: Status;
 }
-
-const INITIAL_TASKS: Task[] = [
-  {
-    id: 't-1',
-    title: 'Design Authentication Split Screen',
-    description: 'Implement the responsive split-screen layout for the login page using the new visual design specifications and Tailwind v4.',
-    project_tag: 'Frontend Core',
-    assignee_name: 'Amanda Smith',
-    assignee_id: 'u-1',
-    priority: 'High',
-    due_date: 'Oct 12, 2026',
-    status: 'Done',
-  },
-  {
-    id: 't-2',
-    title: 'Configure Supabase RLS Policies',
-    description: 'Lock down the tasks table so users can only read and update rows belonging to their assigned organization.',
-    project_tag: 'Backend Infrastructure',
-    assignee_name: 'Rahul Sharma',
-    assignee_id: 'u-2',
-    priority: 'High',
-    due_date: 'Oct 14, 2026',
-    status: 'In Progress',
-  },
-  {
-    id: 't-3',
-    title: 'Implement Kanban Drag-and-Drop',
-    description: 'Build native HTML5 drag and drop APIs without using heavy external libraries for smooth task transitions.',
-    project_tag: 'Frontend Core',
-    assignee_name: 'Amanda Smith',
-    assignee_id: 'u-1',
-    priority: 'Normal',
-    due_date: 'Oct 15, 2026',
-    status: 'In Review',
-  },
-  {
-    id: 't-4',
-    title: 'WhatsApp Bot Integration API',
-    description: 'Map webhooks from Twilio/WhatsApp API to the internal logging server to allow offline task updates.',
-    project_tag: 'Integrations',
-    assignee_name: 'Rahul Sharma',
-    assignee_id: 'u-2',
-    priority: 'Low',
-    due_date: 'Oct 20, 2026',
-    status: 'To Do',
-  },
-  {
-    id: 't-5',
-    title: 'Cohort Velocity Dashboard',
-    description: 'Aggregate nightly metric calculations to visualize the sprint burndown chart for the engineering cohorts.',
-    project_tag: 'Reporting',
-    assignee_name: 'Priya Patel',
-    assignee_id: 'u-3',
-    priority: 'Normal',
-    due_date: 'Oct 18, 2026',
-    status: 'To Do',
-  },
-  {
-    id: 't-6',
-    title: 'Migrate to Tailwind v4',
-    description: 'Update all legacy CSS and Tailwind config to the latest v4 specifications. Test all responsive breakpoints.',
-    project_tag: 'Frontend Core',
-    assignee_name: 'Amanda Smith',
-    assignee_id: 'u-1',
-    priority: 'Normal',
-    due_date: 'Oct 22, 2026',
-    status: 'In Progress',
-  },
-  {
-    id: 't-7',
-    title: 'Setup Redis Caching for API',
-    description: 'Implement Redis caching layer for the main user fetch API to reduce database load by 40%.',
-    project_tag: 'Backend Infrastructure',
-    assignee_name: 'Rahul Sharma',
-    assignee_id: 'u-2',
-    priority: 'High',
-    due_date: 'Oct 19, 2026',
-    status: 'To Do',
-  },
-  {
-    id: 't-8',
-    title: 'Create User Onboarding Flow',
-    description: 'Design and implement the 3-step onboarding modal for new workspace users.',
-    project_tag: 'Product',
-    assignee_name: 'Tanvy',
-    assignee_id: 'u-4',
-    priority: 'Normal',
-    due_date: 'Oct 25, 2026',
-    status: 'To Do',
-  },
-  {
-    id: 't-9',
-    title: 'Fix Navigation Bug on Safari',
-    description: 'Mobile navigation drawer does not close properly on Safari iOS 16. Needs immediate patching.',
-    project_tag: 'Bug Fix',
-    assignee_name: 'Amanda Smith',
-    assignee_id: 'u-1',
-    priority: 'High',
-    due_date: 'Oct 12, 2026',
-    status: 'In Progress',
-  },
-  {
-    id: 't-10',
-    title: 'Write API Documentation',
-    description: 'Update the Swagger docs to include the new webhook endpoints for the WhatsApp bot.',
-    project_tag: 'Documentation',
-    assignee_name: 'Priya Patel',
-    assignee_id: 'u-3',
-    priority: 'Low',
-    due_date: 'Oct 28, 2026',
-    status: 'To Do',
-  },
-  {
-    id: 't-11',
-    title: 'Optimize Webpack Build Size',
-    description: 'Analyze bundle size and implement code splitting for the charting libraries. Target: < 200kb initial load.',
-    project_tag: 'Performance',
-    assignee_name: 'Rahul Sharma',
-    assignee_id: 'u-2',
-    priority: 'Normal',
-    due_date: 'Oct 16, 2026',
-    status: 'In Review',
-  },
-  {
-    id: 't-12',
-    title: 'Update Brand Assets',
-    description: 'Replace all old logos and favicons with the new re-branded SVGs across the application.',
-    project_tag: 'Design',
-    assignee_name: 'Tanvy',
-    assignee_id: 'u-4',
-    priority: 'Low',
-    due_date: 'Oct 15, 2026',
-    status: 'Done',
-  }
-];
 
 const COLUMNS: Status[] = ['To Do', 'In Progress', 'In Review', 'Done'];
 
@@ -175,24 +41,25 @@ const PriorityBadge = ({ priority }: { priority: Priority }) => {
 
 const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
-const EmptyColumnPlaceholder = ({ status }: { status: Status }) => {
+const EmptyColumnPlaceholder = ({ status, role }: { status: Status; role: 'manager' | 'intern' }) => {
+  const isIntern = role === 'intern';
   const placeholders = {
     'To Do': {
       icon: CheckSquare,
       title: 'No tasks to do',
-      desc: 'All caught up! Drag tasks here to plan them.',
+      desc: isIntern ? 'All caught up! New tasks will appear here.' : 'All caught up! Drag tasks here to plan them.',
       color: 'text-blue-600 dark:text-blue-400 bg-blue-50/70 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/30'
     },
     'In Progress': {
       icon: PlayCircle,
       title: 'Nothing in progress',
-      desc: 'Select a task and drag it here to get started.',
+      desc: isIntern ? "Open a task and click 'Start Working' to begin." : 'Select a task and drag it here to get started.',
       color: 'text-amber-600 dark:text-amber-400 bg-amber-50/70 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/30'
     },
     'In Review': {
       icon: Eye,
       title: 'No tasks in review',
-      desc: 'Finished work goes here for approval.',
+      desc: isIntern ? 'Submit a task for review to see it here.' : 'Finished work goes here for approval.',
       color: 'text-purple-600 dark:text-purple-400 bg-purple-50/70 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900/30'
     },
     'Done': {
@@ -220,7 +87,25 @@ const EmptyColumnPlaceholder = ({ status }: { status: Status }) => {
 // --- Main Page Component ---
 
 export default function TaskBoard({ session, isSidebarMinimized = false }: { session?: any; isSidebarMinimized?: boolean }) {
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    const saved = localStorage.getItem('hindustaan_tasks_list');
+    return saved ? JSON.parse(saved) : INITIAL_TASKS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hindustaan_tasks_list', JSON.stringify(tasks));
+  }, [tasks]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hindustaan_tasks_list' && e.newValue) {
+        setTasks(JSON.parse(e.newValue));
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
@@ -441,8 +326,8 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                   ? "min-w-[250px] lg:min-w-0 max-w-[380px] lg:max-w-none flex-1" 
                   : "min-w-[320px] max-w-[320px] shrink-0"
               )}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, columnStatus)}
+              onDragOver={currentUser.role === 'manager' ? handleDragOver : undefined}
+              onDrop={currentUser.role === 'manager' ? (e) => handleDrop(e, columnStatus) : undefined}
             >
               {/* Column Header */}
               <div className="flex items-center justify-between mb-4">
@@ -460,28 +345,27 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
               {/* Column Track */}
               <div className="flex-1 flex flex-col gap-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-2xl p-3 border border-slate-200 dark:border-slate-700/60 min-h-[150px]">
                 {columnTasks.length === 0 ? (
-                  <EmptyColumnPlaceholder status={columnStatus} />
+                  <EmptyColumnPlaceholder status={columnStatus} role={currentUser.role} />
                 ) : (
                   columnTasks.map(task => {
                     return (
                       <div
                         key={task.id}
-                        draggable
+                        draggable={currentUser.role === 'manager'}
                         onClick={() => setSelectedTask(task)}
-                        onDragStart={(e) => handleDragStart(e, task.id)}
-                        onDragEnd={handleDragEnd}
+                        onDragStart={currentUser.role === 'manager' ? (e) => handleDragStart(e, task.id) : undefined}
+                        onDragEnd={currentUser.role === 'manager' ? handleDragEnd : undefined}
                         className={cn(
-                          "group relative bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer active:cursor-grabbing",
+                          "group relative bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer",
+                          currentUser.role === 'manager' && "active:cursor-grabbing",
                           draggedTaskId === task.id ? "opacity-50 border-dashed border-orange-400 shadow-none" : "opacity-100"
                         )}
                       >
-                        {/* Top Row: Checkbox & Priority */}
+                        {/* Top Row: Priority & Project */}
                         <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center space-x-2">
-                            <div className="flex h-5 w-5 items-center justify-center rounded border border-slate-300 dark:border-slate-700 text-transparent hover:border-orange-500 hover:text-orange-500 transition-colors cursor-pointer">
-                              <CheckSquare className="h-3.5 w-3.5" />
-                            </div>
-                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate max-w-[120px]">
+                          <div className="flex items-center space-x-1.5 min-w-0">
+                            <FolderKanban className="h-3.5 w-3.5 text-orange-500/80 shrink-0" />
+                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate max-w-[130px]">
                               {task.project_tag}
                             </span>
                           </div>

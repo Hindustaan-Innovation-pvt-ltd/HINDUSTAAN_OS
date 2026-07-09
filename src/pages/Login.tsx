@@ -14,7 +14,7 @@ export const approvedUsers = [
   { id: "MGR001", name: "Manager One", email: "manager1@hindustaan.in", role: "manager" }
 ];
 
-export default function Login({ onMockLogin }: { onMockLogin?: (role: string) => void }) {
+export default function Login({ onMockLogin }: { onMockLogin?: (role: string, email?: string) => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,7 +42,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string) =>
   }, [isDark]);
 
   useEffect(() => {
-    let interval: ReturnType<typeof setTimeout>;
+    let interval: ReturnType<typeof setInterval>;
     if (showOTPDialog && otpState) {
       interval = setInterval(() => {
         const remaining = Math.max(0, Math.floor((otpState.expiresAt - Date.now()) / 1000));
@@ -78,16 +78,51 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string) =>
     setLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
       
       const user = validateUser();
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      
+      if (user.role === 'intern') {
+        let userId = 'u-4';
+        let userName = 'Tanvy Pandey';
+        
+        if (email.toLowerCase().includes('amanda')) {
+          userId = 'u-1';
+          userName = 'Amanda Smith';
+        } else if (email.toLowerCase().includes('rahul')) {
+          userId = 'u-2';
+          userName = 'Rahul Sharma';
+        } else if (email.toLowerCase().includes('priya')) {
+          userId = 'u-3';
+          userName = 'Priya Patel';
+        }
+
+        // Track specific intern login for Manager Dashboard & WorkLogs
+        localStorage.setItem(`login_time_${userId}`, Date.now().toString());
+        
+        // Log activity to feed
+        const storedFeed = localStorage.getItem('hindustaan_activity_feed');
+        const feed = storedFeed ? JSON.parse(storedFeed) : [];
+        const newEvent = { 
+          id: Date.now().toString(), 
+          user: userName, 
+          action: 'logged into', 
+          target: 'Hindustaan OS', 
+          time: 'Just now', 
+          type: 'login' 
+        };
+        localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newEvent, ...feed].slice(0, 20)));
+      }
       
       localStorage.setItem('hindustaan_user', JSON.stringify(user));
       toast.success('Access granted.', { description: 'Initializing workspaces...' });
       
       if (onMockLogin) {
-        onMockLogin(user.role);
+        onMockLogin(user.role, email);
       } else {
         window.location.reload();
       }
@@ -179,7 +214,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string) =>
         toast.success('Verification Successful', { description: 'Welcome back!' });
         setShowOTPDialog(false);
         if (onMockLogin) {
-          onMockLogin(user.role);
+          onMockLogin(user.role, email);
         } else {
           window.location.reload();
         }

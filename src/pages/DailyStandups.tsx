@@ -53,13 +53,37 @@ const MOCK_STANDUPS = [
 ];
 
 export default function DailyStandups({ session }: { session?: any }) {
+  const role = session?.user?.user_metadata?.role || 'intern';
+  const email = session?.user?.email || 'user@hindustaan.in';
+  
+  let currentUserName = 'Tanvy';
+  if (email.toLowerCase().includes('amanda')) {
+    currentUserName = 'Amanda Smith';
+  } else if (email.toLowerCase().includes('rahul')) {
+    currentUserName = 'Rahul Sharma';
+  } else if (email.toLowerCase().includes('priya')) {
+    currentUserName = 'Priya Patel';
+  }
+
+  // Filter standups to show only logged in employee if role is not manager
+  const displayStandups = role !== 'manager'
+    ? MOCK_STANDUPS.filter(s => s.user.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
+    : MOCK_STANDUPS;
+
+  const submittedCount = displayStandups.filter(s => s.status === 'Submitted').length;
+  const pendingCount = displayStandups.filter(s => s.status === 'Pending').length;
+
   return (
     <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Daily Standups</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Review your team's async standup reports for today.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            {role !== 'manager' 
+              ? 'Review your logged daily standup report for today.' 
+              : "Review your team's async standup reports for today."}
+          </p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -78,7 +102,7 @@ export default function DailyStandups({ session }: { session?: any }) {
           <CheckCircle2 className="h-5 w-5 text-emerald-500" />
           <div>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Submitted</p>
-            <p className="text-lg font-black text-slate-900 dark:text-white leading-none">3</p>
+            <p className="text-lg font-black text-slate-900 dark:text-white leading-none">{submittedCount}</p>
           </div>
         </div>
         <div className="w-px h-8 bg-slate-200 dark:bg-slate-800" />
@@ -86,14 +110,14 @@ export default function DailyStandups({ session }: { session?: any }) {
           <AlertCircle className="h-5 w-5 text-amber-500" />
           <div>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pending</p>
-            <p className="text-lg font-black text-slate-900 dark:text-white leading-none">1</p>
+            <p className="text-lg font-black text-slate-900 dark:text-white leading-none">{pendingCount}</p>
           </div>
         </div>
       </div>
 
       {/* Standup Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {MOCK_STANDUPS.map(standup => (
+        {displayStandups.map(standup => (
           <div key={standup.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden flex flex-col group transition-all hover:shadow-md">
             
             {/* Card Header */}
@@ -154,9 +178,11 @@ export default function DailyStandups({ session }: { session?: any }) {
             {standup.status === 'Submitted' && (
               <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
                 <span className="text-[10px] font-bold text-slate-400">{standup.time}</span>
-                <Button variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-500 hover:text-orange-600">
-                  <MessageSquare className="h-3 w-3 mr-1.5" /> Reply
-                </Button>
+                {role === 'manager' && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-500 hover:text-orange-600">
+                    <MessageSquare className="h-3 w-3 mr-1.5" /> Reply
+                  </Button>
+                )}
               </div>
             )}
           </div>

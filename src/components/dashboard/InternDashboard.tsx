@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle2, Clock, Calendar as CalendarIcon, Flag, Activity, 
   ArrowRight, MoreVertical, PlayCircle, Trophy, Target, AlertCircle, Sparkles, LayoutDashboard
@@ -17,25 +17,117 @@ import { Separator } from "@/components/ui/separator";
 import { WhatsAppBroadcastDialog } from "./WhatsAppBroadcastDialog";
 import { FigjamDialog } from "./FigjamDialog";
 import { EmployeeCalendar } from "./EmployeeCalendar";
+import { INITIAL_TASKS, GLOBAL_LOGS, GLOBAL_ACTIVITY_FEED } from '@/data/mockData';
+import { useProjects } from '@/context/ProjectContext';
 
-// MOCK DATA
-const TASKS = [
-  { id: '1', title: 'Implement Kanban Drag & Drop', project: 'Project OS', priority: 'High', due: 'Due Today', status: 'In Progress', progress: 80 },
-  { id: '2', title: 'Design Authentication UI', project: 'Project OS', priority: 'Medium', due: 'Tomorrow', status: 'To Do', progress: 0 },
-  { id: '3', title: 'Fix Navigation Bugs', project: 'Internal Tools', priority: 'Low', due: 'Jul 10', status: 'Review', progress: 95 },
-  { id: '4', title: 'Update Component Library', project: 'Design System', priority: 'Medium', due: 'Jul 12', status: 'To Do', progress: 10 },
-];
 
-const RECENT_ACTIVITY = [
-  { id: '1', action: 'Logged 2 hrs', target: 'Dashboard UI', time: '2h ago' },
-  { id: '2', action: 'Completed', target: 'Login UI', time: '4h ago' },
-  { id: '3', action: 'Submitted Standup', target: '', time: '9:10 AM' },
-  { id: '4', action: 'Assigned new task', target: 'Kanban Drag & Drop', time: 'Yesterday' },
-];
+interface InternDashboardProps {
+  session?: any;
+}
 
-export default function InternDashboard() {
+export default function InternDashboard({ session }: InternDashboardProps) {
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   const [isFigjamOpen, setIsFigjamOpen] = useState(false);
+
+  // Resolve current user based on session
+  const role = session?.user?.user_metadata?.role || 'intern';
+  const email = session?.user?.email || 'user@hindustaan.in';
+  
+  let currentUserId = 'u-4';
+  let currentUserName = 'Tanvy Pandey';
+  
+  if (email.toLowerCase().includes('amanda')) {
+    currentUserId = 'u-1';
+    currentUserName = 'Amanda Smith';
+  } else if (email.toLowerCase().includes('rahul')) {
+    currentUserId = 'u-2';
+    currentUserName = 'Rahul Sharma';
+  } else if (email.toLowerCase().includes('priya')) {
+    currentUserId = 'u-3';
+    currentUserName = 'Priya Patel';
+  }
+
+  const { projects } = useProjects();
+  
+  // Extract dynamic tasks from projects
+  const tasks = React.useMemo(() => {
+    const allTasks = projects.flatMap((p: any) => p.tasks?.map((t: any) => ({
+      id: t.id + p.id,
+      title: t.title,
+      project_tag: p.name,
+      assignee_name: t.assignee || 'Unassigned',
+      priority: t.priority || 'Normal',
+      due_date: p.deadline || 'TBD',
+      status: t.status
+    })) || []);
+    
+    return allTasks.filter((t: any) => 
+      t.assignee_name === currentUserName || 
+      (currentUserName.toLowerCase().includes('tanvy') && t.assignee_name?.toLowerCase().includes('tanvy'))
+    );
+  }, [projects, currentUserName]);
+
+  // Read activity feed
+  const [activityFeed, setActivityFeed] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_activity_feed');
+    return saved ? JSON.parse(saved) : GLOBAL_ACTIVITY_FEED;
+  });
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hindustaan_activity_feed' && e.newValue) {
+        setActivityFeed(JSON.parse(e.newValue));
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+  
+  const userActivities = React.useMemo(() => {
+    return activityFeed.filter((act: any) => act.user === currentUserName || act.user.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())).slice(0, 5);
+  }, [activityFeed, currentUserName]);
+
+  // Compute log hours this week from localStorage
+  const [loggedHours, setLoggedHours] = useState(() => {
+    const saved = localStorage.getItem('work_logs_list');
+    const logs = saved ? JSON.parse(saved) : GLOBAL_LOGS;
+    const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes('tanvy') && log.name.toLowerCase().includes('tanvy')));
+    return userLogs.reduce((acc: number, log: any) => acc + log.hours, 0);
+  });
+
+  useEffect(() => {
+    const handleLogsChange = () => {
+      const saved = localStorage.getItem('work_logs_list');
+      const logs = saved ? JSON.parse(saved) : GLOBAL_LOGS;
+      const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes('tanvy') && log.name.toLowerCase().includes('tanvy')));
+      setLoggedHours(userLogs.reduce((acc: number, log: any) => acc + log.hours, 0));
+    };
+    window.addEventListener('storage', handleLogsChange);
+    // Listen to local log writes in same window too
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = function(key, value) {
+      originalSetItem.apply(this, arguments as any);
+      if (key === 'work_logs_list') {
+        handleLogsChange();
+      }
+    };
+    return () => {
+      localStorage.setItem = originalSetItem;
+      window.removeEventListener('storage', handleLogsChange);
+    };
+  }, [currentUserName]);
+
+  const getProgress = (status: string) => {
+    switch (status) {
+      case 'Done': return 100;
+      case 'In Review': return 85;
+      case 'In Progress': return 50;
+      default: return 0;
+    }
+  };
+
+  const activeTasksCount = tasks.filter(t => t.status !== 'Done').length;
+  const dueTodayCount = tasks.filter(t => t.due_date.toLowerCase().includes('today') || t.due_date.toLowerCase().includes('12') || t.due_date.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase())).length;
 
   const today = new Date();
   const currentHour = today.getHours();
@@ -57,11 +149,11 @@ export default function InternDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
-            {greeting}, Tanvy <span className="animate-wave inline-block origin-bottom-right">👋</span>
+            {greeting}, {currentUserName.split(' ')[0]} <span className="animate-wave inline-block origin-bottom-right">👋</span>
           </h1>
           <p className="text-lg font-medium text-orange-600 dark:text-orange-400 mt-1">Frontend Developer Intern</p>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">
-            You have <strong className="text-slate-700 dark:text-slate-200">4 active tasks</strong>, <strong className="text-rose-600 dark:text-rose-400">1 deadline today</strong>, and <strong>6.5 hours</strong> logged this week.
+            You have <strong className="text-slate-700 dark:text-slate-200">{activeTasksCount} active tasks</strong>, <strong className="text-rose-600 dark:text-rose-400">{dueTodayCount} due today</strong>, and <strong>{loggedHours.toFixed(1)} hours</strong> logged total.
           </p>
         </div>
 
@@ -76,10 +168,10 @@ export default function InternDashboard() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
                 <LayoutDashboard className="h-5 w-5" />
               </div>
-              <Badge variant="secondary" className="bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 font-bold border-rose-100 dark:border-rose-900/30">1 Due Today</Badge>
+              <Badge variant="secondary" className="bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 font-bold border-rose-100 dark:border-rose-900/30">{dueTodayCount} Due Today</Badge>
             </div>
             <div>
-              <p className="text-3xl font-black text-slate-900 dark:text-white">4</p>
+              <p className="text-3xl font-black text-slate-900 dark:text-white">{activeTasksCount}</p>
               <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">Active Tasks</p>
             </div>
           </CardContent>
@@ -95,9 +187,9 @@ export default function InternDashboard() {
               <span className="text-xs font-bold text-slate-500">Goal: 8 hrs</span>
             </div>
             <div>
-              <p className="text-3xl font-black text-slate-900 dark:text-white">5.5 <span className="text-lg text-slate-500 font-bold">hrs</span></p>
+              <p className="text-3xl font-black text-slate-900 dark:text-white">{loggedHours.toFixed(1)} <span className="text-lg text-slate-500 font-bold">hrs</span></p>
               <div className="flex items-center gap-3 mt-2">
-                <Progress value={68} className="h-1.5 flex-1 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
+                <Progress value={Math.min(100, (loggedHours / 8) * 100)} className="h-1.5 flex-1 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
               </div>
             </div>
           </CardContent>
@@ -163,7 +255,7 @@ export default function InternDashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {TASKS.length > 0 ? TASKS.map(task => (
+                {tasks.length > 0 ? tasks.map(task => (
                   <div key={task.id} className="p-4 md:p-5 py-2.5 md:py-3 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1.5">
@@ -171,14 +263,14 @@ export default function InternDashboard() {
                         <Badge variant="outline" className={cn(
                           "text-[10px] uppercase tracking-wider font-bold rounded",
                           task.priority === 'High' ? "border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-500/10" : 
-                          task.priority === 'Medium' ? "border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:bg-amber-500/10" : 
+                          task.priority === 'Normal' ? "border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:bg-amber-500/10" : 
                           "border-slate-200 text-slate-600 bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:bg-slate-800"
                         )}>{task.priority}</Badge>
                       </div>
                       <div className="flex items-center gap-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                        <span className="flex items-center"><LayoutDashboard className="h-3 w-3 mr-1" /> {task.project}</span>
+                        <span className="flex items-center"><LayoutDashboard className="h-3 w-3 mr-1" /> {task.project_tag}</span>
                         <Separator orientation="vertical" className="h-3" />
-                        <span className="flex items-center"><CalendarIcon className="h-3 w-3 mr-1" /> {task.due}</span>
+                        <span className="flex items-center"><CalendarIcon className="h-3 w-3 mr-1" /> {task.due_date}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-6 w-full sm:w-auto">
@@ -187,9 +279,9 @@ export default function InternDashboard() {
                           <span className={cn(
                             task.status === 'Done' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400 uppercase tracking-wider'
                           )}>{task.status}</span>
-                          <span className="text-slate-900 dark:text-white">{task.progress}%</span>
+                          <span className="text-slate-900 dark:text-white">{getProgress(task.status)}%</span>
                         </div>
-                        <Progress value={task.progress} className="h-1.5 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
+                        <Progress value={getProgress(task.status)} className="h-1.5 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
                       </div>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 shrink-0">
                         <MoreVertical className="h-4 w-4" />
@@ -262,24 +354,25 @@ export default function InternDashboard() {
           <CardContent className="p-0 flex-1 relative h-[250px]">
             <ScrollArea className="absolute inset-0 h-full w-full">
               <div className="p-4 md:p-5 space-y-4">
-                <div className="relative pl-6 py-1 before:absolute before:left-2 before:top-2.5 before:bottom-[-16px] before:w-px before:bg-slate-200 dark:before:bg-slate-700">
-                  <div className="absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950 bg-rose-500" />
-                  <span className="text-xs font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-0.5 block">Today</span>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">Dashboard Review</p>
-                  <Badge variant="outline" className="mt-1.5 text-[10px] border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-900/20 font-bold uppercase tracking-wider">High Priority</Badge>
-                </div>
-                
-                <div className="relative pl-6 py-1 before:absolute before:left-2 before:top-2.5 before:bottom-[-16px] before:w-px before:bg-slate-200 dark:before:bg-slate-700">
-                  <div className="absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950 bg-amber-500" />
-                  <span className="text-xs font-black text-amber-600 dark:text-amber-500 uppercase tracking-wider mb-0.5 block">Tomorrow</span>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">Login UI Adjustments</p>
-                </div>
-                
-                <div className="relative pl-6 py-1">
-                  <div className="absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950 bg-slate-300 dark:bg-slate-600" />
-                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider mb-0.5 block">Friday</span>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">Sprint Demo Prep</p>
-                </div>
+                {tasks.filter(t => t.status !== 'Done').slice(0, 3).map((task, idx) => (
+                  <div key={task.id} className="relative pl-6 py-1 before:absolute before:left-2 before:top-2.5 before:bottom-[-16px] before:w-px before:bg-slate-200 dark:before:bg-slate-700 last:before:hidden">
+                    <div className={cn(
+                      "absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950",
+                      idx === 0 ? "bg-rose-500" : idx === 1 ? "bg-amber-500" : "bg-slate-300 dark:bg-slate-600"
+                    )} />
+                    <span className={cn(
+                      "text-xs font-black uppercase tracking-wider mb-0.5 block",
+                      idx === 0 ? "text-rose-600 dark:text-rose-400" : idx === 1 ? "text-amber-600 dark:text-amber-500" : "text-slate-500"
+                    )}>{task.due_date}</span>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{task.title}</p>
+                    {task.priority === 'High' && (
+                      <Badge variant="outline" className="mt-1.5 text-[10px] border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-900/20 font-bold uppercase tracking-wider">High Priority</Badge>
+                    )}
+                  </div>
+                ))}
+                {tasks.filter(t => t.status !== 'Done').length === 0 && (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No upcoming deadlines. 🎉</p>
+                )}
               </div>
             </ScrollArea>
           </CardContent>
@@ -301,7 +394,7 @@ export default function InternDashboard() {
             <CardContent className="p-0 flex-1 relative min-h-[250px]">
               <ScrollArea className="absolute inset-0 h-full w-full">
                 <div className="p-4 md:p-5 space-y-4">
-                {RECENT_ACTIVITY.map((act, i) => (
+                {userActivities.length > 0 ? userActivities.map((act: any) => (
                   <div key={act.id} className="relative pl-6 py-1 before:absolute before:left-2 before:top-3 before:bottom-[-16px] before:w-px before:bg-slate-100 dark:before:bg-slate-800 last:before:hidden">
                     <div className="absolute left-[3px] top-2 h-2.5 w-2.5 rounded-full bg-slate-200 dark:bg-slate-700 ring-4 ring-white dark:ring-slate-950" />
                     <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-tight">
@@ -309,7 +402,9 @@ export default function InternDashboard() {
                     </p>
                     <p className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wider">{act.time}</p>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No recent activity.</p>
+                )}
                 </div>
               </ScrollArea>
             </CardContent>

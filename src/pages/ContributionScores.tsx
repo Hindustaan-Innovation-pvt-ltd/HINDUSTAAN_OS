@@ -21,6 +21,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // -- MOCK DATA GENERATOR --
 const generateData = () => {
@@ -96,13 +101,23 @@ const COLORS = {
 };
 
 export default function ContributionScores({ session }: { session?: any }) {
-  const [selectedIntern, setSelectedIntern] = useState<typeof MOCK_INTERNS[0] | null>(null);
+  const role = session?.user?.user_metadata?.role || 'intern';
+  const email = session?.user?.email || 'user@hindustaan.in';
+
+  let currentUserName = 'Tanvy Pandey';
+  if (email.toLowerCase().includes('amanda')) currentUserName = 'Amanda Smith';
+  else if (email.toLowerCase().includes('rahul')) currentUserName = 'Rahul Sharma';
+  else if (email.toLowerCase().includes('priya')) currentUserName = 'Priya Patel';
+
   const [searchTerm, setSearchTerm] = useState('');
+  const [date, setDate] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const filteredInterns = MOCK_INTERNS.filter(intern =>
     intern.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    intern.department.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    intern.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    intern.project.toLowerCase().includes(searchTerm.toLowerCase())
+  ).sort((a, b) => b.score - a.score);
 
   const top3 = MOCK_INTERNS.slice(0, 3);
   const needsAttention = MOCK_INTERNS.filter(i => i.score < 70).slice(0, 3);
@@ -115,8 +130,152 @@ export default function ContributionScores({ session }: { session?: any }) {
     { name: 'Needs Imp.', value: MOCK_INTERNS.filter(i => i.score < 70).length, fill: COLORS.poor },
   ];
 
+  const highestScorer = MOCK_INTERNS.reduce((max, intern) => (intern.score > max.score ? intern : max), MOCK_INTERNS[0]);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+
+    // Add title
+    doc.setFontSize(20);
+    doc.text('Contribution Analytics Report', 14, 22);
+
+    doc.setFontSize(11);
+    doc.text(`Generated on: ${format(new Date(), 'PPP')}`, 14, 30);
+
+    // Create table data
+    const tableData = filteredInterns.map((intern, idx) => [
+      `#${idx + 1}`,
+      intern.name,
+      intern.department,
+      `${intern.score}%`,
+      intern.trend + '%',
+      intern.status
+    ]);
+
+    autoTable(doc, {
+      startY: 40,
+      head: [['Rank', 'Intern', 'Department', 'Score', 'Trend', 'Status']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [249, 115, 22] }, // orange-500
+    });
+
+    doc.save(`Team_Contribution_Scores_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
+  if (role === 'intern') {
+    const myData = MOCK_INTERNS.find(i => i.name === currentUserName) || MOCK_INTERNS[0];
+    return (
+      <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+        <div>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
+            <Trophy className="mr-3 h-8 w-8 text-orange-500" />
+            My Performance
+          </h2>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
+            Your detailed contribution score and performance breakdown.
+          </p>
+        </div>
+
+        <Card className="rounded-3xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white dark:bg-slate-950">
+          <div className="p-6 md:p-10 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div className="flex gap-5 items-center">
+                <Avatar className="h-20 w-20 border-4 border-white dark:border-slate-900 shadow-md">
+                  <AvatarFallback className="bg-orange-100 text-orange-600 font-bold text-2xl">
+                    {myData.name.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-3xl font-black text-slate-900 dark:text-white">{myData.name}</h3>
+                  <p className="text-base font-bold text-slate-500">{myData.department} Intern</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 md:p-10 space-y-10">
+            {/* Final Score Radial */}
+            <div className="flex flex-col items-center justify-center p-8 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-slate-800">
+              <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Final Contribution Score</p>
+              <div className="h-64 w-64 relative">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadialBarChart innerRadius="80%" outerRadius="100%" data={[{ value: myData.score, fill: COLORS.orange }]} startAngle={90} endAngle={-270}>
+                    <RadialBar background={{ fill: 'var(--color-slate-200)' }} dataKey="value" cornerRadius={20} />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-7xl font-black text-slate-900 dark:text-white">{myData.score}</span>
+                  <span className="text-base font-bold text-slate-500 mt-1">/ 100</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h4 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">Formula Breakdown</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="flex flex-col items-center justify-center p-6 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-blue-500/50 transition-colors text-center">
+                  <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 mb-4">
+                    <Target className="h-8 w-8" />
+                  </div>
+                  <p className="text-base font-bold text-slate-900 dark:text-white">Task Performance</p>
+                  <p className="text-xs font-semibold text-slate-500 mb-4">40% Weightage</p>
+                  <div className="mt-auto">
+                    <span className="text-3xl font-black text-slate-900 dark:text-white">{myData.taskScore}</span>
+                    <span className="text-sm font-bold text-slate-500"> / 40</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center justify-center p-6 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-emerald-500/50 transition-colors text-center">
+                  <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 mb-4">
+                    <Clock className="h-8 w-8" />
+                  </div>
+                  <p className="text-base font-bold text-slate-900 dark:text-white">Work Log Consistency</p>
+                  <p className="text-xs font-semibold text-slate-500 mb-4">35% Weightage</p>
+                  <div className="mt-auto">
+                    <span className="text-3xl font-black text-slate-900 dark:text-white">{myData.logScore}</span>
+                    <span className="text-sm font-bold text-slate-500"> / 35</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center justify-center p-6 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-purple-500/50 transition-colors text-center">
+                  <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 mb-4">
+                    <Mic className="h-8 w-8" />
+                  </div>
+                  <p className="text-base font-bold text-slate-900 dark:text-white">Standup Completion</p>
+                  <p className="text-xs font-semibold text-slate-500 mb-4">25% Weightage</p>
+                  <div className="mt-auto">
+                    <span className="text-3xl font-black text-slate-900 dark:text-white">{myData.standupScore}</span>
+                    <span className="text-sm font-bold text-slate-500"> / 25</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Score Formula Hint */}
+            <div className="p-5 rounded-2xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/50 flex items-start gap-4">
+              <AlertTriangle className="h-6 w-6 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-slate-900 dark:text-white">How is this calculated?</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mt-1">
+                  Scores automatically recalculate daily at midnight based on tasks resolved on the board, timesheets submitted in Work Logs, and Standups approved by the manager.
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+    <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -129,7 +288,6 @@ export default function ContributionScores({ session }: { session?: any }) {
             Monitor intern performance, identify top contributors, and track productivity trends.
           </p>
         </div>
-
 
       </div>
 
@@ -188,11 +346,13 @@ export default function ContributionScores({ session }: { session?: any }) {
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Highest Score</p>
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-900 shadow-sm">
-                <AvatarFallback className="bg-orange-100 text-orange-700 font-bold">TP</AvatarFallback>
+                <AvatarFallback className="bg-orange-100 text-orange-700 font-bold">
+                  {highestScorer.name.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">Tanvy P.</p>
-                <p className="text-lg font-black text-emerald-600">98%</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white">{highestScorer.name}</p>
+                <p className="text-lg font-black text-emerald-600">{highestScorer.score}%</p>
               </div>
             </div>
           </CardContent>
@@ -237,8 +397,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                   {filteredInterns.map((intern, idx) => (
                     <tr
                       key={intern.id}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors cursor-pointer group"
-                      onClick={() => setSelectedIntern(intern)}
+                      className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group"
                     >
                       <td className="px-6 py-4 font-black text-slate-400 dark:text-slate-600">
                         #{idx + 1}
@@ -404,113 +563,7 @@ export default function ContributionScores({ session }: { session?: any }) {
         </div>
       </div>
 
-      {/* Intern Detail Drawer */}
-      <Sheet open={!!selectedIntern} onOpenChange={(open) => !open && setSelectedIntern(null)}>
-        <SheetContent className="w-full sm:max-w-md lg:max-w-lg overflow-y-auto bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 p-0 rounded-l-3xl">
-          {selectedIntern && (
-            <div className="flex flex-col min-h-full">
-              <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
-                <div className="flex justify-between items-start">
-                  <div className="flex gap-4 items-center">
-                    <Avatar className="h-16 w-16 border-4 border-white dark:border-slate-900 shadow-md">
-                      <AvatarFallback className="bg-orange-100 text-orange-600 font-bold text-xl">
-                        {selectedIntern.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <SheetTitle className="text-2xl font-black text-slate-900 dark:text-white">{selectedIntern.name}</SheetTitle>
-                      <p className="text-sm font-bold text-slate-500">{selectedIntern.department} Intern</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              <div className="p-6 space-y-8 flex-1">
-                {/* Final Score Radial */}
-                <div className="flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-slate-800">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Final Contribution Score</p>
-                  <div className="h-48 w-48 relative">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RadialBarChart innerRadius="80%" outerRadius="100%" data={[{ value: selectedIntern.score, fill: COLORS.orange }]} startAngle={90} endAngle={-270}>
-                        <RadialBar background={{ fill: 'var(--color-slate-200)' }} dataKey="value" cornerRadius={20} />
-                      </RadialBarChart>
-                    </ResponsiveContainer>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-5xl font-black text-slate-900 dark:text-white">{selectedIntern.score}</span>
-                      <span className="text-sm font-bold text-slate-500">/ 100</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Formula Breakdown</h4>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-orange-500/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600">
-                          <Target className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-900 dark:text-white">Task Performance</p>
-                          <p className="text-xs font-semibold text-slate-500">40% Weightage</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xl font-black text-slate-900 dark:text-white">{selectedIntern.taskScore}</span>
-                        <span className="text-sm font-bold text-slate-500"> / 40</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-orange-500/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600">
-                          <Clock className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-900 dark:text-white">Work Log Consistency</p>
-                          <p className="text-xs font-semibold text-slate-500">35% Weightage</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xl font-black text-slate-900 dark:text-white">{selectedIntern.logScore}</span>
-                        <span className="text-sm font-bold text-slate-500"> / 35</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-orange-500/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600">
-                          <Mic className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-900 dark:text-white">Standup Completion</p>
-                          <p className="text-xs font-semibold text-slate-500">25% Weightage</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xl font-black text-slate-900 dark:text-white">{selectedIntern.standupScore}</span>
-                        <span className="text-sm font-bold text-slate-500"> / 25</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Score Formula Hint */}
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
-                  <div>
-                    <p className="text-sm font-bold text-slate-900 dark:text-white">How is this calculated?</p>
-                    <p className="text-xs font-medium text-slate-500 mt-1">
-                      Scores automatically recalculate daily at midnight based on Jira tasks resolved, Harvest timesheets submitted, and Slack standups approved.
-                    </p>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
 
     </div>
   );

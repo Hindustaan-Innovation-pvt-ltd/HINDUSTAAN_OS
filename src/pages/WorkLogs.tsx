@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-import { GLOBAL_LOGS } from '@/data/mockData';
+import { GLOBAL_LOGS, INITIAL_TASKS } from '@/data/mockData';
 
 const ONLINE_TEAM_MEMBERS = [
   { id: 'u-1', name: 'Amanda Smith', initials: 'AS', role: 'Frontend Lead', task: 'Component Refactoring', project: 'Frontend Core', color: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
@@ -35,7 +35,12 @@ export default function WorkLogs({ session }: { session?: any }) {
   const [statusFilter, setStatusFilter] = useState('All');
   const [isActiveMembersModalOpen, setIsActiveMembersModalOpen] = useState(false);
 
+  const isMounted = React.useRef(false);
   useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
     localStorage.setItem('work_logs_list', JSON.stringify(logs));
   }, [logs]);
 
@@ -91,7 +96,7 @@ export default function WorkLogs({ session }: { session?: any }) {
     return () => clearInterval(interval);
   }, [currentUser.id, loginKey, currentUser.role]);
 
-  const [activeSessions, setActiveSessions] = useState<{ [key: string]: number }>({});
+  const [activeSessions, setActiveSessions] = useState<{ [key: string]: { time: number; isOnline: boolean } }>({});
 
   useEffect(() => {
     const teamMembers = [
@@ -102,18 +107,18 @@ export default function WorkLogs({ session }: { session?: any }) {
     ];
 
     const updateSessions = () => {
-      const sessions: { [key: string]: number } = {};
+      const sessions: { [key: string]: { time: number; isOnline: boolean } } = {};
       teamMembers.forEach(member => {
-        if (member.id === currentUser.id) {
-          sessions[member.id] = secondsElapsed;
+        const isCurrentUserIntern = member.id === currentUser.id && currentUser.role === 'intern';
+        const loginTimeStr = localStorage.getItem(`login_time_${member.id}`);
+        
+        if (isCurrentUserIntern) {
+          sessions[member.id] = { time: secondsElapsed, isOnline: true };
+        } else if (loginTimeStr) {
+          const startTime = parseInt(loginTimeStr, 10);
+          sessions[member.id] = { time: Math.floor((Date.now() - startTime) / 1000), isOnline: true };
         } else {
-          const loginTimeStr = localStorage.getItem(`login_time_${member.id}`);
-          if (loginTimeStr) {
-            const startTime = parseInt(loginTimeStr, 10);
-            sessions[member.id] = Math.floor((Date.now() - startTime) / 1000);
-          } else {
-            sessions[member.id] = member.defaultOffset;
-          }
+          sessions[member.id] = { time: member.defaultOffset, isOnline: true };
         }
       });
       setActiveSessions(sessions);
@@ -122,7 +127,7 @@ export default function WorkLogs({ session }: { session?: any }) {
     updateSessions();
     const interval = setInterval(updateSessions, 1000);
     return () => clearInterval(interval);
-  }, [currentUser.id, secondsElapsed]);
+  }, [currentUser.id, secondsElapsed, currentUser.role]);
 
   const formatTime = (totalSeconds: number) => {
     const h = Math.floor(totalSeconds / 3600);
@@ -133,12 +138,12 @@ export default function WorkLogs({ session }: { session?: any }) {
 
   const userBaseLogs = useMemo(() => {
     return currentUser.role === 'intern'
-      ? logs.filter(log => log.name.toLowerCase().includes(currentUser.name.split(' ')[0].toLowerCase()))
+      ? logs.filter((log: any) => log.name.toLowerCase().includes(currentUser.name.split(' ')[0].toLowerCase()))
       : logs;
   }, [logs, currentUser]);
 
   const filteredLogs = useMemo(() => {
-    return userBaseLogs.filter(log => {
+    return userBaseLogs.filter((log: any) => {
       const matchesSearch = log.task.toLowerCase().includes(searchQuery.toLowerCase()) ||
         log.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         log.project.toLowerCase().includes(searchQuery.toLowerCase());
@@ -148,15 +153,15 @@ export default function WorkLogs({ session }: { session?: any }) {
   }, [userBaseLogs, searchQuery, statusFilter]);
 
   const handleStatusChange = (id: string, newStatus: string) => {
-    setLogs(logs.map(log => log.id === id ? { ...log, status: newStatus } : log));
+    setLogs(logs.map((log: any) => log.id === id ? { ...log, status: newStatus } : log));
   };
 
   const handleDelete = (id: string) => {
-    setLogs(logs.filter(log => log.id !== id));
+    setLogs(logs.filter((log: any) => log.id !== id));
   };
 
-  const totalHours = useMemo(() => userBaseLogs.reduce((acc, log) => acc + log.hours, 0), [userBaseLogs]);
-  const pendingHours = useMemo(() => userBaseLogs.filter(l => l.status === 'Pending').reduce((acc, log) => acc + log.hours, 0), [userBaseLogs]);
+  const totalHours = useMemo(() => userBaseLogs.reduce((acc: number, log: any) => acc + log.hours, 0), [userBaseLogs]);
+  const pendingHours = useMemo(() => userBaseLogs.filter((l: any) => l.status === 'Pending').reduce((acc: number, log: any) => acc + log.hours, 0), [userBaseLogs]);
 
   return (
     <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8 relative animate-in fade-in duration-500">
@@ -179,20 +184,22 @@ export default function WorkLogs({ session }: { session?: any }) {
             />
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
-                <Filter className="h-4 w-4 mr-2 text-slate-400" />
-                {statusFilter === 'All' ? 'Status: All' : statusFilter}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-              <DropdownMenuItem onClick={() => setStatusFilter('All')} className="cursor-pointer font-medium">All Statuses</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusFilter('Approved')} className="cursor-pointer font-medium text-emerald-600">Approved</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusFilter('Pending')} className="cursor-pointer font-medium text-amber-600">Pending</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusFilter('Rejected')} className="cursor-pointer font-medium text-rose-600">Rejected</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {currentUser.role === 'manager' && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
+                  <Filter className="h-4 w-4 mr-2 text-slate-400" />
+                  {statusFilter === 'All' ? 'Status: All' : statusFilter}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                <DropdownMenuItem onClick={() => setStatusFilter('All')} className="cursor-pointer font-medium">All Statuses</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatusFilter('Approved')} className="cursor-pointer font-medium text-emerald-600">Approved</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatusFilter('Pending')} className="cursor-pointer font-medium text-amber-600">Pending</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatusFilter('Rejected')} className="cursor-pointer font-medium text-rose-600">Rejected</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           <Button variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hidden md:flex">
             <Download className="h-4 w-4 mr-2 text-slate-400" /> Export
@@ -238,40 +245,83 @@ export default function WorkLogs({ session }: { session?: any }) {
             Live Active Sessions
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {ONLINE_TEAM_MEMBERS.map(member => (
-              <div key={member.id} className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600 transform origin-left transition-transform duration-1000" />
-                
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="relative">
-                      <Avatar className={cn("h-10 w-10 border-2 border-white dark:border-slate-900", member.color)}>
-                        <AvatarFallback className="font-bold">{member.initials}</AvatarFallback>
-                      </Avatar>
-                      <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{member.name}</h4>
-                      <p className="text-xs font-semibold text-slate-500">{member.role}</p>
-                    </div>
-                  </div>
-                  <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1.5 animate-pulse">
-                    <Timer className="h-3.5 w-3.5" />
-                    <span className="text-sm font-bold font-mono tracking-wider">{formatTime(activeSessions[member.id] || 0)}</span>
-                  </div>
-                </div>
+            {ONLINE_TEAM_MEMBERS.map(member => {
+              const sessionInfo = activeSessions[member.id];
+              const isOnline = !!sessionInfo?.isOnline;
+              const sessionTime = sessionInfo?.time || 0;
 
-                <div className="bg-slate-50 dark:bg-slate-950/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Working On</span>
-                    <Badge variant="secondary" className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] uppercase font-black tracking-wider">
-                      {member.project}
-                    </Badge>
+              // Resolve in-progress task for this member
+              const savedTasksStr = localStorage.getItem('hindustaan_tasks_list');
+              const allTasks = savedTasksStr ? JSON.parse(savedTasksStr) : INITIAL_TASKS;
+              const inProgressTask = allTasks.find((t: any) => 
+                (t.assignee_id === member.id || t.assignee_name.toLowerCase().includes(member.name.split(' ')[0].toLowerCase())) &&
+                t.status === 'In Progress'
+              );
+
+              const currentTaskName = inProgressTask ? inProgressTask.title : 'No active task';
+              const currentProjectName = inProgressTask ? inProgressTask.project_tag : 'Idle';
+
+              return (
+                <div 
+                  key={member.id} 
+                  className={cn(
+                    "bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all relative overflow-hidden group",
+                    !isOnline && "opacity-75 bg-slate-50/50 dark:bg-slate-900/40"
+                  )}
+                >
+                  {isOnline ? (
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600 transform origin-left transition-transform duration-1000" />
+                  ) : (
+                    <div className="absolute top-0 left-0 w-full h-1 bg-slate-200 dark:bg-slate-800" />
+                  )}
+                  
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="relative">
+                        <Avatar className={cn("h-10 w-10 border-2 border-white dark:border-slate-900", member.color)}>
+                          <AvatarFallback className="font-bold">{member.initials}</AvatarFallback>
+                        </Avatar>
+                        {isOnline ? (
+                          <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
+                        ) : (
+                          <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-slate-300 dark:bg-slate-600 rounded-full border-2 border-white dark:border-slate-900" />
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{member.name}</h4>
+                        <p className="text-xs font-semibold text-slate-500">{member.role}</p>
+                      </div>
+                    </div>
+                    {isOnline ? (
+                      <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1.5 animate-pulse">
+                        <Timer className="h-3.5 w-3.5" />
+                        <span className="text-sm font-bold font-mono tracking-wider">{formatTime(sessionTime)}</span>
+                      </div>
+                    ) : (
+                      <div className="px-3 py-1 bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 rounded-lg flex items-center space-x-1.5">
+                        <Timer className="h-3.5 w-3.5 text-slate-300 dark:text-slate-650" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Offline</span>
+                      </div>
+                    )}
                   </div>
-                  <p className="font-bold text-slate-700 dark:text-slate-300 line-clamp-1">{member.task}</p>
+
+                  <div className="bg-slate-50 dark:bg-slate-950/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Working On</span>
+                      <Badge variant="secondary" className={cn(
+                        "text-[10px] uppercase font-black tracking-wider",
+                        isOnline && inProgressTask
+                          ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                      )}>
+                        {currentProjectName}
+                      </Badge>
+                    </div>
+                    <p className="font-bold text-slate-700 dark:text-slate-300 line-clamp-1">{currentTaskName}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -325,19 +375,21 @@ export default function WorkLogs({ session }: { session?: any }) {
                 <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Project</th>
                 <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Task</th>
                 <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Hours</th>
-                <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Status</th>
+                {currentUser.role === 'manager' && (
+                  <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Status</th>
+                )}
                 <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
+                  <td colSpan={currentUser.role === 'manager' ? 7 : 6} className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
                     No logs found matching your criteria.
                   </td>
                 </tr>
               ) : (
-                filteredLogs.map(log => (
+                filteredLogs.map((log: any) => (
                   <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors group">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
@@ -363,16 +415,18 @@ export default function WorkLogs({ session }: { session?: any }) {
                         {log.hours.toFixed(1)}h
                       </span>
                     </td>
-                    <td className="p-4 text-right">
-                      <Badge variant="outline" className={cn(
-                        "font-bold uppercase tracking-wider border-0 shadow-sm",
-                        log.status === 'Approved' && "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400",
-                        log.status === 'Pending' && "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400",
-                        log.status === 'Rejected' && "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400"
-                      )}>
-                        {log.status}
-                      </Badge>
-                    </td>
+                    {currentUser.role === 'manager' && (
+                      <td className="p-4 text-right">
+                        <Badge variant="outline" className={cn(
+                          "font-bold uppercase tracking-wider border-0 shadow-sm",
+                          log.status === 'Approved' && "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400",
+                          log.status === 'Pending' && "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400",
+                          log.status === 'Rejected' && "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400"
+                        )}>
+                          {log.status}
+                        </Badge>
+                      </td>
+                    )}
                     <td className="p-4 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -381,17 +435,19 @@ export default function WorkLogs({ session }: { session?: any }) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                          {log.status !== 'Approved' && (
+                          {currentUser.role === 'manager' && log.status !== 'Approved' && (
                             <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Approved')} className="cursor-pointer text-emerald-600 font-medium">
                               <CheckCircle className="h-4 w-4 mr-2" /> Approve Log
                             </DropdownMenuItem>
                           )}
-                          {log.status !== 'Rejected' && (
+                          {currentUser.role === 'manager' && log.status !== 'Rejected' && (
                             <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Rejected')} className="cursor-pointer text-rose-600 font-medium">
                               <XCircle className="h-4 w-4 mr-2" /> Reject Log
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                          {currentUser.role === 'manager' && (
+                            <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                          )}
                           <DropdownMenuItem onClick={() => handleDelete(log.id)} className="cursor-pointer text-red-600 font-medium">
                             <Trash2 className="h-4 w-4 mr-2" /> Delete Entry
                           </DropdownMenuItem>
@@ -428,8 +484,10 @@ export default function WorkLogs({ session }: { session?: any }) {
             </div>
             
             <div className="p-6 max-h-[300px] overflow-y-auto space-y-4">
-              {ONLINE_TEAM_MEMBERS.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all">
+              {ONLINE_TEAM_MEMBERS.map((member) => {
+                const isOnline = activeSessions[member.id]?.isOnline;
+                return (
+                <div key={member.id} className={cn("flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all", !isOnline && "opacity-75 grayscale")}>
                   <div className="flex items-center gap-3">
                     <Avatar className={cn("h-9 w-9 border-2 border-white dark:border-slate-900", member.color)}>
                       <AvatarFallback className="font-bold text-xs">{member.initials}</AvatarFallback>
@@ -440,11 +498,20 @@ export default function WorkLogs({ session }: { session?: any }) {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Active</span>
+                    {isOnline ? (
+                      <>
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Online</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600" />
+                        <span className="text-xs font-bold text-slate-500">Offline</span>
+                      </>
+                    )}
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
             
             <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">
