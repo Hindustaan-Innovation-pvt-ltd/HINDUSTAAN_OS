@@ -27,15 +27,17 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState('Dashboard');
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
+  const [authView, setAuthView] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
-    const userStr = localStorage.getItem('hindustaan_user');
+    const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
-        setSession({ user: { email: user.email, user_metadata: { role: user.role } } });
+        setSession({ user: { email: user.email, user_metadata: { role: user.role, name: user.name, department: user.department } } });
       } catch (e) {
         localStorage.removeItem('hindustaan_user');
+        sessionStorage.removeItem('hindustaan_user');
       }
     }
     setLoading(false);
@@ -60,13 +62,20 @@ function App() {
       <TooltipProvider>
         <ProjectProvider>
           {!session ? (
-            <Login onMockLogin={() => {
-            const userStr = localStorage.getItem('hindustaan_user');
-            if (userStr) {
-              const user = JSON.parse(userStr);
-              setSession({ user: { email: user.email, user_metadata: { role: user.role } } });
-            }
-          }} />
+            authView === 'login' ? (
+              <Login 
+                onMockLogin={(role, email) => {
+                  const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
+                  if (userStr) {
+                    const user = JSON.parse(userStr);
+                    setSession({ user: { email: user.email, user_metadata: { role: user.role, name: user.name, department: user.department } } });
+                  }
+                }}
+                onNavigateToRegister={() => setAuthView('register')}
+              />
+            ) : (
+              <Register onNavigateToLogin={() => setAuthView('login')} />
+            )
         ) : (
           <DashboardShell
             currentView={currentView}
@@ -81,7 +90,7 @@ function App() {
               
               if (role === 'employee') {
                 let currentUserId = 'u-4';
-                let currentUserName = 'Tanvy Pandey';
+                let currentUserName = session.user?.user_metadata?.name || 'Tanvy Pandey';
                 let currentProject = 'Frontend Core';
                 let currentTask = 'Kanban Board & Work Logs';
                 
@@ -133,6 +142,7 @@ function App() {
               }
               
               localStorage.removeItem('hindustaan_user');
+              sessionStorage.removeItem('hindustaan_user');
               setSession(null);
             }}
           >

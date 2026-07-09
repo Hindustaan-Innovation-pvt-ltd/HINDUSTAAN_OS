@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import ProjectDetails from '../projects/ProjectDetails';
 import { cn } from '@/lib/utils';
+import { getCurrentUser } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -251,7 +252,7 @@ function ManagerDashboardInner() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
-            {greeting}, Aakash <span className="inline-block animate-wave origin-bottom-right">👋</span>
+            {greeting}, {getCurrentUser()?.name?.split(' ')[0] || 'Aakash'} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
           <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-2 font-medium break-words whitespace-normal">
             Manage projects, monitor team performance, and track progress from one place.

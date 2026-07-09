@@ -19,24 +19,28 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { getCurrentUser, User } from '@/lib/auth';
 
 // Generate 30 realistic mock interns
-const generateMockInterns = () => {
+const generateMockInterns = (currentUser?: User | null) => {
   const depts = ['Frontend', 'Backend', 'AI/ML', 'UI/UX'];
   const roles = ['Frontend Developer Intern', 'Backend Developer Intern', 'AI Researcher Intern', 'Product Design Intern'];
   const projects = ['Dashboard UI Revamp', 'Supabase Migration', 'Predictive Model V2', 'Onboarding Flow'];
   const statuses = ['Online', 'Busy', 'Offline', 'Leave'];
   
+  const defaultEmployeeName = currentUser?.role === 'employee' ? currentUser.name : "Tanvy Pandey";
+  const defaultManagerName = currentUser?.role === 'manager' ? currentUser.name : "Aakash Gupta";
+
   return Array.from({ length: 30 }).map((_, i) => ({
     id: `INT-2026-${(i + 1).toString().padStart(3, '0')}`,
-    name: i === 0 ? "Tanvy Pandey" : `Intern Member ${i + 1}`,
-    email: i === 0 ? "tanvy.pandey@hindustaan.in" : `intern${i+1}@hindustaan.in`,
+    name: i === 0 ? defaultEmployeeName : `Intern Member ${i + 1}`,
+    email: i === 0 ? (currentUser?.role === 'employee' ? currentUser.email : "tanvy.pandey@hindustaan.in") : `intern${i+1}@hindustaan.in`,
     phone: "+91 9876543210",
     college: "IIT Delhi",
     degree: "B.Tech Computer Science",
     role: roles[i % roles.length],
     department: depts[i % depts.length],
-    manager: "Aakash Gupta",
+    manager: defaultManagerName,
     project: projects[i % projects.length],
     score: Math.floor(Math.random() * (100 - 65 + 1)) + 65,
     attendance: Math.floor(Math.random() * (100 - 80 + 1)) + 80,
@@ -49,22 +53,23 @@ const generateMockInterns = () => {
   }));
 };
 
-const MOCK_INTERNS = generateMockInterns();
-
-export default function TeamMembers({ session }: { session?: any }) {
+export default function TeamMembers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [deptFilter, setDeptFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedIntern, setSelectedIntern] = useState<typeof MOCK_INTERNS[0] | null>(null);
+  
+  const currentUser = getCurrentUser();
+  const [interns, setInterns] = useState(() => generateMockInterns(currentUser));
+  const [selectedIntern, setSelectedIntern] = useState<typeof interns[0] | null>(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   // Stats
-  const totalInterns = MOCK_INTERNS.length;
-  const onlineCount = MOCK_INTERNS.filter(i => i.status === 'Online').length;
-  const leaveCount = MOCK_INTERNS.filter(i => i.status === 'Leave').length;
+  const totalInterns = interns.length;
+  const onlineCount = interns.filter(i => i.status === 'Online').length;
+  const leaveCount = interns.filter(i => i.status === 'Leave').length;
 
   // Filter Logic
-  const filteredInterns = MOCK_INTERNS.filter(intern => {
+  const filteredInterns = interns.filter(intern => {
     // Search
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = searchTerm === '' || 
@@ -124,9 +129,9 @@ export default function TeamMembers({ session }: { session?: any }) {
               </DialogHeader>
               <form onSubmit={handleInviteSubmit} className="space-y-6 pt-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">First Name</label>
-                    <Input required placeholder="E.g. Aakash" className="rounded-xl" />
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500">Manager</label>
+                    <Input required defaultValue={currentUser?.role === 'manager' ? currentUser.name : "Aakash Gupta"} className="rounded-xl" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Last Name</label>

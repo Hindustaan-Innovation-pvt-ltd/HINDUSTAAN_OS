@@ -38,8 +38,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { getCurrentUser } from '@/lib/auth';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const employeeNavigation = [
@@ -68,7 +69,7 @@ const managerNavigation = [
 ];
 
 
-const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen, activeNavigation, onSignOut }: any) => (
+const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen, activeNavigation, onSignOut, userName, userEmail, userInitials }: any) => (
     <div className="flex h-full flex-col bg-white dark:bg-slate-900">
         {/* Branding Badge */}
 
@@ -131,13 +132,13 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
               <button className="w-full flex items-center rounded-xl transition-all hover:bg-slate-50 dark:hover:bg-slate-900/40 outline-none focus:ring-2 focus:ring-orange-500/20 group p-2 justify-between">
                 <div className="flex items-center text-left">
                   <div className="flex items-center justify-center h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 font-bold shadow-sm ring-2 ring-white dark:ring-slate-900 shrink-0">
-                    {role === 'manager' ? 'AG' : 'TP'}
+                    {userInitials}
                   </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">
-                      {role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'}
+                  <div className="ml-3 overflow-hidden">
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white truncate">
+                      {userName}
                     </p>
-                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{role === 'manager' ? 'Manager' : 'Employee'}</p>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{role}</p>
                   </div>
                 </div>
                 <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
@@ -150,23 +151,23 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                     <div className="relative">
                       <Avatar className="h-10 w-10 border border-slate-200 dark:border-slate-700 shadow-sm">
                         <AvatarFallback className="bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 font-bold">
-                          {role === 'manager' ? 'AG' : 'TP'}
+                          {userInitials}
                         </AvatarFallback>
                       </Avatar>
                       <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"></span>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold text-slate-900 dark:text-white leading-none">
-                        {role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'}
+                    <div className="flex flex-col overflow-hidden">
+                      <span className="text-sm font-bold text-slate-900 dark:text-white leading-none truncate">
+                        {userName}
                       </span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        {role === 'manager' ? 'manager@hindustaan.in' : 'employee@hindustaan.in'}
+                      <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
+                        {userEmail}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center mt-1">
                     <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-500/20">
-                      {role === 'manager' ? 'Manager' : 'Employee'}
+                      {role}
                     </Badge>
                   </div>
                 </div>
@@ -205,6 +206,16 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
     </div>
 );
 
+interface DashboardShellProps {
+  children: React.ReactNode;
+  currentView?: string;
+  role?: string;
+  onNavigate?: (view: string) => void;
+  isMinimized?: boolean;
+  onMinimizeChange?: (minimized: boolean) => void;
+  onSignOut?: () => void;
+}
+
 export default function DashboardShell({ 
   children,
   currentView = 'Time Tracking',
@@ -213,17 +224,15 @@ export default function DashboardShell({
   isMinimized = false,
   onMinimizeChange = () => {},
   onSignOut
-}: { 
-  children: React.ReactNode;
-  currentView?: string;
-  role?: string;
-  onNavigate?: (view: string) => void;
-  isMinimized?: boolean;
-  onMinimizeChange?: (minimized: boolean) => void;
-  onSignOut?: () => void;
-}) {
+}: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  
+  const user = getCurrentUser();
+  const userName = user?.name || (role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey');
+  const userEmail = user?.email || (role === 'manager' ? 'manager@hindustaan.in' : 'employee@hindustaan.in');
+  const userInitials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
 

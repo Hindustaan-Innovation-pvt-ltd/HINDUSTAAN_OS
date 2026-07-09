@@ -7,16 +7,14 @@ import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/comp
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { loginUser, getRegisteredUsers, initializeAuth } from '@/lib/auth';
+import { User as UserIcon } from 'lucide-react';
 
-export const approvedUsers = [
-  { id: "EMP001", name: "Employee One", email: "employee1@hindustaan.in", role: "employee" },
-  { id: "EMP002", name: "Employee Two", email: "employee2@hindustaan.in", role: "employee" },
-  { id: "MGR001", name: "Manager One", email: "manager1@hindustaan.in", role: "manager" }
-];
-
-export default function Login({ onMockLogin }: { onMockLogin?: (role: string, email?: string) => void }) {
+export default function Login({ onMockLogin, onNavigateToRegister }: { onMockLogin?: (role: string, email?: string) => void, onNavigateToRegister?: () => void }) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   
   // Authentication Modes
@@ -32,6 +30,10 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
   const [countdown, setCountdown] = useState(300);
 
   const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    initializeAuth();
+  }, []);
 
   useEffect(() => {
     if (isDark) {
@@ -54,7 +56,8 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
   }, [showOTPDialog, otpState]);
 
   const validateUser = () => {
-    const user = approvedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const users = getRegisteredUsers();
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     
     if (!user) {
       toast.error('Access Denied', {
@@ -80,13 +83,20 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
     try {
       await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
       
-      const user = validateUser();
-      if (!user) {
+      const validated = validateUser();
+      if (!validated) {
         setLoading(false);
         return;
       }
       
-      if (user.role === 'intern') {
+      const user = loginUser(email, password, rememberMe);
+      if (!user) {
+        toast.error('Authentication Error', { description: 'Incorrect password.' });
+        setLoading(false);
+        return;
+      }
+      
+      if (user.role === 'employee' || user.role === 'intern' as any) {
         let userId = 'u-4';
         let userName = 'Tanvy Pandey';
         
@@ -118,7 +128,6 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
         localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newEvent, ...feed].slice(0, 20)));
       }
       
-      localStorage.setItem('hindustaan_user', JSON.stringify(user));
       toast.success('Access granted.', { description: 'Initializing workspaces...' });
       
       if (onMockLogin) {
@@ -208,9 +217,8 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
     const success = await verifyOTP(email, otpValue);
     
     if (success) {
-      const user = approvedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+      const user = loginUser(email, undefined, rememberMe); // OTP login, no password needed
       if (user) {
-        localStorage.setItem('hindustaan_user', JSON.stringify(user));
         toast.success('Verification Successful', { description: 'Welcome back!' });
         setShowOTPDialog(false);
         if (onMockLogin) {
@@ -259,6 +267,29 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
             <div className="space-y-5">
               
               <div>
+                <label htmlFor="name" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                    <UserIcon className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                  </div>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    minLength={3}
+                    maxLength={50}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-3.5 pl-12 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+              </div>
+
+              <div>
                 <label htmlFor="email-address" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                   Email Address
                 </label>
@@ -303,6 +334,19 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="flex items-center space-x-2 pt-1">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-900"
+              />
+              <label htmlFor="rememberMe" className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                Remember Me
+              </label>
             </div>
 
             <div className="flex items-center justify-between pt-1 pb-2">
@@ -367,6 +411,17 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
                     <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </>
                 )}
+              </button>
+            </div>
+            
+            <div className="text-center pt-2">
+              <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Don't have an account? </span>
+              <button 
+                type="button" 
+                onClick={onNavigateToRegister}
+                className="text-sm font-bold text-orange-600 hover:text-orange-700 hover:underline transition-all"
+              >
+                Create Account
               </button>
             </div>
           </form>

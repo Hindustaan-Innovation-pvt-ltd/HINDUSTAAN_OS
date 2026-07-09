@@ -14,6 +14,7 @@ import {
   ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis,
   CartesianGrid, RadialBarChart, RadialBar, AreaChart, Area
 } from 'recharts';
+import { getCurrentUser } from '@/lib/auth';
 import {
   Trophy, TrendingUp, TrendingDown, Target, Clock, Mic,
   Download, RefreshCw, Filter, Calendar, Search, MoreVertical,
@@ -106,7 +107,9 @@ export default function ContributionScores({ session }: { session?: any }) {
   const role = session?.user?.user_metadata?.role || 'intern';
   const email = session?.user?.email || 'user@hindustaan.in';
 
-  let currentUserName = 'Tanvy Pandey';
+  const user = getCurrentUser();
+  const userName = user?.name || 'Tanvy Pandey';
+  let currentUserName = userName;
   if (email.toLowerCase().includes('amanda')) currentUserName = 'Amanda Smith';
   else if (email.toLowerCase().includes('rahul')) currentUserName = 'Rahul Sharma';
   else if (email.toLowerCase().includes('priya')) currentUserName = 'Priya Patel';
@@ -328,10 +331,10 @@ export default function ContributionScores({ session }: { session?: any }) {
           { title: "Standups", val: "89%", icon: Mic, color: COLORS.orange },
         ].map((kpi, i) => (
           <Card key={i} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
-            <CardContent className="p-4 lg:p-5 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[8.5px] lg:text-[9.5px] 2xl:text-[10.5px] font-bold text-slate-500 uppercase tracking-tight mb-1 whitespace-nowrap">{kpi.title}</p>
-                <p className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white">{kpi.val}</p>
+            <CardContent className="p-4 lg:p-5 flex flex-col items-center justify-center text-center gap-2 lg:gap-3">
+              <div className="w-full flex flex-col items-center">
+                <p className="text-[9px] lg:text-[10px] 2xl:text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1 whitespace-nowrap overflow-visible">{kpi.title}</p>
+                <p className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white leading-none">{kpi.val}</p>
               </div>
               <div className="h-10 w-10 lg:h-12 lg:w-12 shrink-0 relative flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
@@ -346,18 +349,16 @@ export default function ContributionScores({ session }: { session?: any }) {
         ))}
 
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
-          <CardContent className="p-4 lg:p-5 min-w-0">
-            <p className="text-[8.5px] lg:text-[9.5px] 2xl:text-[10.5px] font-bold text-slate-500 uppercase tracking-tight mb-2 whitespace-nowrap">Highest Score</p>
-            <div className="flex items-center gap-3 min-w-0">
-              <Avatar className="h-8 w-8 lg:h-10 lg:w-10 border-2 border-white dark:border-slate-900 shadow-sm shrink-0">
-                <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-xs lg:text-sm">
-                  {highestScorer.name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="text-[11px] lg:text-xs 2xl:text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap">{highestScorer.name}</p>
-                <p className="text-base lg:text-lg font-black text-emerald-600">{highestScorer.score}%</p>
-              </div>
+          <CardContent className="p-4 lg:p-5 flex flex-col items-center justify-center text-center gap-2">
+            <p className="text-[9px] lg:text-[10px] 2xl:text-[11px] font-bold text-slate-500 uppercase tracking-tight whitespace-nowrap">Highest Score</p>
+            <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-900 shadow-sm shrink-0">
+              <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-xs lg:text-sm">
+                {highestScorer.name.split(' ').map(n => n[0]).join('')}
+              </AvatarFallback>
+            </Avatar>
+            <div className="w-full flex flex-col items-center">
+              <p className="text-xs lg:text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis max-w-full px-1">{highestScorer.name}</p>
+              <p className="text-base lg:text-lg font-black text-emerald-600 leading-none mt-1">{highestScorer.score}%</p>
             </div>
           </CardContent>
         </Card>

@@ -17,7 +17,8 @@ import { Separator } from "@/components/ui/separator";
 import { WhatsAppBroadcastDialog } from "./WhatsAppBroadcastDialog";
 import { FigjamDialog } from "./FigjamDialog";
 import { EmployeeCalendar } from "./EmployeeCalendar";
-import { INITIAL_TASKS, GLOBAL_LOGS, GLOBAL_ACTIVITY_FEED } from '@/data/mockData';
+import { GLOBAL_ACTIVITY_FEED, INITIAL_TASKS, GLOBAL_LOGS } from '@/data/mockData';
+import { getCurrentUser } from '@/lib/auth';
 import { useProjects } from '@/context/ProjectContext';
 
 
@@ -42,19 +43,9 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const role = session?.user?.user_metadata?.role || 'intern';
   const email = session?.user?.email || 'user@hindustaan.in';
   
-  let currentUserId = 'u-4';
-  let currentUserName = 'Tanvy Pandey';
-  
-  if (email.toLowerCase().includes('amanda')) {
-    currentUserId = 'u-1';
-    currentUserName = 'Amanda Smith';
-  } else if (email.toLowerCase().includes('rahul')) {
-    currentUserId = 'u-2';
-    currentUserName = 'Rahul Sharma';
-  } else if (email.toLowerCase().includes('priya')) {
-    currentUserId = 'u-3';
-    currentUserName = 'Priya Patel';
-  }
+  const user = getCurrentUser();
+  let currentUserId = user?.id || 'u-4';
+  let currentUserName = user?.name || 'User';
 
   const { projects } = useProjects();
   
@@ -64,7 +55,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
     const allTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
     return allTasks.filter((t: any) => 
       t.assignee_name === currentUserName || 
-      (currentUserName.toLowerCase().includes('tanvy') && t.assignee_name?.toLowerCase().includes('tanvy'))
+      (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
     );
   });
 
@@ -74,7 +65,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
         const allTasks = JSON.parse(e.newValue);
         setTasks(allTasks.filter((t: any) => 
           t.assignee_name === currentUserName || 
-          (currentUserName.toLowerCase().includes('tanvy') && t.assignee_name?.toLowerCase().includes('tanvy'))
+          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
         ));
       }
     };
@@ -84,7 +75,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
         const allTasks = typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : INITIAL_TASKS;
         setTasks(allTasks.filter((t: any) => 
           t.assignee_name === currentUserName || 
-          (currentUserName.toLowerCase().includes('tanvy') && t.assignee_name?.toLowerCase().includes('tanvy'))
+          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
         ));
       }
     };
@@ -131,14 +122,14 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const [loggedHours, setLoggedHours] = useState(() => {
     const saved = localStorage.getItem('work_logs_list');
     const logs = saved ? JSON.parse(saved) : GLOBAL_LOGS;
-    const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes('tanvy') && log.name.toLowerCase().includes('tanvy')));
+    const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && log.name.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())));
     return userLogs.reduce((acc: number, log: any) => acc + log.hours, 0);
   });
 
   useEffect(() => {
     const handleLogsChange = (logsStr: string | null) => {
       const logs = logsStr ? JSON.parse(logsStr) : GLOBAL_LOGS;
-      const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes('tanvy') && log.name.toLowerCase().includes('tanvy')));
+      const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && log.name.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())));
       setLoggedHours(userLogs.reduce((acc: number, log: any) => acc + log.hours, 0));
     };
 
@@ -189,8 +180,8 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-3 break-words whitespace-normal">
-            {greeting}, {currentUserName.split(' ')[0]} <span className="animate-wave inline-block origin-bottom-right">👋</span>
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
+            {greeting}, {currentUserName.split(' ')[0]} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
           <p className="text-base sm:text-lg font-medium text-orange-600 dark:text-orange-400 mt-1 break-words whitespace-normal">Frontend Developer Intern</p>
           <p className="text-sm sm:text-base font-medium text-slate-500 dark:text-slate-400 mt-2 break-words whitespace-normal">
