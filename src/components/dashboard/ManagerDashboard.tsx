@@ -250,17 +250,17 @@ function ManagerDashboardInner() {
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
             {greeting}, Aakash <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">
+          <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-2 font-medium break-words whitespace-normal">
             Manage projects, monitor team performance, and track progress from one place.
           </p>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
 
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
           <CardContent className="p-5 flex flex-col justify-between h-full gap-4">

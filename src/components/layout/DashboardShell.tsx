@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const employeeNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
@@ -96,7 +97,64 @@ export default function DashboardShell({
       }
     };
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const SidebarContent = () => (
+    <div className="flex h-full flex-col">
+        {/* Branding Badge */}
+
+        <div className="flex min-h-[90px] shrink-0 items-center border-b border-slate-100 dark:border-slate-800 justify-between px-6 py-4 lg:justify-start">
+          <div className="flex items-center gap-3 group cursor-pointer" onClick={() => onNavigate('Dashboard')}>
+            <img
+              src={isDark ? "/icon-dark.png" : "/icon.png"}
+              alt="Hindustaan OS"
+              className="h-auto object-contain transition-all duration-200 group-hover:scale-105 group-hover:drop-shadow-[0_0_12px_rgba(255,153,0,0.5)] shrink-0 rounded-full w-[46px] md:w-[52px] lg:w-[60px]"
+            />
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight animate-in fade-in duration-200">
+              Hindustaan <span className="text-green-500">OS</span>
+            </h1>
+          </div>
+          <button 
+            className="lg:hidden text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        {/* Vertical Navigation Rows */}
+        <div className="flex flex-1 flex-col overflow-y-auto py-6 px-4">
+          <nav className="flex-1 space-y-1">
+            {activeNavigation.map((item) => {
+              const isCurrent = currentView === item.name;
+              return (
+    <div className="flex h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-950 transition-colors duration-500">
+      
+      {/* Left Desktop Sidebar */}
+      <div className="hidden lg:flex inset-y-0 left-0 z-50 flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 lg:w-[260px] shrink-0">
+        <SidebarContent />
+      </div>
+
+      {/* Main Context Body */}
+      <div className="flex flex-1 flex-col overflow-x-hidden min-w-0 w-full max-w-full">
+        
+        {/* Top Sticky Header */}
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 px-4 shadow-sm backdrop-blur-md sm:gap-x-6 sm:px-6 lg:px-8">
+          
+          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className="-m-2.5 p-2.5 text-slate-700 dark:text-slate-200 lg:hidden"
+              >
+                <span className="sr-only">Open sidebar</span>
+                <Menu className="h-6 w-6" aria-hidden="true" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-[260px] border-r border-slate-200 dark:border-slate-700/60">
+              <SidebarContent />
+            </SheetContent>
+          </Sheet>
+
+            return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const activeNavigation = role === 'manager' ? managerNavigation : employeeNavigation;
@@ -316,7 +374,7 @@ export default function DashboardShell({
 
         {/* Viewport Container */}
         <main className="flex-1 overflow-y-auto flex flex-col bg-slate-50/50 dark:bg-slate-900/30">
-          <div className="mx-auto max-w-screen-2xl flex-1 w-full">
+          <div className="mx-auto max-w-screen-2xl flex-1 w-full max-w-full overflow-x-hidden px-4 py-6 md:px-6 lg:px-8">
             {children}
           </div>
           {/* Global Footer */}

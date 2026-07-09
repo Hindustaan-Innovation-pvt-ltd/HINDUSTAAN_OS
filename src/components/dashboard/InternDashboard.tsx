@@ -189,11 +189,11 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-3 break-words whitespace-normal">
             {greeting}, {currentUserName.split(' ')[0]} <span className="animate-wave inline-block origin-bottom-right">👋</span>
           </h1>
-          <p className="text-lg font-medium text-orange-600 dark:text-orange-400 mt-1">Frontend Developer Intern</p>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">
+          <p className="text-base sm:text-lg font-medium text-orange-600 dark:text-orange-400 mt-1 break-words whitespace-normal">Frontend Developer Intern</p>
+          <p className="text-sm sm:text-base font-medium text-slate-500 dark:text-slate-400 mt-2 break-words whitespace-normal">
             You have <strong className="text-slate-700 dark:text-slate-200">{activeTasksCount} active tasks</strong>, <strong className="text-rose-600 dark:text-rose-400">{dueTodayCount} due today</strong>, and <strong>{loggedHours.toFixed(1)} hours</strong> logged total.
           </p>
         </div>
