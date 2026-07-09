@@ -104,6 +104,8 @@ export const GLOBAL_LOGS = [
   { id: '3', name: 'Aiden Chen', initials: 'AC', date: 'Oct 11, 2026', hours: 3.5, task: 'Button Variants', project: 'Design System', status: 'Pending' },
   { id: '4', name: 'Priya Patel', initials: 'PP', date: 'Oct 11, 2026', hours: 8.0, task: 'Landing Page Copy', project: 'Marketing Website', status: 'Approved' },
   { id: '5', name: 'Rohan Gupta', initials: 'RG', date: 'Oct 10, 2026', hours: 5.0, task: 'Push Notifications', project: 'Mobile App', status: 'Rejected' },
+  { id: 'l1', name: 'Tanvy Pandey', initials: 'TP', date: new Date().toLocaleDateString(), hours: 2, task: 'Dashboard UI', project: 'Frontend', status: 'Approved' },
+  { id: 'l2', name: 'Tanvy Pandey', initials: 'TP', date: new Date().toLocaleDateString(), hours: 3.5, task: 'Authentication', project: 'Frontend', status: 'Approved' }
 ];
 
 export const GLOBAL_ACTIVITY_FEED = [
@@ -112,6 +114,10 @@ export const GLOBAL_ACTIVITY_FEED = [
   { id: 'a3', user: 'System', action: 'created project', target: 'ProjectOS Redesign', time: '2h ago', type: 'project' },
   { id: 'a4', user: 'Priya Patel', action: 'submitted standup', target: 'Daily Sync', time: '3h ago', type: 'standup' },
   { id: 'a5', user: 'Rohan Gupta', action: 'assigned task to', target: 'Aiden Chen', time: '4h ago', type: 'assign' },
+  { id: 'a6', user: 'Tanvy Pandey', action: 'Logged 2 hrs', target: 'Dashboard UI', time: '2H AGO', type: 'log' },
+  { id: 'a7', user: 'Tanvy Pandey', action: 'Completed', target: 'Login UI', time: '4H AGO', type: 'task' },
+  { id: 'a8', user: 'Tanvy Pandey', action: 'Submitted Standup', target: '', time: '9:10 AM', type: 'standup' },
+  { id: 'a9', user: 'Tanvy Pandey', action: 'Assigned new task', target: 'Kanban Drag & Drop', time: 'YESTERDAY', type: 'assign' }
 ];
 
 export const GLOBAL_NOTIFICATIONS = [
@@ -124,14 +130,15 @@ export const GLOBAL_NOTIFICATIONS = [
 export const INITIAL_TASKS = [
   {
     id: 't-1',
-    title: 'Design Authentication Split Screen',
+    title: 'Design Authentication UI',
     description: 'Implement the responsive split-screen layout for the login page using the new visual design specifications and Tailwind v4.',
-    project_tag: 'Frontend Core',
-    assignee_name: 'Amanda Smith',
-    assignee_id: 'u-1',
-    priority: 'High',
-    due_date: 'Oct 12, 2026',
-    status: 'Done',
+    project_tag: 'Project OS',
+    assignee_name: 'Tanvy Pandey',
+    assignee_id: 'u-4',
+    priority: 'Medium',
+    due_date: 'Tomorrow',
+    status: 'To Do',
+    progress: 0
   },
   {
     id: 't-2',
@@ -146,14 +153,15 @@ export const INITIAL_TASKS = [
   },
   {
     id: 't-3',
-    title: 'Implement Kanban Drag-and-Drop',
+    title: 'Implement Kanban Drag & Drop',
     description: 'Build native HTML5 drag and drop APIs without using heavy external libraries for smooth task transitions.',
-    project_tag: 'Frontend Core',
-    assignee_name: 'Amanda Smith',
-    assignee_id: 'u-1',
-    priority: 'Normal',
-    due_date: 'Oct 15, 2026',
-    status: 'In Review',
+    project_tag: 'Project OS',
+    assignee_name: 'Tanvy Pandey',
+    assignee_id: 'u-4',
+    priority: 'High',
+    due_date: 'Due Today',
+    status: 'In Progress',
+    progress: 80
   },
   {
     id: 't-4',
@@ -204,22 +212,23 @@ export const INITIAL_TASKS = [
     title: 'Create User Onboarding Flow',
     description: 'Design and implement the 3-step onboarding modal for new workspace users.',
     project_tag: 'Product',
-    assignee_name: 'Tanvy Pandey',
-    assignee_id: 'u-4',
+    assignee_name: 'Amanda Smith',
+    assignee_id: 'u-1',
     priority: 'Normal',
     due_date: 'Oct 25, 2026',
     status: 'To Do',
   },
   {
     id: 't-9',
-    title: 'Fix Navigation Bug on Safari',
+    title: 'Fix Navigation Bugs',
     description: 'Mobile navigation drawer does not close properly on Safari iOS 16. Needs immediate patching.',
-    project_tag: 'Bug Fix',
-    assignee_name: 'Amanda Smith',
-    assignee_id: 'u-1',
-    priority: 'High',
-    due_date: 'Oct 12, 2026',
-    status: 'In Progress',
+    project_tag: 'Internal Tools',
+    assignee_name: 'Tanvy Pandey',
+    assignee_id: 'u-4',
+    priority: 'Low',
+    due_date: 'Jul 10',
+    status: 'Review',
+    progress: 95
   },
   {
     id: 't-10',
@@ -245,13 +254,14 @@ export const INITIAL_TASKS = [
   },
   {
     id: 't-12',
-    title: 'Update Brand Assets',
+    title: 'Update Component Library',
     description: 'Replace all old logos and favicons with the new re-branded SVGs across the application.',
-    project_tag: 'Design',
+    project_tag: 'Design System',
     assignee_name: 'Tanvy Pandey',
     assignee_id: 'u-4',
-    priority: 'Low',
-    due_date: 'Oct 15, 2026',
-    status: 'Done',
+    priority: 'Medium',
+    due_date: 'Jul 12',
+    status: 'To Do',
+    progress: 10
   }
 ];

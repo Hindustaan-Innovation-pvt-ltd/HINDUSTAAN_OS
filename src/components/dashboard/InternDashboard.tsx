@@ -60,7 +60,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   
   // Extract dynamic tasks from central task list (TaskBoard source)
   const [tasks, setTasks] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_tasks_list');
+    const saved = null; // Bypass local storage to fix UI issues
     const allTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
     return allTasks.filter((t: any) => 
       t.assignee_name === currentUserName || 
@@ -100,7 +100,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
 
   // Read activity feed
   const [activityFeed, setActivityFeed] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_activity_feed');
+    const saved = null; // Bypass local storage
     return saved ? JSON.parse(saved) : GLOBAL_ACTIVITY_FEED;
   });
 
@@ -304,7 +304,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                         <Badge variant="outline" className={cn(
                           "text-[10px] uppercase tracking-wider font-bold rounded",
                           task.priority === 'High' ? "border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-500/10" : 
-                          task.priority === 'Normal' ? "border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:bg-amber-500/10" : 
+                          task.priority === 'Normal' || task.priority === 'Medium' ? "border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:bg-amber-500/10" : 
                           "border-slate-200 text-slate-600 bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:bg-slate-800"
                         )}>{task.priority}</Badge>
                       </div>
@@ -320,9 +320,9 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                           <span className={cn(
                             task.status === 'Done' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400 uppercase tracking-wider'
                           )}>{task.status}</span>
-                          <span className="text-slate-900 dark:text-white">{getProgress(task.status)}%</span>
+                          <span className="text-slate-900 dark:text-white">{task.progress ?? getProgress(task.status)}%</span>
                         </div>
-                        <Progress value={getProgress(task.status)} className="h-1.5 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
+                        <Progress value={task.progress ?? getProgress(task.status)} className="h-1.5 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
                       </div>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 shrink-0">
                         <MoreVertical className="h-4 w-4" />
@@ -339,100 +339,19 @@ export default function InternDashboard({ session }: InternDashboardProps) {
               </div>
             </CardContent>
           </Card>
-
           </div>
-        </div>
-      {/* 3-Column Grid for Metrics and Sidebar */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 items-start mt-4 md:mt-5">
-            
-        {/* Contribution Progress */}
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
-          <CardHeader className="p-4 md:p-5 pb-3">
-            <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
-              <Target className="mr-2 h-4 w-4 text-orange-500" />
-              Contribution Breakdown
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col p-4 md:p-5 pt-0">
-            <div className="flex items-end gap-2 mb-4">
-              <span className="text-5xl font-black text-slate-900 dark:text-white">88%</span>
-              <span className="text-sm font-bold text-slate-500 mb-1">Overall Score</span>
-            </div>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
-                  <span>Tasks Completed</span>
-                  <span>24 / 30</span>
-                </div>
-                <Progress value={80} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-emerald-500" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
-                  <span>Hours Logged</span>
-                  <span>42 / 50</span>
-                </div>
-                <Progress value={84} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-blue-500" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
-                  <span>Milestones</span>
-                  <span>2 / 3</span>
-                </div>
-                <Progress value={66} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-purple-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Upcoming Deadlines */}
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
-          <CardHeader className="p-4 md:p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
-              <AlertCircle className="mr-2 h-4 w-4 text-orange-500" />
-              Upcoming Deadlines
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 flex-1 relative h-[250px]">
-            <ScrollArea className="absolute inset-0 h-full w-full">
-              <div className="p-4 md:p-5 space-y-4">
-                {tasks.filter(t => t.status !== 'Done').slice(0, 3).map((task, idx) => (
-                  <div key={task.id} className="relative pl-6 py-1 before:absolute before:left-2 before:top-2.5 before:bottom-[-16px] before:w-px before:bg-slate-200 dark:before:bg-slate-700 last:before:hidden">
-                    <div className={cn(
-                      "absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950",
-                      idx === 0 ? "bg-rose-500" : idx === 1 ? "bg-amber-500" : "bg-slate-300 dark:bg-slate-600"
-                    )} />
-                    <span className={cn(
-                      "text-xs font-black uppercase tracking-wider mb-0.5 block",
-                      idx === 0 ? "text-rose-600 dark:text-rose-400" : idx === 1 ? "text-amber-600 dark:text-amber-500" : "text-slate-500"
-                    )}>{task.due_date}</span>
-                    <p className="text-sm font-bold text-slate-900 dark:text-white">{task.title}</p>
-                    {task.priority === 'High' && (
-                      <Badge variant="outline" className="mt-1.5 text-[10px] border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-900/20 font-bold uppercase tracking-wider">High Priority</Badge>
-                    )}
-                  </div>
-                ))}
-                {tasks.filter(t => t.status !== 'Done').length === 0 && (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No upcoming deadlines. 🎉</p>
-                )}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-
-        {/* Right Column Wrapper */}
-        <div className="space-y-4 md:space-y-5">
-          {/* Refactored Training Calendar */}
-          <EmployeeCalendar />
-
+        
+        {/* Right Column (4) */}
+        <div className="lg:col-span-4 flex flex-col gap-4 md:gap-5">
           {/* Recent Highlights */}
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col flex-1 min-h-[320px] overflow-hidden">
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col flex-1 h-full overflow-hidden">
             <CardHeader className="p-4 md:p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
               <CardTitle className="text-base font-bold flex items-center text-slate-900 dark:text-white">
                 <Activity className="h-4 w-4 text-orange-500 mr-2" />
                 Recent Highlights
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 flex-1 relative min-h-[250px]">
+            <CardContent className="p-0 flex-1 relative">
               <ScrollArea className="absolute inset-0 h-full w-full">
                 <div className="p-4 md:p-5 space-y-4">
                 {userActivities.length > 0 ? userActivities.map((act: any) => (
@@ -450,6 +369,94 @@ export default function InternDashboard({ session }: InternDashboardProps) {
               </ScrollArea>
             </CardContent>
           </Card>
+        </div>
+      </div>
+
+      {/* 3-Column Grid for Metrics and Sidebar */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 items-start mt-4 md:mt-5">
+            
+        <div className="space-y-4 md:space-y-5 h-full">
+          {/* Contribution Progress */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-full">
+            <CardHeader className="p-4 md:p-5 pb-3">
+              <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
+                <Target className="mr-2 h-4 w-4 text-orange-500" />
+                Contribution Breakdown
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col p-4 md:p-5 pt-0">
+              <div className="flex items-end gap-2 mb-4">
+                <span className="text-5xl font-black text-slate-900 dark:text-white">88%</span>
+                <span className="text-sm font-bold text-slate-500 mb-1">Overall Score</span>
+              </div>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
+                    <span>Tasks Completed</span>
+                    <span>24 / 30</span>
+                  </div>
+                  <Progress value={80} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-emerald-500" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
+                    <span>Hours Logged</span>
+                    <span>42 / 50</span>
+                  </div>
+                  <Progress value={84} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-blue-500" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
+                    <span>Milestones</span>
+                    <span>2 / 3</span>
+                  </div>
+                  <Progress value={66} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-purple-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-4 md:space-y-5 h-full">
+          {/* Upcoming Deadlines */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-full overflow-hidden">
+            <CardHeader className="p-4 md:p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
+                <AlertCircle className="mr-2 h-4 w-4 text-orange-500" />
+                Upcoming Deadlines
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 flex-1 relative min-h-0">
+              <ScrollArea className="absolute inset-0 h-full w-full">
+                <div className="p-4 md:p-5 space-y-4">
+                  {tasks.filter(t => t.status !== 'Done').slice(0, 3).map((task, idx) => (
+                    <div key={task.id} className="relative pl-6 py-1 before:absolute before:left-2 before:top-2.5 before:bottom-[-16px] before:w-px before:bg-slate-200 dark:before:bg-slate-700 last:before:hidden">
+                      <div className={cn(
+                        "absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950",
+                        idx === 0 ? "bg-rose-500" : idx === 1 ? "bg-amber-500" : "bg-slate-300 dark:bg-slate-600"
+                      )} />
+                      <span className={cn(
+                        "text-xs font-black uppercase tracking-wider mb-0.5 block",
+                        idx === 0 ? "text-rose-600 dark:text-rose-400" : idx === 1 ? "text-amber-600 dark:text-amber-500" : "text-slate-500"
+                      )}>{task.due_date}</span>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">{task.title}</p>
+                      {task.priority === 'High' && (
+                        <Badge variant="outline" className="mt-1.5 text-[10px] border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-900/20 font-bold uppercase tracking-wider">High Priority</Badge>
+                      )}
+                    </div>
+                  ))}
+                  {tasks.filter(t => t.status !== 'Done').length === 0 && (
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No upcoming deadlines. 🎉</p>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column Wrapper */}
+        <div className="space-y-4 md:space-y-5 h-full">
+          {/* Refactored Training Calendar */}
+          <EmployeeCalendar />
         </div>
       </div>
       

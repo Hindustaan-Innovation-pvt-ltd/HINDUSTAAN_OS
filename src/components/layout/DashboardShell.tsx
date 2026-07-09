@@ -88,65 +88,18 @@ export default function DashboardShell({
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
 
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    const saved = localStorage.getItem('sidebar_width');
-    if (saved) return parseInt(saved, 10);
-    return 288; // Default w-72 equivalent
-  });
-  const [isDragging, setIsDragging] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
+  // Ensure sidebar open state resets on resize to desktop/tablet
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setSidebarOpen(false);
+      }
     };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const sidebarWidthRef = React.useRef(sidebarWidth);
-  sidebarWidthRef.current = sidebarWidth;
-
-  const startResizing = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  // Sync the initial minimized state to the parent based on the initial sidebarWidth
-  useEffect(() => {
-    onMinimizeChange(sidebarWidth <= 200);
-  }, [onMinimizeChange]);
-
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      let newWidth = e.clientX;
-      if (newWidth < 200) {
-        newWidth = 200;
-      } else if (newWidth > 480) {
-        newWidth = 480;
-      }
-      setSidebarWidth(newWidth);
-      onMinimizeChange(newWidth <= 200);
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      localStorage.setItem('sidebar_width', sidebarWidthRef.current.toString());
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, onMinimizeChange]);
-
   const activeNavigation = role === 'manager' ? managerNavigation : employeeNavigation;
-  const isSidebarCollapsed = sidebarWidth <= 200;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-950 transition-colors duration-500">
@@ -154,42 +107,30 @@ export default function DashboardShell({
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-slate-900/80 backdrop-blur-sm lg:hidden transition-opacity"
+          className="fixed inset-0 z-40 bg-slate-900/80 backdrop-blur-sm md:hidden transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Left Desktop Sidebar */}
+      {/* Left Responsive Sidebar */}
       <div 
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 lg:static lg:translate-x-0 relative",
-          isDragging ? "transition-none" : "transition-all duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 md:static md:translate-x-0 relative transition-transform duration-300 ease-in-out",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
-          isMobile && "w-72"
+          "w-[260px] md:w-[220px] lg:w-[260px] shrink-0"
         )}
-        style={{
-          width: !isMobile ? `${sidebarWidth}px` : undefined,
-        }}
       >
         {/* Branding Badge */}
-        <div className={cn(
-          "flex min-h-[90px] shrink-0 items-center border-b border-slate-100 dark:border-slate-800 justify-between",
-          isSidebarCollapsed ? "px-4 justify-center py-3" : "px-6 py-4 lg:justify-start"
-        )}>
+        <div className="flex min-h-[90px] shrink-0 items-center border-b border-slate-100 dark:border-slate-800 justify-between px-6 py-4 lg:justify-start">
           <div className="flex items-center gap-3 group cursor-pointer" onClick={() => onNavigate('Dashboard')}>
             <img
               src={isDark ? "/icon-dark.png" : "/icon.png"}
               alt="Hindustaan OS"
-              className={cn(
-                "h-auto object-contain transition-all duration-200 group-hover:scale-105 group-hover:drop-shadow-[0_0_12px_rgba(255,153,0,0.5)] shrink-0 rounded-full",
-                isSidebarCollapsed ? "w-10 md:w-11 lg:w-12" : "w-[46px] md:w-[52px] lg:w-[60px]"
-              )}
+              className="h-auto object-contain transition-all duration-200 group-hover:scale-105 group-hover:drop-shadow-[0_0_12px_rgba(255,153,0,0.5)] shrink-0 rounded-full w-[46px] md:w-[52px] lg:w-[60px]"
             />
-            {!isSidebarCollapsed && (
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight animate-in fade-in duration-200">
-                Hindustaan <span className="text-green-500">OS</span>
-              </h1>
-            )}
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight animate-in fade-in duration-200">
+              Hindustaan <span className="text-green-500">OS</span>
+            </h1>
           </div>
           <button 
             className="lg:hidden text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300"
@@ -200,10 +141,7 @@ export default function DashboardShell({
         </div>
 
         {/* Vertical Navigation Rows */}
-        <div className={cn(
-          "flex flex-1 flex-col overflow-y-auto py-6",
-          isSidebarCollapsed ? "px-2" : "px-4"
-        )}>
+        <div className="flex flex-1 flex-col overflow-y-auto py-6 px-4">
           <nav className="flex-1 space-y-1">
             {activeNavigation.map((item) => {
               const isCurrent = currentView === item.name;
@@ -214,10 +152,8 @@ export default function DashboardShell({
                     onNavigate(item.name);
                     setSidebarOpen(false);
                   }}
-                  title={isSidebarCollapsed ? item.name : undefined}
                   className={cn(
-                    "w-full group flex items-center text-sm font-medium rounded-xl transition-all duration-200",
-                    isSidebarCollapsed ? "px-3 py-3 justify-center" : "px-3 py-2.5",
+                    "w-full group flex items-center text-sm font-medium rounded-xl transition-all duration-200 px-3 py-2.5",
                     isCurrent
                       ? "bg-amber-50 text-amber-700 dark:bg-white dark:text-slate-900"
                       : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white dark:hover:text-slate-900"
@@ -225,15 +161,12 @@ export default function DashboardShell({
                 >
                   <item.icon
                     className={cn(
-                      "h-5 w-5 shrink-0 transition-colors duration-200",
-                      !isSidebarCollapsed && "mr-3",
+                      "h-5 w-5 shrink-0 transition-colors duration-200 mr-3",
                       isCurrent ? "text-amber-600 dark:text-slate-900" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-900"
                     )}
                     aria-hidden="true"
                   />
-                  {!isSidebarCollapsed && (
-                    <span className="truncate">{item.name}</span>
-                  )}
+                  <span className="truncate">{item.name}</span>
                 </button>
               );
             })}
@@ -241,35 +174,25 @@ export default function DashboardShell({
         </div>
 
         {/* User Profile Card */}
-        <div className={cn(
-          "shrink-0 border-t border-slate-200 dark:border-slate-700/60",
-          isSidebarCollapsed ? "p-2" : "p-4"
-        )}>
+        <div className="shrink-0 border-t border-slate-200 dark:border-slate-700/60 p-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className={cn(
-                "w-full flex items-center rounded-xl transition-all hover:bg-slate-50 dark:hover:bg-slate-900/40 outline-none focus:ring-2 focus:ring-orange-500/20 group",
-                isSidebarCollapsed ? "p-1.5 justify-center" : "p-2 justify-between"
-              )}>
+              <button className="w-full flex items-center rounded-xl transition-all hover:bg-slate-50 dark:hover:bg-slate-900/40 outline-none focus:ring-2 focus:ring-orange-500/20 group p-2 justify-between">
                 <div className="flex items-center text-left">
                   <div className="flex items-center justify-center h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 font-bold shadow-sm ring-2 ring-white dark:ring-slate-900 shrink-0">
                     {role === 'manager' ? 'AG' : 'TP'}
                   </div>
-                  {!isSidebarCollapsed && (
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">
-                        {role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'}
-                      </p>
-                      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{role === 'manager' ? 'Manager' : 'Employee'}</p>
-                    </div>
-                  )}
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">
+                      {role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'}
+                    </p>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{role === 'manager' ? 'Manager' : 'Employee'}</p>
+                  </div>
                 </div>
-                {!isSidebarCollapsed && (
-                  <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
-                )}
+                <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" side={isSidebarCollapsed ? "right" : "top"} sideOffset={12} className="w-64 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl rounded-xl p-2">
+            <DropdownMenuContent align="center" side="top" sideOffset={12} className="w-64 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl rounded-xl p-2">
               <DropdownMenuLabel className="font-normal p-0">
                 <div className="flex flex-col space-y-1 p-2 pb-3">
                   <div className="flex items-center gap-3 mb-2">
@@ -326,18 +249,7 @@ export default function DashboardShell({
           </DropdownMenu>
         </div>
 
-        {/* Resize Handle */}
-        {!isMobile && (
-          <div
-            onMouseDown={startResizing}
-            className="absolute top-0 -right-1 bottom-0 w-2 cursor-col-resize group/resize z-50"
-          >
-            <div className={cn(
-              "w-1 h-full mx-auto transition-colors duration-200",
-              isDragging ? "bg-orange-500" : "bg-transparent group-hover/resize:bg-orange-500/30"
-            )} />
-          </div>
-        )}
+
       </div>
 
       {/* Main Context Body */}
@@ -348,7 +260,7 @@ export default function DashboardShell({
           
           <button
             type="button"
-            className="-m-2.5 p-2.5 text-slate-700 dark:text-slate-200 lg:hidden"
+            className="-m-2.5 p-2.5 text-slate-700 dark:text-slate-200 md:hidden"
             onClick={() => setSidebarOpen(true)}
           >
             <span className="sr-only">Open sidebar</span>
