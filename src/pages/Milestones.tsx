@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { Trophy, Target, Flag, Rocket } from 'lucide-react';
+import { Trophy, Target, Flag, Clock, CheckCircle2, Rocket } from 'lucide-react';
+import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+
+import { useProjects } from '@/context/ProjectContext';
 
 // --- Mock Data ---
 const contributionData = {
@@ -12,19 +15,7 @@ const contributionData = {
   'This Month': { score: 94, tasks: 38, hours: 32, miles: 22 },
 };
 
-const PROJECTS = [
-  { id: '1', name: 'Authentication Pipeline', progress: 70, status: 'On Track', color: 'bg-emerald-500' },
-  { id: '2', name: 'Dashboard UI Revamp', progress: 45, status: 'At Risk', color: 'bg-rose-500' },
-  { id: '3', name: 'Supabase Migration', progress: 90, status: 'Almost Done', color: 'bg-emerald-500' },
-];
-
-const MILESTONES = [
-  { id: 'm1', name: 'Alpha Release', progress: 100, color: 'bg-slate-800 dark:bg-slate-400' },
-  { id: 'm2', name: 'Beta Testing', progress: 60, color: 'bg-orange-500' },
-  { id: 'm3', name: 'Public Launch', progress: 15, color: 'bg-slate-300 dark:bg-slate-700' },
-];
-
-const TEAM = ['Amanda Smith', 'Rahul Sharma', 'Priya Patel', 'Rohan Gupta'];
+const TEAM = GLOBAL_TEAM_MEMBERS.map(m => m.name);
 
 function MetricCard({ name, data, period, onPeriodChange }: { name: string, data: any, period: string, onPeriodChange: (p: string) => void }) {
   const { score, tasks, hours, miles } = data[period as keyof typeof data];
@@ -92,8 +83,37 @@ function MetricCard({ name, data, period, onPeriodChange }: { name: string, data
 }
 
 export default function Milestones({ session }: { session?: any }) {
+  const { projects } = useProjects();
   const [globalPeriod, setGlobalPeriod] = useState('Today');
   const role = session?.user?.user_metadata?.role || 'intern';
+
+  const derivedProjects = projects.map((p: any) => {
+    const totalTasks = p.tasks?.length || 0;
+    const completedTasks = p.tasks?.filter((t: any) => t.status === 'Done').length || 0;
+    const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    let status = 'On Track';
+    let color = 'bg-emerald-500';
+    if (progress === 100) { status = 'Completed'; color = 'bg-blue-500'; }
+    else if (progress < 30 && totalTasks > 0) { status = 'At Risk'; color = 'bg-rose-500'; }
+    else if (progress >= 80) { status = 'Almost Done'; color = 'bg-emerald-500'; }
+    else if (totalTasks === 0) { status = 'Pending'; color = 'bg-slate-400'; }
+    return { id: p.id, name: p.name, progress, status, color };
+  });
+
+  const derivedMilestones = projects.flatMap((p: any) => {
+    if (!p.milestones || p.milestones.length === 0) {
+      // Generate generic milestones if none exist
+      return [
+        { id: `m1-${p.id}`, title: `${p.name} - Alpha`, status: p.status === 'Done' ? 'completed' : 'in-progress' }
+      ];
+    }
+    return p.milestones;
+  }).map((m: any, i: number) => {
+    const isCompleted = m.status === 'completed';
+    const progress = isCompleted ? 100 : (m.status === 'in-progress' ? 50 : 0);
+    const colors = ['bg-slate-800 dark:bg-slate-400', 'bg-orange-500', 'bg-slate-300 dark:bg-slate-700', 'bg-indigo-500'];
+    return { id: m.id || `m-${i}`, name: m.title, progress, color: colors[i % colors.length] };
+  }).slice(0, 5); // Show top 5 milestones
   
   return (
     <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -119,7 +139,7 @@ export default function Milestones({ session }: { session?: any }) {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {PROJECTS.map(project => (
+                {derivedProjects.length > 0 ? derivedProjects.map(project => (
                   <div key={project.id}>
                     <div className="flex justify-between text-sm font-bold mb-2">
                       <span className="text-slate-700 dark:text-slate-200">{project.name}</span>
@@ -130,7 +150,9 @@ export default function Milestones({ session }: { session?: any }) {
                       {project.status}
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-sm text-slate-500 italic">No projects found.</div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -145,7 +167,7 @@ export default function Milestones({ session }: { session?: any }) {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {MILESTONES.map(milestone => (
+                {derivedMilestones.length > 0 ? derivedMilestones.map(milestone => (
                   <div key={milestone.id}>
                     <div className="flex justify-between text-sm font-bold mb-2">
                       <span className="text-slate-700 dark:text-slate-200 flex items-center">
@@ -156,7 +178,9 @@ export default function Milestones({ session }: { session?: any }) {
                     </div>
                     <Progress value={milestone.progress} className={cn("h-3", `[&>div]:${milestone.color}`)} />
                   </div>
-                ))}
+                )) : (
+                  <div className="text-sm text-slate-500 italic">No milestones found.</div>
+                )}
               </div>
             </CardContent>
           </Card>

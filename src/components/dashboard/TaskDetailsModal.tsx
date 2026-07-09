@@ -45,12 +45,7 @@ interface TaskDetailsModalProps {
 
 const STATUSES: Status[] = ['To Do', 'In Progress', 'In Review', 'Done'];
 
-const MOCK_TEAM = [
-  { id: 'u-1', name: 'Amanda Smith' },
-  { id: 'u-2', name: 'Rahul Sharma' },
-  { id: 'u-3', name: 'Priya Patel' },
-  { id: 'u-4', name: 'Tanvy' },
-];
+import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 
 export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, onUpdateTask }: TaskDetailsModalProps) {
   const [editedTask, setEditedTask] = useState<Task | null>(null);
@@ -216,7 +211,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                   <select
                     value={editedTask.assignee_id}
                     onChange={(e) => {
-                      const selected = MOCK_TEAM.find(u => u.id === e.target.value);
+                      const selected = GLOBAL_TEAM_MEMBERS.find(u => u.id === e.target.value);
                       if (selected) {
                         const updated = { ...editedTask, assignee_id: selected.id, assignee_name: selected.name } as Task;
                         setEditedTask(updated);
@@ -225,7 +220,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                     }}
                     className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
                   >
-                    {MOCK_TEAM.map(member => (
+                    {GLOBAL_TEAM_MEMBERS.map(member => (
                       <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={member.id} value={member.id}>{member.name}</option>
                     ))}
                   </select>
