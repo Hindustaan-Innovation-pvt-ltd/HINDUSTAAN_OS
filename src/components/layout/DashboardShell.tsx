@@ -69,7 +69,16 @@ const managerNavigation = [
 ];
 
 
-const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen, activeNavigation, onSignOut, userName, userEmail, userInitials }: any) => (
+const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen, activeNavigation, onSignOut, userName, userEmail, userInitials }: any) => {
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(() => localStorage.getItem('userAvatar'));
+  
+  useEffect(() => {
+    const handleAvatarUpdate = () => setAvatarUrl(localStorage.getItem('userAvatar'));
+    window.addEventListener('avatar-updated', handleAvatarUpdate);
+    return () => window.removeEventListener('avatar-updated', handleAvatarUpdate);
+  }, []);
+
+  return (
     <div className="flex h-full flex-col bg-white dark:bg-slate-900">
         {/* Branding Badge */}
 
@@ -132,8 +141,8 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
             <DropdownMenuTrigger asChild>
               <button className="w-full flex items-center rounded-xl transition-all hover:bg-slate-50 dark:hover:bg-slate-900/40 outline-none focus:ring-2 focus:ring-orange-500/20 group p-2 justify-between">
                 <div className="flex items-center text-left">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 font-bold shadow-sm ring-2 ring-white dark:ring-slate-900 shrink-0">
-                    {userInitials}
+                  <div className="flex items-center justify-center h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 font-bold shadow-sm ring-2 ring-white dark:ring-slate-900 shrink-0 overflow-hidden">
+                    {avatarUrl ? <img src={avatarUrl} className="h-full w-full object-cover" alt={userName} /> : userInitials}
                   </div>
                   <div className="ml-3 overflow-hidden">
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white truncate">
@@ -151,6 +160,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                   <div className="flex items-center gap-3 mb-2">
                     <div className="relative">
                       <Avatar className="h-10 w-10 border border-slate-200 dark:border-slate-700 shadow-sm">
+                        {avatarUrl && <AvatarImage src={avatarUrl} />}
                         <AvatarFallback className="bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 font-bold">
                           {userInitials}
                         </AvatarFallback>
@@ -205,7 +215,8 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
 
 
     </div>
-);
+  );
+};
 
 interface DashboardShellProps {
   children: React.ReactNode;
