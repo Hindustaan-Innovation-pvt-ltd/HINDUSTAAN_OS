@@ -21,11 +21,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 // -- MOCK DATA GENERATOR --
 const generateData = () => {
@@ -103,15 +98,13 @@ const COLORS = {
 export default function ContributionScores({ session }: { session?: any }) {
   const role = session?.user?.user_metadata?.role || 'intern';
   const email = session?.user?.email || 'user@hindustaan.in';
-  
+
   let currentUserName = 'Tanvy Pandey';
   if (email.toLowerCase().includes('amanda')) currentUserName = 'Amanda Smith';
   else if (email.toLowerCase().includes('rahul')) currentUserName = 'Rahul Sharma';
   else if (email.toLowerCase().includes('priya')) currentUserName = 'Priya Patel';
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [date, setDate] = useState<Date>(new Date());
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const filteredInterns = MOCK_INTERNS.filter(intern =>
     intern.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -139,14 +132,14 @@ export default function ContributionScores({ session }: { session?: any }) {
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
-    
+
     // Add title
     doc.setFontSize(20);
     doc.text('Contribution Analytics Report', 14, 22);
-    
+
     doc.setFontSize(11);
     doc.text(`Generated on: ${format(new Date(), 'PPP')}`, 14, 30);
-    
+
     // Create table data
     const tableData = filteredInterns.map((intern, idx) => [
       `#${idx + 1}`,
@@ -156,7 +149,7 @@ export default function ContributionScores({ session }: { session?: any }) {
       intern.trend + '%',
       intern.status
     ]);
-    
+
     autoTable(doc, {
       startY: 40,
       head: [['Rank', 'Intern', 'Department', 'Score', 'Trend', 'Status']],
@@ -164,7 +157,7 @@ export default function ContributionScores({ session }: { session?: any }) {
       theme: 'grid',
       headStyles: { fillColor: [249, 115, 22] }, // orange-500
     });
-    
+
     doc.save(`Team_Contribution_Scores_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
