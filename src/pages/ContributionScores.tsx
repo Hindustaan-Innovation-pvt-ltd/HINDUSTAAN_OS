@@ -330,7 +330,7 @@ export default function ContributionScores({ session }: { session?: any }) {
           <Card key={i} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
             <CardContent className="p-4 lg:p-5 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] lg:text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 leading-tight break-words whitespace-normal">{kpi.title}</p>
+                <p className="text-[8.5px] lg:text-[9.5px] 2xl:text-[10.5px] font-bold text-slate-500 uppercase tracking-tight mb-1 whitespace-nowrap">{kpi.title}</p>
                 <p className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white">{kpi.val}</p>
               </div>
               <div className="h-10 w-10 lg:h-12 lg:w-12 shrink-0 relative flex items-center justify-center">
@@ -347,7 +347,7 @@ export default function ContributionScores({ session }: { session?: any }) {
 
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
           <CardContent className="p-4 lg:p-5 min-w-0">
-            <p className="text-[10px] lg:text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 leading-tight break-words whitespace-normal">Highest Score</p>
+            <p className="text-[8.5px] lg:text-[9.5px] 2xl:text-[10.5px] font-bold text-slate-500 uppercase tracking-tight mb-2 whitespace-nowrap">Highest Score</p>
             <div className="flex items-center gap-3 min-w-0">
               <Avatar className="h-8 w-8 lg:h-10 lg:w-10 border-2 border-white dark:border-slate-900 shadow-sm shrink-0">
                 <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-xs lg:text-sm">
@@ -355,7 +355,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight break-words whitespace-normal">{highestScorer.name}</p>
+                <p className="text-[11px] lg:text-xs 2xl:text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap">{highestScorer.name}</p>
                 <p className="text-base lg:text-lg font-black text-emerald-600">{highestScorer.score}%</p>
               </div>
             </div>

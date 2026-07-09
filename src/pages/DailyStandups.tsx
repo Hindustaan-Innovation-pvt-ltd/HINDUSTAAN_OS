@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const MOCK_STANDUPS = [
   {
@@ -87,10 +88,10 @@ export default function DailyStandups({ session }: { session?: any }) {
         </div>
         
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
+          <Button onClick={() => toast.success('Meeting Started', { description: "Joining your team's video room..."})} variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
             <Video className="h-4 w-4 mr-2 text-slate-400" /> Start Meeting
           </Button>
-          <Button className="h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-sm">
+          <Button onClick={() => toast('Opening Standup Form...')} className="h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-sm">
             <Mic className="h-4 w-4 mr-2" /> Submit My Update
           </Button>
         </div>
@@ -179,7 +180,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
                 <span className="text-[10px] font-bold text-slate-400">{standup.time}</span>
                 {role === 'manager' && (
-                  <Button variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-500 hover:text-orange-600">
+                  <Button onClick={() => toast('Opening Reply Thread...')} variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-500 hover:text-orange-600">
                     <MessageSquare className="h-3 w-3 mr-1.5" /> Reply
                   </Button>
                 )}
