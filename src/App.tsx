@@ -20,7 +20,6 @@ import Register from './pages/Register';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProjectProvider } from './context/ProjectContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { ProjectProvider } from './context/ProjectContext';
 import { Toaster } from '@/components/ui/sonner';
 import { GLOBAL_LOGS } from '@/data/mockData';
 
@@ -63,7 +62,6 @@ function App() {
     <ThemeProvider>
       <ProjectProvider>
       <TooltipProvider>
-        <ProjectProvider>
           {!session ? (
             authView === 'login' ? (
               <Login 
@@ -182,8 +180,8 @@ function App() {
           </DashboardShell>
         )}
         <Toaster position="top-right" richColors />
-        </ProjectProvider>
       </TooltipProvider>
+      </ProjectProvider>
     </ThemeProvider>
   );
 }

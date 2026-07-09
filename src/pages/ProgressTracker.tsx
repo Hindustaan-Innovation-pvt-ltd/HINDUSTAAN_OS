@@ -77,9 +77,9 @@ export default function ProgressTracker({ session }: { session?: any }) {
       // Use just the first name for cleaner chart labels
       const shortName = assignee === 'Unassigned' ? 'Unassigned' : assignee.split(' ')[0];
       
-      const tasksCompleted = activeProject.tasks?.filter(
-        (t: any) => t?.status === 'Done' && t?.completedAt === dateString
-      ).length || 0;
+      if (!assigneeMap.has(shortName)) {
+        assigneeMap.set(shortName, { name: shortName, Done: 0, 'In Progress': 0, 'To Do': 0 });
+      }
       
       const stats = assigneeMap.get(shortName)!;
       if (t.status === 'Done') stats.Done++;
