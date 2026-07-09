@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, KeyRound, User, Briefcase, Phone, Hash, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, KeyRound, User, Briefcase, Phone, Hash, ArrowRight, Loader2, Sun, Moon } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -97,6 +97,16 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
       <div className="fixed inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] dark:opacity-[0.05] pointer-events-none"></div>
       <div className="fixed -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-orange-500/10 dark:bg-orange-500/5 blur-3xl pointer-events-none"></div>
       <div className="fixed -bottom-[20%] -right-[10%] w-[60%] h-[60%] rounded-full bg-emerald-500/10 dark:bg-emerald-500/5 blur-3xl pointer-events-none"></div>
+
+      {/* Theme Toggle Button */}
+      <button
+        type="button"
+        onClick={() => setIsDark(!isDark)}
+        className="absolute top-6 right-6 p-2.5 rounded-full bg-white/50 dark:bg-slate-800/50 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-slate-300 hover:scale-110 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 z-50 shadow-sm"
+        aria-label="Toggle Dark Mode"
+      >
+        {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      </button>
 
       {/* Registration Form */}
       <div className="w-full max-w-md p-6 md:p-8 relative z-10">
