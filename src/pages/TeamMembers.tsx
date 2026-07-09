@@ -361,7 +361,7 @@ export default function TeamMembers({ session }: { session?: any }) {
                       {selectedIntern.name}
                     </SheetTitle>
                     <p className="text-sm font-bold text-slate-500 mt-1">{selectedIntern.role}</p>
-                    <Badge variant="outline" className="mt-3 rounded text-xs font-bold bg-slate-50 dark:bg-slate-900/50">
+                    <Badge variant="outline" className="mt-3 rounded text-xs font-bold bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/80 dark:text-slate-300 dark:border-slate-700">
                       {selectedIntern.id}
                     </Badge>
                   </div>

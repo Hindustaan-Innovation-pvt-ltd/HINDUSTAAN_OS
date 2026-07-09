@@ -360,10 +360,10 @@ export default function ContributionScores({ session }: { session?: any }) {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
         {/* Left Column - Main Table */}
-        <div className="lg:col-span-8 flex flex-col min-w-0">
+        <div className="xl:col-span-8 flex flex-col min-w-0">
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col flex-1">
             <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -380,7 +380,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                 />
               </div>
             </CardHeader>
-            <CardContent className="p-0 overflow-auto flex-1 min-h-0 relative">
+            <CardContent className="p-0 overflow-auto flex-1 min-h-0 relative max-h-[600px] xl:max-h-[750px] custom-scrollbar">
               <table className="w-full whitespace-nowrap text-sm text-left relative">
                 <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-20">
                   <tr>
@@ -473,7 +473,7 @@ export default function ContributionScores({ session }: { session?: any }) {
         </div>
 
         {/* Right Column - Charts & Top Performers */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="xl:col-span-4 space-y-6 xl:sticky xl:top-24 h-fit">
 
           {/* Score Distribution Donut */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
