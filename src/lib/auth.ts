@@ -92,3 +92,18 @@ export const getCurrentUser = (): User | null => {
   if (session) return JSON.parse(session);
   return null;
 };
+
+export const updatePassword = (email: string, currentPass: string, newPass: string): {success: boolean, message: string} => {
+  const users = getRegisteredUsers();
+  const index = users.findIndex(u => u.email === email);
+  if (index === -1) return {success: false, message: 'User not found.'};
+  
+  // If the user has a password set, verify it
+  if (users[index].password && users[index].password !== currentPass) {
+    return {success: false, message: 'Incorrect current password.'};
+  }
+  
+  users[index].password = newPass;
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  return {success: true, message: 'Password updated successfully.'};
+};

@@ -14,6 +14,8 @@ import { cn } from '@/lib/utils';
 import { ConnectedApps } from '../components/dashboard/settings/ConnectedApps';
 import { Progress } from "@/components/ui/progress";
 import { useTheme } from '../context/ThemeContext';
+import { toast } from 'sonner';
+import { updatePassword, getCurrentUser } from '@/lib/auth';
 
 const SETTINGS_SECTIONS = [
   { id: 'profile', label: 'Profile Information', description: 'Manage your personal details and workspace identity.', icon: User },
@@ -42,6 +44,45 @@ export default function Settings({ session, defaultTab = null }: { session: any,
     twoFactor: false,
     compactMode: false
   });
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  const handlePasswordUpdate = async () => {
+    if (!currentPassword || !newPassword) {
+      toast.error('Missing fields', { description: 'Please fill in both current and new passwords.' });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('Weak password', { description: 'New password must be at least 6 characters.' });
+      return;
+    }
+    
+    setIsUpdatingPassword(true);
+    
+    // Simulate slight network delay
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
+    try {
+      const user = getCurrentUser();
+      if (!user) {
+        toast.error('Authentication Error', { description: 'Please log in again to change password.' });
+        return;
+      }
+      
+      const result = updatePassword(user.email, currentPassword, newPassword);
+      if (result.success) {
+        toast.success('Success', { description: result.message });
+        setCurrentPassword('');
+        setNewPassword('');
+      } else {
+        toast.error('Update Failed', { description: result.message });
+      }
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
 
   const handleToggle = (key: keyof typeof toggles) => {
     setToggles(prev => ({ ...prev, [key]: !prev[key] }));
@@ -144,13 +185,15 @@ export default function Settings({ session, defaultTab = null }: { session: any,
               <CardContent className="space-y-4">
                 <div className="space-y-1.5 max-w-md">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Current Password</label>
-                  <Input type="password" placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700" />
+                  <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700" />
                 </div>
                 <div className="space-y-1.5 max-w-md">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">New Password</label>
-                  <Input type="password" placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700" />
+                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700" />
                 </div>
-                <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold mt-2">Update Password</Button>
+                <Button onClick={handlePasswordUpdate} disabled={isUpdatingPassword} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold mt-2">
+                  {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+                </Button>
               </CardContent>
             </Card>
 
