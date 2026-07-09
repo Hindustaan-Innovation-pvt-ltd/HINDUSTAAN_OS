@@ -28,7 +28,7 @@ export default function Projects({ session }: { session?: any }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<any>(null);
-  const [newProject, setNewProject] = useState({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium' });
+  const [newProject, setNewProject] = useState({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium', tasks: [] as any[] });
   const [selectedWeekDate, setSelectedWeekDate] = useState<Date>(new Date());
   
   const role = session?.user?.user_metadata?.role || 'intern';
@@ -43,6 +43,7 @@ export default function Projects({ session }: { session?: any }) {
         name: newProject.name,
         manager: newProject.manager,
         deadline: newProject.deadline,
+        tasks: newProject.tasks,
         budget: newProject.budget ? (newProject.budget.toString().startsWith('$') ? newProject.budget : `$${newProject.budget}`) : 'TBD'
       });
     } else {
@@ -56,7 +57,7 @@ export default function Projects({ session }: { session?: any }) {
       const project = {
         id: Date.now().toString(),
         name: newProject.name,
-        tasks: [],
+        tasks: newProject.tasks.length > 0 ? newProject.tasks : [],
         milestones: [],
         status: 'Not Started',
         progress: 0,
@@ -72,7 +73,7 @@ export default function Projects({ session }: { session?: any }) {
     
     setIsModalOpen(false);
     setEditingProjectId(null);
-    setNewProject({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium' });
+    setNewProject({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium', tasks: [] });
   };
 
   const startOfCurrentWeek = startOfWeek(selectedWeekDate, { weekStartsOn: 1 });
@@ -123,7 +124,7 @@ export default function Projects({ session }: { session?: any }) {
         {role === 'manager' && (
           <button onClick={() => {
             setEditingProjectId(null);
-            setNewProject({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium' });
+            setNewProject({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium', tasks: [] });
             setIsModalOpen(true);
           }} className="flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 shrink-0">
             <Plus className="h-4 w-4 mr-1.5" /> New Project
@@ -246,7 +247,8 @@ export default function Projects({ session }: { session?: any }) {
                                   manager: project.manager,
                                   deadline: project.deadline && project.deadline !== 'TBD' ? project.deadline : '',
                                   budget: project.budget && project.budget !== 'TBD' ? project.budget.replace('$', '') : '',
-                                  priority: 'Medium'
+                                  priority: 'Medium',
+                                  tasks: project.tasks || []
                                 });
                                 setIsModalOpen(true);
                               }}>
@@ -259,12 +261,17 @@ export default function Projects({ session }: { session?: any }) {
                                   <RotateCcw className="mr-2 h-4 w-4" /> Restore
                                 </DropdownMenuItem>
                               ) : (
-                                <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg text-red-600 focus:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => {
+                                <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg text-amber-600 focus:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20" onClick={() => {
                                   updateProject(project.id, { status: 'Aborted' });
                                 }}>
-                                  <Trash2 className="mr-2 h-4 w-4" /> Abort
+                                  <X className="mr-2 h-4 w-4" /> Abort
                                 </DropdownMenuItem>
                               )}
+                              <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg text-red-600 focus:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => {
+                                deleteProject(project.id);
+                              }}>
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         )}
@@ -448,6 +455,63 @@ export default function Projects({ session }: { session?: any }) {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Tasks & Assignees Section */}
+              <div className="space-y-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Tasks & Assignees</label>
+                  <button 
+                    className="text-xs font-bold text-orange-600 hover:text-orange-700 dark:text-orange-500 flex items-center"
+                    onClick={() => setNewProject({...newProject, tasks: [...newProject.tasks, { id: Date.now().toString(), title: '', assignee: 'Unassigned', status: 'To Do' }]})}
+                  >
+                    <Plus className="h-3 w-3 mr-1" /> Add Task
+                  </button>
+                </div>
+                {newProject.tasks.map((task, index) => (
+                  <div key={task.id} className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Design Dashboard"
+                      value={task.title}
+                      onChange={e => {
+                        const updated = [...newProject.tasks];
+                        updated[index].title = e.target.value;
+                        setNewProject({...newProject, tasks: updated});
+                      }}
+                      className="flex-1 h-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors"
+                    />
+                    <div className="relative w-36 shrink-0">
+                      <select 
+                        value={task.assignee}
+                        onChange={e => {
+                          const updated = [...newProject.tasks];
+                          updated[index].assignee = e.target.value;
+                          setNewProject({...newProject, tasks: updated});
+                        }}
+                        className="w-full h-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
+                      >
+                        <option value="Unassigned">Unassigned</option>
+                        <option value="Amanda Smith">Amanda S.</option>
+                        <option value="Rahul Sharma">Rahul S.</option>
+                        <option value="Priya Patel">Priya P.</option>
+                        <option value="Rohan Gupta">Rohan G.</option>
+                      </select>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        const updated = newProject.tasks.filter((_, i) => i !== index);
+                        setNewProject({...newProject, tasks: updated});
+                      }}
+                      className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+                {newProject.tasks.length === 0 && (
+                  <p className="text-xs text-slate-500 italic">No tasks added yet. Click "+ Add Task" to start assigning work.</p>
+                )}
               </div>
             </div>
 

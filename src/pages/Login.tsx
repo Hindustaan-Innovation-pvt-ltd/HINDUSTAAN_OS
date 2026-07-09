@@ -18,7 +18,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   // Missing states and mock config variables
   const [isMagicLink, setIsMagicLink] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | ''; text: string } | null>(null);
@@ -28,11 +28,11 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
       signInWithOtp: async (args: any) => ({ data: {}, error: null })
     }
   };
-  
+
   // Authentication Modes
   const [isOTPMode, setIsOTPMode] = useState(false);
   const [mockRole, setMockRole] = useState('manager');
-  
+
   // OTP State
   const [showOTPDialog, setShowOTPDialog] = useState(false);
   const [otpValue, setOtpValue] = useState('');
@@ -52,11 +52,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
   }, [isDark]);
 
   useEffect(() => {
-<<<<<<< HEAD
-    let interval: ReturnType<typeof setInterval>;
-=======
     let interval: any;
->>>>>>> cfacf240213bd6a71bb56e1f849fdae372f6c291
     if (showOTPDialog && otpState) {
       interval = setInterval(() => {
         const remaining = Math.max(0, Math.floor((otpState.expiresAt - Date.now()) / 1000));
@@ -69,87 +65,40 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
 
   const validateUser = () => {
     const user = approvedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-    
+
     if (!user) {
       toast.error('Access Denied', {
         description: 'This email is not registered with Hindustaan OS.\n\nPlease contact your administrator.',
       });
       return null;
     }
-    
+
     if (user.role !== mockRole) {
       toast.error('Incorrect Access Type', {
         description: `Your account is registered as ${user.role.charAt(0).toUpperCase() + user.role.slice(1)}.\n\nPlease switch to ${user.role.charAt(0).toUpperCase() + user.role.slice(1)} Access.`,
       });
       return null;
     }
-    
+
     return user;
   };
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    try {
-<<<<<<< HEAD
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
-      
-      const user = validateUser();
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      
-      if (user.role === 'intern') {
-        let userId = 'u-4';
-        let userName = 'Tanvy Pandey';
-        
-        if (email.toLowerCase().includes('amanda')) {
-          userId = 'u-1';
-          userName = 'Amanda Smith';
-        } else if (email.toLowerCase().includes('rahul')) {
-          userId = 'u-2';
-          userName = 'Rahul Sharma';
-        } else if (email.toLowerCase().includes('priya')) {
-          userId = 'u-3';
-          userName = 'Priya Patel';
-        }
 
-        // Track specific intern login for Manager Dashboard & WorkLogs
-        localStorage.setItem(`login_time_${userId}`, Date.now().toString());
-        
-        // Log activity to feed
-        const storedFeed = localStorage.getItem('hindustaan_activity_feed');
-        const feed = storedFeed ? JSON.parse(storedFeed) : [];
-        const newEvent = { 
-          id: Date.now().toString(), 
-          user: userName, 
-          action: 'logged into', 
-          target: 'Hindustaan OS', 
-          time: 'Just now', 
-          type: 'login' 
-        };
-        localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newEvent, ...feed].slice(0, 20)));
-      }
-      
-      localStorage.setItem('hindustaan_user', JSON.stringify(user));
-      toast.success('Access granted.', { description: 'Initializing workspaces...' });
-      
-      if (onMockLogin) {
-        onMockLogin(user.role, email);
-=======
+    try {
       if (supabaseUrl.includes('placeholder')) {
         setTimeout(() => {
           setStatusMessage({
             type: 'success',
             text: '✓ Access granted (Mock Mode). Initializing workspaces...',
           });
-          
+
           if (mockRole === 'intern') {
             let userId = 'u-4';
             let userName = 'Tanvy Pandey';
-            
+
             if (email.toLowerCase().includes('amanda')) {
               userId = 'u-1';
               userName = 'Amanda Smith';
@@ -163,21 +112,21 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
 
             // Track specific intern login for Manager Dashboard & WorkLogs
             localStorage.setItem(`login_time_${userId}`, Date.now().toString());
-            
+
             // Log activity to feed
             const storedFeed = localStorage.getItem('hindustaan_activity_feed');
             const feed = storedFeed ? JSON.parse(storedFeed) : [];
-            const newEvent = { 
-              id: Date.now().toString(), 
-              user: userName, 
-              action: 'logged into', 
-              target: 'Hindustaan OS', 
-              time: 'Just now', 
-              type: 'login' 
+            const newEvent = {
+              id: Date.now().toString(),
+              user: userName,
+              action: 'logged into',
+              target: 'Hindustaan OS',
+              time: 'Just now',
+              type: 'login'
             };
             localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newEvent, ...feed].slice(0, 20)));
           }
-          
+
           if (onMockLogin) onMockLogin(mockRole, email);
         }, 800);
         return;
@@ -193,16 +142,15 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
           type: 'success',
           text: '✨ Verification link dispatched! Check your email inbox.',
         });
->>>>>>> cfacf240213bd6a71bb56e1f849fdae372f6c291
       } else {
         await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API
-        
+
         const user = validateUser();
         if (!user) return;
-        
+
         localStorage.setItem('hindustaan_user', JSON.stringify(user));
         toast.success('Access granted.', { description: 'Initializing workspaces...' });
-        
+
         if (onMockLogin) {
           onMockLogin(user.role);
         } else {
@@ -227,10 +175,10 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
       // Generate 6-digit OTP
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = Date.now() + 5 * 60 * 1000;
-      
+
       setOtpState({ code, expiresAt });
       setCountdown(300);
-      
+
       console.log(`[MOCK EMAIL] OTP for ${targetEmail}: ${code}`);
       return true;
     } catch (err: any) {
@@ -264,21 +212,21 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
     setVerifying(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API
-      
+
       if (!otpState) return false;
-      
+
       if (Date.now() > otpState.expiresAt) {
         toast.error('OTP Expired', { description: 'Please request a new verification code.' });
         return false;
       }
-      
+
       if (inputOtp !== otpState.code) {
         toast.error('Invalid OTP', { description: 'The verification code you entered is incorrect.' });
         setOtpError(true);
         setTimeout(() => setOtpError(false), 600); // reset shake animation
         return false;
       }
-      
+
       return true;
     } finally {
       setVerifying(false);
@@ -287,9 +235,9 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
 
   const handleVerify = async () => {
     if (otpValue.length !== 6) return;
-    
+
     const success = await verifyOTP(email, otpValue);
-    
+
     if (success) {
       const user = approvedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
       if (user) {
@@ -307,9 +255,9 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
 
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-500 font-sans">
-      
+
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:32px_32px]"></div>
-      
+
       <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-orange-500/20 dark:bg-orange-600/20 blur-[120px] pointer-events-none transition-colors duration-500"></div>
       <div className="absolute -bottom-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-green-500/20 dark:bg-green-600/10 blur-[120px] pointer-events-none transition-colors duration-500"></div>
 
@@ -323,7 +271,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
 
       <div className="relative z-10 w-full max-w-md px-4 sm:px-6">
         <div className="rounded-[2rem] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-8 sm:p-10 shadow-2xl backdrop-blur-xl transition-all duration-500">
-          
+
           <div className="flex flex-col items-center text-center mb-8">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-green-600 text-white shadow-lg shadow-orange-500/30 mb-5">
               <Compass className="h-7 w-7" />
@@ -338,7 +286,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
 
           <form className="space-y-6" onSubmit={isOTPMode ? handleOTPRequest : handlePasswordLogin}>
             <div className="space-y-5">
-              
+
               <div>
                 <label htmlFor="email-address" className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                   Email Address
@@ -413,8 +361,8 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
                 onClick={() => setMockRole('manager')}
                 className={cn(
                   "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
-                  mockRole === 'manager' 
-                    ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm" 
+                  mockRole === 'manager'
+                    ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                 )}
               >
@@ -425,8 +373,8 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
                 onClick={() => setMockRole('employee')}
                 className={cn(
                   "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
-                  mockRole === 'employee' 
-                    ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm" 
+                  mockRole === 'employee'
+                    ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                 )}
               >
@@ -464,10 +412,10 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
           </DialogHeader>
           <div className="flex flex-col items-center justify-center space-y-6 py-4">
             <div className={cn("transition-transform", otpError && "animate-shake")}>
-              <InputOTP 
-                maxLength={6} 
-                value={otpValue} 
-                onChange={setOtpValue} 
+              <InputOTP
+                maxLength={6}
+                value={otpValue}
+                onChange={setOtpValue}
                 disabled={verifying || countdown === 0}
               >
                 <InputOTPGroup>
@@ -480,14 +428,14 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
                 </InputOTPGroup>
               </InputOTP>
             </div>
-            
+
             <div className="flex w-full flex-col items-center gap-2">
               <Progress value={(countdown / 300) * 100} className="h-2 w-full" />
               <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                 {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')} remaining
               </span>
             </div>
-            
+
             {countdown === 0 && (
               <Alert variant="destructive">
                 <AlertTitle>OTP Expired</AlertTitle>
@@ -496,28 +444,28 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
             )}
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setShowOTPDialog(false)} 
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowOTPDialog(false)}
               disabled={verifying}
               className="border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-white"
             >
               Change Email
             </Button>
-            <Button 
-              type="button" 
-              variant="secondary" 
-              onClick={handleResend} 
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleResend}
               disabled={loading || verifying}
               className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Resend OTP
             </Button>
-            <Button 
-              type="button" 
-              onClick={handleVerify} 
+            <Button
+              type="button"
+              onClick={handleVerify}
               disabled={otpValue.length !== 6 || verifying || countdown === 0}
               className="bg-orange-600 hover:bg-orange-700 text-white"
             >
@@ -527,7 +475,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
     </div>
   );
 }
