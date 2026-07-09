@@ -45,6 +45,28 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (session) {
+      const role = session.user?.user_metadata?.role || 'intern';
+      const email = session.user?.email || 'user@hindustaan.in';
+      if (role === 'intern') {
+        let currentUserId = 'u-4';
+        if (email.toLowerCase().includes('amanda')) {
+          currentUserId = 'u-1';
+        } else if (email.toLowerCase().includes('rahul')) {
+          currentUserId = 'u-2';
+        } else if (email.toLowerCase().includes('priya')) {
+          currentUserId = 'u-3';
+        }
+        
+        const loginKey = `login_time_${currentUserId}`;
+        if (!localStorage.getItem(loginKey)) {
+          localStorage.setItem(loginKey, Date.now().toString());
+        }
+      }
+    }
+  }, [session]);
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -59,7 +81,7 @@ function App() {
     <ThemeProvider>
       <TooltipProvider>
         {!session ? (
-          <Login onMockLogin={(role) => setSession({ user: { email: 'user@hindustaan.in', user_metadata: { role } } })} />
+          <Login onMockLogin={(role, email) => setSession({ user: { email: email || 'user@hindustaan.in', user_metadata: { role } } })} />
         ) : (
           <DashboardShell
             currentView={currentView}

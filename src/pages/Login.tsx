@@ -8,7 +8,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export default function Login({ onMockLogin }: { onMockLogin?: (role: string) => void }) {
+export default function Login({ onMockLogin }: { onMockLogin?: (role: string, email?: string) => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isMagicLink, setIsMagicLink] = useState(false);
@@ -39,7 +39,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string) =>
             type: 'success',
             text: '✓ Access granted (Mock Mode). Initializing workspaces...',
           });
-          if (onMockLogin) onMockLogin(mockRole);
+          if (onMockLogin) onMockLogin(mockRole, email);
         }, 800);
         return;
       }

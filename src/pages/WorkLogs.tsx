@@ -35,7 +35,12 @@ export default function WorkLogs({ session }: { session?: any }) {
   const [statusFilter, setStatusFilter] = useState('All');
   const [isActiveMembersModalOpen, setIsActiveMembersModalOpen] = useState(false);
 
+  const isMounted = React.useRef(false);
   useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
     localStorage.setItem('work_logs_list', JSON.stringify(logs));
   }, [logs]);
 
@@ -91,7 +96,7 @@ export default function WorkLogs({ session }: { session?: any }) {
     return () => clearInterval(interval);
   }, [currentUser.id, loginKey, currentUser.role]);
 
-  const [activeSessions, setActiveSessions] = useState<{ [key: string]: number }>({});
+  const [activeSessions, setActiveSessions] = useState<{ [key: string]: { time: number; isOnline: boolean } }>({});
 
   useEffect(() => {
     const teamMembers = [
@@ -102,18 +107,18 @@ export default function WorkLogs({ session }: { session?: any }) {
     ];
 
     const updateSessions = () => {
-      const sessions: { [key: string]: number } = {};
+      const sessions: { [key: string]: { time: number; isOnline: boolean } } = {};
       teamMembers.forEach(member => {
-        if (member.id === currentUser.id) {
-          sessions[member.id] = secondsElapsed;
+        const isCurrentUserIntern = member.id === currentUser.id && currentUser.role === 'intern';
+        const loginTimeStr = localStorage.getItem(`login_time_${member.id}`);
+        
+        if (isCurrentUserIntern) {
+          sessions[member.id] = { time: secondsElapsed, isOnline: true };
+        } else if (loginTimeStr) {
+          const startTime = parseInt(loginTimeStr, 10);
+          sessions[member.id] = { time: Math.floor((Date.now() - startTime) / 1000), isOnline: true };
         } else {
-          const loginTimeStr = localStorage.getItem(`login_time_${member.id}`);
-          if (loginTimeStr) {
-            const startTime = parseInt(loginTimeStr, 10);
-            sessions[member.id] = Math.floor((Date.now() - startTime) / 1000);
-          } else {
-            sessions[member.id] = member.defaultOffset;
-          }
+          sessions[member.id] = { time: 0, isOnline: false };
         }
       });
       setActiveSessions(sessions);
@@ -122,7 +127,7 @@ export default function WorkLogs({ session }: { session?: any }) {
     updateSessions();
     const interval = setInterval(updateSessions, 1000);
     return () => clearInterval(interval);
-  }, [currentUser.id, secondsElapsed]);
+  }, [currentUser.id, secondsElapsed, currentUser.role]);
 
   const formatTime = (totalSeconds: number) => {
     const h = Math.floor(totalSeconds / 3600);
@@ -238,40 +243,72 @@ export default function WorkLogs({ session }: { session?: any }) {
             Live Active Sessions
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {ONLINE_TEAM_MEMBERS.map(member => (
-              <div key={member.id} className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600 transform origin-left transition-transform duration-1000" />
-                
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="relative">
-                      <Avatar className={cn("h-10 w-10 border-2 border-white dark:border-slate-900", member.color)}>
-                        <AvatarFallback className="font-bold">{member.initials}</AvatarFallback>
-                      </Avatar>
-                      <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{member.name}</h4>
-                      <p className="text-xs font-semibold text-slate-500">{member.role}</p>
-                    </div>
-                  </div>
-                  <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1.5 animate-pulse">
-                    <Timer className="h-3.5 w-3.5" />
-                    <span className="text-sm font-bold font-mono tracking-wider">{formatTime(activeSessions[member.id] || 0)}</span>
-                  </div>
-                </div>
+            {ONLINE_TEAM_MEMBERS.map(member => {
+              const sessionInfo = activeSessions[member.id];
+              const isOnline = !!sessionInfo?.isOnline;
+              const sessionTime = sessionInfo?.time || 0;
 
-                <div className="bg-slate-50 dark:bg-slate-950/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Working On</span>
-                    <Badge variant="secondary" className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] uppercase font-black tracking-wider">
-                      {member.project}
-                    </Badge>
+              return (
+                <div 
+                  key={member.id} 
+                  className={cn(
+                    "bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all relative overflow-hidden group",
+                    !isOnline && "opacity-75 bg-slate-50/50 dark:bg-slate-900/40"
+                  )}
+                >
+                  {isOnline ? (
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600 transform origin-left transition-transform duration-1000" />
+                  ) : (
+                    <div className="absolute top-0 left-0 w-full h-1 bg-slate-200 dark:bg-slate-800" />
+                  )}
+                  
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="relative">
+                        <Avatar className={cn("h-10 w-10 border-2 border-white dark:border-slate-900", member.color)}>
+                          <AvatarFallback className="font-bold">{member.initials}</AvatarFallback>
+                        </Avatar>
+                        {isOnline ? (
+                          <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
+                        ) : (
+                          <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-slate-300 dark:bg-slate-600 rounded-full border-2 border-white dark:border-slate-900" />
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{member.name}</h4>
+                        <p className="text-xs font-semibold text-slate-500">{member.role}</p>
+                      </div>
+                    </div>
+                    {isOnline ? (
+                      <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1.5 animate-pulse">
+                        <Timer className="h-3.5 w-3.5" />
+                        <span className="text-sm font-bold font-mono tracking-wider">{formatTime(sessionTime)}</span>
+                      </div>
+                    ) : (
+                      <div className="px-3 py-1 bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 rounded-lg flex items-center space-x-1.5">
+                        <Timer className="h-3.5 w-3.5 text-slate-300 dark:text-slate-650" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Offline</span>
+                      </div>
+                    )}
                   </div>
-                  <p className="font-bold text-slate-700 dark:text-slate-300 line-clamp-1">{member.task}</p>
+
+                  <div className="bg-slate-50 dark:bg-slate-950/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Working On</span>
+                      <Badge variant="secondary" className={cn(
+                        "text-[10px] uppercase font-black tracking-wider",
+                        isOnline 
+                          ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                      )}>
+                        {member.project}
+                      </Badge>
+                    </div>
+                    <p className="font-bold text-slate-700 dark:text-slate-300 line-clamp-1">{member.task}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
