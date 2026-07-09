@@ -17,14 +17,9 @@ import { Separator } from "@/components/ui/separator";
 import { WhatsAppBroadcastDialog } from "./WhatsAppBroadcastDialog";
 import { FigjamDialog } from "./FigjamDialog";
 import { EmployeeCalendar } from "./EmployeeCalendar";
-import { INITIAL_TASKS, GLOBAL_LOGS } from '@/data/mockData';
+import { INITIAL_TASKS, GLOBAL_LOGS, GLOBAL_ACTIVITY_FEED } from '@/data/mockData';
+import { useProjects } from '@/context/ProjectContext';
 
-const RECENT_ACTIVITY = [
-  { id: '1', action: 'Logged 2 hrs', target: 'Dashboard UI', time: '2h ago' },
-  { id: '2', action: 'Completed', target: 'Login UI', time: '4h ago' },
-  { id: '3', action: 'Submitted Standup', target: '', time: '9:10 AM' },
-  { id: '4', action: 'Assigned new task', target: 'Kanban Drag & Drop', time: 'Yesterday' },
-];
 
 interface InternDashboardProps {
   session?: any;
@@ -52,22 +47,45 @@ export default function InternDashboard({ session }: InternDashboardProps) {
     currentUserName = 'Priya Patel';
   }
 
-  const [tasks, setTasks] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_tasks_list');
-    const allTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
-    return allTasks.filter((t: any) => t.assignee_id === currentUserId || t.assignee_name === currentUserName || (currentUserName.toLowerCase().includes('tanvy') && t.assignee_name.toLowerCase().includes('tanvy')));
+  const { projects } = useProjects();
+  
+  // Extract dynamic tasks from projects
+  const tasks = React.useMemo(() => {
+    const allTasks = projects.flatMap((p: any) => p.tasks?.map((t: any) => ({
+      id: t.id + p.id,
+      title: t.title,
+      project_tag: p.name,
+      assignee_name: t.assignee || 'Unassigned',
+      priority: t.priority || 'Normal',
+      due_date: p.deadline || 'TBD',
+      status: t.status
+    })) || []);
+    
+    return allTasks.filter((t: any) => 
+      t.assignee_name === currentUserName || 
+      (currentUserName.toLowerCase().includes('tanvy') && t.assignee_name?.toLowerCase().includes('tanvy'))
+    );
+  }, [projects, currentUserName]);
+
+  // Read activity feed
+  const [activityFeed, setActivityFeed] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_activity_feed');
+    return saved ? JSON.parse(saved) : GLOBAL_ACTIVITY_FEED;
   });
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'hindustaan_tasks_list' && e.newValue) {
-        const allTasks = JSON.parse(e.newValue);
-        setTasks(allTasks.filter((t: any) => t.assignee_id === currentUserId || t.assignee_name === currentUserName || (currentUserName.toLowerCase().includes('tanvy') && t.assignee_name.toLowerCase().includes('tanvy'))));
+      if (e.key === 'hindustaan_activity_feed' && e.newValue) {
+        setActivityFeed(JSON.parse(e.newValue));
       }
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [currentUserId, currentUserName]);
+  }, []);
+  
+  const userActivities = React.useMemo(() => {
+    return activityFeed.filter((act: any) => act.user === currentUserName || act.user.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())).slice(0, 5);
+  }, [activityFeed, currentUserName]);
 
   // Compute log hours this week from localStorage
   const [loggedHours, setLoggedHours] = useState(() => {
@@ -336,24 +354,25 @@ export default function InternDashboard({ session }: InternDashboardProps) {
           <CardContent className="p-0 flex-1 relative h-[250px]">
             <ScrollArea className="absolute inset-0 h-full w-full">
               <div className="p-4 md:p-5 space-y-4">
-                <div className="relative pl-6 py-1 before:absolute before:left-2 before:top-2.5 before:bottom-[-16px] before:w-px before:bg-slate-200 dark:before:bg-slate-700">
-                  <div className="absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950 bg-rose-500" />
-                  <span className="text-xs font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-0.5 block">Today</span>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">Dashboard Review</p>
-                  <Badge variant="outline" className="mt-1.5 text-[10px] border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-900/20 font-bold uppercase tracking-wider">High Priority</Badge>
-                </div>
-                
-                <div className="relative pl-6 py-1 before:absolute before:left-2 before:top-2.5 before:bottom-[-16px] before:w-px before:bg-slate-200 dark:before:bg-slate-700">
-                  <div className="absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950 bg-amber-500" />
-                  <span className="text-xs font-black text-amber-600 dark:text-amber-500 uppercase tracking-wider mb-0.5 block">Tomorrow</span>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">Login UI Adjustments</p>
-                </div>
-                
-                <div className="relative pl-6 py-1">
-                  <div className="absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950 bg-slate-300 dark:bg-slate-600" />
-                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider mb-0.5 block">Friday</span>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">Sprint Demo Prep</p>
-                </div>
+                {tasks.filter(t => t.status !== 'Done').slice(0, 3).map((task, idx) => (
+                  <div key={task.id} className="relative pl-6 py-1 before:absolute before:left-2 before:top-2.5 before:bottom-[-16px] before:w-px before:bg-slate-200 dark:before:bg-slate-700 last:before:hidden">
+                    <div className={cn(
+                      "absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950",
+                      idx === 0 ? "bg-rose-500" : idx === 1 ? "bg-amber-500" : "bg-slate-300 dark:bg-slate-600"
+                    )} />
+                    <span className={cn(
+                      "text-xs font-black uppercase tracking-wider mb-0.5 block",
+                      idx === 0 ? "text-rose-600 dark:text-rose-400" : idx === 1 ? "text-amber-600 dark:text-amber-500" : "text-slate-500"
+                    )}>{task.due_date}</span>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{task.title}</p>
+                    {task.priority === 'High' && (
+                      <Badge variant="outline" className="mt-1.5 text-[10px] border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-900/20 font-bold uppercase tracking-wider">High Priority</Badge>
+                    )}
+                  </div>
+                ))}
+                {tasks.filter(t => t.status !== 'Done').length === 0 && (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No upcoming deadlines. 🎉</p>
+                )}
               </div>
             </ScrollArea>
           </CardContent>
@@ -375,7 +394,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             <CardContent className="p-0 flex-1 relative min-h-[250px]">
               <ScrollArea className="absolute inset-0 h-full w-full">
                 <div className="p-4 md:p-5 space-y-4">
-                {RECENT_ACTIVITY.map((act, i) => (
+                {userActivities.length > 0 ? userActivities.map((act: any) => (
                   <div key={act.id} className="relative pl-6 py-1 before:absolute before:left-2 before:top-3 before:bottom-[-16px] before:w-px before:bg-slate-100 dark:before:bg-slate-800 last:before:hidden">
                     <div className="absolute left-[3px] top-2 h-2.5 w-2.5 rounded-full bg-slate-200 dark:bg-slate-700 ring-4 ring-white dark:ring-slate-950" />
                     <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-tight">
@@ -383,7 +402,9 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                     </p>
                     <p className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wider">{act.time}</p>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No recent activity.</p>
+                )}
                 </div>
               </ScrollArea>
             </CardContent>
