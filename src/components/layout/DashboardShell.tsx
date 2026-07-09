@@ -115,7 +115,7 @@ export default function DashboardShell({
       {/* Left Responsive Sidebar */}
       <div 
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 md:static md:translate-x-0 relative transition-transform duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 md:static md:translate-x-0 transition-transform duration-300 ease-in-out",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
           "w-[260px] md:w-[220px] lg:w-[260px] shrink-0"
         )}
@@ -253,7 +253,7 @@ export default function DashboardShell({
       </div>
 
       {/* Main Context Body */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-x-hidden min-w-0 w-full max-w-full">
         
         {/* Top Sticky Header */}
         <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 px-4 shadow-sm backdrop-blur-md sm:gap-x-6 sm:px-6 lg:px-8">
