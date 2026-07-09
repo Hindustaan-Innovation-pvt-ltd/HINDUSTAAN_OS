@@ -292,8 +292,8 @@ export default function ContributionScores({ session }: { session?: any }) {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 md:gap-5">
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm col-span-1 sm:col-span-2 lg:col-span-2 relative overflow-hidden group">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-5">
+        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm col-span-1 sm:col-span-2 lg:col-span-4 xl:col-span-2 relative overflow-hidden group">
           <div className="absolute right-0 top-0 h-full w-1/2 opacity-10 pointer-events-none">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={weeklyTrendData}>
@@ -324,35 +324,35 @@ export default function ContributionScores({ session }: { session?: any }) {
           { title: "Standups", val: "89%", icon: Mic, color: COLORS.orange },
         ].map((kpi, i) => (
           <Card key={i} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
-            <CardContent className="p-5 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{kpi.title}</p>
-                <p className="text-2xl font-black text-slate-900 dark:text-white">{kpi.val}</p>
+            <CardContent className="p-4 lg:p-5 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] lg:text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 truncate">{kpi.title}</p>
+                <p className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white">{kpi.val}</p>
               </div>
-              <div className="h-12 w-12 shrink-0 relative flex items-center justify-center">
+              <div className="h-10 w-10 lg:h-12 lg:w-12 shrink-0 relative flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
                   <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: parseInt(kpi.val), fill: kpi.color }]} startAngle={90} endAngle={-270}>
                     <RadialBar background={{ fill: 'var(--color-slate-100)' }} dataKey="value" cornerRadius={10} />
                   </RadialBarChart>
                 </ResponsiveContainer>
-                <kpi.icon className="h-4 w-4 relative z-10" style={{ color: kpi.color }} />
+                <kpi.icon className="h-3 w-3 lg:h-4 lg:w-4 relative z-10" style={{ color: kpi.color }} />
               </div>
             </CardContent>
           </Card>
         ))}
 
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
-          <CardContent className="p-5">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Highest Score</p>
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-900 shadow-sm">
-                <AvatarFallback className="bg-orange-100 text-orange-700 font-bold">
+          <CardContent className="p-4 lg:p-5 min-w-0">
+            <p className="text-[10px] lg:text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 truncate">Highest Score</p>
+            <div className="flex items-center gap-3 min-w-0">
+              <Avatar className="h-8 w-8 lg:h-10 lg:w-10 border-2 border-white dark:border-slate-900 shadow-sm shrink-0">
+                <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-xs lg:text-sm">
                   {highestScorer.name.split(' ').map(n => n[0]).join('')}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">{highestScorer.name}</p>
-                <p className="text-lg font-black text-emerald-600">{highestScorer.score}%</p>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{highestScorer.name}</p>
+                <p className="text-base lg:text-lg font-black text-emerald-600">{highestScorer.score}%</p>
               </div>
             </div>
           </CardContent>
@@ -525,8 +525,8 @@ export default function ContributionScores({ session }: { session?: any }) {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={deptData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-slate-500" />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-slate-500" domain={[60, 100]} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-slate-500 dark:text-slate-400" />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-slate-500 dark:text-slate-400" domain={[60, 100]} />
                     <RechartsTooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px' }} />
                     <Bar dataKey="score" fill={COLORS.orange} radius={[4, 4, 0, 0]} barSize={30} />
                   </BarChart>
