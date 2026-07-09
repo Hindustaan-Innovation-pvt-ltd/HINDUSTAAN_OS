@@ -173,7 +173,7 @@ export default function ProgressTracker({ session }: { session?: any }) {
                   }}
                   itemStyle={{ fontWeight: 'bold', color: chartColor }}
                   labelStyle={{ color: theme === 'dark' ? '#94a3b8' : '#64748b', fontWeight: 'bold', marginBottom: '8px' }}
-                  formatter={(value: number) => [`${value} Tasks`, 'Completed']}
+                  formatter={(value: any) => [`${value} Tasks`, 'Completed']}
                 />
                 <ReferenceLine 
                   y={productivityData.max} 

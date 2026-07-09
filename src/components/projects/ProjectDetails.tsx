@@ -7,7 +7,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
   const milestones = project.milestones || [];
   const tasks = project.tasks || [];
 
-  const completedTasks = tasks.filter(t => t.status === 'Done').length;
+  const completedTasks = tasks.filter((t: any) => t.status === 'Done').length;
   const totalTasks = tasks.length;
   const progress = Math.round((completedTasks / totalTasks) * 100);
 
@@ -91,7 +91,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
           </div>
           
           <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 dark:before:via-slate-800 before:to-transparent">
-            {milestones.map((milestone, i) => (
+            {milestones.map((milestone: any, i: number) => (
               <div key={milestone.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                 {/* Icon */}
                 <div className={cn("flex items-center justify-center w-10 h-10 rounded-full border-4 border-white dark:border-slate-950 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10", 
@@ -136,11 +136,11 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">{status}</h4>
                   <span className="text-xs font-bold text-slate-500 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-800">
-                    {tasks.filter(t => t.status === status).length}
+                    {tasks.filter((t: any) => t.status === status).length}
                   </span>
                 </div>
                 <div className="space-y-3 flex-1">
-                  {tasks.filter(t => t.status === status).map(task => (
+                  {tasks.filter((t: any) => t.status === status).map((task: any) => (
                     <div key={task.id} className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                       <p className="text-sm font-semibold text-slate-900 dark:text-white mb-3">{task.title}</p>
                       <div className="flex items-center justify-between">
@@ -151,7 +151,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                       </div>
                     </div>
                   ))}
-                  {tasks.filter(t => t.status === status).length === 0 && (
+                  {tasks.filter((t: any) => t.status === status).length === 0 && (
                     <div className="h-full min-h-[100px] flex items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-lg">
                       <span className="text-xs font-medium text-slate-400">No tasks</span>
                     </div>

@@ -19,6 +19,16 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   
+  // Missing states and mock config variables
+  const [isMagicLink, setIsMagicLink] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | ''; text: string } | null>(null);
+  const supabaseUrl = 'https://placeholder.supabase.co';
+  const supabase = {
+    auth: {
+      signInWithOtp: async (args: any) => ({ data: {}, error: null })
+    }
+  };
+  
   // Authentication Modes
   const [isOTPMode, setIsOTPMode] = useState(false);
   const [mockRole, setMockRole] = useState('manager');
@@ -42,7 +52,7 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
   }, [isDark]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: any;
     if (showOTPDialog && otpState) {
       interval = setInterval(() => {
         const remaining = Math.max(0, Math.floor((otpState.expiresAt - Date.now()) / 1000));
@@ -132,18 +142,20 @@ export default function Login({ onMockLogin }: { onMockLogin?: (role: string, em
           type: 'success',
           text: '✨ Verification link dispatched! Check your email inbox.',
         });
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API
-      
-      const user = validateUser();
-      if (!user) return;
-      
-      localStorage.setItem('hindustaan_user', JSON.stringify(user));
-      toast.success('Access granted.', { description: 'Initializing workspaces...' });
-      
-      if (onMockLogin) {
-        onMockLogin(user.role);
       } else {
-        window.location.reload();
+        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API
+        
+        const user = validateUser();
+        if (!user) return;
+        
+        localStorage.setItem('hindustaan_user', JSON.stringify(user));
+        toast.success('Access granted.', { description: 'Initializing workspaces...' });
+        
+        if (onMockLogin) {
+          onMockLogin(user.role);
+        } else {
+          window.location.reload();
+        }
       }
     } catch (err: any) {
       toast.error('Authentication Error', { description: err.message });
