@@ -133,7 +133,7 @@ export default function DailyStandups({ session }: { session?: any }) {
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
   const tickColor = isDarkMode ? '#94a3b8' : '#64748b';
-  const gridColor = isDarkMode ? '#334155' : '#e2e8f0';
+  const gridColor = isDarkMode ? '#334155' : '#cbd5e1';
 
   const [standups, setStandups] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_standups');

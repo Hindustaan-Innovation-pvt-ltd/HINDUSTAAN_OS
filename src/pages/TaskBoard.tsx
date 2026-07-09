@@ -355,7 +355,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                         onDragStart={currentUser.role === 'manager' ? (e) => handleDragStart(e, task.id) : undefined}
                         onDragEnd={currentUser.role === 'manager' ? handleDragEnd : undefined}
                         className={cn(
-                          "group relative bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer",
+                          "group relative bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-md dark:shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer",
                           currentUser.role === 'manager' && "active:cursor-grabbing",
                           draggedTaskId === task.id ? "opacity-50 border-dashed border-orange-400 shadow-none" : "opacity-100"
                         )}
