@@ -16,5 +16,5 @@ export default function RoleBasedRouter({ session }: RoleBasedRouterProps) {
   }
 
   // Fallback / default execution view
-  return <InternDashboard />;
+  return <InternDashboard session={session} />;
 }

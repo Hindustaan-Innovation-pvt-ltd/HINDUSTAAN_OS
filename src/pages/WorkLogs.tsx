@@ -184,20 +184,22 @@ export default function WorkLogs({ session }: { session?: any }) {
             />
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
-                <Filter className="h-4 w-4 mr-2 text-slate-400" />
-                {statusFilter === 'All' ? 'Status: All' : statusFilter}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-              <DropdownMenuItem onClick={() => setStatusFilter('All')} className="cursor-pointer font-medium">All Statuses</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusFilter('Approved')} className="cursor-pointer font-medium text-emerald-600">Approved</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusFilter('Pending')} className="cursor-pointer font-medium text-amber-600">Pending</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusFilter('Rejected')} className="cursor-pointer font-medium text-rose-600">Rejected</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {currentUser.role === 'manager' && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
+                  <Filter className="h-4 w-4 mr-2 text-slate-400" />
+                  {statusFilter === 'All' ? 'Status: All' : statusFilter}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                <DropdownMenuItem onClick={() => setStatusFilter('All')} className="cursor-pointer font-medium">All Statuses</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatusFilter('Approved')} className="cursor-pointer font-medium text-emerald-600">Approved</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatusFilter('Pending')} className="cursor-pointer font-medium text-amber-600">Pending</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatusFilter('Rejected')} className="cursor-pointer font-medium text-rose-600">Rejected</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           <Button variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hidden md:flex">
             <Download className="h-4 w-4 mr-2 text-slate-400" /> Export
@@ -362,14 +364,16 @@ export default function WorkLogs({ session }: { session?: any }) {
                 <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Project</th>
                 <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Task</th>
                 <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Hours</th>
-                <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Status</th>
+                {currentUser.role === 'manager' && (
+                  <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Status</th>
+                )}
                 <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
+                  <td colSpan={currentUser.role === 'manager' ? 7 : 6} className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
                     No logs found matching your criteria.
                   </td>
                 </tr>
@@ -400,16 +404,18 @@ export default function WorkLogs({ session }: { session?: any }) {
                         {log.hours.toFixed(1)}h
                       </span>
                     </td>
-                    <td className="p-4 text-right">
-                      <Badge variant="outline" className={cn(
-                        "font-bold uppercase tracking-wider border-0 shadow-sm",
-                        log.status === 'Approved' && "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400",
-                        log.status === 'Pending' && "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400",
-                        log.status === 'Rejected' && "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400"
-                      )}>
-                        {log.status}
-                      </Badge>
-                    </td>
+                    {currentUser.role === 'manager' && (
+                      <td className="p-4 text-right">
+                        <Badge variant="outline" className={cn(
+                          "font-bold uppercase tracking-wider border-0 shadow-sm",
+                          log.status === 'Approved' && "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400",
+                          log.status === 'Pending' && "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400",
+                          log.status === 'Rejected' && "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400"
+                        )}>
+                          {log.status}
+                        </Badge>
+                      </td>
+                    )}
                     <td className="p-4 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -418,17 +424,19 @@ export default function WorkLogs({ session }: { session?: any }) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                          {log.status !== 'Approved' && (
+                          {currentUser.role === 'manager' && log.status !== 'Approved' && (
                             <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Approved')} className="cursor-pointer text-emerald-600 font-medium">
                               <CheckCircle className="h-4 w-4 mr-2" /> Approve Log
                             </DropdownMenuItem>
                           )}
-                          {log.status !== 'Rejected' && (
+                          {currentUser.role === 'manager' && log.status !== 'Rejected' && (
                             <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Rejected')} className="cursor-pointer text-rose-600 font-medium">
                               <XCircle className="h-4 w-4 mr-2" /> Reject Log
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                          {currentUser.role === 'manager' && (
+                            <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                          )}
                           <DropdownMenuItem onClick={() => handleDelete(log.id)} className="cursor-pointer text-red-600 font-medium">
                             <Trash2 className="h-4 w-4 mr-2" /> Delete Entry
                           </DropdownMenuItem>
