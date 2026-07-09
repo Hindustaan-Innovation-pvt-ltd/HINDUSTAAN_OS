@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-import { GLOBAL_LOGS } from '@/data/mockData';
+import { GLOBAL_LOGS, INITIAL_TASKS } from '@/data/mockData';
 
 const ONLINE_TEAM_MEMBERS = [
   { id: 'u-1', name: 'Amanda Smith', initials: 'AS', role: 'Frontend Lead', task: 'Component Refactoring', project: 'Frontend Core', color: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
@@ -250,6 +250,17 @@ export default function WorkLogs({ session }: { session?: any }) {
               const isOnline = !!sessionInfo?.isOnline;
               const sessionTime = sessionInfo?.time || 0;
 
+              // Resolve in-progress task for this member
+              const savedTasksStr = localStorage.getItem('hindustaan_tasks_list');
+              const allTasks = savedTasksStr ? JSON.parse(savedTasksStr) : INITIAL_TASKS;
+              const inProgressTask = allTasks.find((t: any) => 
+                (t.assignee_id === member.id || t.assignee_name.toLowerCase().includes(member.name.split(' ')[0].toLowerCase())) &&
+                t.status === 'In Progress'
+              );
+
+              const currentTaskName = inProgressTask ? inProgressTask.title : 'No active task';
+              const currentProjectName = inProgressTask ? inProgressTask.project_tag : 'Idle';
+
               return (
                 <div 
                   key={member.id} 
@@ -299,14 +310,14 @@ export default function WorkLogs({ session }: { session?: any }) {
                       <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Working On</span>
                       <Badge variant="secondary" className={cn(
                         "text-[10px] uppercase font-black tracking-wider",
-                        isOnline 
+                        isOnline && inProgressTask
                           ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
                           : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
                       )}>
-                        {member.project}
+                        {currentProjectName}
                       </Badge>
                     </div>
-                    <p className="font-bold text-slate-700 dark:text-slate-300 line-clamp-1">{member.task}</p>
+                    <p className="font-bold text-slate-700 dark:text-slate-300 line-clamp-1">{currentTaskName}</p>
                   </div>
                 </div>
               );
