@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { getCurrentUser, User } from '@/lib/auth';
+import { getCurrentUser, type User } from '@/lib/auth';
 
 // Generate 30 realistic mock interns
 const generateMockInterns = (currentUser?: User | null) => {

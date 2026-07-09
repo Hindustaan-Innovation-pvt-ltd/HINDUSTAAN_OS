@@ -414,12 +414,12 @@ export default function Login({ onMockLogin, onNavigateToRegister }: { onMockLog
               </button>
             </div>
             
-            <div className="text-center">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Don't have an account? </span>
+            <div className="text-center pt-3 pb-1">
+              <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Don't have an account? </span>
               <button 
                 type="button" 
                 onClick={onNavigateToRegister}
-                className="text-xs font-bold text-orange-600 hover:text-orange-700 hover:underline transition-all"
+                className="text-[13px] font-extrabold text-orange-600 hover:text-orange-700 hover:underline transition-all ml-1"
               >
                 Create Account
               </button>

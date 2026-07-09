@@ -14,6 +14,7 @@ import ProgressTracker from './pages/ProgressTracker';
 import WorkLogs from './pages/WorkLogs';
 import DailyStandups from './pages/DailyStandups';
 import ContributionScores from './pages/ContributionScores';
+import Register from './pages/Register';
 // Supabase client removed for mock auth implementation
 
 import { ThemeProvider } from './context/ThemeContext';
@@ -119,7 +120,7 @@ function App() {
                   // Convert to hours (with minimum of 0.1 hours so short demo sessions show up nicely)
                   const hours = Math.max(0.1, Math.round((secondsElapsed / 3600) * 10) / 10);
                   
-                  const initials = currentUserName.split(' ').map(n => n[0]).join('').toUpperCase();
+                  const initials = currentUserName.split(' ').map((n: string) => n[0]).join('').toUpperCase();
                   const newLog = {
                     id: `session-${Date.now()}`,
                     name: currentUserName,
@@ -156,7 +157,7 @@ function App() {
             {currentView === 'About Us' && <AboutUs />}
             {currentView === 'Settings' && <Settings session={session} />}
             {currentView === 'My Profile' && <Settings session={session} defaultTab="profile" />}
-            {currentView === 'Team Members' && <TeamMembers session={session} />}
+            {currentView === 'Team Members' && <TeamMembers />}
 
             {/* New Pages */}
             {currentView === 'Gantt Timeline' && <GanttTimeline session={session} />}

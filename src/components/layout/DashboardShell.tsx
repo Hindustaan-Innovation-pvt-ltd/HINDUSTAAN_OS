@@ -95,7 +95,8 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
         {/* Vertical Navigation Rows */}
         <div className="flex flex-1 flex-col overflow-y-auto py-6 px-4">
           <nav className="flex-1 space-y-1">
-            {activeNavigation.map((item) => {
+            {activeNavigation.map((item: { name: string, icon: any }) => {
+              const Icon = item.icon;
               const isCurrent = currentView === item.name;
               return (
                 <button
@@ -111,7 +112,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                       : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white dark:hover:text-slate-900"
                   )}
                 >
-                  <item.icon
+                  <Icon
                     className={cn(
                       "h-5 w-5 shrink-0 transition-colors duration-200 mr-3",
                       isCurrent ? "text-amber-600 dark:text-slate-900" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-900"
