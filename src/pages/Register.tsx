@@ -109,26 +109,30 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
       </button>
 
       {/* Registration Form */}
-      <div className="w-full max-w-md p-6 md:p-8 relative z-10">
-        <div className="bg-white/70 dark:bg-slate-900/60 rounded-[24px] p-6 sm:p-8 shadow-2xl backdrop-blur-xl border border-white/60 dark:border-slate-700/50 animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <div className="relative z-10 w-full max-w-md px-4 sm:px-6">
+        <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-8">
           
-          <div className="text-center mb-6">
-            <img src="/logo-full.png" alt="Hindustaan OS" className="h-12 mx-auto dark:hidden object-contain" />
-            <img src="/logo-full-dark.png" alt="Hindustaan OS" className="h-12 mx-auto hidden dark:block object-contain" />
-          </div>
-          
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Create Account</h2>
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Join the Hindustaan OS Workspace.</p>
+          <div className="flex flex-col items-center text-center mb-4">
+            <img
+              src={isDark ? "/logo-full-dark.png" : "/logo-full.png"}
+              alt="Hindustaan OS Logo"
+              className="mx-auto w-[120px] md:w-[150px] xl:w-[190px] h-auto object-contain transition-all duration-300"
+              style={{ filter: "drop-shadow(0 12px 30px rgba(255,153,0,.18)) drop-shadow(0 12px 30px rgba(34,197,94,.12))" }}
+            />
+            <div className="mt-2 flex flex-col items-center">
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                Create Account
+              </p>
+            </div>
           </div>
 
-          <form onSubmit={handleRegister} className="space-y-5 mt-8">
+          <form onSubmit={handleRegister} className="space-y-3 mt-4">
             {/* Full Name */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">Full Name</label>
+            <div className="space-y-1">
+              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Full Name</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                  <User className="h-5 w-5" />
+                  <User className="h-4 w-4" />
                 </div>
                 <input
                   name="name"
@@ -138,18 +142,18 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
                   maxLength={50}
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all shadow-sm"
+                  className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
                   placeholder="Enter your full name"
                 />
               </div>
             </div>
 
             {/* Email Address */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">Email Address</label>
+            <div className="space-y-1">
+              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Email Address</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                  <Mail className="h-5 w-5" />
+                  <Mail className="h-4 w-4" />
                 </div>
                 <input
                   name="email"
@@ -157,25 +161,25 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all shadow-sm"
+                  className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
                   placeholder="name@hindustaan.in"
                 />
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
                 {/* Role */}
-                <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">Role</label>
+                <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Role</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                    <Briefcase className="h-5 w-5" />
+                    <Briefcase className="h-4 w-4" />
                     </div>
                     <select
                     name="role"
                     value={formData.role}
                     onChange={handleChange}
-                    className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all shadow-sm appearance-none"
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200 appearance-none"
                     >
                         <option value="employee">Employee</option>
                         <option value="manager">Manager</option>
@@ -184,14 +188,14 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
                 </div>
 
                 {/* Department */}
-                <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">Department</label>
+                <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Department</label>
                 <div className="relative group">
                     <select
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
-                    className="w-full px-4 py-3.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all shadow-sm appearance-none"
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 px-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200 appearance-none"
                     >
                         <option value="Engineering">Engineering</option>
                         <option value="HR">HR</option>
@@ -203,10 +207,10 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
                 {/* Employee ID */}
-                <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">Employee ID <span className="text-slate-400 normal-case">(Optional)</span></label>
+                <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Emp ID <span className="text-[9px] text-slate-400 normal-case">(Opt)</span></label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                     <Hash className="h-4 w-4" />
@@ -216,15 +220,15 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
                     type="text"
                     value={formData.employeeId}
                     onChange={handleChange}
-                    className="w-full pl-9 pr-3 py-3.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all shadow-sm"
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-9 pr-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
                     placeholder="EMP001"
                     />
                 </div>
                 </div>
 
                 {/* Phone */}
-                <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">Phone Number <span className="text-slate-400 normal-case">(Optional)</span></label>
+                <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Phone <span className="text-[9px] text-slate-400 normal-case">(Opt)</span></label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                     <Phone className="h-4 w-4" />
@@ -234,20 +238,20 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
                     type="tel"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="w-full pl-9 pr-3 py-3.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all shadow-sm"
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-9 pr-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
                     placeholder="+91..."
                     />
                 </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Password */}
-                <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">Password</label>
+                <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Password</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                    <KeyRound className="h-5 w-5" />
+                    <KeyRound className="h-4 w-4" />
                     </div>
                     <input
                     name="password"
@@ -255,18 +259,18 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all shadow-sm"
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
                     placeholder="••••••••"
                     />
                 </div>
                 </div>
 
                 {/* Confirm Password */}
-                <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider ml-1">Confirm Password</label>
+                <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Confirm Password</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                    <KeyRound className="h-5 w-5" />
+                    <KeyRound className="h-4 w-4" />
                     </div>
                     <input
                     name="confirmPassword"
@@ -274,7 +278,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
                     required
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all shadow-sm"
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
                     placeholder="••••••••"
                     />
                 </div>
@@ -282,41 +286,43 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
             </div>
 
             {/* Terms and Conditions */}
-            <div className="flex items-center space-x-2 pt-2">
+            <div className="flex items-center space-x-2 pt-0.5">
               <input
                 type="checkbox"
                 name="termsAccepted"
                 id="terms"
                 checked={formData.termsAccepted}
                 onChange={handleChange}
-                className="w-4 h-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-900"
+                className="w-3.5 h-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-900"
               />
-              <label htmlFor="terms" className="text-sm font-medium text-slate-600 dark:text-slate-400">
+              <label htmlFor="terms" className="text-xs font-medium text-slate-600 dark:text-slate-400">
                 I accept the <a href="#" className="text-orange-600 hover:underline">Terms & Conditions</a>
               </label>
             </div>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full h-14 bg-slate-900 hover:bg-slate-800 dark:bg-orange-600 dark:hover:bg-orange-700 text-white rounded-2xl font-bold text-[15px] shadow-sm hover:shadow-md transition-all active:scale-[0.98] group"
-            >
-              {loading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <>
-                  Create Account
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </>
-              )}
-            </Button>
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="group relative flex w-full justify-center items-center space-x-2 rounded-xl bg-gradient-to-r from-orange-500 to-green-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-green-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:opacity-70 disabled:hover:scale-100 transition-all duration-200 ease-out"
+              >
+                {loading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <span>Create Account</span>
+                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </>
+                )}
+              </button>
+            </div>
             
-            <div className="text-center pt-2">
-              <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Already have an account? </span>
+            <div className="text-center pt-3 pb-1">
+              <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Already have an account? </span>
               <button 
                 type="button" 
                 onClick={onNavigateToLogin}
-                className="text-sm font-bold text-orange-600 hover:text-orange-700 hover:underline transition-all"
+                className="text-[13px] font-extrabold text-orange-600 hover:text-orange-700 hover:underline transition-all ml-1"
               >
                 Login
               </button>
