@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { INITIAL_TASKS, GLOBAL_LOGS } from '@/data/mockData';
 
 // -- MOCK DATA GENERATOR --
 const generateData = () => {
@@ -98,6 +99,313 @@ const COLORS = {
 export default function ContributionScores({ session }: { session?: any }) {
   const [selectedIntern, setSelectedIntern] = useState<typeof MOCK_INTERNS[0] | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Resolve current user based on session
+  const role = session?.user?.user_metadata?.role || 'intern';
+  const email = session?.user?.email || 'user@hindustaan.in';
+  
+  let currentUserId = 'u-4';
+  let currentUserName = 'Tanvy Pandey';
+  
+  if (email.toLowerCase().includes('amanda')) {
+    currentUserId = 'u-1';
+    currentUserName = 'Amanda Smith';
+  } else if (email.toLowerCase().includes('rahul')) {
+    currentUserId = 'u-2';
+    currentUserName = 'Rahul Sharma';
+  } else if (email.toLowerCase().includes('priya')) {
+    currentUserId = 'u-3';
+    currentUserName = 'Priya Patel';
+  }
+
+  // Load and count user's tasks
+  const savedTasksStr = localStorage.getItem('hindustaan_tasks_list');
+  const allTasks = savedTasksStr ? JSON.parse(savedTasksStr) : INITIAL_TASKS;
+  const userTasks = allTasks.filter((t: any) => 
+    t.assignee_id === currentUserId || 
+    t.assignee_name.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())
+  );
+  const completedTasks = userTasks.filter((t: any) => t.status === 'Done');
+  const tasksCompletedCount = completedTasks.length;
+  const totalTasks = userTasks.length || 1;
+  const taskRate = (tasksCompletedCount / totalTasks) * 100;
+
+  // Load and sum user's logs
+  const savedLogsStr = localStorage.getItem('work_logs_list');
+  const allLogs = savedLogsStr ? JSON.parse(savedLogsStr) : GLOBAL_LOGS;
+  const userLogs = allLogs.filter((log: any) => 
+    log.name.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())
+  );
+  const totalHoursLogged = userLogs.reduce((acc: number, log: any) => acc + log.hours, 0);
+
+  // Daily Standups count derived from log events
+  const standupsCount = Math.max(0, Math.round(totalHoursLogged / 3));
+
+  // Milestones matching from projects
+  const savedProjects = localStorage.getItem('hindustaan_projects_list');
+  const PROJECTS_FALLBACK = [
+    { id: 'p1', name: 'Hindustaan OS', milestones: [
+      { id: 'm1', title: 'Task Manager Interface', status: 'completed', date: 'Oct 05, 2026' },
+      { id: 'm2', title: 'Work Log Timer Integration', status: 'completed', date: 'Oct 08, 2026' },
+      { id: 'm3', title: 'Standup Automation Bot', status: 'in-progress', date: 'Oct 15, 2026' },
+      { id: 'm4', title: 'Performance Analytics Dashboard', status: 'pending', date: 'Oct 20, 2026' }
+    ]}
+  ];
+  const allProjects = savedProjects ? JSON.parse(savedProjects) : PROJECTS_FALLBACK;
+  const allMilestones = allProjects.flatMap((p: any) => p.milestones || []);
+  const completedMilestones = allMilestones.filter((m: any) => m.status === 'completed');
+  const milestonesCount = completedMilestones.length || Math.max(1, Math.min(5, Math.round(completedTasks.length * 0.4)));
+  const totalMilestonesCount = allMilestones.length || 4;
+  const milestoneRate = (milestonesCount / totalMilestonesCount) * 100;
+
+  // Overall Performance is calculated dynamically based on tasks completed and milestones achieved
+  const overallScore = Math.min(100, Math.round((taskRate + milestoneRate) / 2)) || 85;
+
+  if (role === 'intern') {
+    return (
+      <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
+              <Trophy className="mr-3 h-8 w-8 text-orange-500" />
+              My Performance Analytics
+            </h2>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
+              Review your tasks, logged hours, standups, and milestone details.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="outline" className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm font-bold">
+              <Calendar className="mr-2 h-4 w-4 text-slate-400" />
+              This Month
+            </Button>
+            <Button variant="outline" className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm font-bold">
+              <Download className="mr-2 h-4 w-4" />
+              Export Report
+            </Button>
+          </div>
+        </div>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 md:gap-5">
+          {/* Overall Performance Card */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm col-span-1 sm:col-span-2 lg:col-span-2 relative overflow-hidden group">
+            <div className="absolute right-0 top-0 h-full w-1/2 opacity-10 pointer-events-none">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={weeklyTrendData}>
+                  <Area type="monotone" dataKey="score" stroke={COLORS.orange} fill={COLORS.orange} strokeWidth={4} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <CardContent className="p-6 relative z-10">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/40 text-orange-600">
+                  <BarChart2 className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Overall Performance</span>
+              </div>
+              <div className="flex items-end gap-3 mt-4">
+                <span className="text-5xl font-black text-slate-900 dark:text-white">{overallScore}%</span>
+                <span className="flex items-center text-sm font-bold text-emerald-600 mb-1">
+                  <TrendingUp className="h-4 w-4 mr-1" /> +2%
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tasks Completed Card */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tasks Completed</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">{tasksCompletedCount} / {totalTasks}</p>
+              </div>
+              <div className="h-12 w-12 shrink-0 relative flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
+                  <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: Math.min(100, Math.round((tasksCompletedCount / totalTasks) * 100)), fill: COLORS.excellent }]} startAngle={90} endAngle={-270}>
+                    <RadialBar background={{ fill: 'var(--color-slate-100)' }} dataKey="value" cornerRadius={10} />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+                <CheckCircle2 className="h-4 w-4 relative z-10" style={{ color: COLORS.excellent }} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Worklogs Card */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Worklogs</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">{totalHoursLogged.toFixed(1)} hrs</p>
+              </div>
+              <div className="h-12 w-12 shrink-0 relative flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
+                  <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: Math.min(100, Math.round((totalHoursLogged / 40) * 100)), fill: COLORS.good }]} startAngle={90} endAngle={-270}>
+                    <RadialBar background={{ fill: 'var(--color-slate-100)' }} dataKey="value" cornerRadius={10} />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+                <Clock className="h-4 w-4 relative z-10" style={{ color: COLORS.good }} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Daily Standups Card */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Daily Standups</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">{standupsCount}</p>
+              </div>
+              <div className="h-12 w-12 shrink-0 relative flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
+                  <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: Math.min(100, Math.round((standupsCount / 20) * 100)), fill: COLORS.orange }]} startAngle={90} endAngle={-270}>
+                    <RadialBar background={{ fill: 'var(--color-slate-100)' }} dataKey="value" cornerRadius={10} />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+                <Mic className="h-4 w-4 relative z-10" style={{ color: COLORS.orange }} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Milestones Card */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Milestones</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">{milestonesCount} achieved</p>
+              </div>
+              <div className="h-12 w-12 shrink-0 relative flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
+                  <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: Math.min(100, Math.round((milestonesCount / totalMilestonesCount) * 100)), fill: COLORS.excellent }]} startAngle={90} endAngle={-270}>
+                    <RadialBar background={{ fill: 'var(--color-slate-100)' }} dataKey="value" cornerRadius={10} />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+                <Target className="h-4 w-4 relative z-10" style={{ color: COLORS.excellent }} />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Intern Personal Detail Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column (8) - My Tasks Status Table */}
+          <div className="lg:col-span-8 space-y-6">
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-full">
+              <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">My Tasks & Statuses</CardTitle>
+                  <CardDescription className="font-medium mt-1">Review status and priority of all tasks assigned to you.</CardDescription>
+                </div>
+                <Badge variant="outline" className="font-bold border-orange-200 text-orange-700 bg-orange-50 dark:border-orange-900/50 dark:text-orange-400 dark:bg-orange-500/10">
+                  {userTasks.length} total tasks
+                </Badge>
+              </CardHeader>
+              <CardContent className="p-0 overflow-auto max-h-[500px]">
+                {userTasks.length > 0 ? (
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-20 border-b border-slate-100 dark:border-slate-800">
+                      <tr>
+                        <th className="px-6 py-4">Task Name</th>
+                        <th className="px-6 py-4">Project</th>
+                        <th className="px-6 py-4">Priority</th>
+                        <th className="px-6 py-4">Due Date</th>
+                        <th className="px-6 py-4 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {userTasks.map((task: any) => (
+                        <tr key={task.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                          <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{task.title}</td>
+                          <td className="px-6 py-4 font-semibold text-slate-500 dark:text-slate-400">{task.project_tag}</td>
+                          <td className="px-6 py-4">
+                            <Badge variant="outline" className={cn(
+                              "font-bold px-2 py-0.5 rounded text-[10px] uppercase tracking-wider",
+                              task.priority === 'High' ? "border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-500/10" :
+                              task.priority === 'Normal' ? "border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:bg-amber-500/10" :
+                              "border-slate-200 text-slate-650 bg-slate-50 dark:border-slate-700 dark:text-slate-350 dark:bg-slate-800"
+                            )}>
+                              {task.priority}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 font-medium text-slate-500">{task.due_date}</td>
+                          <td className="px-6 py-4 text-right">
+                            <Badge className={cn(
+                              "font-black text-xs px-2.5 py-1 rounded-lg",
+                              task.status === 'Done' ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" :
+                              task.status === 'In Review' ? "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400" :
+                              task.status === 'In Progress' ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" :
+                              "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                            )}>
+                              {task.status}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="p-12 text-center flex flex-col items-center justify-center">
+                    <span className="text-4xl mb-3">🎉</span>
+                    <h4 className="font-bold text-slate-900 dark:text-white">No tasks assigned to you yet.</h4>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column (4) - Milestones Achieved List */}
+          <div className="lg:col-span-4 space-y-6">
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-full">
+              <CardHeader className="p-5 pb-3 border-b border-slate-100 dark:border-slate-800/60">
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center">
+                  <Target className="mr-2 h-4 w-4 text-orange-500" />
+                  Project Milestones
+                </CardTitle>
+                <CardDescription className="font-medium">Track your sprint milestone completions.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-5 overflow-auto max-h-[500px]">
+                <div className="relative pl-6 border-l-2 border-slate-100 dark:border-slate-850 space-y-6">
+                  {allMilestones.map((m: any, i: number) => {
+                    const isCompleted = m.status === 'completed';
+                    const isInProgress = m.status === 'in-progress';
+
+                    return (
+                      <div key={m.id || i} className="relative">
+                        {/* Milestone dot indicator */}
+                        <div className={cn(
+                          "absolute -left-[31px] top-1 h-4 w-4 rounded-full border-2 border-white dark:border-slate-950 flex items-center justify-center shadow-sm",
+                          isCompleted ? "bg-emerald-500 animate-pulse" :
+                          isInProgress ? "bg-orange-500 animate-pulse" : "bg-slate-200 dark:bg-slate-800"
+                        )}>
+                          {isCompleted && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between gap-2">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">{m.title || m.name}</h4>
+                            <Badge variant="outline" className={cn(
+                              "text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded",
+                              isCompleted ? "border-emerald-200 text-emerald-700 bg-emerald-50 dark:border-emerald-900/40 dark:text-emerald-450 dark:bg-emerald-500/10" :
+                              isInProgress ? "border-orange-200 text-orange-700 bg-orange-50 dark:border-orange-900/40 dark:text-orange-400 dark:bg-orange-500/10" :
+                              "border-slate-200 text-slate-500 bg-slate-50 dark:border-slate-800 dark:text-slate-450"
+                            )}>
+                              {m.status}
+                            </Badge>
+                          </div>
+                          <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 mt-1">{m.date || 'Target Milestone'}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const filteredInterns = MOCK_INTERNS.filter(intern =>
     intern.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
