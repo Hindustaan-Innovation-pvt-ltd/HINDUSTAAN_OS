@@ -16,8 +16,10 @@ import { cn } from '@/lib/utils';
 import { ConnectedApps } from '../components/dashboard/settings/ConnectedApps';
 import { Progress } from "@/components/ui/progress";
 import { useTheme } from '../context/ThemeContext';
-import { toast } from 'sonner';
 import { updatePassword } from '@/lib/auth';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { toast } from 'sonner';
 
 const SETTINGS_SECTIONS = [
   { id: 'security', label: 'Account & Security', description: 'Manage your password and security preferences.', icon: Shield },
@@ -35,6 +37,142 @@ export default function Settings({ session }: { session: any }) {
   const role = session?.user?.user_metadata?.role || 'intern';
   
   const [activeTab, setActiveTab] = useState<string | null>(null);
+
+  const [storageUsed, setStorageUsed] = useState(45);
+
+  const handleClearCache = () => {
+    const sessionUser = localStorage.getItem('hindustaan_user');
+    const sessionUserS = sessionStorage.getItem('hindustaan_user');
+    const users = localStorage.getItem('hindustaan_users');
+
+    localStorage.clear();
+    sessionStorage.clear();
+
+    if (sessionUser) localStorage.setItem('hindustaan_user', sessionUser);
+    if (sessionUserS) sessionStorage.setItem('hindustaan_user', sessionUserS);
+    if (users) localStorage.setItem('hindustaan_users', users);
+
+    setStorageUsed(1.2);
+    toast.success("Cache cleared successfully", {
+      description: "Application cache and temporary state have been reset."
+    });
+  };
+
+  const handleDownloadPDF = () => {
+    try {
+      const doc = new jsPDF();
+      
+      // Page Title
+      doc.setFontSize(22);
+      doc.setTextColor(15, 23, 42);
+      doc.text("Project OS - Workspace Summary Report", 14, 25);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 32);
+      
+      doc.setDrawColor(226, 232, 240);
+      doc.line(14, 35, 196, 35);
+      
+      // Load Workspace Data
+      const logsStr = localStorage.getItem('work_logs_list_v4') || localStorage.getItem('work_logs_list');
+      const logs = logsStr ? JSON.parse(logsStr) : [
+        { date: "Jul 10, 2026", name: "Amanda Smith", project: "Frontend Core", task: "Component Refactoring", hours: 8.5, status: "Approved" },
+        { date: "Jul 10, 2026", name: "Rahul Sharma", project: "Backend Core", task: "Database Optimization", hours: 7.2, status: "Approved" },
+        { date: "Jul 10, 2026", name: "Tanvy Pandey", project: "Frontend Core", task: "Kanban Board & Work Logs", hours: 6.0, status: "Pending" }
+      ];
+      
+      const tasksStr = localStorage.getItem('hindustaan_tasks_list');
+      const tasks = tasksStr ? JSON.parse(tasksStr) : [
+        { title: "Design System Setup", status: "Done", assignee_name: "Amanda Smith", project_tag: "ProjectOS Redesign", priority: "High" },
+        { title: "Authentication Flow", status: "Done", assignee_name: "Rahul Sharma", project_tag: "ProjectOS Redesign", priority: "High" },
+        { title: "Dashboard Layout", status: "In Progress", assignee_name: "Priya Patel", project_tag: "ProjectOS Redesign", priority: "Medium" }
+      ];
+      
+      const standupsStr = localStorage.getItem('hindustaan_standups');
+      const standups = standupsStr ? JSON.parse(standupsStr) : [
+        { user: "Tanvy", role: "Frontend Developer", yesterday: "Finished responsive layout.", today: "Kanban drag-and-drop.", blockers: "None." },
+        { user: "Rahul Sharma", role: "Backend Developer", yesterday: "Database schema setup.", today: "REST API endpoints.", blockers: "None." }
+      ];
+
+      // 1. Work Logs Section
+      doc.setFontSize(14);
+      doc.setTextColor(15, 23, 42);
+      doc.text("1. Recent Work Logs", 14, 45);
+      
+      autoTable(doc, {
+        startY: 50,
+        head: [['Date', 'Employee', 'Project', 'Task', 'Hours', 'Status']],
+        body: logs.map((l: any) => [
+          l.date || l.formattedDate || '', 
+          l.name || l.employeeName || '', 
+          l.project || '', 
+          l.task || '', 
+          `${l.hours || 0}h`, 
+          l.status || 'Approved'
+        ]),
+        headStyles: { fillColor: [91, 124, 255] },
+        theme: 'striped'
+      });
+      
+      const nextY1 = (doc as any).lastAutoTable.finalY + 15;
+      
+      // 2. Tasks Section
+      doc.setFontSize(14);
+      doc.setTextColor(15, 23, 42);
+      doc.text("2. Tasks Summary", 14, nextY1);
+      
+      autoTable(doc, {
+        startY: nextY1 + 5,
+        head: [['Task Title', 'Status', 'Assignee', 'Project', 'Priority']],
+        body: tasks.map((t: any) => [
+          t.title || '', 
+          t.status || '', 
+          t.assignee_name || t.assignee || 'Unassigned', 
+          t.project_tag || '', 
+          t.priority || 'Medium'
+        ]),
+        headStyles: { fillColor: [168, 85, 247] },
+        theme: 'striped'
+      });
+      
+      const nextY2 = (doc as any).lastAutoTable.finalY + 15;
+      
+      // 3. Standups Section
+      let startStandupY = nextY2 + 5;
+      if (nextY2 > 240) {
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.setTextColor(15, 23, 42);
+        doc.text("3. Daily Standups", 14, 20);
+        startStandupY = 25;
+      } else {
+        doc.setFontSize(14);
+        doc.setTextColor(15, 23, 42);
+        doc.text("3. Daily Standups", 14, nextY2);
+      }
+      
+      autoTable(doc, {
+        startY: startStandupY,
+        head: [['User', 'Role', 'Yesterday\'s Work', 'Today\'s Plan', 'Blockers']],
+        body: standups.map((s: any) => [
+          s.user || '', 
+          s.role || '', 
+          s.yesterday || '', 
+          s.today || '', 
+          s.blockers || 'None'
+        ]),
+        headStyles: { fillColor: [16, 185, 129] },
+        theme: 'striped'
+      });
+      
+      doc.save("Project_OS_Workspace_Report.pdf");
+      toast.success("PDF Report Downloaded");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to generate PDF report");
+    }
+  };
 
   const [toggles, setToggles] = useState({
     taskAssigned: true,
@@ -602,21 +740,21 @@ export default function Settings({ session }: { session: any }) {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">Storage Used</h3>
-                    <span className="text-xs font-bold text-slate-500">45 MB / 500 MB</span>
+                    <span className="text-xs font-bold text-slate-500">{storageUsed.toFixed(1)} MB / 500 MB</span>
                   </div>
-                  <Progress value={9} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
+                  <Progress value={(storageUsed / 500) * 100} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
                   <p className="text-[10px] font-semibold text-slate-500 mt-2">Cache size includes local drafts and offline data.</p>
                 </div>
                 
                 <div className="flex gap-3">
-                  <Button variant="outline" className="rounded-xl border-slate-200 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Clear Cache</Button>
+                  <Button onClick={handleClearCache} variant="outline" className="rounded-xl border-slate-200 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Clear Cache</Button>
                 </div>
 
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Export Data</h3>
                   <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-4">Download a copy of your work logs, tasks, and standups.</p>
-                  <Button className="rounded-xl bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold">
-                    <Download className="mr-2 h-4 w-4" /> Download Reports (CSV)
+                  <Button onClick={handleDownloadPDF} className="rounded-xl bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold">
+                    <Download className="mr-2 h-4 w-4" /> Download Reports (PDF)
                   </Button>
                 </div>
               </CardContent>

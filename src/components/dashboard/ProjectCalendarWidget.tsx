@@ -52,6 +52,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
+import { useNotifications } from '@/context/NotificationContext';
 
 // Data Structures
 type EventType = 'deadline' | 'completed' | 'milestone' | 'leave';
@@ -87,31 +88,18 @@ export function ProjectCalendarWidget() {
   const [isAllEventsOpen, setIsAllEventsOpen] = useState(false);
   const [eventToEdit, setEventToEdit] = useState<ProjectEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<ProjectEvent | null>(null);
+  
+  const { addNotification } = useNotifications();
 
-  const pushNotification = (title: string, message: string, type: string) => {
-    try {
-      const saved = localStorage.getItem('hindustaan_notifications');
-      let notifications = [];
-      if (saved) {
-        notifications = JSON.parse(saved);
-      }
-      const newNotif = {
-        id: Date.now(),
-        type: type,
-        category: 'Projects',
-        icon: type === 'alert' ? '🚨' : type === 'warning' ? '⚠️' : 'ℹ️',
-        title: title,
-        message: message,
-        time: 'Just now',
-        unread: true,
-        group: 'Today'
-      };
-      notifications.unshift(newNotif);
-      localStorage.setItem('hindustaan_notifications', JSON.stringify(notifications));
-      window.dispatchEvent(new Event('hindustaan_notifications_updated'));
-    } catch (e) {
-      console.error(e);
-    }
+  const pushNotification = (title: string, message: string, type: any) => {
+    addNotification({
+      type: type,
+      category: 'Projects',
+      icon: type === 'alert' ? '🚨' : type === 'warning' ? '⚠️' : 'ℹ️',
+      title: title,
+      message: message,
+      group: 'Today',
+    });
   };
 
   // Dynamic calculations based on today

@@ -22,8 +22,10 @@ const GANTT_TASKS = [
 
 import { GLOBAL_PROJECTS } from '@/data/mockData';
 import { useProjects } from '@/context/ProjectContext';
+import { useNotifications } from '@/context/NotificationContext';
 
 export default function Projects({ session }: { session?: any }) {
+  const { addNotification } = useNotifications();
   const [activeTab, setActiveTab] = useState('All');
   const { projects, addProject, updateProject, deleteProject } = useProjects();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -69,7 +71,16 @@ export default function Projects({ session }: { session?: any }) {
         budget: newProject.budget ? `$${newProject.budget}` : 'TBD'
       };
       
+      
       addProject(project);
+      addNotification({
+        type: 'success',
+        category: 'Projects',
+        icon: '🚀',
+        title: 'Project Created',
+        message: `New project "${newProject.name}" has been created successfully.`,
+        group: 'Today',
+      });
     }
     
     setIsModalOpen(false);

@@ -22,6 +22,7 @@ import ProfileEdit from './pages/ProfileEdit';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProjectProvider } from './context/ProjectContext';
 import { UserProvider } from './context/UserContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { GLOBAL_LOGS } from '@/data/mockData';
@@ -96,8 +97,9 @@ function App() {
 
   return (
     <ThemeProvider>
-      <ProjectProvider>
-      <UserProvider key={session?.user?.email || 'guest'}>
+      <NotificationProvider>
+        <ProjectProvider>
+        <UserProvider key={session?.user?.email || 'guest'}>
       <TooltipProvider>
           {!session ? (
             authView === 'login' ? (
@@ -236,10 +238,11 @@ function App() {
             )}
           </DashboardShell>
         )}
-        <Toaster position="top-right" richColors />
+        <Toaster position="bottom-right" />
       </TooltipProvider>
       </UserProvider>
       </ProjectProvider>
+      </NotificationProvider>
     </ThemeProvider>
   );
 }

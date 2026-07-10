@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -15,7 +16,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { 
   Users, Search, Filter, Plus, Download, MoreVertical, MapPin, 
   Mail, Phone, GraduationCap, Briefcase, Calendar, CheckCircle2, 
-  MessageSquare, Clock, Trophy, ExternalLink, Activity
+  MessageSquare, Clock, Trophy, ExternalLink, Activity, ArrowRightLeft, MessageCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -57,11 +58,17 @@ export default function TeamMembers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [deptFilter, setDeptFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [projectFilter, setProjectFilter] = useState('all');
   
   const currentUser = getCurrentUser();
   const [interns, setInterns] = useState(() => generateMockInterns(currentUser));
   const [selectedIntern, setSelectedIntern] = useState<typeof interns[0] | null>(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [reassignIntern, setReassignIntern] = useState<typeof interns[0] | null>(null);
+  const [reassignMessage, setReassignMessage] = useState('');
+  const [newProject, setNewProject] = useState('');
+  const [whatsappIntern, setWhatsappIntern] = useState<typeof interns[0] | null>(null);
+  const [whatsappMessage, setWhatsappMessage] = useState('');
 
   // Stats
   const totalInterns = interns.length;
@@ -88,8 +95,13 @@ export default function TeamMembers() {
     // Status Filter
     const matchesStatus = statusFilter === 'all' || intern.status.toLowerCase() === statusFilter;
 
-    return matchesSearch && matchesDept && matchesStatus;
+    // Project Filter
+    const matchesProject = projectFilter === 'all' || intern.project === projectFilter;
+
+    return matchesSearch && matchesDept && matchesStatus && matchesProject;
   });
+
+  const hasActiveFilters = searchTerm !== '' || deptFilter !== 'all' || statusFilter !== 'all' || projectFilter !== 'all';
 
   // Handlers
   const handleInviteSubmit = (e: React.FormEvent) => {
@@ -98,6 +110,58 @@ export default function TeamMembers() {
     toast.success("Invitation Sent Successfully", {
       description: "A temporary password and setup instructions have been emailed to the intern.",
     });
+  };
+
+  const handleReassignSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reassignIntern || !newProject) return;
+
+    // Update Interns state
+    setInterns(prev => prev.map(intern => 
+      intern.id === reassignIntern.id ? { ...intern, project: newProject } : intern
+    ));
+
+    // Fire local storage notification for the employee
+    const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
+    let empNotifications = [];
+    if (savedEmpNotifications && savedEmpNotifications !== 'null') {
+      try {
+        empNotifications = JSON.parse(savedEmpNotifications);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    const newEmpNotification = {
+      id: Date.now(),
+      category: 'Projects',
+      icon: '🔄',
+      title: 'Project Reassigned',
+      message: reassignMessage || `You have been reassigned to project: ${newProject}`,
+      time: 'Just now',
+      unread: true,
+      group: 'Today',
+      priority: 'Important'
+    };
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
+    window.dispatchEvent(new Event('employee-notifications-updated'));
+
+    toast.success("Project Reassigned", {
+      description: `${reassignIntern.name} has been moved to ${newProject}.`,
+    });
+    setReassignIntern(null);
+    setNewProject('');
+    setReassignMessage('');
+  };
+
+  const handleWhatsAppSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!whatsappIntern || !whatsappMessage) return;
+
+    const phoneNum = whatsappIntern.phone.replace(/[^0-9]/g, '');
+    window.open(`https://wa.me/${phoneNum}?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
+    
+    setWhatsappIntern(null);
+    setWhatsappMessage('');
   };
 
   return (
@@ -209,6 +273,17 @@ export default function TeamMembers() {
             />
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="w-[140px] rounded-xl bg-slate-50 dark:bg-slate-900/50">
+                <SelectValue placeholder="Project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                {Array.from(new Set(interns.map(i => i.project))).map(proj => (
+                  <SelectItem key={proj} value={proj}>{proj}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={deptFilter} onValueChange={setDeptFilter}>
               <SelectTrigger className="w-[140px] rounded-xl bg-slate-50 dark:bg-slate-900/50">
                 <SelectValue placeholder="Department" />
@@ -253,7 +328,18 @@ export default function TeamMembers() {
                 </SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="icon" className="rounded-xl shrink-0">
+            <Button 
+              variant={hasActiveFilters ? "secondary" : "outline"} 
+              size="icon" 
+              className={cn("rounded-xl shrink-0 transition-colors", hasActiveFilters && "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 border-0")}
+              onClick={() => {
+                setSearchTerm('');
+                setDeptFilter('all');
+                setStatusFilter('all');
+                setProjectFilter('all');
+              }}
+              title={hasActiveFilters ? "Clear filters" : "Filter"}
+            >
               <Filter className="h-4 w-4" />
             </Button>
           </div>
@@ -293,18 +379,34 @@ export default function TeamMembers() {
                     </CardDescription>
                   </div>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-slate-400 hover:text-slate-900 dark:hover:text-white" onClick={(e) => e.stopPropagation()}>
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                    <DropdownMenuItem className="font-medium cursor-pointer"><CheckCircle2 className="mr-2 h-4 w-4" /> Assign Task</DropdownMenuItem>
-                    <DropdownMenuItem className="font-medium cursor-pointer"><MessageSquare className="mr-2 h-4 w-4" /> Send WhatsApp</DropdownMenuItem>
-                    <DropdownMenuItem className="font-medium cursor-pointer text-rose-600 dark:text-rose-400"><Clock className="mr-2 h-4 w-4" /> Deactivate</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex items-center gap-2">
+                  <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-orange-100 text-orange-600 hover:bg-orange-200 hover:text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 dark:hover:bg-orange-500/30 transition-all border-0 shadow-none" onClick={(e) => {
+                    e.stopPropagation();
+                    setReassignIntern(intern);
+                    setReassignMessage(`Hi ${intern.name.split(' ')[0]}, you are being moved from ${intern.project} to a new project.`);
+                    setNewProject('');
+                  }} title="Reassign Project">
+                    <ArrowRightLeft className="h-4 w-4" />
+                  </Button>
+                  <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-200 hover:text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 dark:hover:bg-emerald-500/30 transition-all border-0 shadow-none" onClick={(e) => {
+                    e.stopPropagation();
+                    setWhatsappIntern(intern);
+                    setWhatsappMessage(`Hi ${intern.name.split(' ')[0]}, `);
+                  }} title="Send WhatsApp">
+                    <MessageCircle className="h-4 w-4" />
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white transition-all border-0 shadow-none" onClick={(e) => e.stopPropagation()}>
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                      <DropdownMenuItem className="font-medium cursor-pointer"><CheckCircle2 className="mr-2 h-4 w-4" /> Assign Task</DropdownMenuItem>
+                      <DropdownMenuItem className="font-medium cursor-pointer text-rose-600 dark:text-rose-400"><Clock className="mr-2 h-4 w-4" /> Deactivate</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-5 flex-1 flex flex-col gap-4">
@@ -324,11 +426,19 @@ export default function TeamMembers() {
                 </div>
               </div>
 
-              <div className="space-y-1.5 flex-1">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Current Task</p>
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">
-                  {intern.currentTask}
-                </p>
+              <div className="grid grid-cols-2 gap-3 mb-2 flex-1">
+                <div className="space-y-1.5 flex-1">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Project</p>
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md" title={intern.project}>
+                    {intern.project}
+                  </p>
+                </div>
+                <div className="space-y-1.5 flex-1">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Current Task</p>
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md" title={intern.currentTask}>
+                    {intern.currentTask}
+                  </p>
+                </div>
               </div>
               
               <div className="flex flex-wrap gap-1.5 mt-auto">
@@ -374,8 +484,11 @@ export default function TeamMembers() {
                     <Button size="icon" variant="outline" className="rounded-full shadow-sm">
                       <Mail className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                     </Button>
-                    <Button size="icon" className="rounded-full shadow-sm bg-orange-600 hover:bg-orange-700 text-white">
-                      <MessageSquare className="h-4 w-4" />
+                    <Button size="icon" className="rounded-full shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => {
+                      setWhatsappIntern(selectedIntern);
+                      setWhatsappMessage(`Hi ${selectedIntern.name.split(' ')[0]}, `);
+                    }}>
+                      <MessageCircle className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -486,6 +599,86 @@ export default function TeamMembers() {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Reassign Project Dialog */}
+      <Dialog open={!!reassignIntern} onOpenChange={(open) => !open && setReassignIntern(null)}>
+        <DialogContent className="sm:max-w-[500px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+              <MapPin className="mr-2 h-5 w-5 text-orange-500" />
+              Reassign Project
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleReassignSubmit} className="space-y-4 pt-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Team Member</label>
+              <Input disabled value={reassignIntern?.name || ''} className="rounded-xl bg-slate-50 dark:bg-slate-900" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">New Project</label>
+              <Select required value={newProject} onValueChange={setNewProject}>
+                <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800">
+                  <SelectValue placeholder="Select a new project..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
+                  <SelectItem value="Dashboard UI Revamp">Dashboard UI Revamp</SelectItem>
+                  <SelectItem value="Supabase Migration">Supabase Migration</SelectItem>
+                  <SelectItem value="Predictive Model V2">Predictive Model V2</SelectItem>
+                  <SelectItem value="Onboarding Flow">Onboarding Flow</SelectItem>
+                  <SelectItem value="Backend API V3">Backend API V3</SelectItem>
+                  <SelectItem value="Marketing Site">Marketing Site</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Message to Employee</label>
+              <Textarea 
+                required 
+                value={reassignMessage} 
+                onChange={(e) => setReassignMessage(e.target.value)}
+                className="rounded-xl resize-none h-24 border-slate-200 dark:border-slate-800"
+                placeholder="Explain the reassignment..."
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <Button type="button" variant="ghost" onClick={() => setReassignIntern(null)} className="rounded-xl font-bold">Cancel</Button>
+              <Button type="submit" className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold">Reassign & Notify</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* WhatsApp Message Dialog */}
+      <Dialog open={!!whatsappIntern} onOpenChange={(open) => !open && setWhatsappIntern(null)}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+              <MessageSquare className="mr-2 h-5 w-5 text-emerald-500" />
+              Send WhatsApp Message
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleWhatsAppSubmit} className="space-y-4 pt-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">To</label>
+              <Input disabled value={whatsappIntern?.name || ''} className="rounded-xl bg-slate-50 dark:bg-slate-900" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Message</label>
+              <Textarea 
+                required 
+                value={whatsappMessage} 
+                onChange={(e) => setWhatsappMessage(e.target.value)}
+                className="rounded-xl resize-none h-32 border-slate-200 dark:border-slate-800"
+                placeholder="Type your message here..."
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <Button type="button" variant="ghost" onClick={() => setWhatsappIntern(null)} className="rounded-xl font-bold">Cancel</Button>
+              <Button type="submit" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">Send via WhatsApp</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
