@@ -115,7 +115,7 @@ export default function WorkLogs({ session }: { session?: any }) {
   const todayStr = format(todayDate, 'yyyy-MM-dd');
   
   const [logs, setLogs] = useState<any[]>(() => {
-    const saved = localStorage.getItem('work_logs_list_v3');
+    const saved = localStorage.getItem('work_logs_list_v4');
     if (saved) return JSON.parse(saved);
     
     return mockWorkLogs.map(log => ({
@@ -148,7 +148,7 @@ export default function WorkLogs({ session }: { session?: any }) {
       isMounted.current = true;
       return;
     }
-    localStorage.setItem('work_logs_list_v3', JSON.stringify(logs));
+    localStorage.setItem('work_logs_list_v4', JSON.stringify(logs));
   }, [logs]);
 
   const role = session?.user?.user_metadata?.role || 'manager';
@@ -199,6 +199,14 @@ export default function WorkLogs({ session }: { session?: any }) {
 
   const [activeSessions, setActiveSessions] = useState<{ [key: string]: { time: number; isOnline: boolean } }>({});
 
+  // Simulated base offsets so all team members appear online (in seconds)
+  const SIMULATED_OFFSETS: Record<string, number> = {
+    'u-1': 2 * 3600 + 15 * 60 + 30, // Amanda Smith – 2h 15m 30s
+    'u-2': 3600 + 48 * 60 + 12,      // Rahul Sharma  – 1h 48m 12s
+    'u-3': 45 * 60 + 5,              // Priya Patel   – 45m 5s
+    'u-4': 3 * 3600 + 10 * 60 + 40, // Tanvy Pandey  – 3h 10m 40s
+  };
+
   useEffect(() => {
     const updateSessions = () => {
       const sessions: { [key: string]: { time: number; isOnline: boolean } } = {};
@@ -211,7 +219,9 @@ export default function WorkLogs({ session }: { session?: any }) {
           const startTime = parseInt(loginTimeStr, 10);
           sessions[member.id] = { time: Math.floor((Date.now() - startTime) / 1000), isOnline: true };
         } else {
-          sessions[member.id] = { time: 0, isOnline: false };
+          // Simulate an incrementing online session for all team members
+          const base = SIMULATED_OFFSETS[member.id] || 1800;
+          sessions[member.id] = { time: base + Math.floor(Date.now() / 1000) % 3600, isOnline: true };
         }
       });
       setActiveSessions(sessions);
