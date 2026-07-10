@@ -33,9 +33,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
     const emailKey = defaultEmail.toLowerCase();
     const storedAvatar = localStorage.getItem(`userAvatar_${emailKey}`);
-    const storedName = localStorage.getItem('userName');
-    const storedDepartment = localStorage.getItem('userDepartment');
-    const storedRole = localStorage.getItem('userRole');
+    const storedName = localStorage.getItem(`userName_${emailKey}`);
+    const storedDepartment = localStorage.getItem(`userDepartment_${emailKey}`);
+    const storedRole = localStorage.getItem(`userRole_${emailKey}`);
 
     setUser({
       name: storedName || defaultName,
@@ -56,11 +56,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(prev => {
       if (!prev) return null;
       const next = { ...prev, ...updates };
-      
-      if (updates.name !== undefined) localStorage.setItem('userName', updates.name);
-      if (updates.department !== undefined) localStorage.setItem('userDepartment', updates.department);
-      if (updates.role !== undefined) localStorage.setItem('userRole', updates.role);
       const emailKey = prev.email.toLowerCase();
+      
+      if (updates.name !== undefined) localStorage.setItem(`userName_${emailKey}`, updates.name);
+      if (updates.department !== undefined) localStorage.setItem(`userDepartment_${emailKey}`, updates.department);
+      if (updates.role !== undefined) localStorage.setItem(`userRole_${emailKey}`, updates.role);
       if (updates.avatar !== undefined && updates.avatar !== null) localStorage.setItem(`userAvatar_${emailKey}`, updates.avatar);
       
       return next;

@@ -97,7 +97,7 @@ function App() {
   return (
     <ThemeProvider>
       <ProjectProvider>
-      <UserProvider>
+      <UserProvider key={session?.user?.email || 'guest'}>
       <TooltipProvider>
           {!session ? (
             authView === 'login' ? (
