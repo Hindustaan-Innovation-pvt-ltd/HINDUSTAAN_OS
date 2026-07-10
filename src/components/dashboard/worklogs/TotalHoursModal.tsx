@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, Calendar, Download, Trophy, Users, FolderKanban, Activity, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { Clock, Calendar, Download, Trophy, Users, FolderKanban, Activity, TrendingUp, CheckCircle2, X } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
@@ -117,6 +117,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                 <Button onClick={handlePDF} size="sm" className="h-10 px-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-violet-500/20 text-slate-300 hover:text-white text-sm font-semibold transition-all"><Download className="h-4 w-4 mr-2"/>PDF</Button>
                 <Button onClick={handleCSV} size="sm" className="h-10 px-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-violet-500/20 text-slate-300 hover:text-white text-sm font-semibold transition-all"><Download className="h-4 w-4 mr-2"/>CSV</Button>
               </>}
+              <Button onClick={() => onOpenChange(false)} size="sm" className="h-10 px-5 rounded-2xl bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 text-sm font-semibold transition-all"><X className="h-4 w-4 mr-2"/>Close</Button>
             </div>
           </div>
         </div>
