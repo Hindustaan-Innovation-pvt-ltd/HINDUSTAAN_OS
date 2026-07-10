@@ -24,6 +24,7 @@ import {
 
 import { INITIAL_TASKS } from '@/data/mockData';
 import { mockWorkLogs } from '@/data/mockWorkLogs';
+import { TotalHoursModal } from '@/components/dashboard/worklogs/TotalHoursModal';
 
 const ONLINE_TEAM_MEMBERS = [
   { id: 'u-1', name: 'Amanda Smith', initials: 'AS', role: 'Frontend Lead', task: 'Component Refactoring', project: 'Frontend Core', color: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
@@ -156,7 +157,8 @@ export default function WorkLogs({ session }: { session?: any }) {
   const currentUser = {
     id: currentUserId,
     role: role as 'manager' | 'employee',
-    name: currentUserName
+    name: currentUserName,
+    email: email
   };
 
   // Active session timer for logged-in user
@@ -598,41 +600,13 @@ export default function WorkLogs({ session }: { session?: any }) {
         </div>
       )}
 
-      {/* Total Hours Interactive Modal */}
-      <Dialog open={isTotalHoursModalOpen} onOpenChange={setIsTotalHoursModalOpen}>
-        <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600" />
-          <DialogHeader className="px-2 pt-6">
-            <div className="mx-auto w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-full flex items-center justify-center mb-4">
-              <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <DialogTitle className="text-2xl font-black text-center tracking-tight">Total Hours Analysis</DialogTitle>
-            <DialogDescription className="text-center text-slate-500 dark:text-slate-400 mt-2 font-medium">
-              Detailed breakdown of logged time across all filtered projects between July 1 - July 10.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-6 px-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-50 dark:bg-slate-950/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Approved</p>
-                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                  {filteredLogs.filter(l => l.status === 'Approved').reduce((acc, log) => acc + (log.hours || 0), 0).toFixed(1)}h
-                </p>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-950/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Pending</p>
-                <p className="text-2xl font-black text-amber-600 dark:text-amber-500">
-                  {filteredLogs.filter(l => l.status === 'Pending').reduce((acc, log) => acc + (log.hours || 0), 0).toFixed(1)}h
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 bg-blue-50 dark:bg-blue-500/10 p-4 rounded-xl border border-blue-100 dark:border-blue-500/20 flex items-center justify-between">
-              <span className="text-sm font-bold text-blue-700 dark:text-blue-400">Total Filtered</span>
-              <span className="text-2xl font-black text-blue-700 dark:text-blue-400">{totalHours.toFixed(1)}h</span>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <TotalHoursModal 
+        isOpen={isTotalHoursModalOpen} 
+        onOpenChange={setIsTotalHoursModalOpen} 
+        logs={filteredLogs} 
+        role={currentUser.role} 
+        currentUser={{ name: currentUser.name, email: currentUser.email || '' }}
+      />
     </div>
   );
 }
