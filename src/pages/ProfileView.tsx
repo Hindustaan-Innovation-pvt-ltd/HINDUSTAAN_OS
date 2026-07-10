@@ -77,15 +77,6 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
               {/* Basic Details */}
               <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-4">{profile.name}</h3>
               <p className="text-sm font-semibold text-slate-500 mt-1">{profile.role}</p>
-              
-              <div className="flex items-center gap-1.5 mt-2">
-                <Badge variant="secondary" className="text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md">
-                  {profile.department}
-                </Badge>
-                <Badge variant="outline" className="text-xs font-bold border-orange-500/20 text-orange-600 dark:text-orange-400 rounded-md">
-                  {profile.employmentType}
-                </Badge>
-              </div>
 
               <div className="w-full border-t border-slate-100 dark:border-slate-800/80 mt-6 pt-4 text-left space-y-3">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">About Me</p>
@@ -221,13 +212,6 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Work Mode</span>
                   <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.workMode}</p>
-                </div>
-                <div className="space-y-1 md:col-span-2">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Office Location</span>
-                  <p className="text-base font-bold text-slate-800 dark:text-slate-200 flex items-center">
-                    <MapPin className="h-4 w-4 mr-1.5 text-rose-500" />
-                    {profile.officeLocation}
-                  </p>
                 </div>
               </div>
             </CardContent>

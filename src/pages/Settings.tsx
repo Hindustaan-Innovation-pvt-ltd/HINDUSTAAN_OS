@@ -8,18 +8,21 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   User, Shield, Bell, Palette, Link as LinkIcon, Database, Globe, HelpCircle, 
-  Download, MonitorSmartphone, CheckCircle2, Moon, Sun, Monitor, ChevronLeft
+  Download, MonitorSmartphone, CheckCircle2, Moon, Sun, Monitor, ChevronLeft, Clock,
+  Eye, EyeOff, QrCode, Smartphone, Laptop, AlertTriangle
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { ConnectedApps } from '../components/dashboard/settings/ConnectedApps';
 import { Progress } from "@/components/ui/progress";
 import { useTheme } from '../context/ThemeContext';
+import { toast } from 'sonner';
 
 const SETTINGS_SECTIONS = [
-  { id: 'profile', label: 'Profile Information', description: 'Manage your personal details and workspace identity.', icon: User },
   { id: 'security', label: 'Account & Security', description: 'Manage your password and security preferences.', icon: Shield },
   { id: 'notifications', label: 'Notifications', description: 'Control how and when you receive alerts.', icon: Bell },
   { id: 'appearance', label: 'Appearance', description: 'Customize how the application looks on your device.', icon: Palette },
+  { id: 'standup', label: 'Standup Settings', description: 'Customize daily standups and reminders.', icon: Clock },
   { id: 'apps', label: 'Connected Apps', description: 'Manage your third-party integrations.', icon: LinkIcon },
   { id: 'data', label: 'Data & Storage', description: 'Manage local cache and export your data.', icon: Database },
   { id: 'language', label: 'Language & Region', description: 'Customize your localization settings.', icon: Globe },
@@ -47,88 +50,245 @@ export default function Settings({ session }: { session: any }) {
     setToggles(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // Security State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState({ current: false, new: false, confirm: false });
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
+  const [twoFactorDisableModalOpen, setTwoFactorDisableModalOpen] = useState(false);
+  const [otpValue, setOtpValue] = useState('');
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(() => localStorage.getItem('twoFactorEnabled') === 'true');
+
+  const [sessions, setSessions] = useState(() => {
+    const saved = localStorage.getItem('loginSessions');
+    return saved ? JSON.parse(saved) : [
+      { id: 1, device: "Windows PC", browser: "Chrome", location: "Mumbai, India", date: "Current Session", current: true },
+      { id: 2, device: "MacBook Pro", browser: "Safari", location: "Bengaluru, India", date: "July 5, 2026", current: false }
+    ];
+  });
+  const [sessionToRevoke, setSessionToRevoke] = useState<number | null>(null);
+
+  const calculatePasswordStrength = (pwd: string) => {
+    if (pwd.length === 0) return { label: '', color: 'bg-slate-200 dark:bg-slate-800', width: '0%' };
+    let strength = 0;
+    if (pwd.length >= 8) strength++;
+    if (/[A-Z]/.test(pwd)) strength++;
+    if (/[a-z]/.test(pwd)) strength++;
+    if (/[0-9]/.test(pwd)) strength++;
+    
+    if (strength <= 2) return { label: 'Weak', color: 'bg-rose-500', width: '33%' };
+    if (strength === 3) return { label: 'Medium', color: 'bg-amber-500', width: '66%' };
+    return { label: 'Strong', color: 'bg-emerald-500', width: '100%' };
+  };
+
+  const handleUpdatePassword = () => {
+    if (!currentPassword) return toast.error('Current password required.');
+    if (newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      return toast.error('Password does not meet requirements.');
+    }
+    if (newPassword !== confirmPassword) return toast.error('Passwords do not match.');
+
+    setIsUpdatingPassword(true);
+    setTimeout(() => {
+      setIsUpdatingPassword(false);
+      toast.success('Password updated successfully.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      localStorage.setItem('passwordUpdated', Date.now().toString());
+    }, 1500);
+  };
+
+  const handleEnable2FA = () => {
+    if (otpValue === '123456') {
+      setTwoFactorEnabled(true);
+      localStorage.setItem('twoFactorEnabled', 'true');
+      setTwoFactorModalOpen(false);
+      setOtpValue('');
+      toast.success('Two Factor Authentication Enabled');
+    } else {
+      toast.error('Invalid verification code');
+    }
+  };
+
+  const handleDisable2FA = () => {
+    setTwoFactorEnabled(false);
+    localStorage.setItem('twoFactorEnabled', 'false');
+    setTwoFactorDisableModalOpen(false);
+    toast.success('Two Factor Authentication Disabled');
+  };
+
+  const handleRevokeSession = () => {
+    if (sessionToRevoke !== null) {
+      const updated = sessions.filter((s: any) => s.id !== sessionToRevoke);
+      setSessions(updated);
+      localStorage.setItem('loginSessions', JSON.stringify(updated));
+      setSessionToRevoke(null);
+      toast.success('Session revoked.');
+    }
+  };
+
+  const [standupSettings, setStandupSettings] = useState(() => {
+    const saved = localStorage.getItem('standupSettings');
+    return saved ? JSON.parse(saved) : {
+      dailyReminder: true,
+      reminderTime: '09:00 AM',
+      timeZone: 'Asia/Kolkata',
+      deadline: '10:00 AM',
+      formatYesterday: true,
+      formatToday: true,
+      formatBlockers: true,
+      formatNotes: true,
+      emailReminder: true,
+      browserNotification: true,
+      autoSendReminder: false
+    };
+  });
+
+  const handleStandupToggle = (key: keyof typeof standupSettings) => {
+    setStandupSettings((prev: any) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleStandupSelect = (key: string, value: string) => {
+    setStandupSettings((prev: any) => ({ ...prev, [key]: value }));
+  };
+
+  const saveStandupSettings = () => {
+    localStorage.setItem('standupSettings', JSON.stringify(standupSettings));
+    toast.success('Standup Settings Saved', { description: 'Your preferences have been updated successfully.' });
+  };
+
   const renderContent = () => {
     switch(activeTab) {
-      case 'profile':
+      case 'standup':
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Profile Information</h2>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage your personal details and workspace identity.</p>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Standup Settings</h2>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize how Daily Standups work for you {role === 'manager' && 'and your team'}.</p>
             </div>
             
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row gap-8 items-start">
-                  <div className="flex flex-col items-center gap-4 shrink-0">
-                    <Avatar className="h-24 w-24 border-4 border-slate-50 dark:border-slate-900 shadow-md">
-                      <AvatarFallback className="bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 text-2xl font-bold">
-                        {role === 'manager' ? 'AG' : 'TP'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <Button variant="outline" size="sm" className="rounded-xl font-bold border-slate-200 dark:border-slate-700">Change Avatar</Button>
-                  </div>
+            <Card className="rounded-2xl border-violet-500/20 bg-white/50 dark:bg-slate-900/40 backdrop-blur-xl shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-violet-500/10 to-blue-500/10 rounded-full blur-3xl -z-10 translate-x-1/2 -translate-y-1/2"></div>
+              <CardContent className="p-6 space-y-6">
+                
+                {/* Reminders & Timings */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Timings & Alerts</h3>
                   
-                  <div className="flex-1 space-y-4 w-full">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Full Name</label>
-                        <Input defaultValue={role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'} className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-medium" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Email Address</label>
-                        <Input defaultValue={session?.user?.email || 'user@hindustaan.in'} disabled className="rounded-xl bg-slate-100 dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 font-medium text-slate-500" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Department</label>
-                        <Select defaultValue="engineering">
-                          <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-medium">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
-                            <SelectItem value="engineering">Engineering</SelectItem>
-                            <SelectItem value="design">Design</SelectItem>
-                            <SelectItem value="marketing">Marketing</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Role</label>
-                        <Input defaultValue={role === 'manager' ? 'Manager' : 'Frontend Developer Intern'} disabled className="rounded-xl bg-slate-100 dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 font-medium text-slate-500" />
-                      </div>
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">Daily Standup Reminder</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">Receive an alert to submit your standup.</p>
                     </div>
-                    
-                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800/60">
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Internship Details</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Cohort</span>
-                          <span className="text-sm font-bold text-slate-900 dark:text-white">Summer 2026</span>
-                        </div>
-                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Manager</span>
-                          <span className="text-sm font-bold text-slate-900 dark:text-white">Aakash Gupta</span>
-                        </div>
-                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Start Date</span>
-                          <span className="text-sm font-bold text-slate-900 dark:text-white">Jun 1, 2026</span>
-                        </div>
-                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">End Date</span>
-                          <span className="text-sm font-bold text-slate-900 dark:text-white">Sep 1, 2026</span>
-                        </div>
-                      </div>
+                    <Switch checked={standupSettings.dailyReminder} onCheckedChange={() => handleStandupToggle('dailyReminder')} />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Reminder Time</label>
+                      <Select value={standupSettings.reminderTime} onValueChange={(val) => handleStandupSelect('reminderTime', val)}>
+                        <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          {['08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Time Zone</label>
+                      <Select value={standupSettings.timeZone} onValueChange={(val) => handleStandupSelect('timeZone', val)}>
+                        <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          <SelectItem value="Asia/Kolkata">Asia/Kolkata (IST)</SelectItem>
+                          <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
+                          <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Submission Deadline</label>
+                    <Select value={standupSettings.deadline} onValueChange={(val) => handleStandupSelect('deadline', val)}>
+                      <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="9:00 AM">9:00 AM</SelectItem>
+                        <SelectItem value="10:00 AM">10:00 AM</SelectItem>
+                        <SelectItem value="11:00 AM">11:00 AM</SelectItem>
+                        <SelectItem value="Custom">Custom Time</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
+
+                {/* Format Toggles */}
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                  <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-4">Standup Format Options</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {[
+                      { key: 'formatYesterday', label: "Yesterday's Work" },
+                      { key: 'formatToday', label: "Today's Plan" },
+                      { key: 'formatBlockers', label: "Blockers" },
+                      { key: 'formatNotes', label: "Additional Notes" }
+                    ].map(fmt => (
+                      <div key={fmt.key} className="flex items-center justify-between p-3 rounded-xl bg-white/60 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{fmt.label}</span>
+                        <Switch checked={standupSettings[fmt.key as keyof typeof standupSettings] as boolean} onCheckedChange={() => handleStandupToggle(fmt.key as keyof typeof standupSettings)} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notifications & Automation */}
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                  <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-4">Notifications & Automation</h3>
+                  <div className="space-y-3">
+                    {[
+                      { key: 'emailReminder', label: 'Enable Email Reminder', desc: 'Receive a daily email prompting your standup.' },
+                      { key: 'browserNotification', label: 'Enable Browser Notification', desc: 'Get a push notification in your browser.' },
+                      { key: 'autoSendReminder', label: 'Auto-send reminder if missed', desc: 'Automatically nudge if standup is not submitted by deadline.' }
+                    ].map(notif => (
+                      <div key={notif.key} className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white">{notif.label}</h4>
+                          <p className="text-xs text-slate-500 mt-0.5">{notif.desc}</p>
+                        </div>
+                        <Switch checked={standupSettings[notif.key as keyof typeof standupSettings] as boolean} onCheckedChange={() => handleStandupToggle(notif.key as keyof typeof standupSettings)} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {role === 'manager' && (
+                  <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                    <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4">Manager Access</h3>
+                    <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30">
+                      <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-3">You can enforce these standup configurations as the default for your entire team.</p>
+                      <Button variant="outline" className="text-xs font-bold border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30">Set as Team Default</Button>
+                    </div>
+                  </div>
+                )}
+                
               </CardContent>
               <CardFooter className="p-6 pt-0 flex justify-end">
-                <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold px-6">Save Changes</Button>
+                <Button onClick={saveStandupSettings} className="rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700 text-white font-bold px-8 shadow-md">
+                  Save Changes
+                </Button>
               </CardFooter>
             </Card>
           </div>
         );
       case 'security':
+        const pwdStrength = calculatePasswordStrength(newPassword);
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
@@ -142,15 +302,48 @@ export default function Settings({ session }: { session: any }) {
                 <CardDescription className="font-semibold text-xs">Ensure your account is using a long, random password.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-1.5 max-w-md">
+                <div className="space-y-1.5 max-w-md relative">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Current Password</label>
-                  <Input type="password" placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700" />
+                  <div className="relative">
+                    <Input type={showPassword.current ? "text" : "password"} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 pr-10" />
+                    <button type="button" onClick={() => setShowPassword(p => ({...p, current: !p.current}))} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                      {showPassword.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
-                <div className="space-y-1.5 max-w-md">
+                <div className="space-y-1.5 max-w-md relative">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">New Password</label>
-                  <Input type="password" placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700" />
+                  <div className="relative">
+                    <Input type={showPassword.new ? "text" : "password"} value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 pr-10" />
+                    <button type="button" onClick={() => setShowPassword(p => ({...p, new: !p.new}))} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                      {showPassword.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {newPassword && (
+                    <div className="pt-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div className="text-[10px] font-bold text-slate-500 uppercase">Strength</div>
+                        <div className={`text-[10px] font-bold uppercase ${pwdStrength.color.replace('bg-', 'text-')}`}>{pwdStrength.label}</div>
+                      </div>
+                      <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className={`h-full transition-all duration-300 ${pwdStrength.color}`} style={{ width: pwdStrength.width }}></div>
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">Min 8 chars, 1 uppercase, 1 lowercase, 1 number</div>
+                    </div>
+                  )}
                 </div>
-                <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold mt-2">Update Password</Button>
+                <div className="space-y-1.5 max-w-md relative">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Confirm New Password</label>
+                  <div className="relative">
+                    <Input type={showPassword.confirm ? "text" : "password"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 pr-10" />
+                    <button type="button" onClick={() => setShowPassword(p => ({...p, confirm: !p.confirm}))} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                      {showPassword.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <Button disabled={isUpdatingPassword} onClick={handleUpdatePassword} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold mt-2">
+                  {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+                </Button>
               </CardContent>
             </Card>
 
@@ -158,39 +351,97 @@ export default function Settings({ session }: { session: any }) {
               <CardContent className="p-0">
                 <div className="p-6 border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">Two-Factor Authentication</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">Two-Factor Authentication</h3>
+                      {twoFactorEnabled && <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400">2FA Enabled</Badge>}
+                    </div>
                     <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Add an extra layer of security to your account.</p>
                   </div>
-                  <Switch checked={toggles.twoFactor} onCheckedChange={() => handleToggle('twoFactor')} />
+                  <Switch checked={twoFactorEnabled} onCheckedChange={(checked) => {
+                    if (checked) setTwoFactorModalOpen(true);
+                    else setTwoFactorDisableModalOpen(true);
+                  }} />
                 </div>
                 
                 <div className="p-6">
                   <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4">Active Sessions & Login History</h3>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-500/5">
-                      <div className="flex items-center gap-3">
-                        <MonitorSmartphone className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                        <div>
-                          <p className="text-sm font-bold text-slate-900 dark:text-white">Windows PC • Chrome</p>
-                          <p className="text-xs font-medium text-slate-500">Mumbai, India • Current Session</p>
+                    {sessions.map((s: any) => (
+                      <div key={s.id} className={cn("flex items-center justify-between p-3 rounded-xl border", s.current ? "border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-500/5" : "border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30")}>
+                        <div className="flex items-center gap-3">
+                          {s.device.includes('PC') || s.device.includes('Mac') ? <Laptop className={cn("h-5 w-5", s.current ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400")} /> : <Smartphone className={cn("h-5 w-5", s.current ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400")} />}
+                          <div>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white">{s.device} • {s.browser}</p>
+                            <p className="text-xs font-medium text-slate-500">{s.location} • {s.date}</p>
+                          </div>
                         </div>
+                        {s.current ? (
+                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 hover:bg-emerald-100 border-0 font-bold">Active</Badge>
+                        ) : (
+                          <Button onClick={() => setSessionToRevoke(s.id)} variant="ghost" size="sm" className="text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 font-bold">Revoke</Button>
+                        )}
                       </div>
-                      <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 hover:bg-emerald-100 border-0 font-bold">Active</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-                      <div className="flex items-center gap-3">
-                        <MonitorSmartphone className="h-5 w-5 text-slate-400" />
-                        <div>
-                          <p className="text-sm font-bold text-slate-900 dark:text-white">MacBook Pro • Safari</p>
-                          <p className="text-xs font-medium text-slate-500">Bengaluru, India • July 5, 2026</p>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" className="text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 font-bold">Revoke</Button>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Modals */}
+            <Dialog open={twoFactorModalOpen} onOpenChange={setTwoFactorModalOpen}>
+              <DialogContent className="sm:max-w-[425px] rounded-2xl border-slate-200 dark:border-slate-800">
+                <DialogHeader>
+                  <DialogTitle className="text-slate-900 dark:text-white">Enable Two Factor Authentication</DialogTitle>
+                  <DialogDescription className="text-slate-500">Scan this QR code with your authenticator app.</DialogDescription>
+                </DialogHeader>
+                <div className="py-4 flex flex-col items-center gap-6">
+                  <div className="p-4 bg-white rounded-xl border-2 border-slate-100 shadow-sm">
+                    <QrCode className="w-32 h-32 text-slate-900" />
+                  </div>
+                  <div className="w-full space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center block">Secret Key</label>
+                    <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-lg text-center font-mono text-sm tracking-widest text-slate-900 dark:text-white select-all">
+                      PRJ-OS-4K8D-92JS-7HF2
+                    </div>
+                  </div>
+                  <div className="w-full space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center block">Enter 6-digit Code</label>
+                    <Input type="text" maxLength={6} placeholder="123456" value={otpValue} onChange={e => setOtpValue(e.target.value.replace(/\D/g, ''))} className="text-center tracking-[1em] font-mono text-lg rounded-xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800" />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setTwoFactorModalOpen(false)} className="rounded-xl border-slate-200 dark:border-slate-700">Cancel</Button>
+                  <Button onClick={handleEnable2FA} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold">Verify & Enable</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={twoFactorDisableModalOpen} onOpenChange={setTwoFactorDisableModalOpen}>
+              <DialogContent className="sm:max-w-[400px] rounded-2xl border-slate-200 dark:border-slate-800">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-rose-600"><AlertTriangle className="h-5 w-5"/> Disable Two Factor Authentication?</DialogTitle>
+                  <DialogDescription className="text-slate-500">This will reduce the security of your account. Are you sure?</DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="mt-4">
+                  <Button variant="outline" onClick={() => setTwoFactorDisableModalOpen(false)} className="rounded-xl border-slate-200 dark:border-slate-700">Cancel</Button>
+                  <Button onClick={handleDisable2FA} className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold">Disable</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={sessionToRevoke !== null} onOpenChange={(open) => !open && setSessionToRevoke(null)}>
+              <DialogContent className="sm:max-w-[400px] rounded-2xl border-slate-200 dark:border-slate-800">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-rose-600"><AlertTriangle className="h-5 w-5"/> Remove this device session?</DialogTitle>
+                  <DialogDescription className="text-slate-500">You will be logged out on that device immediately.</DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="mt-4">
+                  <Button variant="outline" onClick={() => setSessionToRevoke(null)} className="rounded-xl border-slate-200 dark:border-slate-700">Cancel</Button>
+                  <Button onClick={handleRevokeSession} className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold">Revoke</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            
           </div>
         );
       case 'notifications':

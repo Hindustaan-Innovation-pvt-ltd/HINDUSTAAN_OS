@@ -117,23 +117,12 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                 <Button onClick={handlePDF} size="sm" className="h-10 px-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-violet-500/20 text-slate-300 hover:text-white text-sm font-semibold transition-all"><Download className="h-4 w-4 mr-2"/>PDF</Button>
                 <Button onClick={handleCSV} size="sm" className="h-10 px-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-violet-500/20 text-slate-300 hover:text-white text-sm font-semibold transition-all"><Download className="h-4 w-4 mr-2"/>CSV</Button>
               </>}
-              <Button onClick={() => onOpenChange(false)} size="sm" className="h-10 px-5 rounded-2xl bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 text-sm font-semibold transition-all"><X className="h-4 w-4 mr-2"/>Close</Button>
             </div>
           </div>
         </div>
 
         {/* ── SCROLLABLE BODY ── */}
         <div className="ms flex-1 overflow-y-auto px-10 py-10 space-y-12">
-
-          {/* STAT CARDS */}
-          <div className={`grid gap-8 ${isManager ? 'grid-cols-2 xl:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
-            <StatCard label={isManager?'Team Total Hours':'Total Logged'} value={`${total.toFixed(1)}h`} sub={`${filtered.length} log entries`} icon={Clock} from="from-violet-600/90" to="to-indigo-700/90" border="border-violet-500/30"/>
-            <StatCard label="Approved Hours" value={`${approved.toFixed(1)}h`} sub="Manager reviewed" icon={CheckCircle2} from="from-emerald-600/90" to="to-teal-700/90" border="border-emerald-500/30"/>
-            <StatCard label="Pending Review" value={`${pending.toFixed(1)}h`} sub="Awaiting approval" icon={TrendingUp} from="from-amber-500/90" to="to-orange-600/90" border="border-amber-500/30"/>
-            {isManager
-              ? <StatCard label="Active Employees" value={`${employees.length}`} sub="Contributing this period" icon={Users} from="from-blue-600/90" to="to-cyan-700/90" border="border-blue-500/30"/>
-              : null}
-          </div>
 
           {/* ── MANAGER VIEW ── */}
           {isManager && (
