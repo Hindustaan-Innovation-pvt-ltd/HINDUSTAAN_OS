@@ -117,15 +117,12 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                 <Button onClick={handlePDF} size="sm" className="h-10 px-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-violet-500/20 text-slate-300 hover:text-white text-sm font-semibold transition-all"><Download className="h-4 w-4 mr-2"/>PDF</Button>
                 <Button onClick={handleCSV} size="sm" className="h-10 px-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-violet-500/20 text-slate-300 hover:text-white text-sm font-semibold transition-all"><Download className="h-4 w-4 mr-2"/>CSV</Button>
               </>}
-              <Button onClick={() => onOpenChange(false)} size="sm" className="h-10 px-5 rounded-2xl bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 text-sm font-semibold transition-all"><X className="h-4 w-4 mr-2"/>Close</Button>
             </div>
           </div>
         </div>
 
         {/* ── SCROLLABLE BODY ── */}
         <div className="ms flex-1 overflow-y-auto px-10 py-10 space-y-12">
-
-
 
           {/* ── MANAGER VIEW ── */}
           {isManager && (

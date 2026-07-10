@@ -318,7 +318,7 @@ export default function WorkLogs({ session }: { session?: any }) {
           className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-[#E2E8F0] dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-[#64748B] dark:text-slate-400 group-hover:text-[#6366F1] transition-colors">{currentUser.role === 'manager' ? 'Team Total Hours' : 'My Total Hours'}</h3>
+            <h3 className="text-sm font-bold text-[#64748B] dark:text-slate-400 group-hover:text-[#6366F1] transition-colors">{currentUser.role === 'manager' ? "Employee's Total Hours" : 'My Total Hours'}</h3>
             <div className="p-2 bg-[#F1F5F9] dark:bg-slate-800 rounded-lg"><Clock className="h-5 w-5 text-[#6366F1]" /></div>
           </div>
           <p className="text-4xl font-black text-[#0F172A] dark:text-white">{totalHours.toFixed(1)}h</p>
