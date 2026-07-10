@@ -147,7 +147,40 @@ const INITIAL_NOTIFICATIONS = [
 ];
 
 export function EmployeeNotificationCenter() {
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_employee_notifications');
+    if (saved && saved !== 'null') {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing employee notifications', e);
+      }
+    }
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify(INITIAL_NOTIFICATIONS));
+    return INITIAL_NOTIFICATIONS;
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
+  React.useEffect(() => {
+    const handleSync = () => {
+      const saved = localStorage.getItem('hindustaan_employee_notifications');
+      if (saved && saved !== 'null') {
+        try {
+          setNotifications(JSON.parse(saved));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+    window.addEventListener('employee-notifications-updated', handleSync);
+    return () => {
+      window.removeEventListener('employee-notifications-updated', handleSync);
+    };
+  }, []);
+
   const [activeTab, setActiveTab] = useState('All');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -284,7 +317,7 @@ export function EmployeeNotificationCenter() {
                     <div className="px-3 py-1.5 flex items-center sticky top-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur z-10">
                       <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{groupName}</span>
                     </div>
-                    {groupItems.map(notification => (
+                    {groupItems.map((notification: any) => (
                       <div 
                         key={notification.id}
                         onClick={() => markAsRead(notification.id)}
@@ -323,7 +356,7 @@ export function EmployeeNotificationCenter() {
                             
                             {notification.actions && (
                               <div className="flex items-center gap-2 mt-3">
-                                {notification.actions.map((action, i) => (
+                                {notification.actions.map((action: any, i: number) => (
                                   <Button 
                                     key={i}
                                     variant={action.primary ? "default" : "outline"}

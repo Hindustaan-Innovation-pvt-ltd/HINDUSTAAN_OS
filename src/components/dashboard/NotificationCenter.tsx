@@ -164,11 +164,11 @@ const INITIAL_NOTIFICATIONS = [
 export function NotificationCenter() {
   const [notifications, setNotifications] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_notifications');
-    if (saved) {
+    if (saved && saved !== 'null') {
       try {
         return JSON.parse(saved);
       } catch (e) {
-        return INITIAL_NOTIFICATIONS;
+        console.error('Error parsing notifications', e);
       }
     }
     return INITIAL_NOTIFICATIONS;
@@ -177,7 +177,7 @@ export function NotificationCenter() {
   React.useEffect(() => {
     const handleStorageChange = () => {
       const saved = localStorage.getItem('hindustaan_notifications');
-      if (saved) {
+      if (saved && saved !== 'null') {
         try {
           setNotifications(JSON.parse(saved));
         } catch (e) {}
@@ -190,9 +190,137 @@ export function NotificationCenter() {
       window.removeEventListener('hindustaan_notifications_updated', handleStorageChange);
     };
   }, []);
+
+  React.useEffect(() => {
+    localStorage.setItem('hindustaan_notifications', JSON.stringify(notifications));
+  }, [notifications]);
   const [activeTab, setActiveTab] = useState('All');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
+
+  const handleApproveExtension = (notification: any) => {
+    const { taskId, days, taskTitle, employeeName } = notification.metadata || {};
+    if (!taskId || !days) {
+      toast.error('Invalid extension request data.');
+      return;
+    }
+
+    // 1. Extend task due date in local storage
+    const savedTasks = localStorage.getItem('hindustaan_tasks_list');
+    if (savedTasks) {
+      try {
+        const tasks = JSON.parse(savedTasks);
+        let taskFound = false;
+        const updatedTasks = tasks.map((t: any) => {
+          if (t.id === taskId || String(t.id) === String(taskId)) {
+            taskFound = true;
+            const current = new Date(t.due_date);
+            if (!isNaN(current.getTime())) {
+              current.setDate(current.getDate() + Number(days));
+              // Format back to YYYY-MM-DD
+              const year = current.getFullYear();
+              const month = String(current.getMonth() + 1).padStart(2, '0');
+              const day = String(current.getDate()).padStart(2, '0');
+              t.due_date = `${year}-${month}-${day}`;
+            }
+          }
+          return t;
+        });
+        if (taskFound) {
+          localStorage.setItem('hindustaan_tasks_list', JSON.stringify(updatedTasks));
+          window.dispatchEvent(new Event('tasks-updated'));
+        }
+      } catch (e) {
+        console.error('Error updating task list', e);
+      }
+    }
+
+    // 2. Add notification to employee notification list
+    const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
+    let empNotifications = [];
+    if (savedEmpNotifications && savedEmpNotifications !== 'null') {
+      try {
+        empNotifications = JSON.parse(savedEmpNotifications);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    const newEmpNotification = {
+      id: Date.now(),
+      category: 'Tasks',
+      icon: '✅',
+      title: 'Extension Request Approved',
+      message: `Your request for a ${days}-day extension on "${taskTitle}" has been approved.`,
+      time: 'Just now',
+      unread: true,
+      group: 'Today',
+      priority: 'Success'
+    };
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
+    window.dispatchEvent(new Event('employee-notifications-updated'));
+
+    // 3. Update notification message and clear actions
+    setNotifications(prev => prev.map(n => {
+      if (n.id === notification.id) {
+        return {
+          ...n,
+          unread: false,
+          message: `Approved: Extended deadline of "${taskTitle}" by ${days} days for ${employeeName}.`,
+          actions: undefined
+        };
+      }
+      return n;
+    }));
+
+    toast.success('Extension Approved!', {
+      description: `Extended "${taskTitle}" by ${days} days.`
+    });
+  };
+
+  const handleRejectExtension = (notification: any) => {
+    const { taskTitle, employeeName } = notification.metadata || {};
+
+    // 1. Add notification to employee notification list
+    const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
+    let empNotifications = [];
+    if (savedEmpNotifications && savedEmpNotifications !== 'null') {
+      try {
+        empNotifications = JSON.parse(savedEmpNotifications);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    const newEmpNotification = {
+      id: Date.now(),
+      category: 'Tasks',
+      icon: '❌',
+      title: 'Extension Request Rejected',
+      message: `Your request for an extension on "${taskTitle}" has been rejected.`,
+      time: 'Just now',
+      unread: true,
+      group: 'Today',
+      priority: 'Critical'
+    };
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
+    window.dispatchEvent(new Event('employee-notifications-updated'));
+
+    // 2. Update notification message and clear actions
+    setNotifications(prev => prev.map(n => {
+      if (n.id === notification.id) {
+        return {
+          ...n,
+          unread: false,
+          message: `Rejected: Extension request for "${taskTitle}" by ${employeeName}.`,
+          actions: undefined
+        };
+      }
+      return n;
+    }));
+
+    toast.info('Extension Rejected', {
+      description: `Rejection sent for "${taskTitle}".`
+    });
+  };
 
   const MOCK_TASK = {
     id: 'nt-1',
@@ -366,12 +494,18 @@ export function NotificationCenter() {
                                     )}
                                     onClick={(e) => { 
                                       e.stopPropagation(); 
-                                      if (action.label === 'View Task') {
-                                        setSelectedTask(MOCK_TASK);
+                                      if (action.actionType === 'approve_extension') {
+                                        handleApproveExtension(notification);
+                                      } else if (action.actionType === 'reject_extension') {
+                                        handleRejectExtension(notification);
                                       } else {
-                                        toast.success(`Action "${action.label}" executed successfully!`);
+                                        if (action.label === 'View Task') {
+                                          setSelectedTask(MOCK_TASK);
+                                        } else {
+                                          toast.success(`Action "${action.label}" executed successfully!`);
+                                        }
+                                        markAsRead(notification.id); 
                                       }
-                                      markAsRead(notification.id); 
                                     }}
                                   >
                                     {action.label}
