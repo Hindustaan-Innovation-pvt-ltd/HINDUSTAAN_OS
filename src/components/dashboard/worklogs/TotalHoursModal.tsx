@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { DateRange } from "react-day-picker";
+import type { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { Clock, Calendar, Download, Trophy, Users, FolderKanban, Activity, TrendingUp, CheckCircle2, X } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
@@ -180,7 +180,6 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 rounded-2xl border border-white/10 bg-[#0f172a] text-white shadow-2xl" align="start">
                     <CalendarComponent
-                      initialFocus
                       mode="range"
                       defaultMonth={customRange?.from}
                       selected={customRange}
