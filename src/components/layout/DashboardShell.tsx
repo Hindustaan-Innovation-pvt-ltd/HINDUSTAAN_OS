@@ -251,7 +251,7 @@ export default function DashboardShell({
 
           {/* Navbar Logo for Mobile/Tablet */}
           <div className="flex items-center lg:hidden ml-2 cursor-pointer transition-all duration-300 hover:scale-[1.03]" onClick={() => onNavigate('Dashboard')}>
-            <ProjectLogo size="sidebar" />
+            <BrandLogo variant="sidebar" />
           </div>
 
           <div className="flex flex-1 items-center justify-between gap-x-4 self-stretch lg:gap-x-6">
