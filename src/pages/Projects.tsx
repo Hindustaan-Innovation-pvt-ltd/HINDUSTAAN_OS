@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CalendarDays, LayoutTemplate, Briefcase, LayoutGrid, CheckSquare, Target, ListTodo, Plus, X, ChevronRight, MoreVertical, Edit2, Trash2, RotateCcw } from 'lucide-react';
+import { CalendarDays, LayoutTemplate, Briefcase, LayoutGrid, CheckSquare, Target, ListTodo, Plus, X, ChevronRight, MoreVertical, Edit2, Trash2, RotateCcw, FolderKanban } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -92,8 +92,14 @@ export default function Projects({ session }: { session?: any }) {
       const pTasks: any[] = [];
       p.tasks?.forEach((t: any, tIndex: number) => {
         if (t.status === 'Done' && seed % 2 === 0) return;
-        const start = (t.id.charCodeAt(t.id.length-1) + pIndex + seed) % 6;
-        const duration = (t.id.charCodeAt(0) % 3) + 2;
+        // Waterfall logic so tasks don't overlap randomly
+        const start = tIndex % 5; // 0, 1, 2, 3, 4
+        let duration = 2 + (tIndex % 3); // 2, 3, 4
+        
+        // Ensure it fits within the 7-day grid
+        if (start + duration > 7) {
+          duration = 7 - start;
+        }
         
         pTasks.push({
           id: t.id + seed + tIndex,
@@ -349,9 +355,20 @@ export default function Projects({ session }: { session?: any }) {
               {/* Grouped by Project */}
               {groupedProjects.map((project) => (
                 <div key={project.id} className="relative z-10 space-y-3">
-                  {/* Project Header Divider */}
-                  <div className="w-48 shrink-0 pr-4 mb-2 border-b border-slate-200 dark:border-slate-700/80 pb-1">
-                    <p className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">{project.name}</p>
+                  {/* Project Header Divider (Full Width) */}
+                  <div className="flex items-center justify-between mb-3 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-800/40 w-full col-span-full shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className={cn("h-6 w-6 rounded-md flex items-center justify-center shadow-sm", project.iconColor)}>
+                         <FolderKanban className="h-3 w-3" />
+                      </div>
+                      <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">{project.name}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline" className="text-[10px] font-bold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                        {project.tasks?.length || 0} Tasks
+                      </Badge>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline-block">Lead: {project.manager}</span>
+                    </div>
                   </div>
                   
                   {/* Task Bars */}
@@ -367,9 +384,10 @@ export default function Projects({ session }: { session?: any }) {
                         {/* Task Timeline Bar */}
                         <div className="flex-1 grid grid-cols-7 gap-2">
                           <div 
-                            className={cn("h-8 rounded-lg shadow-sm flex items-center px-3 text-xs font-bold text-white whitespace-nowrap overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md", task.color)}
+                            className="h-8 rounded-lg shadow-sm flex items-center px-3 text-xs font-bold text-white whitespace-nowrap overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md"
                             style={{ 
-                              gridColumn: `${task.start + 1} / span ${task.duration}` 
+                              gridColumn: `${task.start + 1} / span ${task.duration}`,
+                              backgroundColor: project.strokeColor || '#f97316'
                             }}
                           >
                             {task.name}
@@ -553,3 +571,4 @@ export default function Projects({ session }: { session?: any }) {
     </div>
   );
 }
+ 
