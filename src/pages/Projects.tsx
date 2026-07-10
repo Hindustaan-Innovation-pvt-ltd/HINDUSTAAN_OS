@@ -340,7 +340,7 @@ export default function Projects({ session }: { session?: any }) {
         </div>
 
         {/* Gantt Chart Container */}
-        <div className="p-6 overflow-x-auto">
+        <div className="p-6 overflow-x-auto hide-scrollbar">
           <div className="min-w-[700px]">
             
             {/* Timeline Header (Days) */}
