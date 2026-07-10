@@ -3,6 +3,10 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
 import { Clock, Calendar, Download, Trophy, Users, FolderKanban, Activity, TrendingUp, CheckCircle2, X } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import { toast } from 'sonner';
@@ -45,11 +49,53 @@ function Section({ title, icon:Icon, color, children }:{ title:string; icon:any;
 
 export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser }: Props) {
   const [dateRange, setDateRange] = useState('This Month');
+  const [customRange, setCustomRange] = useState<DateRange | undefined>(undefined);
   const isManager = role === 'manager';
 
-  const filtered = useMemo(() =>
-    isManager ? logs : logs.filter(l => l.name === currentUser.name),
-    [logs, isManager, currentUser.name]);
+  const filtered = useMemo(() => {
+    let result = isManager ? logs : logs.filter(l => l.name === currentUser.name);
+    
+    const now = new Date();
+    result = result.filter(l => {
+      if (dateRange === 'Custom Range') {
+        if (!customRange?.from) return true;
+        if (!l.rawDate) return true;
+        const logDate = new Date(l.rawDate);
+        if (!customRange.to) {
+          return logDate.toDateString() === customRange.from.toDateString();
+        }
+        return logDate >= customRange.from && logDate <= customRange.to;
+      }
+      
+      if (!l.rawDate) return true;
+      
+      const logDate = new Date(l.rawDate);
+      
+      if (dateRange === 'Today') {
+        return logDate.toDateString() === now.toDateString();
+      }
+      
+      if (dateRange === 'Yesterday') {
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        return logDate.toDateString() === yesterday.toDateString();
+      }
+      
+      if (dateRange === 'Last 7 Days' || dateRange === 'This Week') {
+        const diffTime = now.getTime() - logDate.getTime();
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        return diffDays >= 0 && diffDays <= 7;
+      }
+      
+      if (dateRange === 'This Month') {
+        return logDate.getMonth() === now.getMonth() && logDate.getFullYear() === now.getFullYear();
+      }
+      
+      return true;
+    });
+    
+    return result;
+  }, [logs, isManager, currentUser.name, dateRange]);
 
   const total    = filtered.reduce((a,l)=>a+l.hours,0);
   const approved = filtered.filter(l=>l.status==='Approved').reduce((a,l)=>a+l.hours,0);
@@ -87,7 +133,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
   const empBar  = trendData;
 
   const handleCSV = ()=>{ const csv="data:text/csv;charset=utf-8,Date,Employee,Project,Task,Hours,Status\n"+filtered.map(l=>`"${l.date}","${l.name}","${l.project}","${l.task}",${l.hours},"${l.status}"`).join('\n'); const a=document.createElement('a'); a.href=encodeURI(csv); a.download='work_logs.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); toast.success('CSV Exported'); };
-  const handlePDF = ()=>{ try{ const doc=new jsPDF(); doc.text(isManager?'Team Productivity Overview':'My Work Summary',14,15); autoTable(doc,{startY:25,head:[['Date','Employee','Project','Task','Hours','Status']],body:filtered.map(l=>[l.date,l.name,l.project,l.task,`${l.hours}h`,l.status])}); doc.save('work_logs.pdf'); toast.success('PDF Exported'); }catch{ toast.error('Failed'); } };
+  const handlePDF = ()=>{ try{ const doc=new jsPDF(); doc.text(isManager?"Employee's Productivity Overview":'My Work Summary',14,15); autoTable(doc,{startY:25,head:[['Date','Employee','Project','Task','Hours','Status']],body:filtered.map(l=>[l.date,l.name,l.project,l.task,`${l.hours}h`,l.status])}); doc.save('work_logs.pdf'); toast.success('PDF Exported'); }catch{ toast.error('Failed'); } };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -102,7 +148,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                 <Clock className="h-7 w-7 text-violet-400" />
               </div>
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-white">{isManager ? 'Team Productivity Overview' : 'My Work Summary'}</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white">{isManager ? "Employee's Productivity Overview" : 'My Work Summary'}</h2>
                 <p className="text-sm text-slate-400 mt-1 flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5"/>Generated dynamically from work logs</p>
               </div>
             </div>
@@ -110,9 +156,41 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
               <Select value={dateRange} onValueChange={setDateRange}>
                 <SelectTrigger className="w-[160px] h-10 rounded-2xl border-white/10 bg-white/5 text-slate-300 text-sm font-semibold"><SelectValue/></SelectTrigger>
                 <SelectContent className="rounded-2xl bg-[#0f172a] border-white/10 text-white">
-                  {['Today','This Week','This Month','Custom Range'].map(v=><SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  {['Today','Yesterday','Last 7 Days','This Month','Custom Range'].map(v=><SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {dateRange === 'Custom Range' && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="h-10 rounded-2xl bg-white/5 border-white/10 text-slate-300 hover:text-white font-semibold hover:bg-white/10 border transition-all">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {customRange?.from ? (
+                        customRange.to ? (
+                          <>
+                            {format(customRange.from, "LLL dd, y")} -{" "}
+                            {format(customRange.to, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(customRange.from, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>Pick a date range</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 rounded-2xl border border-white/10 bg-[#0f172a] text-white shadow-2xl" align="start">
+                    <CalendarComponent
+                      initialFocus
+                      mode="range"
+                      defaultMonth={customRange?.from}
+                      selected={customRange}
+                      onSelect={setCustomRange}
+                      numberOfMonths={2}
+                      className="text-white bg-[#0f172a] rounded-2xl p-3"
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
               {isManager && <>
                 <Button onClick={handlePDF} size="sm" className="h-10 px-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-violet-500/20 text-slate-300 hover:text-white text-sm font-semibold transition-all"><Download className="h-4 w-4 mr-2"/>PDF</Button>
                 <Button onClick={handleCSV} size="sm" className="h-10 px-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-violet-500/20 text-slate-300 hover:text-white text-sm font-semibold transition-all"><Download className="h-4 w-4 mr-2"/>CSV</Button>
