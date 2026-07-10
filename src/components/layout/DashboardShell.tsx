@@ -71,14 +71,14 @@ const managerNavigation = [
 
 import { useUser } from '@/context/UserContext';
 
-const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen, activeNavigation, onSignOut, isMinimized, onMinimizeChange, isMobile }: any) => {
+const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen, activeNavigation, onSignOut, sidebarWidth, startResizing, isMobile }: any) => {
   const { user } = useUser();
   const userName = user?.name || 'Loading...';
   const userInitials = userName !== 'Loading...' ? userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : '';
   const userRole = user?.role || role;
   const avatarUrl = user?.avatar;
 
-  const collapsed = isMinimized && !isMobile;
+  const collapsed = !isMobile && sidebarWidth < 150;
 
   return (
     <div className="flex h-full flex-col bg-white dark:bg-slate-900 overflow-hidden relative">
@@ -95,12 +95,12 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
           </div>
           
           {!isMobile && (
-            <button
-              onClick={() => onMinimizeChange(!isMinimized)}
-              className="absolute -right-3 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 shadow-sm z-50 transition-transform hover:scale-110"
+            <div 
+              onMouseDown={startResizing}
+              className="absolute -right-[4px] top-0 bottom-0 h-screen w-[8px] cursor-col-resize z-50 flex items-center justify-center group"
             >
-              {isMinimized ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-            </button>
+              <div className="h-16 w-[4px] rounded-full bg-[#5B7CFF]/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
           )}
 
           {isMobile && (
@@ -268,6 +268,59 @@ export default function DashboardShell({
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(isMinimized ? 88 : 280);
+  const [isDragging, setIsDragging] = useState(false);
+  const isResizing = useRef(false);
+
+  const startResizing = React.useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    setIsDragging(true);
+    document.body.style.cursor = 'col-resize';
+  }, []);
+
+  const stopResizing = React.useCallback(() => {
+    if (isResizing.current) {
+      isResizing.current = false;
+      setIsDragging(false);
+      document.body.style.cursor = 'default';
+      setSidebarWidth(prev => {
+        if (prev < 150) {
+          onMinimizeChange(true);
+          return 88;
+        }
+        onMinimizeChange(false);
+        return prev > 400 ? 400 : prev;
+      });
+    }
+  }, [onMinimizeChange]);
+
+  const resize = React.useCallback(
+    (mouseMoveEvent: MouseEvent) => {
+      if (isResizing.current) {
+        let newWidth = mouseMoveEvent.clientX;
+        if (newWidth < 88) newWidth = 88;
+        if (newWidth > 400) newWidth = 400;
+        setSidebarWidth(newWidth);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    window.addEventListener("mousemove", resize);
+    window.addEventListener("mouseup", stopResizing);
+    return () => {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [resize, stopResizing]);
+
+  useEffect(() => {
+    if (!isResizing.current) {
+      setSidebarWidth(isMinimized ? 88 : 280);
+    }
+  }, [isMinimized]);
   
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
@@ -290,11 +343,11 @@ export default function DashboardShell({
       {/* Left Desktop Sidebar */}
       <motion.div 
         initial={false}
-        animate={{ width: isMinimized ? 88 : 280 }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="hidden lg:flex inset-y-0 left-0 z-50 flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 shrink-0 relative"
+        animate={{ width: sidebarWidth }}
+        transition={isDragging ? { duration: 0 } : { duration: 0.3, ease: 'easeInOut' }}
+        className="hidden lg:flex inset-y-0 left-0 z-50 flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 shrink-0 relative select-none"
       >
-        <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} isMinimized={isMinimized} onMinimizeChange={onMinimizeChange} isMobile={false} />
+        <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={sidebarWidth} startResizing={startResizing} isMobile={false} />
       </motion.div>
 
       {/* Main Context Body */}
@@ -314,7 +367,7 @@ export default function DashboardShell({
               </button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-[280px] border-r border-slate-200 dark:border-[#5B7CFF]/20 flex flex-col">
-              <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} isMinimized={false} onMinimizeChange={() => {}} isMobile={true} />
+              <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={280} startResizing={() => {}} isMobile={true} />
             </SheetContent>
           </Sheet>
 
