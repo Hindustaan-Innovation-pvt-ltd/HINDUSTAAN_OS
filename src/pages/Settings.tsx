@@ -74,26 +74,35 @@ export default function Settings({ session }: { session: any }) {
       doc.setDrawColor(226, 232, 240);
       doc.line(14, 35, 196, 35);
       
+      // Safe JSON LocalStorage Loader Helper
+      const getJSONData = (key: string, fallback: any) => {
+        try {
+          const val = localStorage.getItem(key);
+          if (!val || val === 'null' || val === 'undefined') return fallback;
+          const parsed = JSON.parse(val);
+          return Array.isArray(parsed) ? parsed : fallback;
+        } catch (e) {
+          return fallback;
+        }
+      };
+      
       // Load Workspace Data
-      const logsStr = localStorage.getItem('work_logs_list_v4') || localStorage.getItem('work_logs_list');
-      const logs = logsStr ? JSON.parse(logsStr) : [
+      const logs = getJSONData('work_logs_list_v4', getJSONData('work_logs_list', [
         { date: "Jul 10, 2026", name: "Amanda Smith", project: "Frontend Core", task: "Component Refactoring", hours: 8.5, status: "Approved" },
         { date: "Jul 10, 2026", name: "Rahul Sharma", project: "Backend Core", task: "Database Optimization", hours: 7.2, status: "Approved" },
         { date: "Jul 10, 2026", name: "Tanvy Pandey", project: "Frontend Core", task: "Kanban Board & Work Logs", hours: 6.0, status: "Pending" }
-      ];
+      ]));
       
-      const tasksStr = localStorage.getItem('hindustaan_tasks_list');
-      const tasks = tasksStr ? JSON.parse(tasksStr) : [
+      const tasks = getJSONData('hindustaan_tasks_list', [
         { title: "Design System Setup", status: "Done", assignee_name: "Amanda Smith", project_tag: "ProjectOS Redesign", priority: "High" },
         { title: "Authentication Flow", status: "Done", assignee_name: "Rahul Sharma", project_tag: "ProjectOS Redesign", priority: "High" },
         { title: "Dashboard Layout", status: "In Progress", assignee_name: "Priya Patel", project_tag: "ProjectOS Redesign", priority: "Medium" }
-      ];
+      ]);
       
-      const standupsStr = localStorage.getItem('hindustaan_standups');
-      const standups = standupsStr ? JSON.parse(standupsStr) : [
+      const standups = getJSONData('hindustaan_standups', [
         { user: "Tanvy", role: "Frontend Developer", yesterday: "Finished responsive layout.", today: "Kanban drag-and-drop.", blockers: "None." },
         { user: "Rahul Sharma", role: "Backend Developer", yesterday: "Database schema setup.", today: "REST API endpoints.", blockers: "None." }
-      ];
+      ]);
 
       // 1. Work Logs Section
       doc.setFontSize(14);
@@ -166,11 +175,21 @@ export default function Settings({ session }: { session: any }) {
         theme: 'striped'
       });
       
-      doc.save("Project_OS_Workspace_Report.pdf");
+      // Use Blob and anchor element for maximum browser download reliability
+      const blob = doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "Project_OS_Workspace_Report.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
       toast.success("PDF Report Downloaded");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Failed to generate PDF report");
+      toast.error(`Failed to generate PDF report: ${error?.message || error}`);
     }
   };
 
