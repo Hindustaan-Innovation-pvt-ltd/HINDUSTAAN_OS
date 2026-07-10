@@ -170,7 +170,6 @@ body.dark {
   max-height: 90px;
   object-fit: contain;
   background: transparent;
-  filter: drop-shadow(0 0 12px rgba(125, 145, 255, 0.35));
 }
 
 .sidebar-logo {
@@ -178,7 +177,6 @@ body.dark {
   height: 60px;
   object-fit: contain;
   background: transparent;
-  filter: drop-shadow(0 0 12px rgba(125, 145, 255, 0.35));
 }
 
 @media (max-width: 768px) {
