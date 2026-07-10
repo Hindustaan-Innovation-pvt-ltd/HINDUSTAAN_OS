@@ -115,7 +115,7 @@ export default function WorkLogs({ session }: { session?: any }) {
   const todayStr = format(todayDate, 'yyyy-MM-dd');
   
   const [logs, setLogs] = useState<any[]>(() => {
-    const saved = localStorage.getItem('work_logs_list_v3');
+    const saved = localStorage.getItem('work_logs_list_v4');
     if (saved) return JSON.parse(saved);
     
     return mockWorkLogs.map(log => ({
@@ -148,7 +148,7 @@ export default function WorkLogs({ session }: { session?: any }) {
       isMounted.current = true;
       return;
     }
-    localStorage.setItem('work_logs_list_v3', JSON.stringify(logs));
+    localStorage.setItem('work_logs_list_v4', JSON.stringify(logs));
   }, [logs]);
 
   const role = session?.user?.user_metadata?.role || 'manager';
