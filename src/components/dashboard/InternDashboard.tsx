@@ -162,12 +162,14 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const dueTodayCount = tasks.filter(t => t.due_date.toLowerCase().includes('today') || t.due_date.toLowerCase().includes('12') || t.due_date.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase())).length;
 
   const today = new Date();
-  const currentHour = today.getHours();
-  let greeting = 'Good Morning';
-  if (currentHour >= 12 && currentHour < 17) {
-    greeting = 'Good Afternoon';
-  } else if (currentHour >= 17) {
-    greeting = 'Good Evening';
+  const hour = new Date().getHours();
+  let greeting = 'Good evening';
+  if (hour < 12) {
+    greeting = 'Good morning';
+  } else if (hour < 18) {
+    greeting = 'Good afternoon';
+  } else {
+    greeting = 'Good evening';
   }
   
   const [selectedMonth, setSelectedMonth] = useState<Date>(today);
@@ -181,9 +183,11 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
-            {greeting}, {currentUserName.split(' ')[0]} <span className="inline-block animate-wave origin-bottom-right">👋</span>
+            {greeting}, {currentUserName} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
-          <p className="text-base sm:text-lg font-medium text-orange-600 dark:text-orange-400 mt-1 break-words whitespace-normal">Frontend Developer Intern</p>
+          <p className="text-base sm:text-lg font-medium text-orange-600 dark:text-orange-400 mt-1 break-words whitespace-normal">
+            {user?.designation || "Frontend Developer"} {user?.role === 'manager' ? 'Manager' : 'Intern'}
+          </p>
           <p className="text-sm sm:text-base font-medium text-slate-500 dark:text-slate-400 mt-2 break-words whitespace-normal">
             You have <strong className="text-slate-700 dark:text-slate-200">{activeTasksCount} active tasks</strong>, <strong className="text-rose-600 dark:text-rose-400">{dueTodayCount} due today</strong>, and <strong>{loggedHours.toFixed(1)} hours</strong> logged total.
           </p>

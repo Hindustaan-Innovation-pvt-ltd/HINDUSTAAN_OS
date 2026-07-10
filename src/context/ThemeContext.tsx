@@ -20,10 +20,10 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
-    return (localStorage.getItem('themeMode') as ThemeMode) || 'system';
+    return (localStorage.getItem('themeMode') as ThemeMode) || 'dark';
   });
 
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
   const [accentColor, setAccentColor] = useState<AccentColor>(() => {
     return (localStorage.getItem('accentColor') as AccentColor) || 'orange';
