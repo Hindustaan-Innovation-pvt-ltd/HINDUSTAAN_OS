@@ -128,12 +128,11 @@ export function ProjectCalendarWidget() {
 
   const workingDays = totalDays; // Simplification, could exclude weekends
 
-  // Upcoming events
   const upcomingEvents = useMemo(() => {
-    const limitDate = addDays(startOfDay(today), 4);
     return events
-      .filter(e => (isAfter(e.date, startOfDay(today)) || isSameDay(e.date, startOfDay(today))) && isBefore(e.date, limitDate))
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
+      .filter(e => isAfter(e.date, startOfDay(today)) || isSameDay(e.date, startOfDay(today)))
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(0, 4);
   }, [events, today]);
 
   const handleDayClick = (day: Date) => {
@@ -340,18 +339,33 @@ export function ProjectCalendarWidget() {
             </div>
             <div className="space-y-3">
               {upcomingEvents.length > 0 ? upcomingEvents.map((evt) => (
-                <div key={evt.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-950 shadow-sm border border-slate-100 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-500/30 transition-all">
+                <div key={evt.id} className="group relative flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-950 shadow-sm border border-slate-100 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-500/30 transition-all pr-8">
                   <div className="flex flex-col items-center justify-center h-11 w-11 rounded-lg bg-orange-50 dark:bg-orange-500/10 shrink-0">
                     <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase leading-none">{format(evt.date, 'MMM')}</span>
                     <span className="text-sm font-black text-orange-700 dark:text-orange-300 leading-none mt-1">{format(evt.date, 'dd')}</span>
                   </div>
-                  <div className="flex flex-col overflow-hidden">
+                  <div className="flex flex-col overflow-hidden flex-1">
                     <span className="text-sm font-bold text-slate-900 dark:text-white truncate">{evt.title}</span>
                     <div className="flex items-center gap-1.5 mt-1">
                       <div className={cn("h-1.5 w-1.5 rounded-full", getEventColor(evt.type))} />
                       <span className="text-[10px] font-semibold text-slate-500 capitalize">{evt.type}</span>
                     </div>
                   </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                      <DropdownMenuItem onClick={() => setEventToEdit(evt)} className="font-semibold text-sm cursor-pointer">
+                        Edit Event
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setEventToDelete(evt)} className="font-semibold text-sm text-rose-600 focus:text-rose-600 cursor-pointer">
+                        Delete Event
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               )) : (
                 <div className="text-xs text-slate-500 italic p-4 text-center bg-white dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">No upcoming events.</div>
@@ -626,28 +640,6 @@ export function ProjectCalendarWidget() {
                           ))}
                         </div>
                       )}
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg ml-auto sm:ml-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                          <DropdownMenuItem onClick={() => {
-                            setIsAllEventsOpen(false);
-                            setEventToEdit(evt);
-                          }} className="font-semibold text-sm cursor-pointer">
-                            Edit Event
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {
-                            setIsAllEventsOpen(false);
-                            setEventToDelete(evt);
-                          }} className="font-semibold text-sm text-rose-600 focus:text-rose-600 cursor-pointer">
-                            Delete Event
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
                   )})}
                 {events.length === 0 && (
