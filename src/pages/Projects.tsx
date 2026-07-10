@@ -347,7 +347,7 @@ export default function Projects({ session }: { session?: any }) {
               <div className="absolute inset-0 flex ml-48 pointer-events-none">
                 <div className="flex-1 grid grid-cols-7 gap-2 h-full">
                   {[0,1,2,3,4,5,6].map(i => (
-                    <div key={i} className="border-r border-slate-100 dark:border-slate-800/50 h-full"></div>
+                    <div key={i} className="border-r border-slate-100 dark:border-slate-700/80 h-full"></div>
                   ))}
                 </div>
               </div>
@@ -356,7 +356,7 @@ export default function Projects({ session }: { session?: any }) {
               {groupedProjects.map((project) => (
                 <div key={project.id} className="relative z-10 space-y-3">
                   {/* Project Header Divider (Full Width) */}
-                  <div className="flex items-center justify-between mb-3 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-800/40 w-full col-span-full shadow-sm">
+                  <div className="flex items-center justify-between mb-3 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100/50 dark:bg-slate-800/80 w-full col-span-full shadow-sm">
                     <div className="flex items-center gap-3">
                       <div className={cn("h-6 w-6 rounded-md flex items-center justify-center shadow-sm", project.iconColor)}>
                          <FolderKanban className="h-3 w-3" />
@@ -376,7 +376,10 @@ export default function Projects({ session }: { session?: any }) {
                     project.timelineTasks.map((task: any) => (
                       <div key={task.id} className="flex items-center relative group animate-in fade-in slide-in-from-right-4 duration-500">
                         {/* Task Name Label */}
-                        <div className={cn("w-48 shrink-0 pr-4 border-l-4 pl-3 py-1", project.iconColor ? project.iconColor.replace('bg-', 'border-') : 'border-transparent')}>
+                        <div 
+                          className="w-48 shrink-0 pr-4 border-l-4 pl-3 py-1"
+                          style={{ borderColor: project.strokeColor || '#cbd5e1' }}
+                        >
                           <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{task.name}</p>
                           <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">{task.assignee}</p>
                         </div>
