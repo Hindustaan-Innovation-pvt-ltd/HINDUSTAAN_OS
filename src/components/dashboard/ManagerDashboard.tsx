@@ -51,6 +51,9 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { ProjectCalendarWidget } from './ProjectCalendarWidget';
 import { Separator } from '@/components/ui/separator';
 import { AssignTaskDialog } from './AssignTaskDialog';
@@ -94,12 +97,49 @@ const DEADLINES = [
   { id: 'd3', task: 'Client Presentation', priority: 'High', assignee: 'Amanda Smith' },
 ];
 
+const INITIAL_BLOCKERS = [
+  {
+    id: 'b1',
+    user: 'Amanda Smith',
+    initials: 'AS',
+    avatarColor: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+    priority: 'High Priority',
+    priorityColor: 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border-rose-200 dark:border-rose-500/20',
+    bgColor: 'bg-rose-50/50 dark:bg-rose-500/5',
+    borderColor: 'border-rose-100 dark:border-rose-900/50',
+    textColor: 'text-rose-600 dark:text-rose-400',
+    hoverBgColor: 'hover:bg-rose-100 dark:hover:bg-rose-500/20',
+    hoverTextColor: 'hover:text-rose-700',
+    message: 'Figma API token expired and waiting for renewal. Cannot proceed with design implementation.',
+  },
+  {
+    id: 'b2',
+    user: 'Priya Patel',
+    initials: 'PP',
+    avatarColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+    priority: 'Blocked Task',
+    priorityColor: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
+    bgColor: 'bg-amber-50/50 dark:bg-amber-500/5',
+    borderColor: 'border-amber-100 dark:border-amber-900/50',
+    textColor: 'text-amber-600 dark:text-amber-400',
+    hoverBgColor: 'hover:bg-amber-100 dark:hover:bg-amber-500/20',
+    hoverTextColor: 'hover:text-amber-700',
+    message: 'Waiting for data engineering team to provide the cleaned dataset for ML model training.',
+  }
+];
+
 function ManagerDashboardInner() {
   const { projects } = useProjects();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [isActiveInternsModalOpen, setIsActiveInternsModalOpen] = useState(false);
+  const [isAllProjectsOpen, setIsAllProjectsOpen] = useState(false);
+  const [isAllBlockersOpen, setIsAllBlockersOpen] = useState(false);
+  const [messageUser, setMessageUser] = useState<string | null>(null);
+  const [messageText, setMessageText] = useState("");
+  const [isMessageSent, setIsMessageSent] = useState(false);
+  const [blockers, setBlockers] = useState(INITIAL_BLOCKERS);
   const [activityFeed, setActivityFeed] = useState<any[]>(ACTIVITY_FEED_MOCK);
   const [tasks, setTasks] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_tasks_list');
@@ -166,7 +206,7 @@ function ManagerDashboardInner() {
     return () => clearInterval(interval);
   }, []);
 
-  const mappedProjects: any[] = (projects || []).slice(0, 5).map(p => {
+  const allMappedProjects: any[] = (projects || []).map(p => {
     if (!p) return null;
     const completedTasks = (p.tasks || []).filter((t: any) => t?.status === 'Done').length || 0;
     const totalTasks = (p.tasks || []).length || 0;
@@ -179,6 +219,8 @@ function ManagerDashboardInner() {
       status: p.status
     };
   }).filter(Boolean);
+
+  const mappedProjects: any[] = allMappedProjects.slice(0, 5);
 
   const dynamicDeadlines = React.useMemo(() => {
     let tasksList: any[] = [];
@@ -378,7 +420,7 @@ function ManagerDashboardInner() {
                 <CardDescription className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Top 5 active projects across all cohorts.</CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" className="text-orange-600 dark:text-orange-400 font-semibold hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-700 dark:hover:text-orange-300 h-8">
+                <Button onClick={() => setIsAllProjectsOpen(true)} variant="ghost" size="sm" className="text-orange-600 dark:text-orange-400 font-semibold hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-700 dark:hover:text-orange-300 h-8 cursor-pointer">
                   View All <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Button>
               </div>
@@ -428,51 +470,75 @@ function ManagerDashboardInner() {
                 </CardTitle>
                 <CardDescription className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Impediments requiring your immediate attention.</CardDescription>
               </div>
-              <Button variant="ghost" size="sm" className="text-rose-600 dark:text-rose-400 font-semibold hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-300">
+              <Button onClick={() => setIsAllBlockersOpen(true)} variant="ghost" size="sm" className="text-rose-600 dark:text-rose-400 font-semibold hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-300 cursor-pointer">
                 View All
               </Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-
-                <div className="flex flex-col gap-2 p-3.5 rounded-xl border border-rose-100 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-500/5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 text-[10px] font-bold">AS</AvatarFallback>
-                      </Avatar>
-                      <span className="font-bold text-sm text-slate-900 dark:text-white">Amanda Smith</span>
+                {blockers.length === 0 ? (
+                  <div className="text-sm text-slate-500 italic p-4 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                    No active blockers at the moment.
+                  </div>
+                ) : (
+                  blockers.map((blocker) => {
+                    const isResolved = (blocker as any).resolved;
+                    return (
+                    <div key={blocker.id} className={cn("flex flex-col gap-2 p-3.5 rounded-xl border relative transition-all duration-300", isResolved ? "bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-900/50" : cn(blocker.borderColor, blocker.bgColor))}>
+                      {isResolved && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] dark:opacity-[0.02]">
+                          <CheckCircle2 className="w-24 h-24 text-emerald-600" />
+                        </div>
+                      )}
+                      <div className={cn("flex items-center justify-between", isResolved && "opacity-75")}>
+                        <div className="flex items-center gap-2">
+                          <Avatar className={cn("h-6 w-6", isResolved && "opacity-60 grayscale")}>
+                            <AvatarFallback className={cn("text-[10px] font-bold", isResolved ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : blocker.avatarColor)}>{blocker.initials}</AvatarFallback>
+                          </Avatar>
+                          <span className={cn("font-bold text-sm", isResolved ? "text-slate-500 dark:text-slate-400 line-through decoration-slate-300 dark:decoration-slate-600" : "text-slate-900 dark:text-white")}>{blocker.user}</span>
+                        </div>
+                        <Badge variant="outline" className={cn("text-[10px]", isResolved ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" : blocker.priorityColor)}>
+                          {isResolved ? "Resolved" : blocker.priority}
+                        </Badge>
+                      </div>
+                      <p className={cn("text-sm font-medium ml-8", isResolved ? "text-slate-400 dark:text-slate-500" : "text-slate-600 dark:text-slate-400")}>
+                        {blocker.message}
+                      </p>
+                      
+                      {!isResolved && (
+                        <div className="flex items-center gap-3 ml-8 mt-1 relative z-10">
+                          <Button 
+                            onClick={() => {
+                              setBlockers(prev => prev.map(b => b.id === blocker.id ? { ...b, resolved: true } : b));
+                              import('sonner').then(m => m.toast.success('Blocker Resolved', { description: `Resolved for ${blocker.user}. The employee has been notified directly.` }));
+                            }}
+                            variant="ghost" 
+                            size="sm" 
+                            className={cn("h-7 text-xs px-2 font-bold cursor-pointer", blocker.textColor, blocker.hoverTextColor, blocker.hoverBgColor)}
+                          >
+                            Resolve
+                          </Button>
+                          <Button 
+                            onClick={() => setMessageUser(blocker.user)}
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold cursor-pointer"
+                          >
+                            Message
+                          </Button>
+                        </div>
+                      )}
+                      {(blocker as any).managerMessage && (
+                        <div className={cn("ml-8 mt-2 p-3 rounded-xl border shadow-sm relative overflow-hidden", isResolved ? "bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100/50 dark:border-emerald-800/30 opacity-75" : "bg-white/60 dark:bg-slate-900/50 border-slate-100 dark:border-slate-700/50")}>
+                          <div className={cn("absolute left-0 top-0 bottom-0 w-1", isResolved ? "bg-emerald-500/30" : "bg-orange-500/50")}></div>
+                          <p className={cn("text-[10px] font-bold uppercase tracking-wider mb-1", isResolved ? "text-emerald-600/70 dark:text-emerald-400/70" : "text-slate-500 dark:text-slate-400")}>Your Reply</p>
+                          <p className={cn("text-sm italic font-medium", isResolved ? "text-emerald-700 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200")}>"{(blocker as any).managerMessage}"</p>
+                        </div>
+                      )}
                     </div>
-                    <Badge variant="outline" className="text-[10px] bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border-rose-200 dark:border-rose-500/20">High Priority</Badge>
-                  </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 font-medium ml-8">
-                    Figma API token expired and waiting for renewal. Cannot proceed with design implementation.
-                  </p>
-                  <div className="flex items-center gap-3 ml-8 mt-1">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-100 dark:hover:bg-rose-500/20 px-2 font-bold">Resolve</Button>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold">Message</Button>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2 p-3.5 rounded-xl border border-amber-100 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-500/5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 text-[10px] font-bold">PP</AvatarFallback>
-                      </Avatar>
-                      <span className="font-bold text-sm text-slate-900 dark:text-white">Priya Patel</span>
-                    </div>
-                    <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-500/20">Blocked Task</Badge>
-                  </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 font-medium ml-8">
-                    Waiting for data engineering team to provide the cleaned dataset for ML model training.
-                  </p>
-                  <div className="flex items-center gap-3 ml-8 mt-1">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-500/20 px-2 font-bold">Resolve</Button>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold">Message</Button>
-                  </div>
-                </div>
-
+                    )
+                  })
+                )}
               </div>
             </CardContent>
           </Card>
@@ -553,8 +619,8 @@ function ManagerDashboardInner() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="rounded-xl">
-                        <DropdownMenuItem className="font-semibold text-xs cursor-pointer">View Details</DropdownMenuItem>
-                        <DropdownMenuItem className="font-semibold text-xs cursor-pointer text-orange-600 dark:text-orange-400 focus:text-orange-600">Reassign</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { import('sonner').then(m => m.toast.info(`Viewing details for: ${deadline.task}`)) }} className="font-semibold text-xs cursor-pointer">View Details</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setIsAssignTaskOpen(true)} className="font-semibold text-xs cursor-pointer text-orange-600 dark:text-orange-400 focus:text-orange-600">Reassign</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -626,7 +692,11 @@ function ManagerDashboardInner() {
               <ScrollArea className="h-full max-h-[250px]">
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   {NOTIFICATIONS.map((notif) => (
-                    <div key={notif.id} className={cn("p-4 flex gap-3 items-start transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/40", notif.unread ? 'bg-slate-50/50 dark:bg-slate-900/20' : '')}>
+                    <div 
+                      key={notif.id} 
+                      onClick={() => { import('sonner').then(m => m.toast.success(`Opening system: ${notif.text}`)) }}
+                      className={cn("p-4 flex gap-3 items-start transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/40 cursor-pointer", notif.unread ? 'bg-slate-50/50 dark:bg-slate-900/20' : '')}
+                    >
                       <div className="mt-1 shrink-0">
                         {notif.unread ? (
                           <div className="h-2 w-2 rounded-full bg-orange-500" />
@@ -634,9 +704,12 @@ function ManagerDashboardInner() {
                           <div className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-700" />
                         )}
                       </div>
-                      <p className={cn("text-sm font-medium leading-snug", notif.unread ? "text-slate-900 dark:text-white font-bold" : "text-slate-600 dark:text-slate-400")}>
-                        {notif.text}
-                      </p>
+                      <div className="flex flex-col">
+                        <p className={cn("text-sm font-medium leading-snug", notif.unread ? "text-slate-900 dark:text-white font-bold" : "text-slate-600 dark:text-slate-400")}>
+                          {notif.text}
+                        </p>
+                        <span className="text-[10px] text-orange-500 font-bold mt-1 uppercase tracking-wider">Tap to open system</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -708,7 +781,333 @@ function ManagerDashboardInner() {
         </div>
       )}
 
+      {/* All Projects Modal */}
+      {isAllProjectsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setIsAllProjectsOpen(false)}
+          />
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-2xl w-full max-w-2xl overflow-hidden relative z-10 animate-in fade-in zoom-in duration-300 flex flex-col max-h-[80vh]">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center"><Activity className="h-5 w-5 text-orange-600 mr-2" /> All Projects Overview</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Complete list of all projects across cohorts</p>
+              </div>
+              <button 
+                onClick={() => setIsAllProjectsOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+              {allMappedProjects.map((project: any) => (
+                <div key={project?.id || Math.random()} className="group flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                        {project?.name}
+                      </span>
+                      <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", getStatusBadgeStyles(project?.status || 'Active'))}>
+                        {project?.status}
+                      </Badge>
+                    </div>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Due: {project?.dueDate}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Progress value={project?.progress || 0} className={cn("h-2 flex-1", project?.status === 'Aborted' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
+                    <div className="flex items-center gap-1 justify-end w-16 shrink-0">
+                      <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{project?.progress || 0}%</span>
+                      <button
+                        onClick={() => {
+                          setIsAllProjectsOpen(false);
+                          setSelectedProject(project);
+                        }}
+                        className="flex items-center justify-center h-6 w-6 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-orange-600 transition-colors shrink-0 cursor-pointer"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* All Blockers Modal */}
+      {isAllBlockersOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setIsAllBlockersOpen(false)}
+          />
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-2xl w-full max-w-xl overflow-hidden relative z-10 animate-in fade-in zoom-in duration-300 flex flex-col max-h-[80vh]">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center"><AlertTriangle className="h-5 w-5 text-rose-600 mr-2" /> All Active Blockers</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Impediments requiring your immediate attention</p>
+              </div>
+              <button 
+                onClick={() => setIsAllBlockersOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              {blockers.length === 0 ? (
+                <div className="text-sm text-slate-500 italic p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                  No active blockers at the moment. Great job!
+                </div>
+              ) : (
+                blockers.map((blocker) => {
+                  const isResolved = (blocker as any).resolved;
+                  return (
+                    <div key={blocker.id} className={cn("flex flex-col gap-2 p-3.5 rounded-xl border relative transition-all duration-300", isResolved ? "bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-900/50" : cn(blocker.borderColor, blocker.bgColor))}>
+                      {isResolved && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] dark:opacity-[0.02]">
+                          <CheckCircle2 className="w-24 h-24 text-emerald-600" />
+                        </div>
+                      )}
+                      <div className={cn("flex items-center justify-between", isResolved && "opacity-75")}>
+                        <div className="flex items-center gap-2">
+                          <Avatar className={cn("h-6 w-6", isResolved && "opacity-60 grayscale")}>
+                            <AvatarFallback className={cn("text-[10px] font-bold", isResolved ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : blocker.avatarColor)}>{blocker.initials}</AvatarFallback>
+                          </Avatar>
+                          <span className={cn("font-bold text-sm", isResolved ? "text-slate-500 dark:text-slate-400 line-through decoration-slate-300 dark:decoration-slate-600" : "text-slate-900 dark:text-white")}>{blocker.user}</span>
+                        </div>
+                        <Badge variant="outline" className={cn("text-[10px]", isResolved ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" : blocker.priorityColor)}>
+                          {isResolved ? "Resolved" : blocker.priority}
+                        </Badge>
+                      </div>
+                      <p className={cn("text-sm font-medium ml-8", isResolved ? "text-slate-400 dark:text-slate-500" : "text-slate-600 dark:text-slate-400")}>
+                        {blocker.message}
+                      </p>
+                      
+                      {!isResolved && (
+                        <div className="flex items-center gap-3 ml-8 mt-1 relative z-10">
+                          <Button 
+                            onClick={() => {
+                              setBlockers(prev => prev.map(b => b.id === blocker.id ? { ...b, resolved: true } : b));
+                              import('sonner').then(m => m.toast.success('Blocker Resolved', { description: `Resolved for ${blocker.user}. The employee has been notified directly.` }));
+                            }}
+                            variant="ghost" 
+                            size="sm" 
+                            className={cn("h-7 text-xs px-2 font-bold cursor-pointer", blocker.textColor, blocker.hoverTextColor, blocker.hoverBgColor)}
+                          >
+                            Resolve
+                          </Button>
+                          <Button 
+                            onClick={() => setMessageUser(blocker.user)}
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold cursor-pointer"
+                          >
+                            Message
+                          </Button>
+                        </div>
+                      )}
+                      {(blocker as any).managerMessage && (
+                        <div className={cn("ml-8 mt-2 p-3 rounded-xl border shadow-sm relative overflow-hidden", isResolved ? "bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100/50 dark:border-emerald-800/30 opacity-75" : "bg-white/60 dark:bg-slate-900/50 border-slate-100 dark:border-slate-700/50")}>
+                          <div className={cn("absolute left-0 top-0 bottom-0 w-1", isResolved ? "bg-emerald-500/30" : "bg-orange-500/50")}></div>
+                          <p className={cn("text-[10px] font-bold uppercase tracking-wider mb-1", isResolved ? "text-emerald-600/70 dark:text-emerald-400/70" : "text-slate-500 dark:text-slate-400")}>Your Reply</p>
+                          <p className={cn("text-sm italic font-medium", isResolved ? "text-emerald-700 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200")}>"{(blocker as any).managerMessage}"</p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <AssignTaskDialog open={isAssignTaskOpen} onOpenChange={setIsAssignTaskOpen} />
+
+      <Dialog 
+        open={!!messageUser} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setMessageUser(null);
+            setTimeout(() => {
+              setMessageText("");
+              setIsMessageSent(false);
+            }, 300); // delay reset so it doesn't flash during closing animation
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px] rounded-3xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-2xl p-0 overflow-hidden">
+          {!isMessageSent ? (
+            <>
+              <div className="bg-orange-50/50 dark:bg-orange-500/10 p-6 pb-4 border-b border-orange-100 dark:border-orange-900/30">
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-900 shadow-sm">
+                      <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 text-sm font-bold">
+                        {(messageUser || 'U').split(' ').map((n: string) => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>Message {messageUser?.split(' ')[0]}</span>
+                  </DialogTitle>
+                  <DialogDescription className="text-slate-500 dark:text-slate-400 font-medium pt-2">
+                    Send a direct, high-priority message regarding this blocker to help them get unblocked faster.
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
+              <div className="p-6 pt-4 space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Your Message</Label>
+                  <Textarea 
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    placeholder={`Hey ${messageUser?.split(' ')[0]}, how can I help unblock you with this?`} 
+                    className="min-h-[120px] rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500 text-slate-900 dark:text-white resize-none text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500" 
+                  />
+                </div>
+              </div>
+              <DialogFooter className="p-6 pt-0 sm:justify-end">
+                <Button type="button" variant="ghost" onClick={() => setMessageUser(null)} className="rounded-xl font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300">
+                  Cancel
+                </Button>
+                <Button 
+                  type="button" 
+                  disabled={!messageText.trim()}
+                  onClick={() => {
+                    setBlockers(prev => prev.map(b => b.user === messageUser ? { ...b, managerMessage: messageText } : b));
+                    setIsMessageSent(true);
+                  }} 
+                  className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold cursor-pointer transition-all shadow-md hover:shadow-lg disabled:opacity-50"
+                >
+                  <Megaphone className="h-4 w-4 mr-2" />
+                  Send Message
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <div className="p-8 flex flex-col items-center justify-center text-center space-y-6 animate-in zoom-in duration-300">
+              <div className="h-16 w-16 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mb-2">
+                <CheckCircle2 className="h-8 w-8" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white">Sent!</h3>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">Your message has been delivered to <span className="font-bold text-slate-700 dark:text-slate-200">{messageUser}</span>.</p>
+              </div>
+              <div className="w-full bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700/50 text-left relative">
+                <span className="absolute -top-2.5 left-4 bg-white dark:bg-slate-900 px-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">What you said</span>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300 italic whitespace-pre-wrap">{messageText}</p>
+              </div>
+              <Button 
+                onClick={() => setMessageUser(null)} 
+                className="w-full rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold mt-4 cursor-pointer hover:scale-[1.02] transition-transform"
+              >
+                Done
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* All Projects Modal */}
+      <Dialog open={isAllProjectsOpen} onOpenChange={setIsAllProjectsOpen}>
+        <DialogContent className="sm:max-w-[425px] md:max-w-[600px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
+              <Activity className="mr-2 h-5 w-5 text-orange-600 dark:text-orange-400" />
+              All Active Projects
+            </DialogTitle>
+            <DialogDescription className="text-slate-500 font-medium">
+              A comprehensive list of all projects across cohorts.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <ScrollArea className="max-h-[400px] pr-4">
+              <div className="space-y-4">
+                {allMappedProjects.map((project: any) => (
+                  <div key={project?.id || Math.random()} className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200 dark:hover:border-orange-500/30 transition-all">
+                    <div className="flex flex-col gap-1.5 w-full">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-sm text-slate-900 dark:text-white">
+                          {project?.name}
+                        </span>
+                        <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", getStatusBadgeStyles(project?.status || 'Active'))}>
+                          {project?.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Progress value={project?.progress} className="h-1.5 flex-1 bg-slate-200 dark:bg-slate-800" />
+                        <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 w-8">{project?.progress}%</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {allMappedProjects.length === 0 && (
+                  <div className="text-sm text-slate-500 italic p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                    No active projects found.
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* All Blockers Modal */}
+      <Dialog open={isAllBlockersOpen} onOpenChange={setIsAllBlockersOpen}>
+        <DialogContent className="sm:max-w-[425px] md:max-w-[600px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
+              <AlertTriangle className="mr-2 h-5 w-5 text-rose-600 dark:text-orange-400" />
+              All Blockers & Escalations
+            </DialogTitle>
+            <DialogDescription className="text-slate-500 font-medium">
+              View all active blockers that require your attention.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <ScrollArea className="max-h-[400px] pr-4">
+              <div className="space-y-4">
+                {blockers.map((blocker) => {
+                  const isResolved = (blocker as any).resolved;
+                  return (
+                    <div key={blocker.id} className={cn("flex flex-col gap-2 p-3.5 rounded-xl border relative transition-all duration-300", isResolved ? "bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-900/50" : cn(blocker.borderColor, blocker.bgColor))}>
+                      {isResolved && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] dark:opacity-[0.02]">
+                          <CheckCircle2 className="w-24 h-24 text-emerald-600" />
+                        </div>
+                      )}
+                      <div className={cn("flex items-center justify-between", isResolved && "opacity-75")}>
+                        <div className="flex items-center gap-2">
+                          <Avatar className={cn("h-6 w-6", isResolved && "opacity-60 grayscale")}>
+                            <AvatarFallback className={cn("text-[10px] font-bold", isResolved ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : blocker.avatarColor)}>{blocker.initials}</AvatarFallback>
+                          </Avatar>
+                          <span className={cn("font-bold text-sm", isResolved ? "text-slate-500 dark:text-slate-400 line-through decoration-slate-300 dark:decoration-slate-600" : "text-slate-900 dark:text-white")}>{blocker.user}</span>
+                        </div>
+                        <Badge variant="outline" className={cn("text-[10px]", isResolved ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" : blocker.priorityColor)}>
+                          {isResolved ? "Resolved" : blocker.priority}
+                        </Badge>
+                      </div>
+                      <p className={cn("text-sm font-medium ml-8", isResolved ? "text-slate-400 dark:text-slate-500" : "text-slate-600 dark:text-slate-400")}>
+                        {blocker.message}
+                      </p>
+                    </div>
+                  )
+                })}
+                {blockers.length === 0 && (
+                  <div className="text-sm text-slate-500 italic p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                    No active blockers.
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

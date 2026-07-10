@@ -82,6 +82,7 @@ export function ProjectCalendarWidget() {
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [scheduleType, setScheduleType] = useState<'event'|'meeting'>('event');
   const [events, setEvents] = useState<ProjectEvent[]>(MOCK_EVENTS);
+  const [isAllEventsOpen, setIsAllEventsOpen] = useState(false);
 
   // Dynamic calculations based on today
   const today = new Date();
@@ -143,13 +144,25 @@ export function ProjectCalendarWidget() {
     return events.filter(e => isSameDay(e.date, day));
   };
 
-  const getEventColor = (type: EventType) => {
-    switch (type) {
+  const getEventColor = (type: string) => {
+    switch(type) {
       case 'deadline': return 'bg-rose-500';
-      case 'completed': return 'bg-emerald-500';
+      case 'meeting': return 'bg-blue-500';
       case 'milestone': return 'bg-purple-500';
-      case 'leave': return 'bg-amber-400';
-      default: return 'bg-slate-400';
+      case 'completed': return 'bg-emerald-500';
+      case 'leave': return 'bg-amber-500';
+      default: return 'bg-slate-500';
+    }
+  };
+
+  const getEventBadgeStyles = (type: string) => {
+    switch(type) {
+      case 'deadline': return 'text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10';
+      case 'meeting': return 'text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10';
+      case 'milestone': return 'text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-purple-500/10';
+      case 'completed': return 'text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10';
+      case 'leave': return 'text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10';
+      default: return 'text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-500/30 bg-slate-50 dark:bg-slate-500/10';
     }
   };
 
@@ -293,7 +306,7 @@ export function ProjectCalendarWidget() {
           <div className="flex-1 w-full">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center"><Clock className="mr-2 h-4 w-4 text-orange-500" /> Upcoming Events</h4>
-              <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] font-bold text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-500/10">View All</Button>
+              <Button onClick={() => setIsAllEventsOpen(true)} variant="ghost" size="sm" className="h-6 px-2 text-[10px] font-bold text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-500/10 cursor-pointer">View All</Button>
             </div>
             <div className="space-y-3">
               {upcomingEvents.length > 0 ? upcomingEvents.map((evt) => (
@@ -519,6 +532,76 @@ export function ProjectCalendarWidget() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* All Upcoming Events Modal */}
+      <Dialog open={isAllEventsOpen} onOpenChange={setIsAllEventsOpen}>
+        <DialogContent className="sm:max-w-[425px] md:max-w-[600px] rounded-3xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 p-0 overflow-hidden shadow-2xl">
+          <div className="bg-slate-50/50 dark:bg-slate-900/20 p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white flex items-center">
+                <Clock className="mr-3 h-6 w-6 text-orange-500" />
+                All Upcoming Events
+              </DialogTitle>
+              <DialogDescription className="text-slate-500 dark:text-slate-400 font-medium pt-1">
+                View all scheduled events, deadlines, and milestones.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="p-6 pt-4">
+            <ScrollArea className="max-h-[50vh] pr-4">
+              <div className="space-y-4">
+                {events
+                  .filter(e => isAfter(e.date, startOfDay(today)) || isSameDay(e.date, startOfDay(today)))
+                  .sort((a, b) => a.date.getTime() - b.date.getTime())
+                  .map((evt) => (
+                    <div key={evt.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-500/30 transition-all">
+                      <div className="flex flex-col items-center justify-center h-14 w-14 rounded-xl bg-white dark:bg-slate-950 shadow-sm border border-slate-200 dark:border-slate-800 shrink-0">
+                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase leading-none">{format(evt.date, 'MMM')}</span>
+                        <span className="text-lg font-black text-slate-900 dark:text-white leading-none mt-1">{format(evt.date, 'dd')}</span>
+                      </div>
+                      <div className="flex flex-col flex-1 overflow-hidden">
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">{evt.title}</span>
+                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                          <Badge variant="outline" className={cn("text-[10px] font-bold uppercase tracking-wider", getEventBadgeStyles(evt.type))}>
+                            {evt.type}
+                          </Badge>
+                          {evt.time && (
+                            <span className="text-xs font-semibold text-slate-500 flex items-center">
+                              <Clock className="h-3 w-3 mr-1" /> {evt.time}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {evt.assignees && evt.assignees.length > 0 && (
+                        <div className="flex -space-x-2 mt-3 sm:mt-0">
+                          {evt.assignees.map((a, i) => (
+                            <TooltipProvider key={i}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Avatar className="h-8 w-8 border-2 border-white dark:border-slate-900 cursor-pointer shadow-sm">
+                                    <AvatarFallback className="bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-white text-[10px] font-bold">{a.initials}</AvatarFallback>
+                                  </Avatar>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{a.name}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                {events.filter(e => isAfter(e.date, startOfDay(today)) || isSameDay(e.date, startOfDay(today))).length === 0 && (
+                  <div className="text-sm text-slate-500 dark:text-slate-400 italic p-8 text-center bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+                    No upcoming events found.
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>
