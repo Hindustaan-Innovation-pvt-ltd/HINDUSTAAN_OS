@@ -515,9 +515,12 @@ export function ProjectCalendarWidget() {
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label htmlFor="date" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</Label>
-                <Input id="date" name="date" type="date" required className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500" />
+                <div className="relative">
+                  <Input id="date" name="date" type="date" required className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500 pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="time" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Time</Label>
@@ -545,26 +548,15 @@ export function ProjectCalendarWidget() {
 
             <div className="space-y-2">
               <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Type</Label>
-              <Select name="type" defaultValue={scheduleType === 'event' ? 'milestone' : 'sync'}>
-                <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
-                  {scheduleType === 'event' ? (
-                    <>
-                      <SelectItem value="milestone">Milestone</SelectItem>
-                      <SelectItem value="deadline">Deadline</SelectItem>
-                      <SelectItem value="leave">Leave / OOO</SelectItem>
-                    </>
-                  ) : (
-                    <>
-                      <SelectItem value="sync">Sync</SelectItem>
-                      <SelectItem value="review">Review</SelectItem>
-                      <SelectItem value="brainstorm">Brainstorming</SelectItem>
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
+              <Input name="type" list="event-types" defaultValue={scheduleType === 'event' ? 'milestone' : 'sync'} className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500" placeholder="e.g. Milestone, Launch..." />
+              <datalist id="event-types">
+                <option value="milestone">Milestone</option>
+                <option value="deadline">Deadline</option>
+                <option value="leave">Leave / OOO</option>
+                <option value="sync">Sync</option>
+                <option value="review">Review</option>
+                <option value="brainstorm">Brainstorming</option>
+              </datalist>
             </div>
             
             <DialogFooter className="pt-4 sm:justify-end">
@@ -725,7 +717,10 @@ export function ProjectCalendarWidget() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-date" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</Label>
-                  <Input id="edit-date" name="date" type="date" defaultValue={eventToEdit ? format(eventToEdit.date, 'yyyy-MM-dd') : ''} required className="rounded-xl" />
+                  <div className="relative">
+                    <Input id="edit-date" name="date" type="date" defaultValue={eventToEdit ? format(eventToEdit.date, 'yyyy-MM-dd') : ''} required className="rounded-xl pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
+                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-time" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Time</Label>
@@ -746,15 +741,7 @@ export function ProjectCalendarWidget() {
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Type</Label>
-                <Select name="type" defaultValue={eventToEdit?.type || 'milestone'}>
-                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="milestone">Milestone</SelectItem>
-                    <SelectItem value="deadline">Deadline</SelectItem>
-                    <SelectItem value="meeting">Meeting</SelectItem>
-                    <SelectItem value="leave">Leave / OOO</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input name="type" list="event-types" defaultValue={eventToEdit?.type || 'milestone'} className="rounded-xl" placeholder="e.g. Deadline, Client Sync..." />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-reason" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-orange-600">Reason for Edit (Required)</Label>
