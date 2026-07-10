@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { registerUser } from '@/lib/auth';
+import { ProjectLogo } from '@/components/ui/ProjectLogo';
 
 export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (email?: string, name?: string, role?: string) => void }) {
   const [formData, setFormData] = useState({
@@ -113,12 +114,9 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
         <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-8">
           
           <div className="flex flex-col items-center text-center mb-4">
-            <img
-              src={isDark ? "/logo-full-dark.png" : "/logo-full.png"}
-              alt="Hindustaan OS Logo"
-              className="mx-auto w-[120px] md:w-[150px] xl:w-[190px] h-auto object-contain transition-all duration-300"
-              style={{ filter: "drop-shadow(0 12px 30px rgba(255,153,0,.18)) drop-shadow(0 12px 30px rgba(34,197,94,.12))" }}
-            />
+            <div className="hover:scale-[1.03] transition-all duration-300">
+              <ProjectLogo size="large" />
+            </div>
             <div className="mt-2 flex flex-col items-center">
               <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                 Create Account

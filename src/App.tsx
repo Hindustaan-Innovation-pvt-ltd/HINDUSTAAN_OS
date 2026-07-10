@@ -19,9 +19,11 @@ import Register from './pages/Register';
 
 import { ThemeProvider } from './context/ThemeContext';
 import { ProjectProvider } from './context/ProjectContext';
+import { UserProvider } from './context/UserContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { GLOBAL_LOGS } from '@/data/mockData';
+import { ProjectLogo } from '@/components/ui/ProjectLogo';
 
 function App() {
   const [session, setSession] = useState<any>(null);
@@ -51,8 +53,7 @@ function App() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center justify-center gap-6 animate-pulse">
-          <img src="/logo-full.png" alt="Hindustaan OS" className="w-[150px] dark:hidden object-contain" />
-          <img src="/logo-full-dark.png" alt="Hindustaan OS" className="w-[150px] hidden dark:block object-contain" />
+          <ProjectLogo size="large" />
           <div className="text-sm font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
             Initializing Workspace...
           </div>
@@ -64,6 +65,7 @@ function App() {
   return (
     <ThemeProvider>
       <ProjectProvider>
+      <UserProvider>
       <TooltipProvider>
           {!session ? (
             authView === 'login' ? (
@@ -199,6 +201,7 @@ function App() {
         )}
         <Toaster position="top-right" richColors />
       </TooltipProvider>
+      </UserProvider>
       </ProjectProvider>
     </ThemeProvider>
   );

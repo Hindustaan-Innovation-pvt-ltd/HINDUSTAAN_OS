@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { loginUser, getRegisteredUsers, initializeAuth } from '@/lib/auth';
 import { User as UserIcon } from 'lucide-react';
+import { ProjectLogo } from '@/components/ui/ProjectLogo';
 
 export default function Login({ 
   onMockLogin, 
@@ -73,7 +74,7 @@ export default function Login({
     
     if (!user) {
       toast.error('Access Denied', {
-        description: 'This email is not registered with Hindustaan OS.\n\nPlease contact your administrator.',
+        description: 'This email is not registered with Project OS.\n\nPlease contact your administrator.',
       });
       return null;
     }
@@ -133,7 +134,7 @@ export default function Login({
           id: Date.now().toString(), 
           user: userName, 
           action: 'logged into', 
-          target: 'Hindustaan OS', 
+          target: 'Project OS', 
           time: 'Just now', 
           type: 'login' 
         };
@@ -262,12 +263,9 @@ export default function Login({
         <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500">
           
           <div className="flex flex-col items-center text-center mb-4">
-            <img
-              src={isDark ? "/logo-full-dark.png" : "/logo-full.png"}
-              alt="Hindustaan OS Logo"
-              className="mx-auto w-[120px] md:w-[150px] xl:w-[190px] h-auto object-contain transition-all duration-300"
-              style={{ filter: "drop-shadow(0 12px 30px rgba(255,153,0,.18)) drop-shadow(0 12px 30px rgba(34,197,94,.12))" }}
-            />
+            <div className="hover:scale-[1.03] transition-all duration-300">
+              <ProjectLogo size="large" />
+            </div>
             <div className="mt-2 flex flex-col items-center">
               <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                 Internal Workspace Portal

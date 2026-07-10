@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { ConnectedApps } from '../components/dashboard/settings/ConnectedApps';
 import { Progress } from "@/components/ui/progress";
 import { useTheme } from '../context/ThemeContext';
+import { useUser } from '../context/UserContext';
 import { toast } from 'sonner';
 import { updatePassword, getCurrentUser } from '@/lib/auth';
 
@@ -49,7 +50,15 @@ export default function Settings({ session, defaultTab = null }: { session: any,
   const [newPassword, setNewPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(() => localStorage.getItem('userAvatar'));
+  const { user, updateUser } = useUser();
+  const avatarUrl = user?.avatar;
+  const userName = user?.name || (role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey');
+  const userRole = user?.role || role;
+
+  const [profileForm, setProfileForm] = useState({
+    name: user?.name || (role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'),
+    department: user?.department || 'engineering',
+  });
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,9 +94,8 @@ export default function Settings({ session, defaultTab = null }: { session: any,
           
           const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
           
-          setAvatarUrl(compressedDataUrl);
+          updateUser({ avatar: compressedDataUrl });
           try {
-            localStorage.setItem('userAvatar', compressedDataUrl);
             toast.success('Avatar Updated');
             window.dispatchEvent(new Event('avatar-updated'));
           } catch (err) {
@@ -156,7 +164,7 @@ export default function Settings({ session, defaultTab = null }: { session: any,
                     <Avatar className="h-24 w-24 border-4 border-slate-50 dark:border-slate-900 shadow-md">
                       {avatarUrl && <AvatarImage src={avatarUrl} />}
                       <AvatarFallback className="bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 text-2xl font-bold">
-                        {role === 'manager' ? 'AG' : 'TP'}
+                        {userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
                     <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleAvatarChange} />
@@ -167,7 +175,7 @@ export default function Settings({ session, defaultTab = null }: { session: any,
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Full Name</label>
-                        <Input defaultValue={role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'} className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-medium" />
+                        <Input value={profileForm.name} onChange={(e) => setProfileForm(p => ({...p, name: e.target.value}))} className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-medium" />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Email Address</label>
@@ -175,7 +183,7 @@ export default function Settings({ session, defaultTab = null }: { session: any,
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Department</label>
-                        <Select defaultValue="engineering">
+                        <Select value={profileForm.department} onValueChange={(val) => setProfileForm(p => ({...p, department: val}))}>
                           <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-medium">
                             <SelectValue />
                           </SelectTrigger>
@@ -188,7 +196,7 @@ export default function Settings({ session, defaultTab = null }: { session: any,
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Role</label>
-                        <Input defaultValue={role === 'manager' ? 'Manager' : 'Frontend Developer Intern'} disabled className="rounded-xl bg-slate-100 dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 font-medium text-slate-500" />
+                        <Input value={userRole === 'manager' ? 'Manager' : (userRole === 'employee' ? 'Frontend Developer Intern' : userRole)} disabled className="rounded-xl bg-slate-100 dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 font-medium text-slate-500 capitalize" />
                       </div>
                     </div>
                     
@@ -217,7 +225,15 @@ export default function Settings({ session, defaultTab = null }: { session: any,
                 </div>
               </CardContent>
               <CardFooter className="p-6 pt-0 flex justify-end">
-                <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold px-6">Save Changes</Button>
+                <Button 
+                  onClick={() => {
+                    updateUser({ name: profileForm.name, department: profileForm.department });
+                    toast.success('Profile Saved Successfully');
+                  }}
+                  className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold px-6"
+                >
+                  Save Changes
+                </Button>
               </CardFooter>
             </Card>
           </div>
