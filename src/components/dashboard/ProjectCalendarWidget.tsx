@@ -100,10 +100,10 @@ export function ProjectCalendarWidget() {
 
   // Upcoming events
   const upcomingEvents = useMemo(() => {
+    const limitDate = addDays(startOfDay(today), 4);
     return events
-      .filter(e => isAfter(e.date, startOfDay(today)) || isSameDay(e.date, startOfDay(today)))
-      .sort((a, b) => a.date.getTime() - b.date.getTime())
-      .slice(0, 3);
+      .filter(e => (isAfter(e.date, startOfDay(today)) || isSameDay(e.date, startOfDay(today))) && isBefore(e.date, limitDate))
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [events, today]);
 
   const handleDayClick = (day: Date) => {
@@ -306,7 +306,7 @@ export function ProjectCalendarWidget() {
           <div className="flex-1 w-full">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center"><Clock className="mr-2 h-4 w-4 text-orange-500" /> Upcoming Events</h4>
-              <Button onClick={() => setIsAllEventsOpen(true)} variant="ghost" size="sm" className="h-6 px-2 text-[10px] font-bold text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-500/10 cursor-pointer">View All</Button>
+              <Button onClick={() => setIsAllEventsOpen(true)} variant="ghost" size="sm" className="h-6 px-2 text-[10px] font-bold text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-500/10 cursor-pointer">History</Button>
             </div>
             <div className="space-y-3">
               {upcomingEvents.length > 0 ? upcomingEvents.map((evt) => (
@@ -535,17 +535,17 @@ export function ProjectCalendarWidget() {
         </DialogContent>
       </Dialog>
 
-      {/* All Upcoming Events Modal */}
+      {/* Event History Modal */}
       <Dialog open={isAllEventsOpen} onOpenChange={setIsAllEventsOpen}>
         <DialogContent className="sm:max-w-[425px] md:max-w-[600px] rounded-3xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 p-0 overflow-hidden shadow-2xl">
           <div className="bg-slate-50/50 dark:bg-slate-900/20 p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60">
             <DialogHeader>
               <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white flex items-center">
                 <Clock className="mr-3 h-6 w-6 text-orange-500" />
-                All Upcoming Events
+                Event History
               </DialogTitle>
               <DialogDescription className="text-slate-500 dark:text-slate-400 font-medium pt-1">
-                View all scheduled events, deadlines, and milestones.
+                View all past and upcoming events, deadlines, and milestones.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -553,16 +553,20 @@ export function ProjectCalendarWidget() {
             <ScrollArea className="max-h-[50vh] pr-4">
               <div className="space-y-4">
                 {events
-                  .filter(e => isAfter(e.date, startOfDay(today)) || isSameDay(e.date, startOfDay(today)))
-                  .sort((a, b) => a.date.getTime() - b.date.getTime())
-                  .map((evt) => (
-                    <div key={evt.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-500/30 transition-all">
+                  .sort((a, b) => b.date.getTime() - a.date.getTime())
+                  .map((evt) => {
+                    const isPast = isBefore(evt.date, startOfDay(today));
+                    return (
+                    <div key={evt.id} className={cn("flex flex-col sm:flex-row sm:items-center gap-4 p-3.5 rounded-xl border transition-all", isPast ? "bg-slate-50/50 dark:bg-slate-900/20 border-slate-100 dark:border-slate-800/50 opacity-80" : "bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-500/30")}>
                       <div className="flex flex-col items-center justify-center h-14 w-14 rounded-xl bg-white dark:bg-slate-950 shadow-sm border border-slate-200 dark:border-slate-800 shrink-0">
-                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase leading-none">{format(evt.date, 'MMM')}</span>
-                        <span className="text-lg font-black text-slate-900 dark:text-white leading-none mt-1">{format(evt.date, 'dd')}</span>
+                        <span className={cn("text-[10px] font-bold uppercase leading-none", isPast ? "text-slate-400 dark:text-slate-500" : "text-slate-500 dark:text-slate-400")}>{format(evt.date, 'MMM')}</span>
+                        <span className={cn("text-lg font-black leading-none mt-1", isPast ? "text-slate-500 dark:text-slate-400" : "text-slate-900 dark:text-white")}>{format(evt.date, 'dd')}</span>
                       </div>
                       <div className="flex flex-col flex-1 overflow-hidden">
-                        <span className="text-sm font-bold text-slate-900 dark:text-white">{evt.title}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={cn("text-sm font-bold", isPast ? "text-slate-600 dark:text-slate-400" : "text-slate-900 dark:text-white")}>{evt.title}</span>
+                          {isPast && <Badge variant="outline" className="text-[9px] uppercase tracking-wider font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 py-0 h-4 border-slate-200 dark:border-slate-700">Past</Badge>}
+                        </div>
                         <div className="flex flex-wrap items-center gap-2 mt-1.5">
                           <Badge variant="outline" className={cn("text-[10px] font-bold uppercase tracking-wider", getEventBadgeStyles(evt.type))}>
                             {evt.type}
@@ -593,10 +597,10 @@ export function ProjectCalendarWidget() {
                         </div>
                       )}
                     </div>
-                  ))}
-                {events.filter(e => isAfter(e.date, startOfDay(today)) || isSameDay(e.date, startOfDay(today))).length === 0 && (
+                  )})}
+                {events.length === 0 && (
                   <div className="text-sm text-slate-500 dark:text-slate-400 italic p-8 text-center bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
-                    No upcoming events found.
+                    No events found in history.
                   </div>
                 )}
               </div>
