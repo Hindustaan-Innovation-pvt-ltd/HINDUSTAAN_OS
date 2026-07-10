@@ -47,9 +47,41 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
   const [dateRange, setDateRange] = useState('This Month');
   const isManager = role === 'manager';
 
-  const filtered = useMemo(() =>
-    isManager ? logs : logs.filter(l => l.name === currentUser.name),
-    [logs, isManager, currentUser.name]);
+  const filtered = useMemo(() => {
+    let result = isManager ? logs : logs.filter(l => l.name === currentUser.name);
+    
+    const now = new Date();
+    result = result.filter(l => {
+      if (dateRange === 'Custom Range') return true;
+      if (!l.rawDate) return true;
+      
+      const logDate = new Date(l.rawDate);
+      
+      if (dateRange === 'Today') {
+        return logDate.toDateString() === now.toDateString();
+      }
+      
+      if (dateRange === 'Yesterday') {
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        return logDate.toDateString() === yesterday.toDateString();
+      }
+      
+      if (dateRange === 'Last 7 Days' || dateRange === 'This Week') {
+        const diffTime = now.getTime() - logDate.getTime();
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        return diffDays >= 0 && diffDays <= 7;
+      }
+      
+      if (dateRange === 'This Month') {
+        return logDate.getMonth() === now.getMonth() && logDate.getFullYear() === now.getFullYear();
+      }
+      
+      return true;
+    });
+    
+    return result;
+  }, [logs, isManager, currentUser.name, dateRange]);
 
   const total    = filtered.reduce((a,l)=>a+l.hours,0);
   const approved = filtered.filter(l=>l.status==='Approved').reduce((a,l)=>a+l.hours,0);
@@ -110,7 +142,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
               <Select value={dateRange} onValueChange={setDateRange}>
                 <SelectTrigger className="w-[160px] h-10 rounded-2xl border-white/10 bg-white/5 text-slate-300 text-sm font-semibold"><SelectValue/></SelectTrigger>
                 <SelectContent className="rounded-2xl bg-[#0f172a] border-white/10 text-white">
-                  {['Today','This Week','This Month','Custom Range'].map(v=><SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  {['Today','Yesterday','Last 7 Days','This Month','Custom Range'].map(v=><SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
               {isManager && <>
