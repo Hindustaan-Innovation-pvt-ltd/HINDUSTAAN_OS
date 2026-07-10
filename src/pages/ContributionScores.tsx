@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis,
-  CartesianGrid, RadialBarChart, RadialBar, AreaChart, Area
+  CartesianGrid, RadialBarChart, RadialBar, AreaChart, Area, Legend
 } from 'recharts';
 import { getCurrentUser } from '@/lib/auth';
 import {
@@ -102,6 +102,39 @@ const COLORS = {
   average: '#eab308', // yellow-500
   poor: '#ef4444', // red-500
   orange: '#f97316' // orange-500
+};
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const standup = payload.find((p: any) => p.dataKey === 'standupScore')?.value || 0;
+    const log = payload.find((p: any) => p.dataKey === 'logScore')?.value || 0;
+    const task = payload.find((p: any) => p.dataKey === 'taskScore')?.value || 0;
+    const total = standup + log + task;
+    return (
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-xl space-y-2 text-left">
+        <p className="font-black text-slate-800 dark:text-slate-100 text-sm border-b border-slate-100 dark:border-slate-800 pb-1">{label}</p>
+        <div className="space-y-1 text-xs font-bold">
+          <div className="flex items-center justify-between gap-4 text-orange-600">
+            <span>Task Performance:</span>
+            <span>{task} / 40</span>
+          </div>
+          <div className="flex items-center justify-between gap-4 text-blue-600 dark:text-blue-400">
+            <span>Log Consistency:</span>
+            <span>{log} / 35</span>
+          </div>
+          <div className="flex items-center justify-between gap-4 text-emerald-600">
+            <span>Standup Completion:</span>
+            <span>{standup} / 25</span>
+          </div>
+          <div className="flex items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800 pt-1.5 text-sm font-extrabold text-slate-900 dark:text-white">
+            <span>Total Score:</span>
+            <span>{total}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
 };
 
 export default function ContributionScores({ session }: { session?: any }) {
@@ -220,7 +253,17 @@ export default function ContributionScores({ session }: { session?: any }) {
       { name: 'Week 2', score: Math.max(50, myData.score - 5) },
       { name: 'Week 3', score: Math.max(50, myData.score - 2) },
       { name: 'Week 4', score: myData.score },
-    ];
+    ].map(w => {
+      const taskScore = Math.round((w.score / 100) * 40);
+      const logScore = Math.round((w.score / 100) * 35);
+      const standupScore = w.score - taskScore - logScore;
+      return {
+        ...w,
+        taskScore,
+        logScore,
+        standupScore
+      };
+    });
 
     // Recent log entries (last 5)
     const recentLogs = myLogEntries.slice(0, 5);
@@ -317,16 +360,27 @@ export default function ContributionScores({ session }: { session?: any }) {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={myWeeklyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <defs>
-                        <linearGradient id="empScoreGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor={COLORS.orange} stopOpacity={0.2} />
-                          <stop offset="95%" stopColor={COLORS.orange} stopOpacity={0} />
+                        <linearGradient id="taskGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={COLORS.orange} stopOpacity={0.4} />
+                          <stop offset="95%" stopColor={COLORS.orange} stopOpacity={0.1} />
+                        </linearGradient>
+                        <linearGradient id="logGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={COLORS.good} stopOpacity={0.4} />
+                          <stop offset="95%" stopColor={COLORS.good} stopOpacity={0.1} />
+                        </linearGradient>
+                        <linearGradient id="standupGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={COLORS.excellent} stopOpacity={0.4} />
+                          <stop offset="95%" stopColor={COLORS.excellent} stopOpacity={0.1} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: tickColor }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: tickColor }} domain={[50, 100]} />
-                      <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                      <Area type="monotone" dataKey="score" stroke={COLORS.orange} strokeWidth={3} fill="url(#empScoreGrad)" dot={{ fill: COLORS.orange, r: 5 }} activeDot={{ r: 7 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: tickColor }} domain={[0, 100]} />
+                      <RechartsTooltip content={<CustomTooltip />} />
+                      <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
+                      <Area type="monotone" dataKey="standupScore" name="Standup Completion (Max 25)" stackId="1" stroke={COLORS.excellent} strokeWidth={2} fill="url(#standupGrad)" dot={{ fill: COLORS.excellent, r: 4 }} activeDot={{ r: 6 }} />
+                      <Area type="monotone" dataKey="logScore" name="Work Log Consistency (Max 35)" stackId="1" stroke={COLORS.good} strokeWidth={2} fill="url(#logGrad)" dot={{ fill: COLORS.good, r: 4 }} activeDot={{ r: 6 }} />
+                      <Area type="monotone" dataKey="taskScore" name="Task Performance (Max 40)" stackId="1" stroke={COLORS.orange} strokeWidth={2} fill="url(#taskGrad)" dot={{ fill: COLORS.orange, r: 4 }} activeDot={{ r: 6 }} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -356,7 +410,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                         <td className="px-5 py-3 font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">{log.date}</td>
                         <td className="px-5 py-3 font-medium text-slate-800 dark:text-slate-200">{log.task}</td>
                         <td className="px-5 py-3">
-                          <span className="text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-full">{log.project}</span>
+                          <span className="inline-block text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-full whitespace-nowrap">{log.project}</span>
                         </td>
                         <td className="px-5 py-3 text-right font-black text-orange-600">{log.hours?.toFixed(1)}h</td>
                         <td className="px-5 py-3 text-right">
