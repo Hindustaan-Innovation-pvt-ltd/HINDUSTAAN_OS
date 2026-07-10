@@ -20,152 +20,137 @@ import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import TaskDetailsModal from './TaskDetailsModal';
-
-// Dummy data matching the prompt requirements
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: 1,
-    type: 'task',
-    category: 'Tasks',
-    icon: '📋',
-    title: 'New Task Assigned',
-    message: 'Rahul assigned Authentication Module to Tanvy.',
-    time: '2 minutes ago',
-    unread: true,
-    group: 'Today',
-    actions: [
-      { label: 'View Task', primary: true },
-      { label: 'Dismiss', primary: false }
-    ]
-  },
-  {
-    id: 2,
-    type: 'success',
-    category: 'Tasks',
-    icon: '✅',
-    title: 'Task Completed',
-    message: 'Tanvy completed Dashboard UI.',
-    time: '10 minutes ago',
-    unread: true,
-    group: 'Today',
-  },
-  {
-    id: 3,
-    type: 'alert',
-    category: 'Projects',
-    icon: '🚨',
-    title: 'Deadline Alert',
-    message: 'Backend API deadline is tomorrow.',
-    priority: 'High',
-    time: '1 hour ago',
-    unread: true,
-    group: 'Today',
-  },
-  {
-    id: 4,
-    type: 'warning',
-    category: 'Team',
-    icon: '📝',
-    title: 'Standup Missing',
-    message: 'Priya and Aman haven\'t submitted today\'s standup.',
-    time: '2 hours ago',
-    unread: false,
-    group: 'Today',
-  },
-  {
-    id: 5,
-    type: 'info',
-    category: 'Team',
-    icon: '⏱',
-    title: 'Work Log Submitted',
-    message: 'Rahul logged 7.5 hours today.',
-    time: '5 hours ago',
-    unread: false,
-    group: 'Today',
-  },
-  {
-    id: 6,
-    type: 'user',
-    category: 'Team',
-    icon: '👤',
-    title: 'New Team Member',
-    message: 'Neha Sharma joined the Frontend Team.',
-    time: 'Yesterday',
-    unread: false,
-    group: 'Yesterday',
-  },
-  {
-    id: 7,
-    type: 'request',
-    category: 'Team',
-    icon: '📅',
-    title: 'Leave Request',
-    message: 'Aman requested leave for 12 July.',
-    time: 'Yesterday',
-    unread: false,
-    group: 'Yesterday',
-    actions: [
-      { label: 'Approve', primary: true },
-      { label: 'Reject', primary: false }
-    ]
-  },
-  {
-    id: 8,
-    type: 'success',
-    category: 'Projects',
-    icon: '🎯',
-    title: 'Milestone Completed',
-    message: 'Sprint 2 milestone completed.',
-    time: '2 days ago',
-    unread: false,
-    group: 'Earlier',
-  },
-  {
-    id: 9,
-    type: 'danger',
-    category: 'Projects',
-    icon: '⚠️',
-    title: 'Project Risk',
-    message: 'Crime Prediction System is behind schedule.',
-    time: '2 days ago',
-    unread: false,
-    group: 'Earlier',
-  },
-  {
-    id: 10,
-    type: 'file',
-    category: 'System',
-    icon: '📄',
-    title: 'File Uploaded',
-    message: 'Tanvy uploaded Dashboard_Design.pdf',
-    time: '3 days ago',
-    unread: false,
-    group: 'Earlier',
-    actions: [
-      { label: 'Open File', primary: true }
-    ]
-  },
-  {
-    id: 11,
-    type: 'meeting',
-    category: 'Team',
-    icon: '📹',
-    title: 'Meeting Reminder',
-    message: 'UI Review Meeting starts in 15 minutes.',
-    time: 'Just now',
-    unread: true,
-    group: 'Today',
-    actions: [
-      { label: 'Join Meeting', primary: true }
-    ]
-  }
-];
+import { useNotifications } from '@/context/NotificationContext';
 
 export function NotificationCenter() {
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const { notifications, markAsRead: contextMarkAsRead, clearAll: contextClearAll, setNotifications } = useNotifications();
   const [activeTab, setActiveTab] = useState('All');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
+
+  const handleApproveExtension = (notification: any) => {
+    const { taskId, days, taskTitle, employeeName } = notification.metadata || {};
+    if (!taskId || !days) {
+      toast.error('Invalid extension request data.');
+      return;
+    }
+
+    // 1. Extend task due date in local storage
+    const savedTasks = localStorage.getItem('hindustaan_tasks_list');
+    if (savedTasks) {
+      try {
+        const tasks = JSON.parse(savedTasks);
+        let taskFound = false;
+        const updatedTasks = tasks.map((t: any) => {
+          if (t.id === taskId || String(t.id) === String(taskId)) {
+            taskFound = true;
+            const current = new Date(t.due_date);
+            if (!isNaN(current.getTime())) {
+              current.setDate(current.getDate() + Number(days));
+              // Format back to YYYY-MM-DD
+              const year = current.getFullYear();
+              const month = String(current.getMonth() + 1).padStart(2, '0');
+              const day = String(current.getDate()).padStart(2, '0');
+              t.due_date = `${year}-${month}-${day}`;
+            }
+          }
+          return t;
+        });
+        if (taskFound) {
+          localStorage.setItem('hindustaan_tasks_list', JSON.stringify(updatedTasks));
+          window.dispatchEvent(new Event('tasks-updated'));
+        }
+      } catch (e) {
+        console.error('Error updating task list', e);
+      }
+    }
+
+    // 2. Add notification to employee notification list
+    const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
+    let empNotifications = [];
+    if (savedEmpNotifications && savedEmpNotifications !== 'null') {
+      try {
+        empNotifications = JSON.parse(savedEmpNotifications);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    const newEmpNotification = {
+      id: Date.now(),
+      category: 'Tasks',
+      icon: '✅',
+      title: 'Extension Request Approved',
+      message: `Your request for a ${days}-day extension on "${taskTitle}" has been approved.`,
+      time: 'Just now',
+      unread: true,
+      group: 'Today',
+      priority: 'Success'
+    };
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
+    window.dispatchEvent(new Event('employee-notifications-updated'));
+
+    // 3. Update notification message and clear actions
+    setNotifications(prev => prev.map(n => {
+      if (n.id === notification.id) {
+        return {
+          ...n,
+          unread: false,
+          message: `Approved: Extended deadline of "${taskTitle}" by ${days} days for ${employeeName}.`,
+          actions: undefined
+        };
+      }
+      return n;
+    }));
+
+    toast.success('Extension Approved!', {
+      description: `Extended "${taskTitle}" by ${days} days.`
+    });
+  };
+
+  const handleRejectExtension = (notification: any) => {
+    const { taskTitle, employeeName } = notification.metadata || {};
+
+    // 1. Add notification to employee notification list
+    const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
+    let empNotifications = [];
+    if (savedEmpNotifications && savedEmpNotifications !== 'null') {
+      try {
+        empNotifications = JSON.parse(savedEmpNotifications);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    const newEmpNotification = {
+      id: Date.now(),
+      category: 'Tasks',
+      icon: '❌',
+      title: 'Extension Request Rejected',
+      message: `Your request for an extension on "${taskTitle}" has been rejected.`,
+      time: 'Just now',
+      unread: true,
+      group: 'Today',
+      priority: 'Critical'
+    };
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
+    window.dispatchEvent(new Event('employee-notifications-updated'));
+
+    // 2. Update notification message and clear actions
+    setNotifications(prev => prev.map(n => {
+      if (n.id === notification.id) {
+        return {
+          ...n,
+          unread: false,
+          message: `Rejected: Extension request for "${taskTitle}" by ${employeeName}.`,
+          actions: undefined
+        };
+      }
+      return n;
+    }));
+
+    toast.info('Extension Rejected', {
+      description: `Rejection sent for "${taskTitle}".`
+    });
+  };
 
   const MOCK_TASK = {
     id: 'nt-1',
@@ -182,15 +167,15 @@ export function NotificationCenter() {
   const unreadCount = notifications.filter(n => n.unread).length;
 
   const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, unread: false })));
+    setNotifications((prev: any) => prev.map((n: any) => ({ ...n, unread: false })));
   };
 
   const markAsRead = (id: number) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, unread: false } : n));
+    contextMarkAsRead(id);
   };
 
   const clearAll = () => {
-    setNotifications([]);
+    contextClearAll();
   };
 
   const filteredNotifications = activeTab === 'All' 
@@ -222,7 +207,25 @@ export function NotificationCenter() {
         </button>
       </DropdownMenuTrigger>
       
-      <DropdownMenuContent align="end" className="w-[380px] p-0 rounded-2xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <DropdownMenuContent 
+        align="end" 
+        className={cn(
+          "p-0 bg-white dark:bg-slate-900 shadow-xl overflow-hidden z-[9999] flex flex-col",
+          // Desktop (>1024px)
+          "lg:w-[420px] lg:rounded-2xl lg:border lg:border-slate-200 lg:dark:border-slate-800 lg:h-auto lg:max-h-[85vh]",
+          // Tablet (768px-1024px)
+          "md:max-lg:!fixed md:max-lg:!top-3 md:max-lg:!right-3 md:max-lg:!bottom-3 md:max-lg:w-[360px] md:max-lg:h-[calc(100vh-24px)] md:max-lg:rounded-2xl md:max-lg:!translate-x-0 md:max-lg:!translate-y-0",
+          // Mobile (<768px)
+          "max-md:!fixed max-md:!top-0 max-md:!right-0 max-md:!bottom-0 max-md:w-[min(92vw,380px)] max-md:h-[100dvh] max-md:rounded-l-[24px] max-md:rounded-r-none max-md:!translate-x-0 max-md:!translate-y-0 max-md:border-y-0 max-md:border-r-0 max-md:border-l max-md:shadow-[0_20px_60px_rgba(0,0,0,0.45)]",
+          // Dark mode exact match styling requested
+          "dark:bg-[linear-gradient(180deg,rgba(15,18,40,0.98),rgba(10,12,30,0.98))] dark:border-[rgba(120,120,255,0.15)]",
+          // Animation overrides for slide in
+          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+          "max-md:data-[state=open]:slide-in-from-right-full max-md:data-[state=closed]:slide-out-to-right-full max-md:transition-transform max-md:duration-300"
+        )}
+      >
+        {/* Mobile Backdrop Overlay Hack (render inside the portal but positioned outside) */}
+        <div className="md:hidden fixed inset-0 -z-10 bg-black/55 backdrop-blur-[6px] w-[100vw] h-[100vh] -translate-x-full pointer-events-none" />
         
         {/* Header */}
         <div className="p-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50">
@@ -262,7 +265,7 @@ export function NotificationCenter() {
         </div>
 
         {/* Scrollable Content */}
-        <ScrollArea className="h-[400px]">
+        <ScrollArea className="flex-1 overflow-y-auto max-h-[100vh] pb-[env(safe-area-inset-bottom)]">
           {filteredNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[300px] text-slate-400">
               <Bell className="h-8 w-8 mb-3 opacity-20" />
@@ -279,7 +282,7 @@ export function NotificationCenter() {
                     <div className="px-3 py-1.5 flex items-center sticky top-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur z-10">
                       <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{groupName}</span>
                     </div>
-                    {groupItems.map(notification => (
+                    {groupItems.map((notification: any) => (
                       <div 
                         key={notification.id}
                         onClick={() => markAsRead(notification.id)}
@@ -294,7 +297,9 @@ export function NotificationCenter() {
                         <div className="flex gap-3">
                           <div className={cn(
                             "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base",
-                            notification.unread ? "bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700" : "bg-slate-100 dark:bg-slate-800/50 grayscale opacity-70"
+                            notification.unread 
+                              ? "bg-indigo-500/10 dark:bg-[#6366F1]/12 border-l-2 border-l-indigo-500 dark:border-l-purple-500 shadow-sm" 
+                              : "bg-slate-100 dark:bg-slate-800/50 grayscale opacity-70"
                           )}>
                             {notification.icon}
                           </div>
@@ -323,7 +328,7 @@ export function NotificationCenter() {
 
                             {notification.actions && (
                               <div className="flex items-center gap-2 mt-3">
-                                {notification.actions.map((action, i) => (
+                                {notification.actions.map((action: any, i: number) => (
                                   <Button 
                                     key={i}
                                     variant={action.primary ? "default" : "outline"}
@@ -334,12 +339,18 @@ export function NotificationCenter() {
                                     )}
                                     onClick={(e) => { 
                                       e.stopPropagation(); 
-                                      if (action.label === 'View Task') {
-                                        setSelectedTask(MOCK_TASK);
+                                      if (action.actionType === 'approve_extension') {
+                                        handleApproveExtension(notification);
+                                      } else if (action.actionType === 'reject_extension') {
+                                        handleRejectExtension(notification);
                                       } else {
-                                        toast.success(`Action "${action.label}" executed successfully!`);
+                                        if (action.label === 'View Task') {
+                                          setSelectedTask(MOCK_TASK);
+                                        } else {
+                                          toast.success(`Action "${action.label}" executed successfully!`);
+                                        }
+                                        markAsRead(notification.id); 
                                       }
-                                      markAsRead(notification.id); 
                                     }}
                                   >
                                     {action.label}

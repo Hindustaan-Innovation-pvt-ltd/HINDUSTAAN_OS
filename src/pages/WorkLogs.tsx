@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   Clock, Search, Calendar as CalendarIcon,
   CheckCircle2, Filter, MoreHorizontal, Trash2, X, CheckCircle, XCircle, Timer,
+  FolderKanban, Users, Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,8 +15,21 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { GLOBAL_LOGS, INITIAL_TASKS } from '@/data/mockData';
+import { INITIAL_TASKS } from '@/data/mockData';
+import { mockWorkLogs } from '@/data/mockWorkLogs';
+import { TotalHoursModal } from '@/components/dashboard/worklogs/TotalHoursModal';
+import { format, subDays, startOfMonth, parseISO, isSameDay } from 'date-fns';
 
 const ONLINE_TEAM_MEMBERS = [
   { id: 'u-1', name: 'Amanda Smith', initials: 'AS', role: 'Frontend Lead', task: 'Component Refactoring', project: 'Frontend Core', color: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
@@ -24,7 +38,21 @@ const ONLINE_TEAM_MEMBERS = [
   { id: 'u-4', name: 'Tanvy Pandey', initials: 'TP', role: 'Intern Developer', task: 'Kanban Board & Work Logs', project: 'Frontend Core', color: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400' },
 ];
 
-const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+const getProjectColor = (project: string) => {
+  const p = project.toLowerCase();
+  if (p.includes('frontend')) return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-200 dark:border-blue-500/30';
+  if (p.includes('design')) return 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400 border-purple-200 dark:border-purple-500/30';
+  if (p.includes('internal')) return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-400 border-cyan-200 dark:border-cyan-500/30';
+  if (p.includes('backend')) return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30';
+  if (p.includes('meeting')) return 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 border-orange-200 dark:border-orange-500/30';
+  return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+};
+
+const getHoursColor = (hours: number) => {
+  if (hours < 2) return 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-200 dark:border-blue-500/30';
+  if (hours <= 4) return 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border-purple-200 dark:border-purple-500/30';
+  return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30';
+};
 
 // ─── Active Session Widget ────────────────────────────────────────────────────
 interface ActiveSessionWidgetProps {
@@ -34,7 +62,6 @@ interface ActiveSessionWidgetProps {
 }
 
 function ActiveSessionWidget({ secondsElapsed, formatTime, currentUser }: ActiveSessionWidgetProps) {
-  // Find current in-progress task
   const savedTasksStr = localStorage.getItem('hindustaan_tasks_list');
   const allTasks = savedTasksStr ? JSON.parse(savedTasksStr) : INITIAL_TASKS;
   const inProgressTask = allTasks.find((t: any) =>
@@ -44,60 +71,78 @@ function ActiveSessionWidget({ secondsElapsed, formatTime, currentUser }: Active
   );
 
   return (
-    <div className="mb-8 rounded-2xl overflow-hidden shadow-xl shadow-orange-500/10 border border-orange-200/40 dark:border-orange-500/20">
-      <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 p-6 text-white relative overflow-hidden">
+    <div className="mb-8 rounded-2xl overflow-hidden shadow-xl shadow-indigo-500/10 border border-indigo-200/40 dark:border-indigo-500/20 w-full">
+      <div className="bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-600 p-4 sm:p-6 text-white relative overflow-hidden">
         <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -left-8 -bottom-8 w-36 h-36 bg-amber-300/20 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -left-8 -bottom-8 w-36 h-36 bg-purple-300/20 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-          {/* Left – label + task */}
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-white/20 rounded-2xl border border-white/25 shrink-0">
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-5 text-center md:text-left p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+            <div className="p-3 bg-white/20 rounded-2xl border border-white/25 shrink-0 w-fit">
               <Clock className="h-7 w-7 text-white animate-pulse" />
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <h3 className="text-lg font-black tracking-tight leading-tight">Active Work Session</h3>
+              <div className="flex flex-wrap items-center gap-2 mb-1 sm:mb-0.5">
+                <h3 className="text-lg sm:text-xl font-black tracking-tight leading-tight">Active Work Session</h3>
                 <span className="flex items-center gap-1 px-2 py-0.5 bg-white/20 border border-white/25 rounded-full text-[10px] font-bold uppercase tracking-wider">
                   <span className="h-1.5 w-1.5 bg-emerald-300 rounded-full animate-ping" />
                   Live
                 </span>
               </div>
               {inProgressTask ? (
-                <p className="text-sm text-orange-100 font-semibold line-clamp-1">
+                <p className="text-sm text-indigo-100 font-semibold mt-1">
                   📌 {inProgressTask.title}
-                  <span className="ml-1.5 text-orange-200/70 font-normal">· {inProgressTask.project_tag}</span>
+                  <span className="ml-1.5 text-indigo-200/70 font-normal">· {inProgressTask.project_tag}</span>
                 </p>
               ) : (
-                <p className="text-xs text-orange-100/80 font-medium">Session will be auto-logged on sign out.</p>
+                <p className="text-xs sm:text-sm text-indigo-100/80 font-medium mt-1">Session will be auto-logged on sign out.</p>
               )}
             </div>
           </div>
-
-          {/* Right – timer */}
-          <div className="text-right shrink-0">
-            <div className="text-4xl font-black font-mono tracking-widest tabular-nums drop-shadow">
+          <div className="shrink-0 bg-black/10 md:bg-transparent rounded-xl md:rounded-none p-4 md:p-0 mt-2 md:mt-0 flex items-center justify-between md:block md:text-right w-full md:w-auto">
+            <p className="text-[10px] sm:text-xs font-bold text-indigo-100 uppercase tracking-widest block md:hidden">Session Time</p>
+            <div className="text-3xl sm:text-4xl md:text-5xl font-black font-mono tracking-wider tabular-nums drop-shadow text-right">
               {formatTime(secondsElapsed)}
             </div>
-            <p className="text-[10px] font-bold text-orange-100 uppercase tracking-widest mt-0.5">Session Time</p>
+            <p className="text-[10px] font-bold text-indigo-100 uppercase tracking-widest mt-0.5 hidden md:block">Session Time</p>
           </div>
         </div>
       </div>
     </div>
   );
 }
-// ─────────────────────────────────────────────────────────────────────────────
-
-
 
 export default function WorkLogs({ session }: { session?: any }) {
+  const todayDate = new Date();
+  const todayStr = format(todayDate, 'yyyy-MM-dd');
+  
   const [logs, setLogs] = useState<any[]>(() => {
-    const saved = localStorage.getItem('work_logs_list');
-    return saved ? JSON.parse(saved) : GLOBAL_LOGS;
+    const saved = localStorage.getItem('work_logs_list_v4');
+    if (saved) return JSON.parse(saved);
+    
+    return mockWorkLogs.map(log => ({
+      id: log.id,
+      name: log.employeeName,
+      initials: log.avatarInitials,
+      date: log.formattedDate,
+      rawDate: log.date,
+      project: log.project,
+      task: log.task,
+      hours: log.hours,
+      status: log.status || 'Approved'
+    }));
   });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [projectFilter, setProjectFilter] = useState('All');
+  const [employeeFilter, setEmployeeFilter] = useState('All');
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(new Date());
+  const [activeTab, setActiveTab] = useState('all');
+  const [selectedSpecificDate, setSelectedSpecificDate] = useState<string>(todayStr);
+
   const [isActiveMembersModalOpen, setIsActiveMembersModalOpen] = useState(false);
+  const [isTotalHoursModalOpen, setIsTotalHoursModalOpen] = useState(false);
 
   const isMounted = React.useRef(false);
   useEffect(() => {
@@ -105,10 +150,9 @@ export default function WorkLogs({ session }: { session?: any }) {
       isMounted.current = true;
       return;
     }
-    localStorage.setItem('work_logs_list', JSON.stringify(logs));
+    localStorage.setItem('work_logs_list_v4', JSON.stringify(logs));
   }, [logs]);
 
-  // Resolve current user based on session
   const role = session?.user?.user_metadata?.role || 'manager';
   const email = session?.user?.email || 'user@hindustaan.in';
   
@@ -134,27 +178,22 @@ export default function WorkLogs({ session }: { session?: any }) {
   const currentUser = {
     id: currentUserId,
     role: role as 'manager' | 'employee',
-    name: currentUserName
+    name: currentUserName,
+    email: email
   };
 
-  // Active session timer for logged-in user
   const loginKey = `login_time_${currentUser.id}`;
   const [secondsElapsed, setSecondsElapsed] = useState(0);
 
   useEffect(() => {
     if (currentUser.role !== 'employee') return;
-
     let loginTime = localStorage.getItem(loginKey);
     if (!loginTime) {
       loginTime = Date.now().toString();
       localStorage.setItem(loginKey, loginTime);
     }
     const startTime = parseInt(loginTime, 10);
-
-    const updateTimer = () => {
-      setSecondsElapsed(Math.floor((Date.now() - startTime) / 1000));
-    };
-
+    const updateTimer = () => setSecondsElapsed(Math.floor((Date.now() - startTime) / 1000));
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
@@ -162,32 +201,33 @@ export default function WorkLogs({ session }: { session?: any }) {
 
   const [activeSessions, setActiveSessions] = useState<{ [key: string]: { time: number; isOnline: boolean } }>({});
 
-  useEffect(() => {
-    const teamMembers = [
-      { id: 'u-1', defaultOffset: 2 * 3600 + 15 * 60 + 30 }, // Amanda Smith
-      { id: 'u-2', defaultOffset: 3600 + 45 * 60 + 12 },    // Rahul Sharma
-      { id: 'u-3', defaultOffset: 45 * 60 + 5 },            // Priya Patel
-      { id: 'u-4', defaultOffset: 3 * 3600 + 10 * 60 + 40 } // Tanvy Pandey
-    ];
+  // Simulated base offsets so all team members appear online (in seconds)
+  const SIMULATED_OFFSETS: Record<string, number> = {
+    'u-1': 2 * 3600 + 15 * 60 + 30, // Amanda Smith – 2h 15m 30s
+    'u-2': 3600 + 48 * 60 + 12,      // Rahul Sharma  – 1h 48m 12s
+    'u-3': 45 * 60 + 5,              // Priya Patel   – 45m 5s
+    'u-4': 3 * 3600 + 10 * 60 + 40, // Tanvy Pandey  – 3h 10m 40s
+  };
 
+  useEffect(() => {
     const updateSessions = () => {
       const sessions: { [key: string]: { time: number; isOnline: boolean } } = {};
-      teamMembers.forEach(member => {
+      ONLINE_TEAM_MEMBERS.forEach(member => {
         const isCurrentUserEmployee = member.id === currentUser.id && currentUser.role === 'employee';
         const loginTimeStr = localStorage.getItem(`login_time_${member.id}`);
-        
         if (isCurrentUserEmployee) {
           sessions[member.id] = { time: secondsElapsed, isOnline: true };
         } else if (loginTimeStr) {
           const startTime = parseInt(loginTimeStr, 10);
           sessions[member.id] = { time: Math.floor((Date.now() - startTime) / 1000), isOnline: true };
         } else {
-          sessions[member.id] = { time: member.defaultOffset, isOnline: true };
+          // Simulate an incrementing online session for all team members
+          const base = SIMULATED_OFFSETS[member.id] || 1800;
+          sessions[member.id] = { time: base + Math.floor(Date.now() / 1000) % 3600, isOnline: true };
         }
       });
       setActiveSessions(sessions);
     };
-
     updateSessions();
     const interval = setInterval(updateSessions, 1000);
     return () => clearInterval(interval);
@@ -201,20 +241,43 @@ export default function WorkLogs({ session }: { session?: any }) {
   };
 
   const userBaseLogs = useMemo(() => {
-    return currentUser.role === 'employee'
-      ? logs.filter((log: any) => log.name.toLowerCase().includes(currentUser.name.split(' ')[0].toLowerCase()))
+    const base = currentUser.role === 'employee' 
+      ? logs.filter((log: any) => log.name === currentUser.name)
       : logs;
-  }, [logs, currentUser]);
+
+    return base.filter((log: any) => {
+      const logDate = new Date(log.rawDate);
+      if (isNaN(logDate.getTime())) return true; // keep if invalid mock date
+
+      let inRange = true;
+      if (dateFilter) {
+        inRange = isSameDay(logDate, dateFilter);
+      }
+      return inRange;
+    });
+  }, [logs, currentUser, dateFilter]);
+
+  const uniqueProjects = useMemo(() => Array.from(new Set(logs.map(l => l.project))), [logs]);
+  const uniqueEmployees = useMemo(() => Array.from(new Set(logs.map(l => l.name))), [logs]);
 
   const filteredLogs = useMemo(() => {
     return userBaseLogs.filter((log: any) => {
+      const logDate = new Date(log.rawDate);
+      
+      // Tab filter
+      if (activeTab === 'today' && !isSameDay(logDate, todayDate)) return false;
+      if (activeTab === 'specific' && !isSameDay(logDate, parseISO(selectedSpecificDate))) return false;
+
       const matchesSearch = log.task.toLowerCase().includes(searchQuery.toLowerCase()) ||
         log.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         log.project.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'All' || log.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [userBaseLogs, searchQuery, statusFilter]);
+      const matchesProject = projectFilter === 'All' || log.project === projectFilter;
+      const matchesEmployee = currentUser.role === 'manager' && employeeFilter !== 'All' ? log.name === employeeFilter : true;
+      
+      return matchesSearch && matchesStatus && matchesProject && matchesEmployee;
+    }).sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime());
+  }, [userBaseLogs, searchQuery, statusFilter, projectFilter, employeeFilter, activeTab, selectedSpecificDate, currentUser.role]);
 
   const handleStatusChange = (id: string, newStatus: string) => {
     setLogs(logs.map((log: any) => log.id === id ? { ...log, status: newStatus } : log));
@@ -224,286 +287,241 @@ export default function WorkLogs({ session }: { session?: any }) {
     setLogs(logs.filter((log: any) => log.id !== id));
   };
 
-  const totalHours = useMemo(() => (userBaseLogs || []).reduce((acc: number, log: any) => acc + (log?.hours || 0), 0), [userBaseLogs]);
-  const pendingHours = useMemo(() => (userBaseLogs || []).filter((l: any) => l?.status === 'Pending').reduce((acc: number, log: any) => acc + (log?.hours || 0), 0), [userBaseLogs]);
+  const totalHours = useMemo(() => (filteredLogs || []).reduce((acc: number, log: any) => acc + (log?.hours || 0), 0), [filteredLogs]);
+  const approvedHours = useMemo(() => (filteredLogs || []).filter((l: any) => l?.status === 'Approved').reduce((acc: number, log: any) => acc + (log?.hours || 0), 0), [filteredLogs]);
+  const pendingHours = useMemo(() => (filteredLogs || []).filter((l: any) => l?.status === 'Pending').reduce((acc: number, log: any) => acc + (log?.hours || 0), 0), [filteredLogs]);
+  const activeStaff = useMemo(() => new Set((filteredLogs || []).map(l => l.name)).size, [filteredLogs]);
 
   return (
-    <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8 relative animate-in fade-in duration-500">
+    <div className="w-full max-w-full overflow-x-hidden p-4 sm:p-6 lg:p-8 space-y-6 relative animate-in fade-in duration-500 bg-[#F8FAFC] dark:bg-slate-950 min-h-screen text-[#0F172A] dark:text-white">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Work Logs</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Review team timesheets and efficiently manage logged hours.</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center bg-white dark:bg-slate-900 px-3 py-2 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700/60 hidden sm:flex">
-            <Search className="h-4 w-4 text-slate-400 mr-2" />
-            <input
-              type="text"
-              placeholder="Search logs..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 w-48"
-            />
-          </div>
-
-          {currentUser.role === 'manager' && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
-                  <Filter className="h-4 w-4 mr-2 text-slate-400" />
-                  {statusFilter === 'All' ? 'Status: All' : statusFilter}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                <DropdownMenuItem onClick={() => setStatusFilter('All')} className="cursor-pointer font-medium">All Statuses</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatusFilter('Approved')} className="cursor-pointer font-medium text-emerald-600">Approved</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatusFilter('Pending')} className="cursor-pointer font-medium text-amber-600">Pending</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatusFilter('Rejected')} className="cursor-pointer font-medium text-rose-600">Rejected</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-
+          <h2 className="text-2xl font-bold tracking-tight text-[#0F172A] dark:text-white">Work Logs</h2>
+          <p className="text-sm text-[#64748B] dark:text-slate-400 mt-1">Manage team timesheets and logged hours efficiently.</p>
         </div>
       </div>
 
       {/* Employee Active Session Timer Widget */}
       {currentUser.role === 'employee' && (
-        <ActiveSessionWidget
-          secondsElapsed={secondsElapsed}
-          formatTime={formatTime}
-          currentUser={currentUser}
-        />
-      )}
-
-
-      {/* Live Employee Sessions (Manager Only) */}
-      {currentUser.role === 'manager' && (
-        <div className="mb-8">
-          <h3 className="text-lg font-black tracking-tight text-slate-900 dark:text-white mb-4 flex items-center">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
-            Live Active Sessions
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {ONLINE_TEAM_MEMBERS.map(member => {
-              const sessionInfo = activeSessions[member.id];
-              const isOnline = !!sessionInfo?.isOnline;
-              const sessionTime = sessionInfo?.time || 0;
-
-              // Resolve in-progress task for this member
-              const savedTasksStr = localStorage.getItem('hindustaan_tasks_list');
-              const allTasks = savedTasksStr ? JSON.parse(savedTasksStr) : INITIAL_TASKS;
-              const inProgressTask = allTasks.find((t: any) => 
-                (t.assignee_id === member.id || t.assignee_name.toLowerCase().includes(member.name.split(' ')[0].toLowerCase())) &&
-                t.status === 'In Progress'
-              );
-
-              const currentTaskName = inProgressTask ? inProgressTask.title : 'No active task';
-              const currentProjectName = inProgressTask ? inProgressTask.project_tag : 'Idle';
-
-              return (
-                <div 
-                  key={member.id} 
-                  className={cn(
-                    "bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all relative overflow-hidden group",
-                    !isOnline && "opacity-75 bg-slate-50/50 dark:bg-slate-900/40"
-                  )}
-                >
-                  {isOnline ? (
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600 transform origin-left transition-transform duration-1000" />
-                  ) : (
-                    <div className="absolute top-0 left-0 w-full h-1 bg-slate-200 dark:bg-slate-800" />
-                  )}
-                  
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="relative">
-                        <Avatar className={cn("h-10 w-10 border-2 border-white dark:border-slate-900", member.color)}>
-                          <AvatarFallback className="font-bold">{member.initials}</AvatarFallback>
-                        </Avatar>
-                        {isOnline ? (
-                          <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
-                        ) : (
-                          <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-slate-300 dark:bg-slate-600 rounded-full border-2 border-white dark:border-slate-900" />
-                        )}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{member.name}</h4>
-                        <p className="text-xs font-semibold text-slate-500">{member.role}</p>
-                      </div>
-                    </div>
-                    {isOnline ? (
-                      <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1.5 animate-pulse">
-                        <Timer className="h-3.5 w-3.5" />
-                        <span className="text-sm font-bold font-mono tracking-wider">{formatTime(sessionTime)}</span>
-                      </div>
-                    ) : (
-                      <div className="px-3 py-1 bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 rounded-lg flex items-center space-x-1.5">
-                        <Timer className="h-3.5 w-3.5 text-slate-300 dark:text-slate-650" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Offline</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="bg-slate-50 dark:bg-slate-950/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Working On</span>
-                      <Badge variant="secondary" className={cn(
-                        "text-[10px] uppercase font-black tracking-wider",
-                        isOnline && inProgressTask
-                          ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                      )}>
-                        {currentProjectName}
-                      </Badge>
-                    </div>
-                    <p className="font-bold text-slate-700 dark:text-slate-300 line-clamp-1">{currentTaskName}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <ActiveSessionWidget secondsElapsed={secondsElapsed} formatTime={formatTime} currentUser={currentUser} />
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
-          <div className="flex items-center justify-between mb-4 relative z-10">
-            <h3 className="text-sm font-bold opacity-90">Total Hours (All Time)</h3>
-            <div className="p-2 bg-white/20 rounded-lg"><Clock className="h-5 w-5 text-white" /></div>
-          </div>
-          <p className="text-4xl font-black relative z-10">{totalHours.toFixed(1)}h</p>
-          <p className="text-xs font-semibold text-blue-100 mt-2 relative z-10">Across {logs.length} logged entries</p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400">Pending Approvals</h3>
-            <div className="p-2 bg-amber-100 dark:bg-amber-500/20 rounded-lg"><CheckCircle2 className="h-5 w-5 text-amber-600 dark:text-amber-500" /></div>
-          </div>
-          <p className="text-4xl font-black text-slate-900 dark:text-white">{pendingHours.toFixed(1)}h</p>
-          <p className="text-xs font-semibold text-slate-500 mt-2">Requires manager review</p>
-        </div>
-
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
         <div 
-          onClick={() => setIsActiveMembersModalOpen(true)}
-          className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all cursor-pointer hover:border-emerald-500/30 group/card active:scale-98"
+          onClick={() => setIsTotalHoursModalOpen(true)}
+          className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-[#E2E8F0] dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 group-hover/card:text-emerald-500 transition-colors">Active Members</h3>
-            <div className="flex -space-x-2">
-              <Avatar className="h-8 w-8 border-2 border-white dark:border-slate-900 shadow-sm"><AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs font-bold">TP</AvatarFallback></Avatar>
-              <Avatar className="h-8 w-8 border-2 border-white dark:border-slate-900 shadow-sm"><AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-bold">RS</AvatarFallback></Avatar>
-              <Avatar className="h-8 w-8 border-2 border-white dark:border-slate-900 shadow-sm"><AvatarFallback className="bg-orange-100 text-orange-700 text-xs font-bold">AS</AvatarFallback></Avatar>
-            </div>
+            <h3 className="text-sm font-bold text-[#64748B] dark:text-slate-400 group-hover:text-[#6366F1] transition-colors">{currentUser.role === 'manager' ? "Employee's Total Hours" : 'My Total Hours'}</h3>
+            <div className="p-2 bg-[#F1F5F9] dark:bg-slate-800 rounded-lg"><Clock className="h-5 w-5 text-[#6366F1]" /></div>
           </div>
-          <p className="text-4xl font-black text-slate-900 dark:text-white">4</p>
-          <p className="text-xs font-semibold text-slate-500 mt-2">Contributing this sprint</p>
+          <p className="text-4xl font-black text-[#0F172A] dark:text-white">{totalHours.toFixed(1)}h</p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-[#E2E8F0] dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-[#64748B] dark:text-slate-400">Approved Hours</h3>
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg"><CheckCircle2 className="h-5 w-5 text-[#10B981]" /></div>
+          </div>
+          <p className="text-4xl font-black text-[#0F172A] dark:text-white">{approvedHours.toFixed(1)}h</p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-[#E2E8F0] dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-[#64748B] dark:text-slate-400">Pending Approvals</h3>
+            <div className="p-2 bg-amber-50 dark:bg-amber-500/10 rounded-lg"><Timer className="h-5 w-5 text-[#F59E0B]" /></div>
+          </div>
+          <p className="text-4xl font-black text-[#0F172A] dark:text-white">{pendingHours.toFixed(1)}h</p>
+        </div>
+
+        {currentUser.role === 'manager' && (
+          <div 
+            onClick={() => setIsActiveMembersModalOpen(true)}
+            className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-[#E2E8F0] dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-[#64748B] dark:text-slate-400 group-hover:text-emerald-500 transition-colors">Active Employees</h3>
+              <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg"><Users className="h-5 w-5 text-emerald-500" /></div>
+            </div>
+            <p className="text-4xl font-black text-[#0F172A] dark:text-white">{activeStaff}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Filter Section */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] dark:border-slate-800 shadow-sm space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h3 className="font-bold text-[#0F172A] dark:text-white flex items-center gap-2">
+            <Filter className="h-4 w-4 text-[#6366F1]" /> Filters
+          </h3>
+          <div className="flex items-center bg-[#F1F5F9] dark:bg-slate-800 px-3 py-2 rounded-xl w-full md:w-64 border border-transparent focus-within:border-[#6366F1] transition-colors">
+            <Search className="h-4 w-4 text-[#64748B] mr-2 shrink-0" />
+            <input
+              type="text"
+              placeholder="Search tasks, projects..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-transparent border-none outline-none text-sm font-medium text-[#0F172A] dark:text-white placeholder:text-[#64748B] w-full"
+            />
+          </div>
+        </div>
+        
+        <div className="flex flex-wrap gap-3">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-[160px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0F172A] dark:text-white justify-start hover:bg-[#F1F5F9] dark:hover:bg-slate-800 transition-colors shadow-sm">
+                <CalendarIcon className="mr-2 h-4 w-4 text-[#6366F1]" />
+                {dateFilter ? format(dateFilter, "do MMMM") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl" align="start">
+              <CalendarComponent
+                mode="single"
+                selected={dateFilter}
+                onSelect={setDateFilter}
+                className="bg-white dark:bg-slate-900 text-[#0F172A] dark:text-white rounded-2xl p-3"
+              />
+            </PopoverContent>
+          </Popover>
+
+          {currentUser.role === 'manager' && (
+            <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+              <SelectTrigger className="w-[160px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
+                <SelectValue placeholder="Employee" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="All">All Employees</SelectItem>
+                {uniqueEmployees.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+
+          <Select value={projectFilter} onValueChange={setProjectFilter}>
+            <SelectTrigger className="w-[160px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
+              <SelectValue placeholder="Project" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="All">All Projects</SelectItem>
+              {uniqueProjects.map(p => <SelectItem key={p as string} value={p as string}>{p as string}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="All">All Statuses</SelectItem>
+              <SelectItem value="Approved">Approved</SelectItem>
+              <SelectItem value="Pending">Pending</SelectItem>
+              <SelectItem value="Rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Data Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden flex-1 flex flex-col">
-        <div className="overflow-x-auto flex-1">
-          <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm z-10 border-b border-slate-200 dark:border-slate-800">
-              <tr>
-                <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Employee</th>
-                <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</th>
-                <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Project</th>
-                <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Task</th>
-                <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Hours</th>
-                {currentUser.role === 'manager' && (
-                  <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Status</th>
-                )}
-                {currentUser.role === 'manager' && (
-                  <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-              {filteredLogs.length === 0 ? (
-                <tr>
-                  <td colSpan={currentUser.role === 'manager' ? 7 : 5} className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
-                    No logs found matching your criteria.
-                  </td>
-                </tr>
-              ) : (
-                filteredLogs.map((log: any) => (
-                  <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors group">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9 ring-2 ring-white dark:ring-slate-900 shadow-sm">
-                          <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs">{log.initials}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm font-bold text-slate-900 dark:text-white">{log.name}</span>
+      {/* Data Cards Section */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="bg-[#F1F5F9] dark:bg-slate-800 p-1 rounded-xl mb-6 flex-wrap h-auto gap-1">
+          <TabsTrigger value="all" className="rounded-lg text-sm font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-[#6366F1]">All Logs</TabsTrigger>
+          <TabsTrigger value="today" className="rounded-lg text-sm font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-[#6366F1]">Today's Logs</TabsTrigger>
+          <TabsTrigger value="specific" className="rounded-lg text-sm font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-[#6366F1]">Date Specific Logs</TabsTrigger>
+        </TabsList>
+
+        {activeTab === 'specific' && (
+          <div className="mb-6 flex items-center gap-3">
+            <label className="text-sm font-bold text-[#64748B] dark:text-slate-400">Select Date:</label>
+            <input 
+              type="date" 
+              value={selectedSpecificDate}
+              onChange={(e) => setSelectedSpecificDate(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-[#0F172A] dark:text-white outline-none focus:border-[#6366F1]"
+            />
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {filteredLogs.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-12 border border-[#E2E8F0] dark:border-slate-800 shadow-sm text-center">
+              <FolderKanban className="h-12 w-12 text-[#64748B] opacity-50 mx-auto mb-4" />
+              <p className="text-[#64748B] dark:text-slate-400 font-bold text-lg">No logs found matching your criteria.</p>
+            </div>
+          ) : (
+            filteredLogs.map((log: any) => (
+              <div key={log.id} className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] dark:border-slate-800 shadow-sm hover:shadow-md hover:border-[#6366F1]/30 dark:hover:border-[#6366F1]/30 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 group">
+                
+                {/* Left side: Avatar + Info */}
+                <div className="flex items-start md:items-center gap-4 flex-1">
+                  <Avatar className="h-12 w-12 border-2 border-white dark:border-slate-900 shadow-sm shrink-0">
+                    <AvatarFallback className="bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] text-white font-bold text-sm">
+                      {log.initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-bold text-[#0F172A] dark:text-white text-base">{log.name}</span>
+                      <div className="flex items-center gap-1 text-xs font-semibold text-[#64748B] bg-[#F1F5F9] dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                        <CalendarIcon className="h-3 w-3" /> {log.date}
                       </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 w-fit px-2.5 py-1 rounded-md">
-                        <CalendarIcon className="h-3.5 w-3.5 text-blue-500" /> {log.date}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-full shadow-sm">{log.project}</span>
-                    </td>
-                    <td className="p-4 text-sm font-medium text-slate-700 dark:text-slate-300">
+                      <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", getProjectColor(log.project))}>
+                        {log.project}
+                      </Badge>
+                    </div>
+                    <p className="text-sm font-medium text-[#64748B] dark:text-slate-300 break-words line-clamp-2 sm:line-clamp-none">
                       {log.task}
-                    </td>
-                    <td className="p-4 text-right">
-                      <span className="inline-flex items-center justify-center px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-sm font-black shadow-sm">
-                        {log.hours.toFixed(1)}h
-                      </span>
-                    </td>
-                    {currentUser.role === 'manager' && (
-                      <td className="p-4 text-right">
-                        <Badge variant="outline" className={cn(
-                          "font-bold uppercase tracking-wider border-0 shadow-sm",
-                          log.status === 'Approved' && "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400",
-                          log.status === 'Pending' && "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400",
-                          log.status === 'Rejected' && "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400"
-                        )}>
-                          {log.status}
-                        </Badge>
-                      </td>
-                    )}
-                    {currentUser.role === 'manager' && (
-                      <td className="p-4 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                            {log.status !== 'Approved' && (
-                              <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Approved')} className="cursor-pointer text-emerald-600 font-medium">
-                                <CheckCircle className="h-4 w-4 mr-2" /> Approve Log
-                              </DropdownMenuItem>
-                            )}
-                            {log.status !== 'Rejected' && (
-                              <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Rejected')} className="cursor-pointer text-rose-600 font-medium">
-                                <XCircle className="h-4 w-4 mr-2" /> Reject Log
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
-                            <DropdownMenuItem onClick={() => handleDelete(log.id)} className="cursor-pointer text-red-600 font-medium">
-                              <Trash2 className="h-4 w-4 mr-2" /> Delete Entry
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    )}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right side: Badges and Actions */}
+                <div className="flex items-center justify-between md:justify-end gap-4 shrink-0 pl-[64px] md:pl-0 border-t border-[#E2E8F0] dark:border-slate-800 md:border-0 pt-3 md:pt-0">
+                  <Badge variant="outline" className={cn("text-xs font-black tracking-wider px-2.5 py-1", getHoursColor(log.hours))}>
+                    <Clock className="h-3 w-3 mr-1.5" /> {log.hours.toFixed(1)}h
+                  </Badge>
+                  
+                  <Badge variant="outline" className={cn(
+                    "text-xs font-bold uppercase tracking-wider px-2.5 py-1",
+                    log.status === 'Approved' ? "bg-emerald-50 text-[#10B981] dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30" :
+                    log.status === 'Pending' ? "bg-amber-50 text-[#F59E0B] dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30" :
+                    "bg-rose-50 text-rose-600 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30"
+                  )}>
+                    {log.status}
+                  </Badge>
+
+                  {currentUser.role === 'manager' && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-[#64748B] hover:bg-[#F1F5F9] dark:hover:bg-slate-800 rounded-lg">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-[#E2E8F0] dark:border-slate-800 rounded-xl">
+                        {log.status !== 'Approved' && (
+                          <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Approved')} className="cursor-pointer text-[#10B981] font-bold">
+                            <CheckCircle className="h-4 w-4 mr-2" /> Approve Log
+                          </DropdownMenuItem>
+                        )}
+                        {log.status !== 'Rejected' && (
+                          <DropdownMenuItem onClick={() => handleStatusChange(log.id, 'Rejected')} className="cursor-pointer text-rose-600 font-bold">
+                            <XCircle className="h-4 w-4 mr-2" /> Reject Log
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator className="bg-[#E2E8F0] dark:bg-slate-800" />
+                        <DropdownMenuItem onClick={() => handleDelete(log.id)} className="cursor-pointer text-red-600 font-bold">
+                          <Trash2 className="h-4 w-4 mr-2" /> Delete Entry
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
-      </div>
+      </Tabs>
 
       {/* Active Members Modal */}
       {isActiveMembersModalOpen && (
@@ -530,7 +548,7 @@ export default function WorkLogs({ session }: { session?: any }) {
               {ONLINE_TEAM_MEMBERS.map((member) => {
                 const isOnline = activeSessions[member.id]?.isOnline;
                 return (
-                <div key={member.id} className={cn("flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all", !isOnline && "opacity-75 grayscale")}>
+                <div key={member.id} className={cn("flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-800 transition-all", !isOnline && "opacity-75 grayscale")}>
                   <div className="flex items-center gap-3">
                     <Avatar className={cn("h-9 w-9 border-2 border-white dark:border-slate-900", member.color)}>
                       <AvatarFallback className="font-bold text-xs">{member.initials}</AvatarFallback>
@@ -565,6 +583,14 @@ export default function WorkLogs({ session }: { session?: any }) {
           </div>
         </div>
       )}
+
+      <TotalHoursModal 
+        isOpen={isTotalHoursModalOpen} 
+        onOpenChange={setIsTotalHoursModalOpen} 
+        logs={filteredLogs} 
+        role={currentUser.role} 
+        currentUser={{ name: currentUser.name, email: currentUser.email || '' }}
+      />
     </div>
   );
 }

@@ -15,13 +15,19 @@ import WorkLogs from './pages/WorkLogs';
 import DailyStandups from './pages/DailyStandups';
 import ContributionScores from './pages/ContributionScores';
 import Register from './pages/Register';
+import ProfileView from './pages/ProfileView';
+import ProfileEdit from './pages/ProfileEdit';
+import HelpSupport from '@/pages/HelpSupport';
 // Supabase client removed for mock auth implementation
 
 import { ThemeProvider } from './context/ThemeContext';
 import { ProjectProvider } from './context/ProjectContext';
+import { UserProvider } from './context/UserContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { GLOBAL_LOGS } from '@/data/mockData';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 
 function App() {
   const [session, setSession] = useState<any>(null);
@@ -29,6 +35,39 @@ function App() {
   const [currentView, setCurrentView] = useState('Dashboard');
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
+  const [prefilledEmail, setPrefilledEmail] = useState('');
+  const [prefilledName, setPrefilledName] = useState('');
+  const [prefilledRole, setPrefilledRole] = useState('manager');
+
+  // Router listener to synchronize pathname with React currentView state
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const path = window.location.pathname;
+      if (path === '/profile') {
+        setCurrentView('My Profile');
+      } else if (path === '/profile/edit') {
+        setCurrentView('Edit Profile');
+      }
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    handleLocationChange(); // run once on mount
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
+
+  const handleNavigate = (view: string) => {
+    if (view === 'My Profile') {
+      window.history.pushState({}, '', '/profile');
+      window.dispatchEvent(new Event('popstate'));
+    } else if (view === 'Edit Profile') {
+      window.history.pushState({}, '', '/profile/edit');
+      window.dispatchEvent(new Event('popstate'));
+    } else {
+      if (window.location.pathname !== '/') {
+        window.history.pushState({}, '', '/');
+      }
+      setCurrentView(view);
+    }
+  };
 
   useEffect(() => {
     const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
@@ -48,8 +87,7 @@ function App() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center justify-center gap-6 animate-pulse">
-          <img src="/logo-full.png" alt="Hindustaan OS" className="w-[150px] dark:hidden object-contain" />
-          <img src="/logo-full-dark.png" alt="Hindustaan OS" className="w-[150px] hidden dark:block object-contain" />
+          <BrandLogo variant="auth" />
           <div className="text-sm font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
             Initializing Workspace...
           </div>
@@ -60,11 +98,16 @@ function App() {
 
   return (
     <ThemeProvider>
-      <ProjectProvider>
+      <NotificationProvider>
+        <ProjectProvider>
+        <UserProvider key={session?.user?.email || 'guest'}>
       <TooltipProvider>
           {!session ? (
             authView === 'login' ? (
               <Login 
+                defaultEmail={prefilledEmail}
+                defaultName={prefilledName}
+                defaultRole={prefilledRole}
                 onMockLogin={(role, email) => {
                   const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
                   if (userStr) {
@@ -72,15 +115,27 @@ function App() {
                     setSession({ user: { email: user.email, user_metadata: { role: user.role, name: user.name, department: user.department } } });
                   }
                 }}
-                onNavigateToRegister={() => setAuthView('register')}
+                onNavigateToRegister={() => {
+                  setPrefilledEmail('');
+                  setPrefilledName('');
+                  setPrefilledRole('manager');
+                  setAuthView('register');
+                }}
               />
             ) : (
-              <Register onNavigateToLogin={() => setAuthView('login')} />
+              <Register 
+                onNavigateToLogin={(email, name, role) => {
+                  if (email) setPrefilledEmail(email);
+                  if (name) setPrefilledName(name);
+                  if (role) setPrefilledRole(role);
+                  setAuthView('login');
+                }} 
+              />
             )
         ) : (
           <DashboardShell
             currentView={currentView}
-            onNavigate={setCurrentView}
+            onNavigate={handleNavigate}
             role={session.user?.user_metadata?.role || 'employee'}
             isMinimized={isSidebarMinimized}
             onMinimizeChange={setIsSidebarMinimized}
@@ -156,7 +211,12 @@ function App() {
             {(currentView === 'Projects' || currentView === 'My Projects') && <Projects session={session} />}
             {currentView === 'About Us' && <AboutUs />}
             {currentView === 'Settings' && <Settings session={session} />}
-            {currentView === 'My Profile' && <Settings session={session} defaultTab="profile" />}
+            {currentView === 'My Profile' && (
+              <ProfileView session={session} onNavigate={handleNavigate} />
+            )}
+            {currentView === 'Edit Profile' && (
+              <ProfileEdit session={session} onNavigate={handleNavigate} />
+            )}
             {currentView === 'Team Members' && <TeamMembers />}
 
             {/* New Pages */}
@@ -165,13 +225,14 @@ function App() {
             {currentView === 'Work Logs' && <WorkLogs session={session} />}
             {(currentView === 'Daily Standups' || currentView === 'Daily Standup') && <DailyStandups session={session} />}
             {(currentView === 'Contribution Scores' || currentView === 'My Performance') && <ContributionScores session={session} />}
+            {currentView === 'Help & Support' && <HelpSupport session={session} />}
 
             {/* Fallback for anything else */}
             {![
               'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
-              'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Team Members',
+              'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Edit Profile', 'Team Members',
               'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
-              'Contribution Scores', 'My Performance'
+              'Contribution Scores', 'My Performance', 'Help & Support'
             ].includes(currentView) && (
               <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
                 <p>Module "{currentView}" is under construction.</p>
@@ -179,9 +240,11 @@ function App() {
             )}
           </DashboardShell>
         )}
-        <Toaster position="top-right" richColors />
+        <Toaster position="bottom-right" />
       </TooltipProvider>
+      </UserProvider>
       </ProjectProvider>
+      </NotificationProvider>
     </ThemeProvider>
   );
 }

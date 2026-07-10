@@ -3,6 +3,7 @@ export interface User {
   name: string;
   email: string;
   role: 'manager' | 'employee';
+  designation?: string;
   department?: string;
   phone?: string;
   password?: string; // Only stored locally for mock
@@ -24,6 +25,7 @@ export const initializeAuth = () => {
         email: 'manager1@hindustaan.in',
         password: 'Manager@123',
         role: 'manager',
+        designation: 'Product Manager',
         department: 'Engineering',
         dateJoined: new Date().toISOString()
       },
@@ -33,6 +35,7 @@ export const initializeAuth = () => {
         email: 'employee1@hindustaan.in',
         password: 'Employee@123',
         role: 'employee',
+        designation: 'Frontend Developer',
         department: 'Engineering',
         dateJoined: new Date().toISOString()
       }
@@ -42,13 +45,14 @@ export const initializeAuth = () => {
 };
 
 export const getRegisteredUsers = (): User[] => {
+  initializeAuth();
   const usersStr = localStorage.getItem(USERS_KEY);
   return usersStr ? JSON.parse(usersStr) : [];
 };
 
 export const registerUser = (user: Omit<User, 'dateJoined'>): boolean => {
   const users = getRegisteredUsers();
-  if (users.find(u => u.email === user.email)) {
+  if (users.find(u => u.email.toLowerCase() === user.email.toLowerCase())) {
     return false; // Email already exists
   }
   
@@ -65,16 +69,12 @@ export const registerUser = (user: Omit<User, 'dateJoined'>): boolean => {
 
 export const loginUser = (email: string, password?: string, rememberMe: boolean = true): User | null => {
   const users = getRegisteredUsers();
-  const user = users.find(u => u.email === email && (!password || u.password === password));
+  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && (!password || u.password === password));
   
   if (user) {
-    const safeUser = { name: user.name, email: user.email, role: user.role, id: user.id, department: user.department };
-    if (rememberMe) {
-      localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(safeUser));
-    } else {
-      sessionStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(safeUser));
-      localStorage.removeItem(LOCAL_SESSION_KEY);
-    }
+    const safeUser = { name: user.name, email: user.email, role: user.role, id: user.id, department: user.department, designation: user.designation, phone: user.phone };
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(safeUser));
+    sessionStorage.removeItem(LOCAL_SESSION_KEY);
     return safeUser;
   }
   return null;
