@@ -22,7 +22,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
-import { GLOBAL_LOGS, INITIAL_TASKS } from '@/data/mockData';
+import { INITIAL_TASKS } from '@/data/mockData';
+import { mockWorkLogs } from '@/data/mockWorkLogs';
+import { TotalHoursModal } from '@/components/dashboard/worklogs/TotalHoursModal';
 
 const ONLINE_TEAM_MEMBERS = [
   { id: 'u-1', name: 'Amanda Smith', initials: 'AS', role: 'Frontend Lead', task: 'Component Refactoring', project: 'Frontend Core', color: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
@@ -56,7 +58,7 @@ function ActiveSessionWidget({ secondsElapsed, formatTime, currentUser }: Active
         <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -left-8 -bottom-8 w-36 h-36 bg-amber-300/20 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-5">
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-5 text-center md:text-left p-4 md:p-6">
           {/* Left – label + task */}
           <div className="flex flex-col sm:flex-row sm:items-start gap-4">
             <div className="p-3 bg-white/20 rounded-2xl border border-white/25 shrink-0 w-fit">
@@ -84,7 +86,7 @@ function ActiveSessionWidget({ secondsElapsed, formatTime, currentUser }: Active
           {/* Right – timer */}
           <div className="shrink-0 bg-black/10 md:bg-transparent rounded-xl md:rounded-none p-4 md:p-0 mt-2 md:mt-0 flex items-center justify-between md:block md:text-right w-full md:w-auto">
             <p className="text-[10px] sm:text-xs font-bold text-orange-100 uppercase tracking-widest block md:hidden">Session Time</p>
-            <div className="text-3xl sm:text-4xl font-black font-mono tracking-widest tabular-nums drop-shadow text-right">
+            <div className="text-3xl sm:text-4xl md:text-5xl font-black font-mono tracking-wider tabular-nums drop-shadow text-right">
               {formatTime(secondsElapsed)}
             </div>
             <p className="text-[10px] font-bold text-orange-100 uppercase tracking-widest mt-0.5 hidden md:block">Session Time</p>
@@ -100,8 +102,20 @@ function ActiveSessionWidget({ secondsElapsed, formatTime, currentUser }: Active
 
 export default function WorkLogs({ session }: { session?: any }) {
   const [logs, setLogs] = useState<any[]>(() => {
-    const saved = localStorage.getItem('work_logs_list');
-    return saved ? JSON.parse(saved) : GLOBAL_LOGS;
+    const saved = localStorage.getItem('work_logs_list_v2');
+    if (saved) return JSON.parse(saved);
+    
+    return mockWorkLogs.map(log => ({
+      id: log.id,
+      name: log.employeeName,
+      initials: log.avatarInitials,
+      date: log.formattedDate,
+      rawDate: log.date,
+      project: log.project,
+      task: log.task,
+      hours: log.hours,
+      status: log.status || 'Approved'
+    }));
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -114,7 +128,7 @@ export default function WorkLogs({ session }: { session?: any }) {
       isMounted.current = true;
       return;
     }
-    localStorage.setItem('work_logs_list', JSON.stringify(logs));
+    localStorage.setItem('work_logs_list_v2', JSON.stringify(logs));
   }, [logs]);
 
   // Resolve current user based on session
@@ -143,7 +157,8 @@ export default function WorkLogs({ session }: { session?: any }) {
   const currentUser = {
     id: currentUserId,
     role: role as 'manager' | 'employee',
-    name: currentUserName
+    name: currentUserName,
+    email: email
   };
 
   // Active session timer for logged-in user
@@ -246,9 +261,9 @@ export default function WorkLogs({ session }: { session?: any }) {
   const pendingHours = useMemo(() => (userBaseLogs || []).filter((l: any) => l?.status === 'Pending').reduce((acc: number, log: any) => acc + (log?.hours || 0), 0), [userBaseLogs]);
 
   return (
-    <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8 relative animate-in fade-in duration-500">
+    <div className="w-full max-w-full overflow-x-hidden p-4 sm:p-6 lg:p-8 space-y-6 relative animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Work Logs</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Review team timesheets and efficiently manage logged hours.</p>
@@ -386,7 +401,7 @@ export default function WorkLogs({ session }: { session?: any }) {
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
         <div 
           onClick={() => setIsTotalHoursModalOpen(true)}
           className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden cursor-pointer hover:border-orange-500/30 hover:scale-[1.02] transition-all"
@@ -427,9 +442,8 @@ export default function WorkLogs({ session }: { session?: any }) {
       </div>
 
       {/* Data Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden flex-1 flex flex-col">
-        <div className="overflow-x-auto flex-1">
-          <table className="w-full text-left border-collapse min-w-[800px]">
+      <div className="w-full overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/50 shadow-sm flex-1 flex flex-col">
+        <table className="w-full text-left border-collapse min-w-[600px] md:min-w-[800px]">
             <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm z-10 border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Employee</th>
@@ -455,26 +469,26 @@ export default function WorkLogs({ session }: { session?: any }) {
               ) : (
                 filteredLogs.map((log: any) => (
                   <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors group">
-                    <td className="p-4">
+                    <td className="p-4 max-w-[150px] md:max-w-none truncate sm:whitespace-normal">
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9 ring-2 ring-white dark:ring-slate-900 shadow-sm">
+                        <Avatar className="h-9 w-9 ring-2 ring-white dark:ring-slate-900 shadow-sm shrink-0">
                           <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs">{log.initials}</AvatarFallback>
                         </Avatar>
-                        <span className="text-sm font-bold text-slate-900 dark:text-white">{log.name}</span>
+                        <span className="text-sm font-bold text-slate-900 dark:text-white truncate">{log.name}</span>
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 w-fit px-2.5 py-1 rounded-md">
                         <CalendarIcon className="h-3.5 w-3.5 text-blue-500" /> {log.date}
                       </div>
                     </td>
-                    <td className="p-4">
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-full shadow-sm">{log.project}</span>
+                    <td className="p-4 max-w-[150px] md:max-w-none truncate sm:whitespace-normal">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-full shadow-sm inline-block truncate max-w-full">{log.project}</span>
                     </td>
-                    <td className="p-4 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <td className="p-4 text-sm font-medium text-slate-700 dark:text-slate-300 max-w-[150px] md:max-w-none truncate sm:whitespace-normal">
                       {log.task}
                     </td>
-                    <td className="p-4 text-right">
+                    <td className="p-4 text-right whitespace-nowrap">
                       <span className="inline-flex items-center justify-center px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-sm font-black shadow-sm">
                         {log.hours.toFixed(1)}h
                       </span>
@@ -522,8 +536,7 @@ export default function WorkLogs({ session }: { session?: any }) {
                 ))
               )}
             </tbody>
-          </table>
-        </div>
+        </table>
       </div>
 
       {/* Active Members Modal */}
@@ -587,41 +600,13 @@ export default function WorkLogs({ session }: { session?: any }) {
         </div>
       )}
 
-      {/* Total Hours Interactive Modal */}
-      <Dialog open={isTotalHoursModalOpen} onOpenChange={setIsTotalHoursModalOpen}>
-        <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600" />
-          <DialogHeader className="px-2 pt-6">
-            <div className="mx-auto w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-full flex items-center justify-center mb-4">
-              <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <DialogTitle className="text-2xl font-black text-center tracking-tight">Total Hours Analysis</DialogTitle>
-            <DialogDescription className="text-center text-slate-500 dark:text-slate-400 mt-2 font-medium">
-              Detailed breakdown of logged time across all filtered projects between July 1 - July 10.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-6 px-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-50 dark:bg-slate-950/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Approved</p>
-                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                  {filteredLogs.filter(l => l.status === 'Approved').reduce((acc, log) => acc + (log.hours || 0), 0).toFixed(1)}h
-                </p>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-950/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Pending</p>
-                <p className="text-2xl font-black text-amber-600 dark:text-amber-500">
-                  {filteredLogs.filter(l => l.status === 'Pending').reduce((acc, log) => acc + (log.hours || 0), 0).toFixed(1)}h
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 bg-blue-50 dark:bg-blue-500/10 p-4 rounded-xl border border-blue-100 dark:border-blue-500/20 flex items-center justify-between">
-              <span className="text-sm font-bold text-blue-700 dark:text-blue-400">Total Filtered</span>
-              <span className="text-2xl font-black text-blue-700 dark:text-blue-400">{totalHours.toFixed(1)}h</span>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <TotalHoursModal 
+        isOpen={isTotalHoursModalOpen} 
+        onOpenChange={setIsTotalHoursModalOpen} 
+        logs={filteredLogs} 
+        role={currentUser.role} 
+        currentUser={{ name: currentUser.name, email: currentUser.email || '' }}
+      />
     </div>
   );
 }
