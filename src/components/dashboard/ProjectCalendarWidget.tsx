@@ -49,6 +49,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
 
 // Data Structures
@@ -83,6 +85,8 @@ export function ProjectCalendarWidget() {
   const [scheduleType, setScheduleType] = useState<'event'|'meeting'>('event');
   const [events, setEvents] = useState<ProjectEvent[]>(MOCK_EVENTS);
   const [isAllEventsOpen, setIsAllEventsOpen] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState<ProjectEvent | null>(null);
+  const [eventToDelete, setEventToDelete] = useState<ProjectEvent | null>(null);
 
   // Dynamic calculations based on today
   const today = new Date();
@@ -579,7 +583,7 @@ export function ProjectCalendarWidget() {
                         </div>
                       </div>
                       {evt.assignees && evt.assignees.length > 0 && (
-                        <div className="flex -space-x-2 mt-3 sm:mt-0">
+                        <div className="flex -space-x-2 mt-3 sm:mt-0 mr-2">
                           {evt.assignees.map((a, i) => (
                             <TooltipProvider key={i}>
                               <Tooltip>
@@ -596,6 +600,22 @@ export function ProjectCalendarWidget() {
                           ))}
                         </div>
                       )}
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg ml-auto sm:ml-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                          <DropdownMenuItem onClick={() => setEventToEdit(evt)} className="font-semibold text-sm cursor-pointer">
+                            Edit Event
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setEventToDelete(evt)} className="font-semibold text-sm text-rose-600 focus:text-rose-600 cursor-pointer">
+                            Delete Event
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   )})}
                 {events.length === 0 && (
@@ -606,6 +626,120 @@ export function ProjectCalendarWidget() {
               </div>
             </ScrollArea>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!eventToDelete} onOpenChange={(open) => !open && setEventToDelete(null)}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white text-rose-600 flex items-center">
+              Delete Event
+            </DialogTitle>
+            <DialogDescription className="text-slate-500 font-medium">
+              Are you sure you want to delete <span className="font-bold text-slate-700 dark:text-slate-300">"{eventToDelete?.title}"</span>? Please provide a reason for the team.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const reason = formData.get('reason') as string;
+            setEvents(events.filter(ev => ev.id !== eventToDelete?.id));
+            toast.error('Event Deleted', { description: `Reason: ${reason}. Employees notified.` });
+            setEventToDelete(null);
+          }}>
+            <div className="py-4">
+              <Label htmlFor="reason" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Reason for Deletion</Label>
+              <Textarea id="reason" name="reason" required placeholder="e.g. Cancelled by client, duplicated event..." className="mt-2 rounded-xl" />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEventToDelete(null)} className="rounded-xl font-bold">Cancel</Button>
+              <Button type="submit" variant="destructive" className="rounded-xl font-bold">Confirm Delete</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!eventToEdit} onOpenChange={(open) => !open && setEventToEdit(null)}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
+              Edit Event
+            </DialogTitle>
+            <DialogDescription className="text-slate-500 font-medium">
+              Update event details. Please provide a reason for these changes to notify the team.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const title = formData.get('title') as string;
+            const dateStr = formData.get('date') as string;
+            const timeStr = formData.get('time') as string;
+            const type = formData.get('type') as EventType;
+            const reason = formData.get('reason') as string;
+
+            if (!title || !dateStr) return;
+            const [year, month, day] = dateStr.split('-').map(Number);
+            
+            setEvents(events.map(ev => {
+              if (ev.id === eventToEdit?.id) {
+                return { ...ev, title, time: timeStr, type, date: new Date(year, month - 1, day) };
+              }
+              return ev;
+            }));
+            
+            toast.success('Event Updated', { description: `Reason: ${reason}. Employees notified.` });
+            setEventToEdit(null);
+          }}>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-title" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Title</Label>
+                <Input id="edit-title" name="title" defaultValue={eventToEdit?.title} required className="rounded-xl" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-date" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</Label>
+                  <Input id="edit-date" name="date" type="date" defaultValue={eventToEdit ? format(eventToEdit.date, 'yyyy-MM-dd') : ''} required className="rounded-xl" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-time" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Time</Label>
+                  <Select name="time" defaultValue={eventToEdit?.time || "09:00 AM"}>
+                    <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-xl max-h-[200px]">
+                      {Array.from({ length: 48 }).map((_, i) => {
+                        const hour24 = Math.floor(i / 2);
+                        const minute = i % 2 === 0 ? '00' : '30';
+                        const ampm = hour24 >= 12 ? 'PM' : 'AM';
+                        const hour12 = hour24 % 12 || 12;
+                        const timeStr = `${hour12.toString().padStart(2, '0')}:${minute} ${ampm}`;
+                        return <SelectItem key={timeStr} value={timeStr}>{timeStr}</SelectItem>;
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Type</Label>
+                <Select name="type" defaultValue={eventToEdit?.type || 'milestone'}>
+                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="milestone">Milestone</SelectItem>
+                    <SelectItem value="deadline">Deadline</SelectItem>
+                    <SelectItem value="meeting">Meeting</SelectItem>
+                    <SelectItem value="leave">Leave / OOO</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-reason" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-orange-600">Reason for Edit (Required)</Label>
+                <Textarea id="edit-reason" name="reason" required placeholder="e.g. Rescheduled due to client request..." className="rounded-xl border-orange-200 dark:border-orange-500/30 focus-visible:ring-orange-500" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEventToEdit(null)} className="rounded-xl font-bold">Cancel</Button>
+              <Button type="submit" className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold">Save Changes</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </Card>
