@@ -394,11 +394,22 @@ export default function Projects({ session }: { session?: any }) {
                     <div className="flex items-center relative group animate-in fade-in slide-in-from-right-4 duration-500">
                       <div className="w-48 shrink-0 pr-4 border-l-4 pl-3 py-1 border-emerald-500">
                          <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Completed</p>
+                         <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">Execution Finished</p>
                       </div>
                       <div className="flex-1">
-                        <div className="h-8 rounded-lg shadow-sm flex items-center justify-center px-3 text-xs font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 w-full col-span-full">
-                           <CheckSquare className="h-4 w-4 mr-2" />
-                           Project Execution Finished
+                        <div className="h-8 rounded-lg shadow-sm flex items-center justify-between px-4 text-xs font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 w-full col-span-full">
+                           <div className="flex items-center">
+                             <CheckSquare className="h-4 w-4 mr-2" />
+                             Project Execution Finished
+                           </div>
+                           <div className="flex items-center space-x-3 text-[10px]">
+                             <span className="bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded-md border border-emerald-200/50 dark:border-emerald-800/30">
+                               {project.tasks?.length * 4 || 0} Days Taken
+                             </span>
+                             <span className="bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded-md border border-emerald-200/50 dark:border-emerald-800/30 text-emerald-800 dark:text-emerald-300">
+                               {(project.tasks?.length * 4 || 0) * 8} Hours Logged
+                             </span>
+                           </div>
                         </div>
                       </div>
                     </div>
