@@ -31,7 +31,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     const defaultName = authUser?.name || (defaultRole === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey');
     const defaultEmail = authUser?.email || (defaultRole === 'manager' ? 'manager@hindustaan.in' : 'employee@hindustaan.in');
 
-    const storedAvatar = localStorage.getItem('userAvatar');
+    const emailKey = defaultEmail.toLowerCase();
+    const storedAvatar = localStorage.getItem(`userAvatar_${emailKey}`);
     const storedName = localStorage.getItem('userName');
     const storedDepartment = localStorage.getItem('userDepartment');
     const storedRole = localStorage.getItem('userRole');
@@ -45,7 +46,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     const handleAvatarUpdate = () => {
-      setUser(prev => prev ? { ...prev, avatar: localStorage.getItem('userAvatar') } : null);
+      setUser(prev => prev ? { ...prev, avatar: localStorage.getItem(`userAvatar_${prev.email.toLowerCase()}`) } : null);
     };
     window.addEventListener('avatar-updated', handleAvatarUpdate);
     return () => window.removeEventListener('avatar-updated', handleAvatarUpdate);
@@ -59,7 +60,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       if (updates.name !== undefined) localStorage.setItem('userName', updates.name);
       if (updates.department !== undefined) localStorage.setItem('userDepartment', updates.department);
       if (updates.role !== undefined) localStorage.setItem('userRole', updates.role);
-      if (updates.avatar !== undefined && updates.avatar !== null) localStorage.setItem('userAvatar', updates.avatar);
+      const emailKey = prev.email.toLowerCase();
+      if (updates.avatar !== undefined && updates.avatar !== null) localStorage.setItem(`userAvatar_${emailKey}`, updates.avatar);
       
       return next;
     });

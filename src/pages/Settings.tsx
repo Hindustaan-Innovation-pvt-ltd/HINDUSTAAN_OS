@@ -286,30 +286,30 @@ export default function Settings({ session, defaultTab = null }: { session: any,
 
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
               <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                <div className="p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Daily Standup Reminder</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Receive a reminder to submit your standup.</p>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Daily Standup Reminder</h4>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Receive a reminder to submit your standup.</p>
                   </div>
-                  <Switch checked={standupSettings.dailyReminder} onCheckedChange={(val) => updateStandupSetting('dailyReminder', val)} />
+                  <Switch checked={standupSettings.dailyReminder} onCheckedChange={(val) => updateStandupSetting('dailyReminder', val)} className="data-[state=checked]:bg-purple-600" />
                 </div>
                 
-                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
                   <div className="space-y-3">
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">Reminder Time</h4>
-                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">When should we remind you?</p>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Reminder Time</h4>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">When should we remind you?</p>
                     </div>
-                    <Input type="time" value={standupSettings.reminderTime} onChange={(e) => updateStandupSetting('reminderTime', e.target.value)} className="w-full sm:w-48 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium" />
+                    <Input type="time" value={standupSettings.reminderTime} onChange={(e) => updateStandupSetting('reminderTime', e.target.value)} className="w-full sm:w-48 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium focus:border-purple-500 focus:ring-purple-500/20" />
                   </div>
                   
                   <div className="space-y-3">
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">Time Zone</h4>
-                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Your local time zone.</p>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Time Zone</h4>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Your local time zone.</p>
                     </div>
                     <Select value={standupSettings.timeZone} onValueChange={(val) => updateStandupSetting('timeZone', val)}>
-                      <SelectTrigger className="w-full sm:w-64 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium">
+                      <SelectTrigger className="w-full sm:w-64 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium focus:ring-purple-500/20 focus:border-purple-500">
                         <SelectValue placeholder="Select timezone" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
@@ -322,13 +322,13 @@ export default function Settings({ session, defaultTab = null }: { session: any,
                   </div>
                 </div>
 
-                <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Standup Submission Deadline</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Time when standup is marked as late.</p>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Standup Submission Deadline</h4>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Time when standup is marked as late.</p>
                   </div>
                   <Select value={standupSettings.submissionDeadline} onValueChange={(val) => updateStandupSetting('submissionDeadline', val)}>
-                    <SelectTrigger className="w-full sm:w-48 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium">
+                    <SelectTrigger className="w-full sm:w-48 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium focus:ring-purple-500/20 focus:border-purple-500">
                       <SelectValue placeholder="Select deadline" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
@@ -348,47 +348,47 @@ export default function Settings({ session, defaultTab = null }: { session: any,
                 <CardDescription>Select what sections are included in your daily standup.</CardDescription>
               </CardHeader>
               <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Yesterday's Work</span>
-                  <Switch checked={standupSettings.formatYesterday} onCheckedChange={(val) => updateStandupSetting('formatYesterday', val)} />
+                <div className="p-4 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Yesterday's Work</span>
+                  <Switch checked={standupSettings.formatYesterday} onCheckedChange={(val) => updateStandupSetting('formatYesterday', val)} className="data-[state=checked]:bg-purple-600" />
                 </div>
-                <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Today's Plan</span>
-                  <Switch checked={standupSettings.formatToday} onCheckedChange={(val) => updateStandupSetting('formatToday', val)} />
+                <div className="p-4 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Today's Plan</span>
+                  <Switch checked={standupSettings.formatToday} onCheckedChange={(val) => updateStandupSetting('formatToday', val)} className="data-[state=checked]:bg-purple-600" />
                 </div>
-                <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Blockers</span>
-                  <Switch checked={standupSettings.formatBlockers} onCheckedChange={(val) => updateStandupSetting('formatBlockers', val)} />
+                <div className="p-4 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Blockers</span>
+                  <Switch checked={standupSettings.formatBlockers} onCheckedChange={(val) => updateStandupSetting('formatBlockers', val)} className="data-[state=checked]:bg-purple-600" />
                 </div>
-                <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Additional Notes</span>
-                  <Switch checked={standupSettings.formatNotes} onCheckedChange={(val) => updateStandupSetting('formatNotes', val)} />
+                <div className="p-4 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Additional Notes</span>
+                  <Switch checked={standupSettings.formatNotes} onCheckedChange={(val) => updateStandupSetting('formatNotes', val)} className="data-[state=checked]:bg-purple-600" />
                 </div>
               </div>
             </Card>
 
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
               <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                <div className="p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Enable Email Reminder</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Send a quick email before the deadline.</p>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Enable Email Reminder</h4>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Send a quick email before the deadline.</p>
                   </div>
-                  <Switch checked={standupSettings.emailReminder} onCheckedChange={(val) => updateStandupSetting('emailReminder', val)} />
+                  <Switch checked={standupSettings.emailReminder} onCheckedChange={(val) => updateStandupSetting('emailReminder', val)} className="data-[state=checked]:bg-purple-600" />
                 </div>
-                <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                <div className="p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Enable Browser Notification</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Show a push notification on your desktop.</p>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Enable Browser Notification</h4>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Show a push notification on your desktop.</p>
                   </div>
-                  <Switch checked={standupSettings.browserNotif} onCheckedChange={(val) => updateStandupSetting('browserNotif', val)} />
+                  <Switch checked={standupSettings.browserNotif} onCheckedChange={(val) => updateStandupSetting('browserNotif', val)} className="data-[state=checked]:bg-purple-600" />
                 </div>
-                <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                <div className="p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Auto-send Reminder</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Send a final reminder if standup is not submitted on time.</p>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Auto-send Reminder</h4>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Send a final reminder if standup is not submitted on time.</p>
                   </div>
-                  <Switch checked={standupSettings.autoSendUnsubmitted} onCheckedChange={(val) => updateStandupSetting('autoSendUnsubmitted', val)} />
+                  <Switch checked={standupSettings.autoSendUnsubmitted} onCheckedChange={(val) => updateStandupSetting('autoSendUnsubmitted', val)} className="data-[state=checked]:bg-purple-600" />
                 </div>
               </div>
             </Card>

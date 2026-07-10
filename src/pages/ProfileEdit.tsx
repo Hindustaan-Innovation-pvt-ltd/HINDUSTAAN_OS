@@ -136,9 +136,9 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
 
     // Update global avatar in localStorage and dispatch event for header/sidebar updates
     if (avatar) {
-      localStorage.setItem('userAvatar', avatar);
+      localStorage.setItem(`userAvatar_${user.email.toLowerCase()}`, avatar);
     } else {
-      localStorage.removeItem('userAvatar');
+      localStorage.removeItem(`userAvatar_${user.email.toLowerCase()}`);
     }
     window.dispatchEvent(new Event('avatar-updated'));
 
