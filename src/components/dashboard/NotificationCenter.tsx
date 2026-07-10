@@ -162,7 +162,34 @@ const INITIAL_NOTIFICATIONS = [
 ];
 
 export function NotificationCenter() {
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_notifications');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return INITIAL_NOTIFICATIONS;
+      }
+    }
+    return INITIAL_NOTIFICATIONS;
+  });
+
+  React.useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem('hindustaan_notifications');
+      if (saved) {
+        try {
+          setNotifications(JSON.parse(saved));
+        } catch (e) {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('hindustaan_notifications_updated', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('hindustaan_notifications_updated', handleStorageChange);
+    };
+  }, []);
   const [activeTab, setActiveTab] = useState('All');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -181,16 +208,21 @@ export function NotificationCenter() {
 
   const unreadCount = notifications.filter(n => n.unread).length;
 
+  const updateNotifications = (newNotifs: any[]) => {
+    setNotifications(newNotifs);
+    localStorage.setItem('hindustaan_notifications', JSON.stringify(newNotifs));
+  };
+
   const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, unread: false })));
+    updateNotifications(notifications.map(n => ({ ...n, unread: false })));
   };
 
   const markAsRead = (id: number) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, unread: false } : n));
+    updateNotifications(notifications.map(n => n.id === id ? { ...n, unread: false } : n));
   };
 
   const clearAll = () => {
-    setNotifications([]);
+    updateNotifications([]);
   };
 
   const filteredNotifications = activeTab === 'All' 
@@ -279,7 +311,7 @@ export function NotificationCenter() {
                     <div className="px-3 py-1.5 flex items-center sticky top-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur z-10">
                       <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{groupName}</span>
                     </div>
-                    {groupItems.map(notification => (
+                    {groupItems.map((notification: any) => (
                       <div 
                         key={notification.id}
                         onClick={() => markAsRead(notification.id)}
@@ -323,7 +355,7 @@ export function NotificationCenter() {
 
                             {notification.actions && (
                               <div className="flex items-center gap-2 mt-3">
-                                {notification.actions.map((action, i) => (
+                                {notification.actions.map((action: any, i: number) => (
                                   <Button 
                                     key={i}
                                     variant={action.primary ? "default" : "outline"}

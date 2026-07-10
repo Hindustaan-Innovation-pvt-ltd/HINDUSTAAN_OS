@@ -88,6 +88,32 @@ export function ProjectCalendarWidget() {
   const [eventToEdit, setEventToEdit] = useState<ProjectEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<ProjectEvent | null>(null);
 
+  const pushNotification = (title: string, message: string, type: string) => {
+    try {
+      const saved = localStorage.getItem('hindustaan_notifications');
+      let notifications = [];
+      if (saved) {
+        notifications = JSON.parse(saved);
+      }
+      const newNotif = {
+        id: Date.now(),
+        type: type,
+        category: 'Projects',
+        icon: type === 'alert' ? '🚨' : type === 'warning' ? '⚠️' : 'ℹ️',
+        title: title,
+        message: message,
+        time: 'Just now',
+        unread: true,
+        group: 'Today'
+      };
+      notifications.unshift(newNotif);
+      localStorage.setItem('hindustaan_notifications', JSON.stringify(notifications));
+      window.dispatchEvent(new Event('hindustaan_notifications_updated'));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   // Dynamic calculations based on today
   const today = new Date();
   
@@ -644,6 +670,7 @@ export function ProjectCalendarWidget() {
             const formData = new FormData(e.currentTarget);
             const reason = formData.get('reason') as string;
             setEvents(events.filter(ev => ev.id !== eventToDelete?.id));
+            pushNotification('Event Deleted', `"${eventToDelete?.title}" deleted. Reason: ${reason}`, 'alert');
             toast.error('Event Deleted', { description: `Reason: ${reason}. Employees notified.` });
             setEventToDelete(null);
           }}>
@@ -688,6 +715,7 @@ export function ProjectCalendarWidget() {
               return ev;
             }));
             
+            pushNotification('Event Edited', `"${title}" updated. Reason: ${reason}`, 'warning');
             toast.success('Event Updated', { description: `Reason: ${reason}. Employees notified.` });
             setEventToEdit(null);
           }}>
