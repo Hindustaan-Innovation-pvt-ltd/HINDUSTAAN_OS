@@ -14,6 +14,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 import { GLOBAL_LOGS, INITIAL_TASKS } from '@/data/mockData';
 
@@ -99,6 +106,7 @@ export default function WorkLogs({ session }: { session?: any }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [isActiveMembersModalOpen, setIsActiveMembersModalOpen] = useState(false);
+  const [isTotalHoursModalOpen, setIsTotalHoursModalOpen] = useState(false);
 
   const isMounted = React.useRef(false);
   useEffect(() => {
@@ -202,9 +210,18 @@ export default function WorkLogs({ session }: { session?: any }) {
   };
 
   const userBaseLogs = useMemo(() => {
+    const minDate = new Date('2026-07-01T00:00:00');
+    const maxDate = new Date('2026-07-10T23:59:59');
+
+    const dateFilteredLogs = logs.filter((log: any) => {
+      const logDate = new Date(log.date);
+      if (isNaN(logDate.getTime())) return false;
+      return logDate >= minDate && logDate <= maxDate;
+    });
+
     return currentUser.role === 'employee'
-      ? logs.filter((log: any) => log.name.toLowerCase().includes(currentUser.name.split(' ')[0].toLowerCase()))
-      : logs;
+      ? dateFilteredLogs.filter((log: any) => log.name === currentUser.name)
+      : dateFilteredLogs;
   }, [logs, currentUser]);
 
   const filteredLogs = useMemo(() => {
@@ -370,14 +387,17 @@ export default function WorkLogs({ session }: { session?: any }) {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
+        <div 
+          onClick={() => setIsTotalHoursModalOpen(true)}
+          className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden cursor-pointer hover:border-orange-500/30 hover:scale-[1.02] transition-all"
+        >
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
           <div className="flex items-center justify-between mb-4 relative z-10">
             <h3 className="text-sm font-bold opacity-90">Total Hours (All Time)</h3>
             <div className="p-2 bg-white/20 rounded-lg"><Clock className="h-5 w-5 text-white" /></div>
           </div>
           <p className="text-4xl font-black relative z-10">{totalHours.toFixed(1)}h</p>
-          <p className="text-xs font-semibold text-blue-100 mt-2 relative z-10">Across {logs.length} logged entries</p>
+          <p className="text-xs font-semibold text-blue-100 mt-2 relative z-10">Across {filteredLogs.length} logged entries</p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-shadow">
@@ -566,6 +586,42 @@ export default function WorkLogs({ session }: { session?: any }) {
           </div>
         </div>
       )}
+
+      {/* Total Hours Interactive Modal */}
+      <Dialog open={isTotalHoursModalOpen} onOpenChange={setIsTotalHoursModalOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600" />
+          <DialogHeader className="px-2 pt-6">
+            <div className="mx-auto w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-full flex items-center justify-center mb-4">
+              <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <DialogTitle className="text-2xl font-black text-center tracking-tight">Total Hours Analysis</DialogTitle>
+            <DialogDescription className="text-center text-slate-500 dark:text-slate-400 mt-2 font-medium">
+              Detailed breakdown of logged time across all filtered projects between July 1 - July 10.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-6 px-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-slate-50 dark:bg-slate-950/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Approved</p>
+                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                  {filteredLogs.filter(l => l.status === 'Approved').reduce((acc, log) => acc + (log.hours || 0), 0).toFixed(1)}h
+                </p>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-950/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Pending</p>
+                <p className="text-2xl font-black text-amber-600 dark:text-amber-500">
+                  {filteredLogs.filter(l => l.status === 'Pending').reduce((acc, log) => acc + (log.hours || 0), 0).toFixed(1)}h
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 bg-blue-50 dark:bg-blue-500/10 p-4 rounded-xl border border-blue-100 dark:border-blue-500/20 flex items-center justify-between">
+              <span className="text-sm font-bold text-blue-700 dark:text-blue-400">Total Filtered</span>
+              <span className="text-2xl font-black text-blue-700 dark:text-blue-400">{totalHours.toFixed(1)}h</span>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
