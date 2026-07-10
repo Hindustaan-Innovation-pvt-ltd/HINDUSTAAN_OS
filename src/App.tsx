@@ -25,7 +25,7 @@ import { UserProvider } from './context/UserContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { GLOBAL_LOGS } from '@/data/mockData';
-import { ProjectLogo } from '@/components/ui/ProjectLogo';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 
 function App() {
   const [session, setSession] = useState<any>(null);
@@ -85,7 +85,7 @@ function App() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center justify-center gap-6 animate-pulse">
-          <ProjectLogo size="large" />
+          <BrandLogo variant="auth" />
           <div className="text-sm font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
             Initializing Workspace...
           </div>
