@@ -44,42 +44,43 @@ function ActiveSessionWidget({ secondsElapsed, formatTime, currentUser }: Active
   );
 
   return (
-    <div className="mb-8 rounded-2xl overflow-hidden shadow-xl shadow-orange-500/10 border border-orange-200/40 dark:border-orange-500/20">
-      <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 p-6 text-white relative overflow-hidden">
+    <div className="mb-8 rounded-2xl overflow-hidden shadow-xl shadow-orange-500/10 border border-orange-200/40 dark:border-orange-500/20 w-full">
+      <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 p-4 sm:p-6 text-white relative overflow-hidden">
         <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -left-8 -bottom-8 w-36 h-36 bg-amber-300/20 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-5">
           {/* Left – label + task */}
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-white/20 rounded-2xl border border-white/25 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+            <div className="p-3 bg-white/20 rounded-2xl border border-white/25 shrink-0 w-fit">
               <Clock className="h-7 w-7 text-white animate-pulse" />
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <h3 className="text-lg font-black tracking-tight leading-tight">Active Work Session</h3>
+              <div className="flex flex-wrap items-center gap-2 mb-1 sm:mb-0.5">
+                <h3 className="text-lg sm:text-xl font-black tracking-tight leading-tight">Active Work Session</h3>
                 <span className="flex items-center gap-1 px-2 py-0.5 bg-white/20 border border-white/25 rounded-full text-[10px] font-bold uppercase tracking-wider">
                   <span className="h-1.5 w-1.5 bg-emerald-300 rounded-full animate-ping" />
                   Live
                 </span>
               </div>
               {inProgressTask ? (
-                <p className="text-sm text-orange-100 font-semibold line-clamp-1">
+                <p className="text-sm text-orange-100 font-semibold mt-1">
                   📌 {inProgressTask.title}
                   <span className="ml-1.5 text-orange-200/70 font-normal">· {inProgressTask.project_tag}</span>
                 </p>
               ) : (
-                <p className="text-xs text-orange-100/80 font-medium">Session will be auto-logged on sign out.</p>
+                <p className="text-xs sm:text-sm text-orange-100/80 font-medium mt-1">Session will be auto-logged on sign out.</p>
               )}
             </div>
           </div>
 
           {/* Right – timer */}
-          <div className="text-right shrink-0">
-            <div className="text-4xl font-black font-mono tracking-widest tabular-nums drop-shadow">
+          <div className="shrink-0 bg-black/10 md:bg-transparent rounded-xl md:rounded-none p-4 md:p-0 mt-2 md:mt-0 flex items-center justify-between md:block md:text-right w-full md:w-auto">
+            <p className="text-[10px] sm:text-xs font-bold text-orange-100 uppercase tracking-widest block md:hidden">Session Time</p>
+            <div className="text-3xl sm:text-4xl font-black font-mono tracking-widest tabular-nums drop-shadow text-right">
               {formatTime(secondsElapsed)}
             </div>
-            <p className="text-[10px] font-bold text-orange-100 uppercase tracking-widest mt-0.5">Session Time</p>
+            <p className="text-[10px] font-bold text-orange-100 uppercase tracking-widest mt-0.5 hidden md:block">Session Time</p>
           </div>
         </div>
       </div>
