@@ -124,7 +124,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] lg:w-[88vw] xl:w-[85vw] max-w-[1400px] h-[88vh] overflow-hidden rounded-[32px] border border-white/10 dark:border-white/10 border-slate-200 bg-white/95 dark:bg-[#060816]/95 backdrop-blur-[28px] p-0 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+      <DialogContent className="w-[98vw] sm:w-[95vw] lg:w-[92vw] xl:w-[90vw] max-w-[1600px] h-[92vh] overflow-hidden rounded-[32px] border border-white/10 dark:border-white/10 border-slate-200 bg-white/95 dark:bg-[#060816]/95 backdrop-blur-[28px] p-0 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
         <style>{`.mscroll::-webkit-scrollbar{width:5px}.mscroll::-webkit-scrollbar-thumb{background:rgba(139,92,246,.35);border-radius:999px}`}</style>
 
         {/* Sticky Header */}
