@@ -680,13 +680,13 @@ export function ProjectCalendarWidget() {
             toast.error('Event Deleted', { description: `Reason: ${reason}. Employees notified.` });
             setEventToDelete(null);
           }}>
-            <div className="py-4">
-              <Label htmlFor="reason" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Reason for Deletion</Label>
-              <Textarea id="reason" name="reason" required placeholder="e.g. Cancelled by client, duplicated event..." className="mt-2 rounded-xl" />
+            <div className="space-y-2 py-4">
+              <Label htmlFor="delete-reason" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-rose-600">Reason for Deletion (Required)</Label>
+              <Textarea id="delete-reason" name="reason" required placeholder="e.g. Cancelled by client, duplicated event..." className="rounded-xl border-rose-200 dark:border-rose-500/30 focus-visible:ring-rose-500" />
             </div>
-            <DialogFooter>
+            <DialogFooter className="mt-2">
               <Button type="button" variant="outline" onClick={() => setEventToDelete(null)} className="rounded-xl font-bold">Cancel</Button>
-              <Button type="submit" variant="destructive" className="rounded-xl font-bold">Confirm Delete</Button>
+              <Button type="submit" className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold">Confirm Delete</Button>
             </DialogFooter>
           </form>
         </DialogContent>
