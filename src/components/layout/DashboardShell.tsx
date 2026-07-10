@@ -23,7 +23,8 @@ import {
   ChevronDown,
   User,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  LifeBuoy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
@@ -354,46 +355,47 @@ export default function DashboardShell({
       <div className="flex flex-1 flex-col overflow-x-hidden min-w-0 w-full max-w-full">
         
         {/* Top Sticky Header */}
-        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-slate-200 dark:border-[#5B7CFF]/20 bg-white/80 dark:bg-[#050816]/80 px-4 shadow-sm backdrop-blur-md sm:gap-x-6 sm:px-6 lg:px-8">
+        {/* Top Sticky Header */}
+        <header className="sticky top-0 z-30 flex flex-col justify-center border-b border-slate-200 dark:border-[#5B7CFF]/20 bg-white/80 dark:bg-[#050816]/80 px-4 shadow-sm backdrop-blur-md sm:px-6 lg:px-8 md:h-16 h-auto py-3 md:py-0">
           
-          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-            <SheetTrigger asChild>
-              <button
-                type="button"
-                className="-m-2.5 p-2.5 text-slate-700 dark:text-slate-200 lg:hidden"
-              >
-                <span className="sr-only">Open sidebar</span>
-                <Menu className="h-6 w-6" aria-hidden="true" />
-              </button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-[280px] border-r border-slate-200 dark:border-[#5B7CFF]/20 flex flex-col">
-              <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={280} startResizing={() => {}} isMobile={true} />
-            </SheetContent>
-          </Sheet>
+          <div className="flex items-center justify-between w-full gap-x-4">
+            <div className="flex items-center gap-x-4">
+              <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                <SheetTrigger asChild>
+                  <button
+                    type="button"
+                    className="-m-2.5 p-2.5 text-slate-700 dark:text-slate-200 lg:hidden"
+                  >
+                    <span className="sr-only">Open sidebar</span>
+                    <Menu className="h-6 w-6" aria-hidden="true" />
+                  </button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-[280px] border-r border-slate-200 dark:border-[#5B7CFF]/20 flex flex-col">
+                  <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={280} startResizing={() => {}} isMobile={true} />
+                </SheetContent>
+              </Sheet>
 
-          {/* Navbar Logo for Mobile/Tablet */}
-          <div className="flex items-center lg:hidden ml-2 cursor-pointer transition-all duration-300 hover:scale-[1.03]" onClick={() => onNavigate('Dashboard')}>
-            <BrandLogo variant="sidebar" />
-          </div>
-
-          <div className="flex flex-1 items-center justify-between gap-x-4 self-stretch lg:gap-x-6">
-            
-            {/* Greeting */}
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white hidden sm:block">
-                {currentView}
-              </h1>
+              {/* Navbar Logo for Mobile/Tablet */}
+              <div className="flex items-center lg:hidden cursor-pointer transition-all duration-300 hover:scale-[1.03]" onClick={() => onNavigate('Dashboard')}>
+                <BrandLogo variant="sidebar" />
+              </div>
+              
+              {/* Greeting Desktop */}
+              <div className="hidden lg:flex items-center">
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  {currentView}
+                </h1>
+              </div>
             </div>
 
-            {/* Global Search & Notifications */}
-            <div className="flex items-center gap-x-4 lg:gap-x-6 w-full sm:w-auto">
-              
-              <div className="relative w-full sm:w-64" onClick={() => setIsSearchOpen(true)}>
+            <div className="flex items-center gap-x-2 sm:gap-x-4 lg:gap-x-6">
+              {/* Desktop Global Search */}
+              <div className="relative hidden md:block w-64" onClick={() => setIsSearchOpen(true)}>
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <Search className="h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden="true" />
                 </div>
                 <div
-                  className="flex items-center justify-between h-9 w-full rounded-full border border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/50 pl-10 pr-3 text-sm text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm cursor-text cursor-pointer"
+                  className="flex items-center justify-between h-9 w-full rounded-full border border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/50 pl-10 pr-3 text-sm text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm cursor-text"
                 >
                   <span className="truncate">Search workspace...</span>
                   <div className="flex items-center gap-1 shrink-0 ml-2">
@@ -404,21 +406,27 @@ export default function DashboardShell({
                 </div>
               </div>
 
-              <div className="flex items-center gap-x-4 lg:gap-x-6">
-                
-                {/* Theme Toggle */}
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  className="-m-2.5 p-2.5 text-slate-400 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-400 relative transition-colors duration-200"
-                >
-                  <span className="sr-only">Toggle dark mode</span>
-                  {isDark ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
-                </button>
+              {/* Theme Toggle */}
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="-m-2.5 p-2.5 text-slate-400 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-400 relative transition-colors duration-200 shrink-0"
+              >
+                <span className="sr-only">Toggle dark mode</span>
+                {isDark ? <Sun className="h-5 w-5 sm:h-6 sm:w-6" /> : <Moon className="h-5 w-5 sm:h-6 sm:w-6" />}
+              </button>
 
-                {role === 'manager' ? <NotificationCenter /> : <EmployeeNotificationCenter />}
-              </div>
-              
+              {role === 'manager' ? <NotificationCenter /> : <EmployeeNotificationCenter />}
+            </div>
+          </div>
+
+          {/* Mobile Search Input */}
+          <div className="mt-3 md:hidden w-full relative" onClick={() => setIsSearchOpen(true)}>
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <Search className="h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+            </div>
+            <div className="flex items-center justify-between h-10 w-full rounded-xl border border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/50 pl-10 pr-3 text-sm text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 transition-all cursor-text shadow-sm">
+              <span className="truncate">Search workspace...</span>
             </div>
           </div>
         </header>

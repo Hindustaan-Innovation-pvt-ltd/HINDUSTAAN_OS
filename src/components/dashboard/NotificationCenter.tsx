@@ -207,7 +207,25 @@ export function NotificationCenter() {
         </button>
       </DropdownMenuTrigger>
       
-      <DropdownMenuContent align="end" className="w-[380px] p-0 rounded-2xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <DropdownMenuContent 
+        align="end" 
+        className={cn(
+          "p-0 bg-white dark:bg-slate-900 shadow-xl overflow-hidden z-[9999] flex flex-col",
+          // Desktop (>1024px)
+          "lg:w-[420px] lg:rounded-2xl lg:border lg:border-slate-200 lg:dark:border-slate-800 lg:h-auto lg:max-h-[85vh]",
+          // Tablet (768px-1024px)
+          "md:max-lg:!fixed md:max-lg:!top-3 md:max-lg:!right-3 md:max-lg:!bottom-3 md:max-lg:w-[360px] md:max-lg:h-[calc(100vh-24px)] md:max-lg:rounded-2xl md:max-lg:!translate-x-0 md:max-lg:!translate-y-0",
+          // Mobile (<768px)
+          "max-md:!fixed max-md:!top-0 max-md:!right-0 max-md:!bottom-0 max-md:w-[min(92vw,380px)] max-md:h-[100dvh] max-md:rounded-l-[24px] max-md:rounded-r-none max-md:!translate-x-0 max-md:!translate-y-0 max-md:border-y-0 max-md:border-r-0 max-md:border-l max-md:shadow-[0_20px_60px_rgba(0,0,0,0.45)]",
+          // Dark mode exact match styling requested
+          "dark:bg-[linear-gradient(180deg,rgba(15,18,40,0.98),rgba(10,12,30,0.98))] dark:border-[rgba(120,120,255,0.15)]",
+          // Animation overrides for slide in
+          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+          "max-md:data-[state=open]:slide-in-from-right-full max-md:data-[state=closed]:slide-out-to-right-full max-md:transition-transform max-md:duration-300"
+        )}
+      >
+        {/* Mobile Backdrop Overlay Hack (render inside the portal but positioned outside) */}
+        <div className="md:hidden fixed inset-0 -z-10 bg-black/55 backdrop-blur-[6px] w-[100vw] h-[100vh] -translate-x-full pointer-events-none" />
         
         {/* Header */}
         <div className="p-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50">
@@ -247,7 +265,7 @@ export function NotificationCenter() {
         </div>
 
         {/* Scrollable Content */}
-        <ScrollArea className="h-[400px]">
+        <ScrollArea className="flex-1 overflow-y-auto max-h-[100vh] pb-[env(safe-area-inset-bottom)]">
           {filteredNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[300px] text-slate-400">
               <Bell className="h-8 w-8 mb-3 opacity-20" />
@@ -279,7 +297,9 @@ export function NotificationCenter() {
                         <div className="flex gap-3">
                           <div className={cn(
                             "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base",
-                            notification.unread ? "bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700" : "bg-slate-100 dark:bg-slate-800/50 grayscale opacity-70"
+                            notification.unread 
+                              ? "bg-indigo-500/10 dark:bg-[#6366F1]/12 border-l-2 border-l-indigo-500 dark:border-l-purple-500 shadow-sm" 
+                              : "bg-slate-100 dark:bg-slate-800/50 grayscale opacity-70"
                           )}>
                             {notification.icon}
                           </div>
