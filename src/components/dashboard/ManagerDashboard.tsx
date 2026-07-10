@@ -44,6 +44,7 @@ import {
 import ProjectDetails from '../projects/ProjectDetails';
 import { cn } from '@/lib/utils';
 import { getCurrentUser } from '@/lib/auth';
+import { useUser } from '@/context/UserContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -252,8 +253,9 @@ function ManagerDashboardInner() {
   if (hour < 12) greeting = 'Good morning';
   else if (hour < 18) greeting = 'Good afternoon';
 
+  const { user: contextUser } = useUser();
   const currentUser = getCurrentUser();
-  const userName = currentUser?.name || 'Manager';
+  const userName = contextUser?.name || currentUser?.name || 'Manager';
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {

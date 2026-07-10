@@ -20,6 +20,7 @@ import { EmployeeCalendar } from "./EmployeeCalendar";
 import { GLOBAL_ACTIVITY_FEED, INITIAL_TASKS, GLOBAL_LOGS } from '@/data/mockData';
 import { getCurrentUser } from '@/lib/auth';
 import { useProjects } from '@/context/ProjectContext';
+import { useUser } from '@/context/UserContext';
 
 
 interface InternDashboardProps {
@@ -43,9 +44,10 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const role = session?.user?.user_metadata?.role || 'intern';
   const email = session?.user?.email || 'user@hindustaan.in';
   
+  const { user: contextUser } = useUser();
   const user = getCurrentUser();
   let currentUserId = user?.id || 'u-4';
-  let currentUserName = user?.name || 'User';
+  let currentUserName = contextUser?.name || user?.name || 'User';
 
   const { projects } = useProjects();
   

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { getCurrentUser } from '@/lib/auth';
 import { getProfileData, saveProfileData, type ProfileData } from '@/lib/profile';
 import { toast } from 'sonner';
+import { useUser } from '@/context/UserContext';
 import { 
   User, Mail, Phone, Shield, Briefcase, Calendar, MapPin, 
   Globe, Building, Clock, Camera, ArrowLeft
@@ -14,6 +15,7 @@ import {
 
 export default function ProfileEdit({ session, onNavigate }: { session?: any, onNavigate: (view: string) => void }) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const { updateUser } = useUser();
   
   // Form States
   const [name, setName] = useState('');
@@ -141,6 +143,13 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
       localStorage.removeItem(`userAvatar_${user.email.toLowerCase()}`);
     }
     window.dispatchEvent(new Event('avatar-updated'));
+
+    // Update user context for name and department changes to immediately sync layout sidebar/topbar
+    updateUser({
+      name: name.trim(),
+      department: department,
+      avatar: avatar || null
+    });
 
     toast.success('Profile Updated Successfully', { description: 'Your profile changes have been persisted.' });
     
