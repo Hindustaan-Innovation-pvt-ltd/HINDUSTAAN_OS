@@ -159,6 +159,33 @@ export default function DailyStandups({ session }: { session?: any }) {
   const [formData, setFormData] = useState({ yesterday: '', today: '', blockers: '' });
   const [sentReminders, setSentReminders] = useState<Set<string>>(new Set());
   const [viewingStandup, setViewingStandup] = useState<any | null>(null);
+  
+  const [replyStandupId, setReplyStandupId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+
+  const handleSendReply = () => {
+    if (!replyText.trim() || !replyStandupId) return;
+    
+    setStandups(prev => {
+      const updated = prev.map(s => {
+        if (s.id === replyStandupId) {
+          const newReply = {
+            id: `r-${Date.now()}`,
+            user: currentUserName,
+            text: replyText.trim(),
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+          return { ...s, replies: [...(s.replies || []), newReply] };
+        }
+        return s;
+      });
+      return updated;
+    });
+    
+    toast.success('Reply sent successfully!');
+    setReplyStandupId(null);
+    setReplyText('');
+  };
 
   const handleUpdateSubmit = () => {
     if (!formData.yesterday || !formData.today) {
@@ -663,13 +690,34 @@ export default function DailyStandups({ session }: { session?: any }) {
                 </div>
               )}
             </div>
+
+            {standup.replies && standup.replies.length > 0 && (
+              <div className="mx-5 mb-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-3">
+                {standup.replies.map((reply: any) => (
+                  <div key={reply.id} className="flex gap-3">
+                    <Avatar className="h-6 w-6 ring-2 ring-white dark:ring-slate-950 shrink-0">
+                      <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 text-[10px] font-bold">
+                        {reply.user.split(' ').map((n: string) => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{reply.user}</span>
+                        <span className="text-[10px] font-semibold text-slate-400 shrink-0">{reply.time}</span>
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 break-words">{reply.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             
             {/* Card Footer */}
             {standup.status === 'Submitted' && (
               <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50 flex items-center justify-between transition-opacity">
                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{standup.time}</span>
                 {role === 'manager' && (
-                  <Button onClick={() => toast('Opening Reply Thread...')} variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-500 hover:text-orange-600">
+                  <Button onClick={() => setReplyStandupId(standup.id)} variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-500 hover:text-orange-600">
                     <MessageSquare className="h-3 w-3 mr-1.5" /> Reply
                   </Button>
                 )}
@@ -1069,6 +1117,37 @@ export default function DailyStandups({ session }: { session?: any }) {
                 Submit Request
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reply Dialog */}
+      <Dialog open={!!replyStandupId} onOpenChange={(open) => !open && setReplyStandupId(null)}>
+        <DialogContent className="sm:max-w-[425px] border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 rounded-2xl shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-orange-500" />
+              Reply to Update
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <textarea
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700/60 p-4 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-slate-50/50 dark:bg-slate-900 dark:text-white placeholder:text-slate-400 resize-none shadow-sm"
+              rows={4}
+              placeholder="Type your reply or feedback here..."
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+            />
+          </div>
+          <div className="flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
+            <Button variant="ghost" onClick={() => setReplyStandupId(null)} className="rounded-xl font-bold">Cancel</Button>
+            <Button 
+              className="bg-orange-600 text-white hover:bg-orange-700 rounded-xl font-bold shadow-md shadow-orange-500/20" 
+              onClick={handleSendReply}
+              disabled={!replyText.trim()}
+            >
+              Send Reply
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
