@@ -258,7 +258,7 @@ function ManagerDashboardInner() {
             {greeting}, {userName} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
           <p className="text-orange-500 font-medium tracking-wide mt-1 break-words whitespace-normal">
-            {currentUser?.designation || "Product Manager"} {currentUser?.role === 'manager' ? 'Manager' : 'Intern'}
+            {currentUser?.designation || "Product Manager"}
           </p>
           <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-2 font-medium break-words whitespace-normal">
             Manage projects, monitor team performance, and track progress from one place.
