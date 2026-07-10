@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-import { 
   User, Shield, Bell, Palette, Link as LinkIcon, Database, Globe, HelpCircle, 
   Download, MonitorSmartphone, CheckCircle2, Moon, Sun, Monitor, ChevronLeft, Clock,
   Eye, EyeOff, QrCode, Smartphone, Laptop, AlertTriangle

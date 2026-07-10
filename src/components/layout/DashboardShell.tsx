@@ -52,6 +52,7 @@ const employeeNavigation = [
   { name: 'My Projects', icon: FolderKanban },
   { name: 'Milestones', icon: Flag },
   { name: 'My Performance', icon: Trophy },
+  { name: 'Settings', icon: Settings },
 ];
 
 const managerNavigation = [
@@ -64,6 +65,7 @@ const managerNavigation = [
   { name: 'Daily Standups', icon: Mic },
   { name: 'Contribution Scores', icon: Trophy },
   { name: 'Team Members', icon: Users },
+  { name: 'Settings', icon: Settings },
 ];
 
 
@@ -159,13 +161,6 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
               >
                 <User className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />
                 My Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => { onNavigate('Settings'); setSidebarOpen(false); }}
-                className="cursor-pointer text-slate-700 dark:text-slate-200 focus:bg-slate-100 dark:focus:bg-slate-800/80 text-sm font-medium rounded-xl flex items-center py-2.5 transition-colors"
-              >
-                <Settings className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />
-                Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-slate-200/50 dark:bg-slate-700/50 my-1 -mx-2" />
               {onSignOut && (
