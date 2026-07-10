@@ -522,7 +522,6 @@ export default function WorkLogs({ session }: { session?: any }) {
               )}
             </tbody>
         </table>
-        </div>
       </div>
 
       {/* Active Members Modal */}
