@@ -29,6 +29,9 @@ function App() {
   const [currentView, setCurrentView] = useState('Dashboard');
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
+  const [prefilledEmail, setPrefilledEmail] = useState('');
+  const [prefilledName, setPrefilledName] = useState('');
+  const [prefilledRole, setPrefilledRole] = useState('manager');
 
   useEffect(() => {
     const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
@@ -65,6 +68,9 @@ function App() {
           {!session ? (
             authView === 'login' ? (
               <Login 
+                defaultEmail={prefilledEmail}
+                defaultName={prefilledName}
+                defaultRole={prefilledRole}
                 onMockLogin={(role, email) => {
                   const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
                   if (userStr) {
@@ -72,10 +78,22 @@ function App() {
                     setSession({ user: { email: user.email, user_metadata: { role: user.role, name: user.name, department: user.department } } });
                   }
                 }}
-                onNavigateToRegister={() => setAuthView('register')}
+                onNavigateToRegister={() => {
+                  setPrefilledEmail('');
+                  setPrefilledName('');
+                  setPrefilledRole('manager');
+                  setAuthView('register');
+                }}
               />
             ) : (
-              <Register onNavigateToLogin={() => setAuthView('login')} />
+              <Register 
+                onNavigateToLogin={(email, name, role) => {
+                  if (email) setPrefilledEmail(email);
+                  if (name) setPrefilledName(name);
+                  if (role) setPrefilledRole(role);
+                  setAuthView('login');
+                }} 
+              />
             )
         ) : (
           <DashboardShell
