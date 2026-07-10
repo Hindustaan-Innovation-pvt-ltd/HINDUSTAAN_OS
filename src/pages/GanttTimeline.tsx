@@ -474,7 +474,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
           <div className="flex items-center gap-2"><div className="w-3 h-3 transform rotate-45 bg-amber-500 border border-amber-600" /> Milestone</div>
         </div>
 
-        <div ref={scrollRef} className="flex-1 overflow-auto smooth-scroll">
+        <div ref={scrollRef} className="flex-1 overflow-auto smooth-scroll hide-scrollbar">
           <div className="min-w-max">
             
             {/* Timeline Header */}
