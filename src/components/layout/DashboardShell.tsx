@@ -23,7 +23,8 @@ import {
   ChevronDown,
   User,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  LifeBuoy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
@@ -54,6 +55,7 @@ const employeeNavigation = [
   { name: 'My Projects', icon: FolderKanban },
   { name: 'Milestones', icon: Flag },
   { name: 'My Performance', icon: Trophy },
+  { name: 'Help & Support', icon: LifeBuoy },
 ];
 
 const managerNavigation = [
@@ -66,6 +68,7 @@ const managerNavigation = [
   { name: 'Daily Standups', icon: Mic },
   { name: 'Contribution Scores', icon: Trophy },
   { name: 'Team Members', icon: Users },
+  { name: 'Help & Support', icon: LifeBuoy },
 ];
 
 
