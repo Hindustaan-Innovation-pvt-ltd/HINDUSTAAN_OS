@@ -42,7 +42,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { getCurrentUser } from '@/lib/auth';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ProjectLogo } from '@/components/ui/ProjectLogo';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 
 const employeeNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
@@ -82,7 +82,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
 
         <div className="flex min-h-[90px] shrink-0 items-center border-b border-slate-100 dark:border-[#5B7CFF]/20 justify-between py-3 px-4 lg:justify-start">
           <div className="flex items-center group cursor-pointer transition-all duration-300 hover:scale-[1.03]" onClick={() => onNavigate('Dashboard')}>
-            <ProjectLogo size="sidebar" />
+            <BrandLogo variant="sidebar" />
           </div>
           <button 
             className="lg:hidden text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300"

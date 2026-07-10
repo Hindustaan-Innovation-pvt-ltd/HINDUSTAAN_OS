@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { registerUser } from '@/lib/auth';
-import { ProjectLogo } from '@/components/ui/ProjectLogo';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -106,7 +106,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
           
           <div className="flex flex-col items-center text-center mb-4">
             <div className="hover:scale-[1.03] transition-all duration-300">
-              <ProjectLogo size="large" />
+              <BrandLogo variant="auth" />
             </div>
             <div className="mt-2 flex flex-col items-center">
               <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">

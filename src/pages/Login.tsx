@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { loginUser, getRegisteredUsers, initializeAuth } from '@/lib/auth';
 import { User as UserIcon } from 'lucide-react';
-import { ProjectLogo } from '@/components/ui/ProjectLogo';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 
 export default function Login({ 
   onMockLogin, 
@@ -264,7 +264,7 @@ export default function Login({
           
           <div className="flex flex-col items-center text-center mb-4">
             <div className="hover:scale-[1.03] transition-all duration-300">
-              <ProjectLogo size="large" />
+              <BrandLogo variant="auth" />
             </div>
             <div className="mt-2 flex flex-col items-center">
               <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
