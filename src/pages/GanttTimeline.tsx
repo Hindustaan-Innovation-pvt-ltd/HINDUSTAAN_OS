@@ -173,7 +173,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
   };
 
   return (
-    <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8 bg-slate-50/50 dark:bg-slate-950/20">
+    <div className="flex flex-col h-[calc(100vh-180px)] min-h-[600px] w-full">
       {/* Enterprise Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
