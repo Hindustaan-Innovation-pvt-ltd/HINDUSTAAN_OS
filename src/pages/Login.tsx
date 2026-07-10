@@ -11,16 +11,28 @@ import { loginUser, getRegisteredUsers, initializeAuth } from '@/lib/auth';
 import { User as UserIcon } from 'lucide-react';
 import { ProjectLogo } from '@/components/ui/ProjectLogo';
 
-export default function Login({ onMockLogin, onNavigateToRegister }: { onMockLogin?: (role: string, email?: string) => void, onNavigateToRegister?: () => void }) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+export default function Login({ 
+  onMockLogin, 
+  onNavigateToRegister,
+  defaultEmail = '',
+  defaultName = '',
+  defaultRole = 'manager'
+}: { 
+  onMockLogin?: (role: string, email?: string) => void, 
+  onNavigateToRegister?: () => void,
+  defaultEmail?: string,
+  defaultName?: string,
+  defaultRole?: string
+}) {
+  const [name, setName] = useState(defaultName);
+  const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   
   // Authentication Modes
   const [isOTPMode, setIsOTPMode] = useState(false);
-  const [mockRole, setMockRole] = useState('manager');
+  const [mockRole, setMockRole] = useState(defaultRole);
   
   // OTP State
   const [showOTPDialog, setShowOTPDialog] = useState(false);
@@ -364,7 +376,7 @@ export default function Login({ onMockLogin, onNavigateToRegister }: { onMockLog
                 onClick={() => setIsOTPMode(!isOTPMode)}
                 className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors uppercase tracking-wider"
               >
-                {isOTPMode ? 'Use Password' : 'Login with OTP'}
+                {isOTPMode ? 'Use Password' : 'Magic Link'}
               </button>
             </div>
 
