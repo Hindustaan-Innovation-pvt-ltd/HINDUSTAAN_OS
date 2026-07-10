@@ -17,6 +17,7 @@ import { ConnectedApps } from '../components/dashboard/settings/ConnectedApps';
 import { Progress } from "@/components/ui/progress";
 import { useTheme } from '../context/ThemeContext';
 import { toast } from 'sonner';
+import { updatePassword } from '@/lib/auth';
 
 const SETTINGS_SECTIONS = [
   { id: 'security', label: 'Account & Security', description: 'Manage your password and security preferences.', icon: Shield },
@@ -94,11 +95,19 @@ export default function Settings({ session }: { session: any }) {
     setIsUpdatingPassword(true);
     setTimeout(() => {
       setIsUpdatingPassword(false);
-      toast.success('Password updated successfully.');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      localStorage.setItem('passwordUpdated', Date.now().toString());
+      
+      const userEmail = session?.user?.email || (role === 'manager' ? 'manager1@hindustaan.in' : 'employee1@hindustaan.in');
+      const result = updatePassword(userEmail, currentPassword, newPassword);
+      
+      if (result.success) {
+        toast.success(result.message);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        localStorage.setItem('passwordUpdated', Date.now().toString());
+      } else {
+        toast.error('Authentication Error', { description: result.message });
+      }
     }, 1500);
   };
 
