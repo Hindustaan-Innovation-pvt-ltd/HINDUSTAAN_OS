@@ -88,7 +88,19 @@ export default function Projects({ session }: { session?: any }) {
 
   const groupedProjects = React.useMemo(() => {
     const seed = selectedWeekDate.getDate();
+    
+    // Vibrant distinct color palette for timeline
+    const PROJECT_PALETTE = [
+      { bg: 'bg-rose-50 dark:bg-rose-500/15', text: 'text-rose-600 dark:text-rose-400', stroke: '#e11d48', border: 'border-rose-200 dark:border-rose-500/30' },
+      { bg: 'bg-blue-50 dark:bg-blue-500/15', text: 'text-blue-600 dark:text-blue-400', stroke: '#3b82f6', border: 'border-blue-200 dark:border-blue-500/30' },
+      { bg: 'bg-emerald-50 dark:bg-emerald-500/15', text: 'text-emerald-600 dark:text-emerald-400', stroke: '#10b981', border: 'border-emerald-200 dark:border-emerald-500/30' },
+      { bg: 'bg-purple-50 dark:bg-purple-500/15', text: 'text-purple-600 dark:text-purple-400', stroke: '#8b5cf6', border: 'border-purple-200 dark:border-purple-500/30' },
+      { bg: 'bg-amber-50 dark:bg-amber-500/15', text: 'text-amber-600 dark:text-amber-400', stroke: '#f59e0b', border: 'border-amber-200 dark:border-amber-500/30' },
+      { bg: 'bg-cyan-50 dark:bg-cyan-500/15', text: 'text-cyan-600 dark:text-cyan-400', stroke: '#06b6d4', border: 'border-cyan-200 dark:border-cyan-500/30' },
+    ];
+
     return displayedProjects.map((p, pIndex) => {
+      const palette = PROJECT_PALETTE[pIndex % PROJECT_PALETTE.length];
       const pTasks: any[] = [];
       p.tasks?.forEach((t: any, tIndex: number) => {
         if (t.status === 'Done' && seed % 2 === 0) return;
@@ -106,12 +118,15 @@ export default function Projects({ session }: { session?: any }) {
           name: t.title,
           start,
           duration,
-          color: p.iconColor || 'bg-slate-500', // Match project color exactly
           assignee: t.assignee
         });
       });
       return {
         ...p,
+        iconColor: `${palette.bg} ${palette.text}`,
+        strokeColor: palette.stroke,
+        headerBg: palette.bg,
+        headerBorder: palette.border,
         timelineTasks: pTasks.slice(0, 4) // Show up to 4 tasks per project
       };
     }); // Show all projects in this view
@@ -356,7 +371,7 @@ export default function Projects({ session }: { session?: any }) {
               {groupedProjects.map((project) => (
                 <div key={project.id} className="relative z-10 space-y-3">
                   {/* Project Header Divider (Full Width) */}
-                  <div className="flex items-center justify-between mb-3 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100/50 dark:bg-slate-800/80 w-full col-span-full shadow-sm">
+                  <div className={cn("flex items-center justify-between mb-3 px-4 py-2.5 rounded-xl border w-full col-span-full shadow-sm", project.headerBg, project.headerBorder)}>
                     <div className="flex items-center gap-3">
                       <div className={cn("h-6 w-6 rounded-md flex items-center justify-center shadow-sm", project.iconColor)}>
                          <FolderKanban className="h-3 w-3" />
@@ -364,15 +379,27 @@ export default function Projects({ session }: { session?: any }) {
                       <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">{project.name}</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="text-[10px] font-bold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                      <Badge variant="outline" className={cn("text-[10px] font-bold bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-slate-800 dark:text-slate-200", project.headerBorder)}>
                         {project.tasks?.length || 0} Tasks
                       </Badge>
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline-block">Lead: {project.manager}</span>
                     </div>
                   </div>
                   
-                  {/* Task Bars */}
-                  {project.timelineTasks.length > 0 ? (
+                  {/* Task Bars or Completed Status */}
+                  {project.status === 'Completed' ? (
+                    <div className="flex items-center relative group animate-in fade-in slide-in-from-right-4 duration-500">
+                      <div className="w-48 shrink-0 pr-4 border-l-4 pl-3 py-1 border-emerald-500">
+                         <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Completed</p>
+                      </div>
+                      <div className="flex-1">
+                        <div className="h-8 rounded-lg shadow-sm flex items-center justify-center px-3 text-xs font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 w-full col-span-full">
+                           <CheckSquare className="h-4 w-4 mr-2" />
+                           Project Execution Finished
+                        </div>
+                      </div>
+                    </div>
+                  ) : project.timelineTasks.length > 0 ? (
                     project.timelineTasks.map((task: any) => (
                       <div key={task.id} className="flex items-center relative group animate-in fade-in slide-in-from-right-4 duration-500">
                         {/* Task Name Label */}
