@@ -8,7 +8,7 @@ export interface ProjectLogoProps extends React.ImgHTMLAttributes<HTMLImageEleme
 export function ProjectLogo({ size = 'large', className, ...props }: ProjectLogoProps) {
   return (
     <img
-      src="/logo.png"
+      src="/project-os-logo.png"
       alt="Project OS"
       className={cn(
         size === 'large' ? "project-logo" : "sidebar-logo",
