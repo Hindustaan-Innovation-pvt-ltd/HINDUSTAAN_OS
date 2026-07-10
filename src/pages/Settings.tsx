@@ -16,7 +16,6 @@ import { Progress } from "@/components/ui/progress";
 import { useTheme } from '../context/ThemeContext';
 
 const SETTINGS_SECTIONS = [
-  { id: 'profile', label: 'Profile Information', description: 'Manage your personal details and workspace identity.', icon: User },
   { id: 'security', label: 'Account & Security', description: 'Manage your password and security preferences.', icon: Shield },
   { id: 'notifications', label: 'Notifications', description: 'Control how and when you receive alerts.', icon: Bell },
   { id: 'appearance', label: 'Appearance', description: 'Customize how the application looks on your device.', icon: Palette },
@@ -49,85 +48,6 @@ export default function Settings({ session }: { session: any }) {
 
   const renderContent = () => {
     switch(activeTab) {
-      case 'profile':
-        return (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Profile Information</h2>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage your personal details and workspace identity.</p>
-            </div>
-            
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row gap-8 items-start">
-                  <div className="flex flex-col items-center gap-4 shrink-0">
-                    <Avatar className="h-24 w-24 border-4 border-slate-50 dark:border-slate-900 shadow-md">
-                      <AvatarFallback className="bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 text-2xl font-bold">
-                        {role === 'manager' ? 'AG' : 'TP'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <Button variant="outline" size="sm" className="rounded-xl font-bold border-slate-200 dark:border-slate-700">Change Avatar</Button>
-                  </div>
-                  
-                  <div className="flex-1 space-y-4 w-full">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Full Name</label>
-                        <Input defaultValue={role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'} className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-medium" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Email Address</label>
-                        <Input defaultValue={session?.user?.email || 'user@hindustaan.in'} disabled className="rounded-xl bg-slate-100 dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 font-medium text-slate-500" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Department</label>
-                        <Select defaultValue="engineering">
-                          <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-medium">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
-                            <SelectItem value="engineering">Engineering</SelectItem>
-                            <SelectItem value="design">Design</SelectItem>
-                            <SelectItem value="marketing">Marketing</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Role</label>
-                        <Input defaultValue={role === 'manager' ? 'Manager' : 'Frontend Developer Intern'} disabled className="rounded-xl bg-slate-100 dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 font-medium text-slate-500" />
-                      </div>
-                    </div>
-                    
-                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800/60">
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Internship Details</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Cohort</span>
-                          <span className="text-sm font-bold text-slate-900 dark:text-white">Summer 2026</span>
-                        </div>
-                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Manager</span>
-                          <span className="text-sm font-bold text-slate-900 dark:text-white">Aakash Gupta</span>
-                        </div>
-                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Start Date</span>
-                          <span className="text-sm font-bold text-slate-900 dark:text-white">Jun 1, 2026</span>
-                        </div>
-                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">End Date</span>
-                          <span className="text-sm font-bold text-slate-900 dark:text-white">Sep 1, 2026</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="p-6 pt-0 flex justify-end">
-                <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold px-6">Save Changes</Button>
-              </CardFooter>
-            </Card>
-          </div>
-        );
       case 'security':
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
