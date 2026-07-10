@@ -43,6 +43,8 @@ import { Badge } from '@/components/ui/badge';
 import { getCurrentUser } from '@/lib/auth';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { BrandLogo } from '@/components/ui/BrandLogo';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const employeeNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
@@ -52,7 +54,6 @@ const employeeNavigation = [
   { name: 'My Projects', icon: FolderKanban },
   { name: 'Milestones', icon: Flag },
   { name: 'My Performance', icon: Trophy },
-  { name: 'Settings', icon: Settings },
 ];
 
 const managerNavigation = [
@@ -65,92 +66,152 @@ const managerNavigation = [
   { name: 'Daily Standups', icon: Mic },
   { name: 'Contribution Scores', icon: Trophy },
   { name: 'Team Members', icon: Users },
-  { name: 'Settings', icon: Settings },
 ];
 
 
 import { useUser } from '@/context/UserContext';
 
-const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen, activeNavigation, onSignOut }: any) => {
+const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen, activeNavigation, onSignOut, isMinimized, onMinimizeChange, isMobile }: any) => {
   const { user } = useUser();
   const userName = user?.name || 'Loading...';
   const userInitials = userName !== 'Loading...' ? userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : '';
   const userRole = user?.role || role;
   const avatarUrl = user?.avatar;
 
-  return (
-    <div className="flex h-full flex-col bg-white dark:bg-slate-900">
-        {/* Branding Badge */}
+  const collapsed = isMinimized && !isMobile;
 
-        <div className="flex min-h-[90px] shrink-0 items-center border-b border-slate-100 dark:border-[#5B7CFF]/20 justify-between py-3 px-4 lg:justify-start">
+  return (
+    <div className="flex h-full flex-col bg-white dark:bg-slate-900 overflow-hidden relative">
+        {/* Branding Badge */}
+        <div className={cn("flex shrink-0 items-center border-b border-slate-100 dark:border-[#5B7CFF]/20 py-4 relative", collapsed ? "justify-center px-0 h-[90px]" : "justify-between px-4 min-h-[90px]")}>
           <div className="flex items-center group cursor-pointer transition-all duration-300 hover:scale-[1.03]" onClick={() => onNavigate('Dashboard')}>
-            <BrandLogo variant="sidebar" />
+            {collapsed ? (
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#5B7CFF] to-[#A855F7] flex items-center justify-center text-white font-bold text-lg shadow-[0_0_15px_rgba(91,124,255,0.4)]">
+                P
+              </div>
+            ) : (
+              <BrandLogo variant="sidebar" />
+            )}
           </div>
-          <button 
-            className="lg:hidden text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X className="h-6 w-6" />
-          </button>
+          
+          {!isMobile && (
+            <button
+              onClick={() => onMinimizeChange(!isMinimized)}
+              className="absolute -right-3 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 shadow-sm z-50 transition-transform hover:scale-110"
+            >
+              {isMinimized ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+            </button>
+          )}
+
+          {isMobile && (
+            <button 
+              className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <X className="h-6 w-6" />
+            </button>
+          )}
         </div>
 
         {/* Vertical Navigation Rows */}
-        <div className="flex flex-1 flex-col overflow-y-auto py-6 px-4">
+        <div className="flex flex-1 flex-col overflow-y-auto py-6 px-3 custom-scrollbar">
+          <style>{`.custom-scrollbar::-webkit-scrollbar{width:4px;display:none}.custom-scrollbar:hover::-webkit-scrollbar{display:block}.custom-scrollbar::-webkit-scrollbar-thumb{background:rgba(91,124,255,0.3);border-radius:10px}`}</style>
           <nav className="flex-1 space-y-1">
-            {activeNavigation.map((item: { name: string, icon: any }) => {
-              const Icon = item.icon;
-              const isCurrent = currentView === item.name;
-              return (
-                <button
-                  key={item.name}
-                  onClick={() => {
-                    onNavigate(item.name);
-                    setSidebarOpen(false);
-                  }}
-                  className={cn(
-                    "w-full group flex items-center text-sm font-bold rounded-xl transition-all duration-300 px-3 py-3",
-                    isCurrent
-                      ? "bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] text-white shadow-[0_0_15px_rgba(91,124,255,0.4)]"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-[#5B7CFF]/10 dark:hover:bg-[#5B7CFF]/10 hover:text-[#5B7CFF] dark:hover:text-[#5B7CFF]"
-                  )}
-                >
-                  <Icon
+            <TooltipProvider delayDuration={0}>
+              {activeNavigation.map((item: { name: string, icon: any }) => {
+                const Icon = item.icon;
+                const isCurrent = currentView === item.name;
+                
+                const NavItem = (
+                  <button
+                    key={item.name}
+                    onClick={() => {
+                      onNavigate(item.name);
+                      if (isMobile) setSidebarOpen(false);
+                    }}
                     className={cn(
-                      "h-5 w-5 shrink-0 transition-colors duration-200 mr-3",
-                      isCurrent ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-[#5B7CFF] dark:group-hover:text-[#5B7CFF]"
+                      "group flex items-center font-bold rounded-xl transition-all duration-300 py-3 relative w-full",
+                      collapsed ? "justify-center px-0 h-12 mb-1" : "px-3",
+                      isCurrent
+                        ? "bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] text-white shadow-[0_0_15px_rgba(91,124,255,0.4)]"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-[#5B7CFF]/10 dark:hover:bg-[#5B7CFF]/10 hover:text-[#5B7CFF] dark:hover:text-[#5B7CFF]"
                     )}
-                    aria-hidden="true"
-                  />
-                  <span className="truncate">{item.name}</span>
-                </button>
-              );
-            })}
+                  >
+                    <Icon
+                      className={cn(
+                        "h-5 w-5 shrink-0 transition-colors duration-200",
+                        !collapsed && "mr-3",
+                        isCurrent ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-[#5B7CFF] dark:group-hover:text-[#5B7CFF]"
+                      )}
+                      aria-hidden="true"
+                    />
+                    <AnimatePresence>
+                      {!collapsed && (
+                        <motion.span 
+                          initial={{ opacity: 0, width: 0 }}
+                          animate={{ opacity: 1, width: 'auto' }}
+                          exit={{ opacity: 0, width: 0 }}
+                          className="truncate text-sm whitespace-nowrap overflow-hidden"
+                        >
+                          {item.name}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </button>
+                );
+
+                if (collapsed) {
+                  return (
+                    <Tooltip key={item.name}>
+                      <TooltipTrigger asChild>{NavItem}</TooltipTrigger>
+                      <TooltipContent side="right" sideOffset={16} className="bg-slate-900 text-white border-slate-800 font-medium">
+                        {item.name}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
+                return NavItem;
+              })}
+            </TooltipProvider>
           </nav>
         </div>
 
         {/* User Profile Card */}
-        <div className="shrink-0 p-3 mb-2 mt-auto">
+        <div className="shrink-0 p-3 mb-2 mt-auto border-t border-slate-100 dark:border-[#5B7CFF]/20 sticky bottom-0 bg-white dark:bg-slate-900 z-10">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-full flex items-center rounded-xl transition-all hover:bg-slate-100 dark:hover:bg-slate-800/80 outline-none group p-2 justify-between">
+              <button className={cn("w-full flex items-center rounded-xl transition-all hover:bg-slate-100 dark:hover:bg-slate-800/80 outline-none group p-2", collapsed ? "justify-center" : "justify-between")}>
                 <div className="flex items-center text-left">
-                  <div className="flex items-center justify-center h-9 w-9 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold shrink-0 overflow-hidden">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold shrink-0 overflow-hidden border-2 border-white dark:border-slate-800 group-hover:border-[#5B7CFF] transition-colors shadow-sm">
                     {avatarUrl ? <img src={avatarUrl} className="h-full w-full object-cover" alt={userName} /> : userInitials}
                   </div>
-                  <div className="ml-3 overflow-hidden">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                      {userName}
-                    </p>
-                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 capitalize truncate">
-                      {userRole}
-                    </p>
-                  </div>
+                  
+                  <AnimatePresence>
+                    {!collapsed && (
+                      <motion.div 
+                        initial={{ opacity: 0, width: 0 }}
+                        animate={{ opacity: 1, width: 'auto' }}
+                        exit={{ opacity: 0, width: 0 }}
+                        className="ml-3 overflow-hidden whitespace-nowrap"
+                      >
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                          {userName}
+                        </p>
+                        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 capitalize truncate">
+                          {userRole}
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
+                {!collapsed && (
+                  <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors shrink-0 ml-2" />
+                )}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent 
-              align="center" 
+              align={collapsed ? "end" : "center"} 
               side="top" 
               sideOffset={12} 
               className="w-64 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-700/50 shadow-2xl rounded-[18px] p-2 animate-in fade-in zoom-in-95 duration-200"
@@ -161,6 +222,13 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
               >
                 <User className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />
                 My Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => { onNavigate('Settings'); setSidebarOpen(false); }}
+                className="cursor-pointer text-slate-700 dark:text-slate-200 focus:bg-slate-100 dark:focus:bg-slate-800/80 text-sm font-medium rounded-xl flex items-center py-2.5 transition-colors"
+              >
+                <Settings className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />
+                Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-slate-200/50 dark:bg-slate-700/50 my-1 -mx-2" />
               {onSignOut && (
@@ -174,7 +242,8 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>    </div>
+        </div>
+    </div>
   );
 };
 
@@ -219,9 +288,14 @@ export default function DashboardShell({
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-950 transition-colors duration-500">
       {/* Left Desktop Sidebar */}
-      <div className="hidden lg:flex inset-y-0 left-0 z-50 flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 lg:w-[260px] shrink-0">
-        <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} />
-      </div>
+      <motion.div 
+        initial={false}
+        animate={{ width: isMinimized ? 88 : 280 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className="hidden lg:flex inset-y-0 left-0 z-50 flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 shrink-0 relative"
+      >
+        <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} isMinimized={isMinimized} onMinimizeChange={onMinimizeChange} isMobile={false} />
+      </motion.div>
 
       {/* Main Context Body */}
       <div className="flex flex-1 flex-col overflow-x-hidden min-w-0 w-full max-w-full">
@@ -239,8 +313,8 @@ export default function DashboardShell({
                 <Menu className="h-6 w-6" aria-hidden="true" />
               </button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-[260px] border-r border-slate-200 dark:border-[#5B7CFF]/20 flex flex-col">
-              <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} />
+            <SheetContent side="left" className="p-0 w-[280px] border-r border-slate-200 dark:border-[#5B7CFF]/20 flex flex-col">
+              <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} isMinimized={false} onMinimizeChange={() => {}} isMobile={true} />
             </SheetContent>
           </Sheet>
 
