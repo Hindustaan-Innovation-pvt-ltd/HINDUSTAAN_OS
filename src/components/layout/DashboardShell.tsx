@@ -42,6 +42,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { getCurrentUser } from '@/lib/auth';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ProjectLogo } from '@/components/ui/ProjectLogo';
 
 const employeeNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
@@ -79,18 +80,9 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
     <div className="flex h-full flex-col bg-white dark:bg-slate-900">
         {/* Branding Badge */}
 
-        <div className="flex min-h-[90px] shrink-0 items-center border-b border-slate-100 dark:border-[#5B7CFF]/20 justify-between p-[16px] lg:p-[20px] lg:justify-start">
+        <div className="flex min-h-[90px] shrink-0 items-center border-b border-slate-100 dark:border-[#5B7CFF]/20 justify-between py-3 px-4 lg:justify-start">
           <div className="flex items-center group cursor-pointer transition-all duration-300 hover:scale-[1.03]" onClick={() => onNavigate('Dashboard')}>
-            <div 
-              className="overflow-hidden lg:w-auto w-[56px] h-[48px] lg:h-[56px] flex items-center justify-start rounded-xl lg:rounded-none"
-              style={{ boxShadow: '0 0 25px rgba(91,124,255,0.25)' }}
-            >
-              <img
-                src="/logo.png"
-                alt="Project OS"
-                className="h-[48px] lg:h-[56px] w-auto max-w-none object-left"
-              />
-            </div>
+            <ProjectLogo size="sidebar" />
           </div>
           <button 
             className="lg:hidden text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300"
@@ -259,12 +251,7 @@ export default function DashboardShell({
 
           {/* Navbar Logo for Mobile/Tablet */}
           <div className="flex items-center lg:hidden ml-2 cursor-pointer transition-all duration-300 hover:scale-[1.03]" onClick={() => onNavigate('Dashboard')}>
-            <img 
-              src="/logo.png" 
-              alt="Project OS" 
-              className="h-[40px] sm:h-[45px] w-auto object-contain" 
-              style={{ filter: 'drop-shadow(0 0 15px rgba(91,124,255,0.25))' }}
-            />
+            <ProjectLogo size="sidebar" />
           </div>
 
           <div className="flex flex-1 items-center justify-between gap-x-4 self-stretch lg:gap-x-6">
