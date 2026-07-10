@@ -9,6 +9,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const registerSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(50),
@@ -27,7 +28,7 @@ const registerSchema = z.object({
 });
 
 export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (email?: string, name?: string, role?: string) => void }) {
-  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<z.infer<typeof registerSchema>>({
+  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       name: '',
@@ -46,6 +47,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
   const selectedRole = watch('role');
   const [loading, setLoading] = useState(false);
   const [isDark, setIsDark] = useState(true);
+  const [showTerms, setShowTerms] = useState(false);
 
   useEffect(() => {
     if (isDark) {
@@ -294,7 +296,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                   className="w-3.5 h-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-900"
                 />
                 <label htmlFor="terms" className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  I accept the <a href="#" className="text-orange-600 hover:underline">Terms & Conditions</a>
+                  I accept the <span onClick={() => setShowTerms(true)} className="text-orange-600 hover:underline cursor-pointer">Terms & Conditions</span>
                 </label>
               </div>
               {errors.termsAccepted && <p className="text-[10px] text-red-500 font-medium flex items-center"><AlertCircle className="w-3 h-3 mr-1"/>{errors.termsAccepted.message}</p>}
@@ -331,6 +333,36 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
 
         </div>
       </div>
+
+      {/* Terms and Conditions Modal */}
+      <Dialog open={showTerms} onOpenChange={setShowTerms}>
+        <DialogContent className="sm:max-w-[500px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-800 shadow-2xl rounded-[24px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Project OS Terms & Conditions</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
+            <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">1.</span> Employees must use valid company information while creating an account.</p>
+            <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">2.</span> User credentials are confidential and must not be shared.</p>
+            <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">3.</span> The platform tracks tasks, work logs, attendance, standups, and project activity.</p>
+            <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">4.</span> Any misuse of company data may lead to account suspension.</p>
+            <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">5.</span> Managers have access to team management features.</p>
+            <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">6.</span> Project OS stores profile information securely.</p>
+            <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">7.</span> Users agree to receive OTP emails and system notifications.</p>
+          </div>
+          <div className="flex justify-end space-x-3 mt-2">
+            <Button variant="outline" onClick={() => setShowTerms(false)} className="rounded-xl border-slate-200 dark:border-slate-700">Close</Button>
+            <Button 
+              className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-500/20"
+              onClick={() => {
+                setValue('termsAccepted', true, { shouldValidate: true });
+                setShowTerms(false);
+              }}
+            >
+              Accept
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
