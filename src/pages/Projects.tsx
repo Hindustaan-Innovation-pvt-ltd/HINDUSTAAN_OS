@@ -499,7 +499,7 @@ export default function Projects({ session }: { session?: any }) {
                   placeholder="e.g. Q4 Marketing Campaign"
                   value={newProject.name}
                   onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                  className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors"
+                  className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
               
@@ -510,7 +510,7 @@ export default function Projects({ session }: { session?: any }) {
                     <select
                       value={newProject.manager}
                       onChange={(e) => setNewProject({ ...newProject, manager: e.target.value })}
-                      className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
+                      className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all appearance-none cursor-pointer"
                     >
                       <option value="Unassigned">Unassigned</option>
                       {GLOBAL_TEAM_MEMBERS.map(member => (
@@ -526,7 +526,7 @@ export default function Projects({ session }: { session?: any }) {
                     <select
                       value={newProject.priority}
                       onChange={(e) => setNewProject({ ...newProject, priority: e.target.value })}
-                      className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
+                      className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all appearance-none cursor-pointer"
                     >
                       <option value="High">High</option>
                       <option value="Medium">Medium</option>
@@ -544,7 +544,7 @@ export default function Projects({ session }: { session?: any }) {
                     type="date"
                     value={newProject.deadline}
                     onChange={(e) => setNewProject({ ...newProject, deadline: e.target.value })}
-                    className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors"
+                    className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
                   />
                 </div>
                 <div className="space-y-2">
@@ -556,7 +556,7 @@ export default function Projects({ session }: { session?: any }) {
                       placeholder="e.g. 15000"
                       value={newProject.budget}
                       onChange={(e) => setNewProject({ ...newProject, budget: e.target.value })}
-                      className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors"
+                      className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     />
                   </div>
                 </div>
@@ -584,7 +584,7 @@ export default function Projects({ session }: { session?: any }) {
                         updated[index].title = e.target.value;
                         setNewProject({...newProject, tasks: updated});
                       }}
-                      className="flex-1 h-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors"
+                      className="flex-1 h-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     />
                     <div className="relative w-36 shrink-0">
                       <select 
@@ -594,7 +594,7 @@ export default function Projects({ session }: { session?: any }) {
                           updated[index].assignee = e.target.value;
                           setNewProject({...newProject, tasks: updated});
                         }}
-                        className="w-full h-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
+                        className="w-full h-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all appearance-none cursor-pointer"
                       >
                         <option value="Unassigned">Unassigned</option>
                         {GLOBAL_TEAM_MEMBERS.map(member => (
@@ -620,7 +620,7 @@ export default function Projects({ session }: { session?: any }) {
             </div>
 
             <div className="p-6 pt-0 flex gap-3 mt-4">
-              <button className="flex-1 h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" onClick={() => setIsModalOpen(false)}>
+              <button className="flex-1 h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm" onClick={() => setIsModalOpen(false)}>
                 Cancel
               </button>
               <button 
