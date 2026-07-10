@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, Video, CheckCircle2, AlertCircle, MessageSquare, Clock, Calendar, CheckSquare, Edit3, Sparkles, TrendingUp, AlertTriangle, Flame, Percent, Search } from 'lucide-react';
+import { Mic, Video, CheckCircle2, AlertCircle, MessageSquare, Clock, Calendar, CheckSquare, Edit3, Sparkles, TrendingUp, AlertTriangle, Flame, Percent, Search, Trash2, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,13 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { useTheme } from '@/context/ThemeContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useNotifications } from '@/context/NotificationContext';
+import { getCurrentUser } from '@/lib/auth';
+
+const WhatsappIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.086 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+);
 
 const MOCK_STANDUPS = [
   {
@@ -118,17 +125,11 @@ const MOCK_HISTORY = [
 
 export default function DailyStandups({ session }: { session?: any }) {
   const { addNotification } = useNotifications();
-  const role = session?.user?.user_metadata?.role || 'employee';
-  const email = session?.user?.email || 'user@hindustaan.in';
+  const currentUser = getCurrentUser();
+  const role = session?.user?.user_metadata?.role || currentUser?.role || 'employee';
+  const email = session?.user?.email || currentUser?.email || 'user@hindustaan.in';
   
-  let currentUserName = 'Tanvy';
-  if (email.toLowerCase().includes('amanda')) {
-    currentUserName = 'Amanda Smith';
-  } else if (email.toLowerCase().includes('rahul')) {
-    currentUserName = 'Rahul Sharma';
-  } else if (email.toLowerCase().includes('priya')) {
-    currentUserName = 'Priya Patel';
-  }
+  const currentUserName = currentUser?.name || 'Tanvy';
 
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
@@ -164,25 +165,24 @@ export default function DailyStandups({ session }: { session?: any }) {
   
   const [replyStandupId, setReplyStandupId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [editingReply, setEditingReply] = useState<{standupId: string, replyId: string, text: string} | null>(null);
+
+  const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
+  const [meetingLink, setMeetingLink] = useState('https://meet.google.com/new');
+  const [meetingMessage, setMeetingMessage] = useState('Hi team, please join the daily standup meeting now!');
 
   const handleSendReply = () => {
     if (!replyText.trim() || !replyStandupId) return;
     
-    setStandups(prev => {
-      const updated = prev.map(s => {
-        if (s.id === replyStandupId) {
-          const newReply = {
-            id: `r-${Date.now()}`,
-            user: currentUserName,
-            text: replyText.trim(),
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          };
-          return { ...s, replies: [...(s.replies || []), newReply] };
-        }
-        return s;
-      });
-      return updated;
-    });
+    const newReply = {
+      id: `r-${Date.now()}`,
+      user: currentUserName,
+      text: replyText.trim(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setStandups(prev => prev.map(s => s.id === replyStandupId ? { ...s, replies: [...(s.replies || []), newReply] } : s));
+    setHistory(prev => prev.map(s => s.id === replyStandupId ? { ...s, replies: [...(s.replies || []), newReply] } : s));
     
     addNotification({
       type: 'message',
@@ -196,6 +196,43 @@ export default function DailyStandups({ session }: { session?: any }) {
     toast.success('Reply sent successfully!');
     setReplyStandupId(null);
     setReplyText('');
+  };
+
+  const handleEditReplySubmit = () => {
+    if (!editingReply || !editingReply.text.trim()) return;
+    
+    const updateReplies = (prev: any[]) => prev.map(s => {
+      if (s.id === editingReply.standupId && s.replies) {
+        return {
+          ...s,
+          replies: s.replies.map((r: any) => 
+            r.id === editingReply.replyId ? { ...r, text: editingReply.text.trim() } : r
+          )
+        };
+      }
+      return s;
+    });
+
+    setStandups(updateReplies);
+    setHistory(updateReplies);
+    toast.success('Reply updated successfully!');
+    setEditingReply(null);
+  };
+
+  const handleDeleteReply = (standupId: string, replyId: string) => {
+    const removeReply = (prev: any[]) => prev.map(s => {
+      if (s.id === standupId && s.replies) {
+        return {
+          ...s,
+          replies: s.replies.filter((r: any) => r.id !== replyId)
+        };
+      }
+      return s;
+    });
+
+    setStandups(removeReply);
+    setHistory(removeReply);
+    toast.success('Reply deleted');
   };
 
   const handleUpdateSubmit = () => {
@@ -571,6 +608,31 @@ export default function DailyStandups({ session }: { session?: any }) {
                       {viewingStandup.blockers || 'None.'}
                     </p>
                   </div>
+                  
+                  {viewingStandup.replies && viewingStandup.replies.length > 0 && (
+                    <div className="space-y-3 pt-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Replies</span>
+                      <div className="space-y-3">
+                        {viewingStandup.replies.map((reply: any) => (
+                          <div key={reply.id} className="flex gap-3">
+                            <Avatar className="h-6 w-6 ring-2 ring-white dark:ring-slate-950 shrink-0">
+                              <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 text-[10px] font-bold">
+                                {reply.user.split(' ').map((n: string) => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{reply.user}</span>
+                                <span className="text-[10px] font-semibold text-slate-400 shrink-0">{reply.time}</span>
+                              </div>
+                              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 break-words">{reply.text}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="pt-2 flex justify-end">
                     <Button onClick={() => setViewingStandup(null)} className="h-10 rounded-xl px-6 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 font-bold">
                       Close
@@ -600,18 +662,19 @@ export default function DailyStandups({ session }: { session?: any }) {
         
         <div className="flex flex-wrap items-center gap-3">
 
-          <Button onClick={() => toast.success('Meeting Started', { description: "Joining your team's video room..."})} variant="outline" className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
-            <Video className="h-4 w-4 mr-2 text-slate-400" /> Start Meeting
+          <Button 
+            onClick={() => setIsMeetingModalOpen(true)} 
+            className="h-10 rounded-xl bg-gradient-to-r from-orange-600 to-rose-600 hover:from-orange-700 hover:to-rose-700 text-white font-bold shadow-md shadow-orange-500/20 border-0 transition-all"
+          >
+            <Video className="h-4 w-4 mr-2" /> Start Meeting
           </Button>
-          <Button onClick={() => setIsModalOpen(true)} className="h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-sm">
-            <Mic className="h-4 w-4 mr-2" /> Submit My Update
-          </Button>
+
           <Button 
             variant="outline" 
             onClick={() => setShowHistory(true)}
-            className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold"
+            className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
           >
-            <Clock className="h-4 w-4 mr-2 text-slate-400" /> Standup History
+            <Clock className="h-4 w-4 mr-2 text-indigo-500 dark:text-indigo-400" /> Standup History
           </Button>
         </div>
       </div>
@@ -722,7 +785,7 @@ export default function DailyStandups({ session }: { session?: any }) {
             {standup.replies && standup.replies.length > 0 && (
               <div className="mx-5 mb-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-3">
                 {standup.replies.map((reply: any) => (
-                  <div key={reply.id} className="flex gap-3">
+                  <div key={reply.id} className="flex gap-3 group">
                     <Avatar className="h-6 w-6 ring-2 ring-white dark:ring-slate-950 shrink-0">
                       <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 text-[10px] font-bold">
                         {reply.user.split(' ').map((n: string) => n[0]).join('')}
@@ -731,7 +794,21 @@ export default function DailyStandups({ session }: { session?: any }) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{reply.user}</span>
-                        <span className="text-[10px] font-semibold text-slate-400 shrink-0">{reply.time}</span>
+                        <div className="flex items-center gap-2">
+                          {(reply.user === currentUserName || role === 'manager') && (
+                            <div className="flex items-center gap-1.5 transition-opacity">
+                              {reply.user === currentUserName && (
+                                <button onClick={(e) => { e.stopPropagation(); setEditingReply({ standupId: standup.id, replyId: reply.id, text: reply.text }); }} className="text-slate-400 hover:text-orange-600 transition-colors" title="Edit Reply">
+                                  <Edit3 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                              <button onClick={(e) => { e.stopPropagation(); handleDeleteReply(standup.id, reply.id); }} className="text-slate-400 hover:text-rose-600 transition-colors" title="Delete Reply">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )}
+                          <span className="text-[10px] font-semibold text-slate-400 shrink-0">{reply.time}</span>
+                        </div>
                       </div>
                       <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 break-words">{reply.text}</p>
                     </div>
@@ -1176,6 +1253,89 @@ export default function DailyStandups({ session }: { session?: any }) {
             >
               Send Reply
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Reply Dialog */}
+      <Dialog open={!!editingReply} onOpenChange={(open) => !open && setEditingReply(null)}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+              <Edit3 className="mr-2 h-5 w-5 text-orange-500" />
+              Edit Reply
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Your Message</label>
+              <textarea 
+                value={editingReply?.text || ''}
+                onChange={(e) => setEditingReply(prev => prev ? { ...prev, text: e.target.value } : null)}
+                className="w-full h-32 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-500 resize-none"
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <Button variant="ghost" onClick={() => setEditingReply(null)} className="rounded-xl font-bold">Cancel</Button>
+              <Button 
+                className="bg-orange-600 text-white hover:bg-orange-700 rounded-xl font-bold shadow-md shadow-orange-500/20"
+                onClick={handleEditReplySubmit}
+                disabled={!editingReply?.text?.trim()}
+              >
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Start & Share Meeting Dialog */}
+      <Dialog open={isMeetingModalOpen} onOpenChange={setIsMeetingModalOpen}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+              <Video className="mr-2 h-5 w-5 text-orange-500" />
+              Start & Share Meeting
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Meeting Link</label>
+              <input 
+                value={meetingLink}
+                onChange={(e) => setMeetingLink(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-500"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Message to Team</label>
+              <textarea 
+                value={meetingMessage}
+                onChange={(e) => setMeetingMessage(e.target.value)}
+                className="w-full h-24 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-500 resize-none"
+              />
+            </div>
+            <div className="flex flex-col gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <Button 
+                onClick={() => {
+                  window.open(meetingLink, '_blank');
+                }}
+                variant="outline"
+                className="w-full rounded-xl font-bold border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-900/50 dark:text-orange-500 dark:hover:bg-orange-500/10"
+              >
+                <Video className="h-4 w-4 mr-2" /> 1. Open Meeting Room
+              </Button>
+              <Button 
+                onClick={() => {
+                  const text = encodeURIComponent(`${meetingMessage}\n\nJoin Link: ${meetingLink}`);
+                  window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+                  setIsMeetingModalOpen(false);
+                }}
+                className="w-full rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white font-bold transition-colors"
+              >
+                <WhatsappIcon className="h-4 w-4 mr-2" /> 2. Share via WhatsApp
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -238,7 +238,7 @@ function App() {
             )}
           </DashboardShell>
         )}
-        <Toaster position="top-right" />
+        <Toaster position="bottom-right" />
       </TooltipProvider>
       </UserProvider>
       </ProjectProvider>
