@@ -114,10 +114,10 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
           
           <div className="flex flex-col items-center text-center mb-4">
             <img
-              src={isDark ? "/logo-full-dark.png" : "/logo-full.png"}
-              alt="Hindustaan OS Logo"
-              className="mx-auto w-[120px] md:w-[150px] xl:w-[190px] h-auto object-contain transition-all duration-300"
-              style={{ filter: "drop-shadow(0 12px 30px rgba(255,153,0,.18)) drop-shadow(0 12px 30px rgba(34,197,94,.12))" }}
+              src="/logo.png"
+              alt="Project OS Logo"
+              className="mx-auto w-[120px] md:w-[150px] xl:w-[190px] h-auto object-contain transition-all duration-300 hover:scale-[1.03]"
+              style={{ filter: "drop-shadow(0 0 25px rgba(91,124,255,0.25))" }}
             />
             <div className="mt-2 flex flex-col items-center">
               <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">

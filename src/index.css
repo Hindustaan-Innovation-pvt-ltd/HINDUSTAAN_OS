@@ -109,3 +109,57 @@
 html.compact-mode {
   font-size: 14.5px;
 }
+
+/* NEON COSMIC THEME OVERRIDES */
+@theme {
+  --color-slate-950: #050816;
+  --color-slate-900: #0B1023;
+  --color-slate-800: #12182F;
+  --color-slate-700: #1A223F;
+  
+  --color-orange-400: #00D4FF; 
+  --color-orange-500: #5B7CFF; 
+  --color-orange-600: #A855F7; 
+  --color-orange-700: #8833D7; 
+}
+
+body.dark {
+  background-color: #050816;
+  background-image: 
+    radial-gradient(circle at 15% 30%, rgba(91, 124, 255, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 85% 70%, rgba(168, 85, 247, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 50% 10%, rgba(0, 212, 255, 0.08) 0%, transparent 35%);
+  color: white;
+  background-attachment: fixed;
+}
+
+/* Glassmorphism Cards */
+.dark .rounded-2xl {
+  background: rgba(18, 24, 47, 0.75) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(91, 124, 255, 0.15) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4) !important;
+  transition: all 0.3s ease;
+}
+
+.dark .rounded-2xl:hover {
+  border-color: rgba(168, 85, 247, 0.5) !important;
+  box-shadow: 0 0 25px 0 rgba(91, 124, 255, 0.25) !important;
+}
+
+/* Button Gradients */
+.dark .bg-orange-600,
+.dark .hover\:bg-orange-700:hover {
+  background: linear-gradient(135deg, #5B7CFF, #A855F7) !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(91, 124, 255, 0.4) !important;
+  transition: all 0.3s ease !important;
+  color: white !important;
+}
+
+.dark .bg-orange-600:hover {
+  background: linear-gradient(135deg, #6b89ff, #b56cf8) !important;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.6) !important;
+  transform: translateY(-1px) !important;
+}
