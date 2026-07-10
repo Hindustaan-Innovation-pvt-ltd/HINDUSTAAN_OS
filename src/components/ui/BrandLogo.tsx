@@ -19,20 +19,20 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', class
         Image wrapper with light drop-shadow/mix-blend for canvas sanitization.
         This allows the white circle in the PNG to pop cleanly on both light and dark themes 
       */}
-      <div className="relative flex items-center justify-center p-0.5">
+      <div className="relative flex items-center justify-center drop-shadow-md dark:drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]">
         <img 
           src="/project-os-logo-new.png" 
           alt="Project OS Logo" 
           className={cn(
-            "object-contain transition-all duration-200 shrink-0",
-            isAuth ? "h-32 w-32" : "h-12 w-12"
+            "object-contain transition-all duration-200",
+            isAuth ? "h-32 w-32" : "h-9 w-9"
           )}
         />
       </div>
       
       <h1 className={cn(
         "tracking-tight text-slate-900 dark:text-white",
-        isAuth ? "text-3xl md:text-4xl font-extrabold mt-3 flex flex-col items-center" : "text-xl ml-2.5 flex items-center font-bold"
+        isAuth ? "text-3xl md:text-4xl font-extrabold mt-3 flex flex-col items-center" : "text-lg ml-2 flex items-center font-bold"
       )}>
         {isAuth ? (
           <>
