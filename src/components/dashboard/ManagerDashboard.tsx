@@ -248,9 +248,12 @@ function ManagerDashboardInner() {
   };
 
   const hour = new Date().getHours();
-  let greeting = 'Good Evening';
-  if (hour < 12) greeting = 'Good Morning';
-  else if (hour < 18) greeting = 'Good Afternoon';
+  let greeting = 'Good evening';
+  if (hour < 12) greeting = 'Good morning';
+  else if (hour < 18) greeting = 'Good afternoon';
+
+  const currentUser = getCurrentUser();
+  const userName = currentUser?.name || 'Manager';
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -294,8 +297,11 @@ function ManagerDashboardInner() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
-            {greeting}, {getCurrentUser()?.name?.split(' ')[0] || 'Aakash'} <span className="inline-block animate-wave origin-bottom-right">👋</span>
+            {greeting}, {userName} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
+          <p className="text-orange-500 font-medium tracking-wide mt-1 break-words whitespace-normal">
+            {currentUser?.designation || "Product Manager"}
+          </p>
           <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-2 font-medium break-words whitespace-normal">
             Manage projects, monitor team performance, and track progress from one place.
           </p>
@@ -781,152 +787,6 @@ function ManagerDashboardInner() {
         </div>
       )}
 
-      {/* All Projects Modal */}
-      {isAllProjectsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
-            className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
-            onClick={() => setIsAllProjectsOpen(false)}
-          />
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-2xl w-full max-w-2xl overflow-hidden relative z-10 animate-in fade-in zoom-in duration-300 flex flex-col max-h-[80vh]">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center"><Activity className="h-5 w-5 text-orange-600 mr-2" /> All Projects Overview</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Complete list of all projects across cohorts</p>
-              </div>
-              <button 
-                onClick={() => setIsAllProjectsOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto flex-1 space-y-6">
-              {allMappedProjects.map((project: any) => (
-                <div key={project?.id || Math.random()} className="group flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                        {project?.name}
-                      </span>
-                      <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", getStatusBadgeStyles(project?.status || 'Active'))}>
-                        {project?.status}
-                      </Badge>
-                    </div>
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Due: {project?.dueDate}</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <Progress value={project?.progress || 0} className={cn("h-2 flex-1", project?.status === 'Aborted' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
-                    <div className="flex items-center gap-1 justify-end w-16 shrink-0">
-                      <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{project?.progress || 0}%</span>
-                      <button
-                        onClick={() => {
-                          setIsAllProjectsOpen(false);
-                          setSelectedProject(project);
-                        }}
-                        className="flex items-center justify-center h-6 w-6 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-orange-600 transition-colors shrink-0 cursor-pointer"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* All Blockers Modal */}
-      {isAllBlockersOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
-            className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
-            onClick={() => setIsAllBlockersOpen(false)}
-          />
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-2xl w-full max-w-xl overflow-hidden relative z-10 animate-in fade-in zoom-in duration-300 flex flex-col max-h-[80vh]">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center"><AlertTriangle className="h-5 w-5 text-rose-600 mr-2" /> All Active Blockers</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Impediments requiring your immediate attention</p>
-              </div>
-              <button 
-                onClick={() => setIsAllBlockersOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto flex-1 space-y-4">
-              {blockers.length === 0 ? (
-                <div className="text-sm text-slate-500 italic p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                  No active blockers at the moment. Great job!
-                </div>
-              ) : (
-                blockers.map((blocker) => {
-                  const isResolved = (blocker as any).resolved;
-                  return (
-                    <div key={blocker.id} className={cn("flex flex-col gap-2 p-3.5 rounded-xl border relative transition-all duration-300", isResolved ? "bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-900/50" : cn(blocker.borderColor, blocker.bgColor))}>
-                      {isResolved && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] dark:opacity-[0.02]">
-                          <CheckCircle2 className="w-24 h-24 text-emerald-600" />
-                        </div>
-                      )}
-                      <div className={cn("flex items-center justify-between", isResolved && "opacity-75")}>
-                        <div className="flex items-center gap-2">
-                          <Avatar className={cn("h-6 w-6", isResolved && "opacity-60 grayscale")}>
-                            <AvatarFallback className={cn("text-[10px] font-bold", isResolved ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : blocker.avatarColor)}>{blocker.initials}</AvatarFallback>
-                          </Avatar>
-                          <span className={cn("font-bold text-sm", isResolved ? "text-slate-500 dark:text-slate-400 line-through decoration-slate-300 dark:decoration-slate-600" : "text-slate-900 dark:text-white")}>{blocker.user}</span>
-                        </div>
-                        <Badge variant="outline" className={cn("text-[10px]", isResolved ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" : blocker.priorityColor)}>
-                          {isResolved ? "Resolved" : blocker.priority}
-                        </Badge>
-                      </div>
-                      <p className={cn("text-sm font-medium ml-8", isResolved ? "text-slate-400 dark:text-slate-500" : "text-slate-600 dark:text-slate-400")}>
-                        {blocker.message}
-                      </p>
-                      
-                      {!isResolved && (
-                        <div className="flex items-center gap-3 ml-8 mt-1 relative z-10">
-                          <Button 
-                            onClick={() => {
-                              setBlockers(prev => prev.map(b => b.id === blocker.id ? { ...b, resolved: true } : b));
-                              import('sonner').then(m => m.toast.success('Blocker Resolved', { description: `Resolved for ${blocker.user}. The employee has been notified directly.` }));
-                            }}
-                            variant="ghost" 
-                            size="sm" 
-                            className={cn("h-7 text-xs px-2 font-bold cursor-pointer", blocker.textColor, blocker.hoverTextColor, blocker.hoverBgColor)}
-                          >
-                            Resolve
-                          </Button>
-                          <Button 
-                            onClick={() => setMessageUser(blocker.user)}
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-7 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold cursor-pointer"
-                          >
-                            Message
-                          </Button>
-                        </div>
-                      )}
-                      {(blocker as any).managerMessage && (
-                        <div className={cn("ml-8 mt-2 p-3 rounded-xl border shadow-sm relative overflow-hidden", isResolved ? "bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100/50 dark:border-emerald-800/30 opacity-75" : "bg-white/60 dark:bg-slate-900/50 border-slate-100 dark:border-slate-700/50")}>
-                          <div className={cn("absolute left-0 top-0 bottom-0 w-1", isResolved ? "bg-emerald-500/30" : "bg-orange-500/50")}></div>
-                          <p className={cn("text-[10px] font-bold uppercase tracking-wider mb-1", isResolved ? "text-emerald-600/70 dark:text-emerald-400/70" : "text-slate-500 dark:text-slate-400")}>Your Reply</p>
-                          <p className={cn("text-sm italic font-medium", isResolved ? "text-emerald-700 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200")}>"{(blocker as any).managerMessage}"</p>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       <AssignTaskDialog open={isAssignTaskOpen} onOpenChange={setIsAssignTaskOpen} />
 

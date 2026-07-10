@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { loginUser, getRegisteredUsers, initializeAuth } from '@/lib/auth';
 import { User as UserIcon } from 'lucide-react';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 
 export default function Login({ 
   onMockLogin, 
@@ -73,7 +74,7 @@ export default function Login({
     
     if (!user) {
       toast.error('Access Denied', {
-        description: 'This email is not registered with Hindustaan OS.\n\nPlease contact your administrator.',
+        description: 'This email is not registered with Project OS.\n\nPlease contact your administrator.',
       });
       return null;
     }
@@ -133,7 +134,7 @@ export default function Login({
           id: Date.now().toString(), 
           user: userName, 
           action: 'logged into', 
-          target: 'Hindustaan OS', 
+          target: 'Project OS', 
           time: 'Just now', 
           type: 'login' 
         };
@@ -262,12 +263,9 @@ export default function Login({
         <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500">
           
           <div className="flex flex-col items-center text-center mb-4">
-            <img
-              src={isDark ? "/logo-full-dark.png" : "/logo-full.png"}
-              alt="Hindustaan OS Logo"
-              className="mx-auto w-[120px] md:w-[150px] xl:w-[190px] h-auto object-contain transition-all duration-300"
-              style={{ filter: "drop-shadow(0 12px 30px rgba(255,153,0,.18)) drop-shadow(0 12px 30px rgba(34,197,94,.12))" }}
-            />
+            <div className="hover:scale-[1.03] transition-all duration-300">
+              <BrandLogo variant="auth" />
+            </div>
             <div className="mt-2 flex flex-col items-center">
               <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                 Internal Workspace Portal
@@ -328,7 +326,7 @@ export default function Login({
                   <label htmlFor="password" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
                     Password
                   </label>
-                  <div className="relative">
+                  <div className="relative z-10">
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
                       <KeyRound className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                     </div>
@@ -340,7 +338,7 @@ export default function Login({
                       required={!isOTPMode}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
+                      className="pointer-events-auto block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
                       placeholder="••••••••"
                     />
                   </div>

@@ -173,7 +173,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
   };
 
   return (
-    <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8 bg-slate-50/50 dark:bg-slate-950/20">
+    <div className="flex flex-col h-[calc(100vh-180px)] min-h-[600px] w-full">
       {/* Enterprise Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -474,7 +474,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
           <div className="flex items-center gap-2"><div className="w-3 h-3 transform rotate-45 bg-amber-500 border border-amber-600" /> Milestone</div>
         </div>
 
-        <div ref={scrollRef} className="flex-1 overflow-auto smooth-scroll">
+        <div ref={scrollRef} className="flex-1 overflow-auto smooth-scroll hide-scrollbar">
           <div className="min-w-max">
             
             {/* Timeline Header */}
