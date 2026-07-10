@@ -717,7 +717,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50 flex items-center justify-between transition-opacity">
                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{standup.time}</span>
                 {role === 'manager' && (
-                  <Button onClick={() => setReplyStandupId(standup.id)} variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-500 hover:text-orange-600">
+                  <Button onClick={(e) => { e.stopPropagation(); setReplyStandupId(standup.id); }} variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-500 hover:text-orange-600">
                     <MessageSquare className="h-3 w-3 mr-1.5" /> Reply
                   </Button>
                 )}
