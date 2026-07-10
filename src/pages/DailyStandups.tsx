@@ -9,6 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { useTheme } from '@/context/ThemeContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useNotifications } from '@/context/NotificationContext';
 
 const MOCK_STANDUPS = [
   {
@@ -116,6 +117,7 @@ const MOCK_HISTORY = [
 ];
 
 export default function DailyStandups({ session }: { session?: any }) {
+  const { addNotification } = useNotifications();
   const role = session?.user?.user_metadata?.role || 'employee';
   const email = session?.user?.email || 'user@hindustaan.in';
   
@@ -182,6 +184,15 @@ export default function DailyStandups({ session }: { session?: any }) {
       return updated;
     });
     
+    addNotification({
+      type: 'message',
+      category: 'Team',
+      icon: '💬',
+      title: 'New Standup Reply',
+      message: `${currentUserName} replied to a standup.`,
+      group: 'Today',
+    });
+
     toast.success('Reply sent successfully!');
     setReplyStandupId(null);
     setReplyText('');
@@ -206,6 +217,14 @@ export default function DailyStandups({ session }: { session?: any }) {
     };
 
     setStandups([newStandup, ...standups.filter((s) => s.user !== currentUserName)]);
+    addNotification({
+      type: 'success',
+      category: 'Team',
+      icon: '📝',
+      title: 'Standup Updated',
+      message: `${currentUserName} updated their daily standup.`,
+      group: 'Today',
+    });
     toast.success('Standup Update Submitted!');
     setIsModalOpen(false);
     setFormData({ yesterday: '', today: '', blockers: '' });
@@ -365,6 +384,15 @@ export default function DailyStandups({ session }: { session?: any }) {
       dateGroup: 'Today'
     };
     setHistory(prev => [historyEntry, ...prev]);
+    
+    addNotification({
+      type: 'success',
+      category: 'Team',
+      icon: '📝',
+      title: 'Standup Submitted',
+      message: `${currentUserName} submitted their daily standup.`,
+      group: 'Today',
+    });
 
     setIsModalOpen(false);
     setFormData({ yesterday: '', today: '', blockers: '' });

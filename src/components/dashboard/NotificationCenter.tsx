@@ -20,180 +20,10 @@ import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import TaskDetailsModal from './TaskDetailsModal';
-
-// Dummy data matching the prompt requirements
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: 1,
-    type: 'task',
-    category: 'Tasks',
-    icon: '📋',
-    title: 'New Task Assigned',
-    message: 'Rahul assigned Authentication Module to Tanvy.',
-    time: '2 minutes ago',
-    unread: true,
-    group: 'Today',
-    actions: [
-      { label: 'View Task', primary: true },
-      { label: 'Dismiss', primary: false }
-    ]
-  },
-  {
-    id: 2,
-    type: 'success',
-    category: 'Tasks',
-    icon: '✅',
-    title: 'Task Completed',
-    message: 'Tanvy completed Dashboard UI.',
-    time: '10 minutes ago',
-    unread: true,
-    group: 'Today',
-  },
-  {
-    id: 3,
-    type: 'alert',
-    category: 'Projects',
-    icon: '🚨',
-    title: 'Deadline Alert',
-    message: 'Backend API deadline is tomorrow.',
-    priority: 'High',
-    time: '1 hour ago',
-    unread: true,
-    group: 'Today',
-  },
-  {
-    id: 4,
-    type: 'warning',
-    category: 'Team',
-    icon: '📝',
-    title: 'Standup Missing',
-    message: 'Priya and Aman haven\'t submitted today\'s standup.',
-    time: '2 hours ago',
-    unread: false,
-    group: 'Today',
-  },
-  {
-    id: 5,
-    type: 'info',
-    category: 'Team',
-    icon: '⏱',
-    title: 'Work Log Submitted',
-    message: 'Rahul logged 7.5 hours today.',
-    time: '5 hours ago',
-    unread: false,
-    group: 'Today',
-  },
-  {
-    id: 6,
-    type: 'user',
-    category: 'Team',
-    icon: '👤',
-    title: 'New Team Member',
-    message: 'Neha Sharma joined the Frontend Team.',
-    time: 'Yesterday',
-    unread: false,
-    group: 'Yesterday',
-  },
-  {
-    id: 7,
-    type: 'request',
-    category: 'Team',
-    icon: '📅',
-    title: 'Leave Request',
-    message: 'Aman requested leave for 12 July.',
-    time: 'Yesterday',
-    unread: false,
-    group: 'Yesterday',
-    actions: [
-      { label: 'Approve', primary: true },
-      { label: 'Reject', primary: false }
-    ]
-  },
-  {
-    id: 8,
-    type: 'success',
-    category: 'Projects',
-    icon: '🎯',
-    title: 'Milestone Completed',
-    message: 'Sprint 2 milestone completed.',
-    time: '2 days ago',
-    unread: false,
-    group: 'Earlier',
-  },
-  {
-    id: 9,
-    type: 'danger',
-    category: 'Projects',
-    icon: '⚠️',
-    title: 'Project Risk',
-    message: 'Crime Prediction System is behind schedule.',
-    time: '2 days ago',
-    unread: false,
-    group: 'Earlier',
-  },
-  {
-    id: 10,
-    type: 'file',
-    category: 'System',
-    icon: '📄',
-    title: 'File Uploaded',
-    message: 'Tanvy uploaded Dashboard_Design.pdf',
-    time: '3 days ago',
-    unread: false,
-    group: 'Earlier',
-    actions: [
-      { label: 'Open File', primary: true }
-    ]
-  },
-  {
-    id: 11,
-    type: 'meeting',
-    category: 'Team',
-    icon: '📹',
-    title: 'Meeting Reminder',
-    message: 'UI Review Meeting starts in 15 minutes.',
-    time: 'Just now',
-    unread: true,
-    group: 'Today',
-    actions: [
-      { label: 'Join Meeting', primary: true }
-    ]
-  }
-];
+import { useNotifications } from '@/context/NotificationContext';
 
 export function NotificationCenter() {
-  const [notifications, setNotifications] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_notifications');
-    if (saved && saved !== 'null') {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing notifications', e);
-      }
-    }
-    return INITIAL_NOTIFICATIONS;
-  });
-
-  React.useEffect(() => {
-    const handleStorageChange = () => {
-      const saved = localStorage.getItem('hindustaan_notifications');
-      if (saved && saved !== 'null') {
-        try {
-          setNotifications(JSON.parse(saved));
-        } catch (e) {}
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('hindustaan_notifications_updated', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('hindustaan_notifications_updated', handleStorageChange);
-    };
-  }, []);
-
-  React.useEffect(() => {
-    localStorage.setItem('hindustaan_notifications', JSON.stringify(notifications));
-  }, [notifications]);
+  const { notifications, markAsRead: contextMarkAsRead, clearAll: contextClearAll, setNotifications } = useNotifications();
   const [activeTab, setActiveTab] = useState('All');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -336,21 +166,16 @@ export function NotificationCenter() {
 
   const unreadCount = notifications.filter(n => n.unread).length;
 
-  const updateNotifications = (newNotifs: any[]) => {
-    setNotifications(newNotifs);
-    localStorage.setItem('hindustaan_notifications', JSON.stringify(newNotifs));
-  };
-
   const markAllAsRead = () => {
-    updateNotifications(notifications.map(n => ({ ...n, unread: false })));
+    setNotifications((prev: any) => prev.map((n: any) => ({ ...n, unread: false })));
   };
 
   const markAsRead = (id: number) => {
-    updateNotifications(notifications.map(n => n.id === id ? { ...n, unread: false } : n));
+    contextMarkAsRead(id);
   };
 
   const clearAll = () => {
-    updateNotifications([]);
+    contextClearAll();
   };
 
   const filteredNotifications = activeTab === 'All' 
