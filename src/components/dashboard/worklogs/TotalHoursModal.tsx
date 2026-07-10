@@ -1,473 +1,373 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, Calendar, Download, Trophy, Users, FolderKanban, CheckSquare, Activity, PieChart as PieChartIcon } from 'lucide-react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Clock, Calendar, Download, Trophy, Users, FolderKanban, Activity, TrendingUp } from 'lucide-react';
+import {
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
+  Tooltip, ResponsiveContainer, LineChart, Line, Legend
+} from 'recharts';
 import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-// Assuming the log structure from mockWorkLogs
 interface WorkLog {
-  id: string;
-  name: string;
-  initials: string;
-  date: string;
-  rawDate: string;
-  project: string;
-  task: string;
-  hours: number;
-  status: string;
+  id: string; name: string; initials: string; date: string; rawDate: string;
+  project: string; task: string; hours: number; status: string;
+}
+interface Props {
+  isOpen: boolean; onOpenChange: (v: boolean) => void;
+  logs: WorkLog[]; role: string; currentUser: { name: string; email: string };
 }
 
-interface TotalHoursModalProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  logs: WorkLog[];
-  role: string;
-  currentUser: { name: string; email: string };
+const COLORS = ['#8b5cf6','#6366f1','#3b82f6','#10b981','#f59e0b','#ef4444','#ec4899'];
+const TT = { borderRadius:'12px', border:'1px solid rgba(255,255,255,0.08)', background:'#0f172a', color:'#e2e8f0', fontSize:'12px' };
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+function StatCard({ label, value, icon: Icon, gradient }: { label:string; value:string; icon:any; gradient:string }) {
+  return (
+    <div className={`rounded-3xl border border-white/10 dark:border-white/10 border-slate-200 bg-gradient-to-br ${gradient} p-5 sm:p-6 h-[130px] flex flex-col justify-between`}>
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">{label}</p>
+        <div className="h-8 w-8 rounded-xl bg-white/10 flex items-center justify-center">
+          <Icon className="h-4 w-4 text-white opacity-80" />
+        </div>
+      </div>
+      <p className="text-4xl font-bold text-white dark:text-white text-slate-900">{value}</p>
+    </div>
+  );
 }
 
-const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+// ─── Chart Card ───────────────────────────────────────────────────────────────
+function ChartCard({ title, icon: Icon, iconColor, children, height = 300 }: { title:string; icon:any; iconColor:string; children:React.ReactNode; height?:number }) {
+  return (
+    <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] p-5 sm:p-6">
+      <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2 mb-4">
+        <Icon className={`h-4 w-4 ${iconColor}`} />{title}
+      </h3>
+      <div style={{ height }}>{children}</div>
+    </div>
+  );
+}
 
-export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser }: TotalHoursModalProps) {
-  const [dateRange, setDateRange] = useState('Jul 1, 2026 -> Current Date');
-  
-  // 1. Filter logs based on date range (mocked filter logic)
-  const filteredLogs = useMemo(() => {
-    // In a real app, parse date strings and filter. 
-    // Here we'll just use all logs for the visual structure since data is static mock.
-    let baseLogs = logs;
-    if (role === 'employee') {
-      baseLogs = baseLogs.filter(l => l.name === currentUser.name);
-    }
-    return baseLogs;
-  }, [logs, role, currentUser.name, dateRange]);
+export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser }: Props) {
+  const [dateRange, setDateRange] = useState('This Month');
 
-  // Calculations
-  const totalHours = filteredLogs.reduce((acc, log) => acc + (log.hours || 0), 0);
-  const approvedHours = filteredLogs.filter(l => l.status === 'Approved').reduce((acc, log) => acc + (log.hours || 0), 0);
-  const pendingHours = filteredLogs.filter(l => l.status === 'Pending').reduce((acc, log) => acc + (log.hours || 0), 0);
+  const filtered = useMemo(() =>
+    role === 'employee' ? logs.filter(l => l.name === currentUser.name) : logs,
+    [logs, role, currentUser.name]
+  );
 
-  // Export functions
+  const totalHours    = filtered.reduce((a, l) => a + l.hours, 0);
+  const approvedHours = filtered.filter(l => l.status === 'Approved').reduce((a, l) => a + l.hours, 0);
+  const pendingHours  = filtered.filter(l => l.status === 'Pending').reduce((a, l) => a + l.hours, 0);
+
+  // ── project map ──
+  const projectsArr = useMemo(() => {
+    const m = new Map<string,{hours:number;tasks:number;employees:Map<string,number>}>();
+    filtered.forEach(l => {
+      const p = m.get(l.project) || {hours:0,tasks:0,employees:new Map()};
+      p.hours += l.hours; p.tasks += 1;
+      p.employees.set(l.name,(p.employees.get(l.name)||0)+l.hours);
+      m.set(l.project,p);
+    });
+    return Array.from(m.entries());
+  },[filtered]);
+
+  // ── employee map ──
+  const employees = useMemo(() => {
+    const m = new Map<string,{hours:number;pending:number;tasks:number;projects:Set<string>}>();
+    filtered.forEach(l => {
+      const e = m.get(l.name)||{hours:0,pending:0,tasks:0,projects:new Set<string>()};
+      e.hours+=l.hours; if(l.status==='Pending') e.pending+=l.hours;
+      e.tasks+=1; e.projects.add(l.project); m.set(l.name,e);
+    });
+    return Array.from(m.entries()).sort((a,b)=>b[1].hours-a[1].hours);
+  },[filtered]);
+
+  // ── chart data ──
+  const pieData = projectsArr.map(([name,d])=>({name,value:+d.hours.toFixed(1)}));
+
+  const trendData = useMemo(()=>{
+    const m = new Map<string,number>();
+    filtered.forEach(l=>{ m.set(l.date,(m.get(l.date)||0)+l.hours); });
+    return Array.from(m.entries()).sort((a,b)=>a[0].localeCompare(b[0])).map(([date,hours])=>({date:date.substring(0,6),hours:+hours.toFixed(1)}));
+  },[filtered]);
+
+  const rankData = employees.slice(0,5).map(([n,d])=>({name:n.split(' ')[0],hours:+d.hours.toFixed(1)}));
+
+  const timelineMap = useMemo(()=>{
+    const m = new Map<string,WorkLog[]>();
+    filtered.forEach(l=>{ if(!m.has(l.date)) m.set(l.date,[]); m.get(l.date)!.push(l); });
+    return Array.from(m.entries()).sort((a,b)=>new Date(b[0]).getTime()-new Date(a[0]).getTime());
+  },[filtered]);
+
   const handleExportCSV = () => {
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + "Date,Employee,Project,Task,Hours,Status\n"
-      + filteredLogs.map(l => `"${l.date}","${l.name}","${l.project}","${l.task}",${l.hours},"${l.status}"`).join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "work_logs_export.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success('CSV Exported Successfully');
+    const csv = "data:text/csv;charset=utf-8,Date,Employee,Project,Task,Hours,Status\n"
+      + filtered.map(l=>`"${l.date}","${l.name}","${l.project}","${l.task}",${l.hours},"${l.status}"`).join('\n');
+    const a = document.createElement('a'); a.href=encodeURI(csv); a.download='work_logs.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    toast.success('CSV Exported');
   };
-
   const handleExportPDF = () => {
     try {
       const doc = new jsPDF();
-      doc.text(role === 'manager' ? "Team Productivity Overview" : "My Work Summary", 14, 15);
-      doc.text(`Total Hours: ${totalHours.toFixed(1)}h | Approved: ${approvedHours.toFixed(1)}h`, 14, 25);
-      
-      const tableData = filteredLogs.map(l => [l.date, l.name, l.project, l.task, `${l.hours}h`, l.status]);
-      
-      autoTable(doc, {
-        startY: 35,
-        head: [['Date', 'Employee', 'Project', 'Task', 'Hours', 'Status']],
-        body: tableData,
-      });
-      
-      doc.save("work_logs_export.pdf");
-      toast.success('PDF Exported Successfully');
-    } catch (e) {
-      toast.error('Failed to export PDF');
-    }
+      doc.text(role==='manager'?'Team Productivity Overview':'My Work Summary',14,15);
+      doc.text(`Total: ${totalHours.toFixed(1)}h | Approved: ${approvedHours.toFixed(1)}h`,14,25);
+      autoTable(doc,{startY:35,head:[['Date','Employee','Project','Task','Hours','Status']],body:filtered.map(l=>[l.date,l.name,l.project,l.task,`${l.hours}h`,l.status])});
+      doc.save('work_logs.pdf'); toast.success('PDF Exported');
+    } catch { toast.error('Export failed'); }
   };
 
-  const renderEmployeeView = () => {
-    // Project logic
-    const projectsMap = new Map<string, { hours: number, tasks: number }>();
-    filteredLogs.forEach(l => {
-      const p = projectsMap.get(l.project) || { hours: 0, tasks: 0 };
-      p.hours += l.hours;
-      p.tasks += 1;
-      projectsMap.set(l.project, p);
-    });
-    const projects = Array.from(projectsMap.entries()).map(([name, data]) => ({ name, ...data }));
-    
-    // Timeline Logic
-    const timelineMap = new Map<string, WorkLog[]>();
-    filteredLogs.forEach(l => {
-      const day = l.date; // For simplicity
-      if (!timelineMap.has(day)) timelineMap.set(day, []);
-      timelineMap.get(day)!.push(l);
-    });
-    const timeline = Array.from(timelineMap.entries()).sort((a,b) => new Date(b[0]).getTime() - new Date(a[0]).getTime());
+  const isManager = role === 'manager';
 
-    // Charts Data
-    const pieData = projects.map(p => ({ name: p.name, value: p.hours }));
-    const barData = timeline.map(([date, items]) => ({
-      date: date.substring(0, 6),
-      hours: items.reduce((sum, i) => sum + i.hours, 0)
-    })).reverse();
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="w-[95vw] lg:w-[88vw] xl:w-[85vw] max-w-[1400px] h-[88vh] overflow-hidden rounded-[32px] border border-white/10 dark:border-white/10 border-slate-200 bg-white/95 dark:bg-[#060816]/95 backdrop-blur-[28px] p-0 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+        <style>{`.mscroll::-webkit-scrollbar{width:5px}.mscroll::-webkit-scrollbar-thumb{background:rgba(139,92,246,.35);border-radius:999px}`}</style>
 
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 p-4 rounded-xl border border-purple-500/20">
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Total Logged</p>
-            <p className="text-3xl font-black text-slate-900 dark:text-white">{totalHours.toFixed(1)}h</p>
-          </div>
-          <div className="bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20">
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Approved</p>
-            <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400">{approvedHours.toFixed(1)}h</p>
-          </div>
-          <div className="bg-amber-50 dark:bg-amber-500/10 p-4 rounded-xl border border-amber-500/20">
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Pending</p>
-            <p className="text-3xl font-black text-amber-600 dark:text-amber-400">{pendingHours.toFixed(1)}h</p>
+        {/* Sticky Header */}
+        <div className="shrink-0 px-6 sm:px-8 pt-6 sm:pt-8 pb-5 border-b border-slate-100 dark:border-white/10 bg-white/80 dark:bg-[#060816]/80 backdrop-blur-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-violet-500/15 dark:bg-violet-500/20 flex items-center justify-center shrink-0">
+                <Clock className="h-6 w-6 text-violet-500 dark:text-violet-400" />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                  {isManager ? 'Team Productivity Overview' : 'My Work Summary'}
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                  <Calendar className="h-3 w-3" /> Generated dynamically from work logs
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={dateRange} onValueChange={setDateRange}>
+                <SelectTrigger className="w-[150px] h-9 rounded-xl border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl dark:bg-[#0f172a] dark:border-white/10">
+                  {['Today','This Week','This Month','Custom Range'].map(v=><SelectItem key={v} value={v}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {isManager && <>
+                <Button onClick={handleExportPDF} size="sm" variant="outline" className="rounded-xl border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-violet-500/20 text-xs">
+                  <Download className="h-3.5 w-3.5 mr-1.5" /> PDF
+                </Button>
+                <Button onClick={handleExportCSV} size="sm" variant="outline" className="rounded-xl border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-violet-500/20 text-xs">
+                  <Download className="h-3.5 w-3.5 mr-1.5" /> CSV
+                </Button>
+              </>}
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center">
-              <FolderKanban className="h-4 w-4 mr-2 text-purple-500" />
-              Projects Worked On
-            </h3>
-            <div className="space-y-3">
-              {projects.map((p, idx) => (
-                <div key={idx} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50 hover:border-purple-500/30 transition-colors">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-bold text-slate-900 dark:text-white">{p.name}</span>
-                  </div>
-                  <div className="flex gap-4 text-xs font-medium text-slate-500">
-                    <span className="flex items-center"><Clock className="h-3 w-3 mr-1"/> {p.hours.toFixed(1)}h Logged</span>
-                    <span className="flex items-center"><CheckSquare className="h-3 w-3 mr-1"/> {p.tasks} Tasks</span>
+        {/* Scrollable Body */}
+        <div className="mscroll flex-1 overflow-y-auto px-6 sm:px-8 py-6 space-y-6">
+
+          {/* Stat Cards */}
+          <div className={`grid gap-4 ${isManager ? 'grid-cols-2 xl:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
+            <StatCard label={isManager?'Team Hours':'Total Logged'} value={`${totalHours.toFixed(1)}h`} icon={Clock} gradient="from-violet-600/80 to-indigo-600/80" />
+            <StatCard label="Approved" value={`${approvedHours.toFixed(1)}h`} icon={Activity} gradient="from-emerald-600/80 to-teal-600/80" />
+            <StatCard label="Pending" value={`${pendingHours.toFixed(1)}h`} icon={TrendingUp} gradient="from-amber-500/80 to-orange-500/80" />
+            {isManager
+              ? <StatCard label="Active Staff" value={`${employees.length}`} icon={Users} gradient="from-blue-600/80 to-cyan-600/80" />
+              : null}
+          </div>
+
+          {/* ── MANAGER VIEW ── */}
+          {isManager && (
+            <>
+              {/* Projects + Right Panel */}
+              <div className="grid xl:grid-cols-3 gap-6">
+                <div className="xl:col-span-2">
+                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2 mb-3">
+                    <FolderKanban className="h-4 w-4 text-violet-400" /> Project Analysis
+                  </h3>
+                  <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {projectsArr.map(([pName,pData],i)=>(
+                      <div key={i} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] p-4 hover:border-violet-400/40 transition-all">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="font-bold text-slate-900 dark:text-white text-sm leading-tight">{pName}</span>
+                          <Badge className="bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 border-0 font-bold ml-2 shrink-0">{pData.hours.toFixed(1)}h</Badge>
+                        </div>
+                        <p className="text-xs text-slate-400">{pData.tasks} tasks</p>
+                        <div className="mt-2 space-y-1">
+                          {Array.from(pData.employees.entries()).slice(0,2).map(([emp,hrs],j)=>(
+                            <div key={j} className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                              <span>{emp.split(' ')[0]}</span><span className="font-medium">{hrs.toFixed(1)}h</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center">
-              <PieChartIcon className="h-4 w-4 mr-2 text-emerald-500" />
-              Hours per Project
-            </h3>
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50 h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value">
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center">
-              <Activity className="h-4 w-4 mr-2 text-blue-500" />
-              Daily Logged Hours
-            </h3>
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50 h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData}>
-                  <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}h`} />
-                  <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                  <Bar dataKey="hours" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center">
-            <Calendar className="h-4 w-4 mr-2 text-indigo-500" />
-            Task History Timeline
-          </h3>
-          <div className="space-y-6">
-            {timeline.map(([date, items], idx) => (
-              <div key={idx} className="relative pl-6 border-l-2 border-slate-200 dark:border-slate-700 pb-2">
-                <div className="absolute w-3 h-3 bg-purple-500 rounded-full -left-[7px] top-1" />
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3">{date}</h4>
-                <div className="space-y-3">
-                  {items.map(item => (
-                    <div key={item.id} className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/50 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-                      <div>
-                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{item.task}</p>
-                        <p className="text-xs font-medium text-slate-500 mt-0.5">{item.project}</p>
+                {/* Top Contributors + Pie */}
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-amber-200/40 dark:border-amber-500/20 bg-gradient-to-br from-orange-50 dark:from-orange-500/10 to-violet-50 dark:to-violet-500/10 p-5">
+                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2 mb-3">
+                      <Trophy className="h-4 w-4 text-amber-400" /> Top Contributors
+                    </h3>
+                    {employees.slice(0,4).map(([name,data],i)=>(
+                      <div key={i} className="flex items-center justify-between py-2 border-b border-white/10 last:border-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">{['🥇','🥈','🥉','4️⃣'][i]}</span>
+                          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{name}</span>
+                        </div>
+                        <span className="text-sm font-black text-amber-600 dark:text-amber-400">{data.hours.toFixed(1)}h</span>
                       </div>
-                      <Badge variant="secondary" className="w-fit bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300">
-                        {item.hours}h Logged
-                      </Badge>
+                    ))}
+                  </div>
+                  <ChartCard title="Project Distribution" icon={FolderKanban} iconColor="text-violet-400" height={260}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={pieData} cx="50%" cy="50%" innerRadius={65} outerRadius={100} paddingAngle={3} dataKey="value">
+                          {pieData.map((_,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>)}
+                        </Pie>
+                        <Tooltip contentStyle={TT}/>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </ChartCard>
+                </div>
+              </div>
+
+              {/* Bottom Charts */}
+              <div className="grid xl:grid-cols-2 gap-6">
+                <ChartCard title="Team Hours Trend" icon={Activity} iconColor="text-indigo-400" height={280}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={trendData}>
+                      <XAxis dataKey="date" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false}/>
+                      <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={v=>`${v}h`}/>
+                      <Tooltip contentStyle={TT}/>
+                      <Line type="monotone" dataKey="hours" stroke="#8b5cf6" strokeWidth={3} dot={{r:4,fill:'#8b5cf6',strokeWidth:0}}/>
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartCard>
+                <ChartCard title="Productivity Ranking" icon={Users} iconColor="text-emerald-400" height={280}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={rankData} layout="vertical" margin={{left:10,right:24}}>
+                      <XAxis type="number" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false}/>
+                      <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} width={65}/>
+                      <Tooltip cursor={{fill:'rgba(139,92,246,0.06)'}} contentStyle={TT}/>
+                      <Bar dataKey="hours" fill="#10b981" radius={[0,8,8,0]} barSize={20}/>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartCard>
+              </div>
+
+              {/* Table */}
+              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-100 dark:border-white/10">
+                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Employee Productivity Table</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-white/5">
+                      <tr>{['Employee','Projects','Tasks','Total Logged','Pending'].map(h=><th key={h} className="px-5 py-3 text-left font-bold">{h}</th>)}</tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                      {employees.map(([name,data],i)=>(
+                        <tr key={i} className="hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors">
+                          <td className="px-5 py-3.5 font-bold text-slate-900 dark:text-white">{name}</td>
+                          <td className="px-5 py-3.5 text-slate-500">{data.projects.size}</td>
+                          <td className="px-5 py-3.5 text-slate-500">{data.tasks}</td>
+                          <td className="px-5 py-3.5 font-bold text-violet-600 dark:text-violet-400">{data.hours.toFixed(1)}h</td>
+                          <td className="px-5 py-3.5">{data.pending>0?<Badge className="bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20 font-bold">{data.pending.toFixed(1)}h</Badge>:<span className="text-slate-300">—</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── EMPLOYEE VIEW ── */}
+          {!isManager && (
+            <>
+              {/* Analytics Grid */}
+              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {/* Projects */}
+                <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] p-5">
+                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2 mb-4">
+                    <FolderKanban className="h-4 w-4 text-violet-400" /> Projects
+                  </h3>
+                  <div className="space-y-3">
+                    {projectsArr.map(([name,d],i)=>{
+                      const pct = totalHours>0 ? Math.round((d.hours/totalHours)*100) : 0;
+                      return (
+                        <div key={i} className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 hover:border-violet-300/40 transition-colors">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="font-bold text-slate-800 dark:text-white text-sm">{name}</span>
+                            <Badge className="bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 border-0 font-bold text-[10px]">{d.hours.toFixed(1)}h</Badge>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mb-2">{d.tasks} tasks</p>
+                          <div className="h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                            <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all" style={{width:`${pct}%`}}/>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Pie Chart */}
+                <ChartCard title="Hours Per Project" icon={FolderKanban} iconColor="text-emerald-400" height={260}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={pieData} cx="50%" cy="45%" innerRadius={65} outerRadius={100} paddingAngle={3} dataKey="value">
+                        {pieData.map((_,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>)}
+                      </Pie>
+                      <Tooltip contentStyle={TT}/>
+                      <Legend iconType="circle" iconSize={8} formatter={(v)=><span className="text-xs text-slate-500 dark:text-slate-400">{v}</span>}/>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartCard>
+
+                {/* Bar Chart */}
+                <ChartCard title="Daily Logged Hours" icon={Activity} iconColor="text-blue-400" height={260}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={trendData} margin={{left:0,right:8,top:4,bottom:0}}>
+                      <XAxis dataKey="date" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false}/>
+                      <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={v=>`${v}h`} width={28}/>
+                      <Tooltip cursor={{fill:'rgba(139,92,246,0.06)'}} contentStyle={TT}/>
+                      <Bar dataKey="hours" fill="#8b5cf6" radius={[6,6,0,0]}/>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartCard>
+              </div>
+
+              {/* Timeline */}
+              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] p-5">
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2 mb-4">
+                  <Calendar className="h-4 w-4 text-indigo-400" /> Task History Timeline
+                </h3>
+                <div className="space-y-5">
+                  {timelineMap.map(([date,items],i)=>(
+                    <div key={i} className="relative pl-5 border-l-2 border-violet-400/30 pb-1">
+                      <div className="absolute w-2.5 h-2.5 bg-violet-500 rounded-full -left-[7px] top-1"/>
+                      <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">{date}</h4>
+                      <div className="grid sm:grid-cols-2 gap-2">
+                        {items.map(item=>(
+                          <div key={item.id} className="rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-4 py-3 flex justify-between items-start gap-3">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 leading-snug truncate">{item.task}</p>
+                              <p className="text-[11px] text-slate-400 mt-0.5">{item.project}</p>
+                            </div>
+                            <Badge className="bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300 border-0 font-bold shrink-0">{item.hours}h</Badge>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderManagerView = () => {
-    // Project-wise analysis
-    const projectsMap = new Map<string, { hours: number, employees: Map<string, number> }>();
-    filteredLogs.forEach(l => {
-      const p = projectsMap.get(l.project) || { hours: 0, employees: new Map() };
-      p.hours += l.hours;
-      p.employees.set(l.name, (p.employees.get(l.name) || 0) + l.hours);
-      projectsMap.set(l.project, p);
-    });
-    const projects = Array.from(projectsMap.entries());
-
-    // Employee Productivity Table
-    const empMap = new Map<string, { hours: number, pending: number, tasks: number, projects: Set<string> }>();
-    filteredLogs.forEach(l => {
-      const e = empMap.get(l.name) || { hours: 0, pending: 0, tasks: 0, projects: new Set() };
-      e.hours += l.hours;
-      if (l.status === 'Pending') e.pending += l.hours;
-      e.tasks += 1;
-      e.projects.add(l.project);
-      empMap.set(l.name, e);
-    });
-    const employees = Array.from(empMap.entries()).sort((a,b) => b[1].hours - a[1].hours);
-    const uniqueEmployees = employees.length;
-
-    const pieData = projects.map(p => ({ name: p[0], value: p[1].hours }));
-    
-    // Team Hours Trend (Line Chart)
-    const timelineMap = new Map<string, number>();
-    filteredLogs.forEach(l => {
-      const day = l.date.substring(0, 6);
-      timelineMap.set(day, (timelineMap.get(day) || 0) + l.hours);
-    });
-    const trendData = Array.from(timelineMap.entries()).sort((a,b) => new Date(a[0]).getTime() - new Date(b[0]).getTime()).map(([date, hours]) => ({ date, hours }));
-
-    // Employee Productivity Ranking (Bar Chart)
-    const barData = employees.slice(0, 5).map(([name, data]) => ({ name: name.split(' ')[0], hours: data.hours }));
-
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex gap-2">
-            <Button onClick={handleExportPDF} size="sm" variant="outline" className="rounded-xl border-slate-200 dark:border-slate-700">
-              <Download className="h-4 w-4 mr-2" /> Export PDF
-            </Button>
-            <Button onClick={handleExportCSV} size="sm" variant="outline" className="rounded-xl border-slate-200 dark:border-slate-700">
-              <Download className="h-4 w-4 mr-2" /> Export CSV
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 p-4 rounded-xl border border-purple-500/20">
-            <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Team Hours</p>
-            <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{totalHours.toFixed(1)}h</p>
-          </div>
-          <div className="bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20">
-            <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Approved</p>
-            <p className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">{approvedHours.toFixed(1)}h</p>
-          </div>
-          <div className="bg-amber-50 dark:bg-amber-500/10 p-4 rounded-xl border border-amber-500/20">
-            <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Pending</p>
-            <p className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400">{pendingHours.toFixed(1)}h</p>
-          </div>
-          <div className="bg-indigo-50 dark:bg-indigo-500/10 p-4 rounded-xl border border-indigo-500/20">
-            <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Active Staff</p>
-            <p className="text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400">{uniqueEmployees} <span className="text-sm font-medium">Emp</span></p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-4">
-             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center">
-              <FolderKanban className="h-4 w-4 mr-2 text-purple-500" />
-              Project-wise Analysis
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {projects.map(([pName, pData], idx) => (
-                <div key={idx} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="font-bold text-slate-900 dark:text-white truncate pr-2">{pName}</span>
-                    <Badge className="bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 font-bold shrink-0">{pData.hours.toFixed(1)}h</Badge>
-                  </div>
-                  <div className="space-y-1.5 mt-2">
-                    {Array.from(pData.employees.entries()).slice(0,3).map(([emp, hrs], i) => (
-                      <div key={i} className="flex justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
-                        <span className="flex items-center"><Users className="h-3 w-3 mr-1"/> {emp}</span>
-                        <span>{hrs.toFixed(1)}h</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center">
-              <Trophy className="h-4 w-4 mr-2 text-amber-500" />
-              Top Contributors
-            </h3>
-            <div className="bg-amber-50/50 dark:bg-amber-900/10 p-4 rounded-xl border border-amber-200/50 dark:border-amber-700/30 space-y-3">
-              {employees.slice(0, 3).map(([name, data], idx) => (
-                <div key={idx} className="flex items-center justify-between p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <span className="text-amber-500 text-lg">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}</span>
-                    <span className="font-bold text-sm text-slate-800 dark:text-slate-200">{name}</span>
-                  </div>
-                  <span className="text-sm font-black text-amber-700 dark:text-amber-400">{data.hours.toFixed(1)}h</span>
-                </div>
-              ))}
-            </div>
-            
-            <div className="h-[200px] mt-4">
-              <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center mb-2">Project Distribution</h4>
-               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} dataKey="value">
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center">
-              <Activity className="h-4 w-4 mr-2 text-indigo-500" />
-              Team Hours Trend
-            </h3>
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50 h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendData}>
-                  <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}h`} />
-                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                  <Line type="monotone" dataKey="hours" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4, fill: '#8b5cf6' }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center">
-              <Users className="h-4 w-4 mr-2 text-emerald-500" />
-              Productivity Ranking
-            </h3>
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50 h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} layout="vertical" margin={{ left: 20 }}>
-                  <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis type="category" dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                  <Bar dataKey="hours" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Employee Productivity Table</h3>
-          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 uppercase text-[10px] font-bold tracking-wider">
-                <tr>
-                  <th className="px-4 py-3">Employee Name</th>
-                  <th className="px-4 py-3">Projects</th>
-                  <th className="px-4 py-3">Tasks</th>
-                  <th className="px-4 py-3">Total Logged</th>
-                  <th className="px-4 py-3">Pending</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {employees.map(([name, data], idx) => (
-                  <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">{name}</td>
-                    <td className="px-4 py-3 text-slate-500">{data.projects.size} Projects</td>
-                    <td className="px-4 py-3 text-slate-500">{data.tasks}</td>
-                    <td className="px-4 py-3 font-bold text-purple-600 dark:text-purple-400">{data.hours.toFixed(1)}h</td>
-                    <td className="px-4 py-3">
-                      {data.pending > 0 ? (
-                        <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-500/20">{data.pending.toFixed(1)}h</Badge>
-                      ) : (
-                        <span className="text-slate-400">-</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl h-[90vh] flex flex-col p-0">
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-purple-600 to-blue-600" />
-        
-        <DialogHeader className="p-6 pb-4 shrink-0 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-50 dark:bg-purple-500/10 rounded-xl flex items-center justify-center">
-                <Clock className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">
-                  {role === 'manager' ? 'Team Productivity Overview' : 'My Work Summary'}
-                </DialogTitle>
-                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 flex items-center">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  Generated dynamically from work logs
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-[180px] h-9 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold focus:ring-purple-500/20 focus:border-purple-500">
-                  <SelectValue placeholder="Select period" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="Today">Today</SelectItem>
-                  <SelectItem value="This Week">This Week</SelectItem>
-                  <SelectItem value="This Month">This Month</SelectItem>
-                  <SelectItem value="Jul 1, 2026 -> Current Date">Jul 1, 2026 -&gt; Current Date</SelectItem>
-                  <SelectItem value="Custom Range">Custom Range</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <div className="flex-1 overflow-y-auto p-6 relative">
-          {role === 'manager' ? renderManagerView() : renderEmployeeView()}
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
