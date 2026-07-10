@@ -3,6 +3,10 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
 import { Clock, Calendar, Download, Trophy, Users, FolderKanban, Activity, TrendingUp, CheckCircle2, X } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import { toast } from 'sonner';
@@ -45,6 +49,7 @@ function Section({ title, icon:Icon, color, children }:{ title:string; icon:any;
 
 export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser }: Props) {
   const [dateRange, setDateRange] = useState('This Month');
+  const [customRange, setCustomRange] = useState<DateRange | undefined>(undefined);
   const isManager = role === 'manager';
 
   const filtered = useMemo(() => {
@@ -52,7 +57,16 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
     
     const now = new Date();
     result = result.filter(l => {
-      if (dateRange === 'Custom Range') return true;
+      if (dateRange === 'Custom Range') {
+        if (!customRange?.from) return true;
+        if (!l.rawDate) return true;
+        const logDate = new Date(l.rawDate);
+        if (!customRange.to) {
+          return logDate.toDateString() === customRange.from.toDateString();
+        }
+        return logDate >= customRange.from && logDate <= customRange.to;
+      }
+      
       if (!l.rawDate) return true;
       
       const logDate = new Date(l.rawDate);
@@ -145,6 +159,38 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                   {['Today','Yesterday','Last 7 Days','This Month','Custom Range'].map(v=><SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {dateRange === 'Custom Range' && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="h-10 rounded-2xl bg-white/5 border-white/10 text-slate-300 hover:text-white font-semibold hover:bg-white/10 border transition-all">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {customRange?.from ? (
+                        customRange.to ? (
+                          <>
+                            {format(customRange.from, "LLL dd, y")} -{" "}
+                            {format(customRange.to, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(customRange.from, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>Pick a date range</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 rounded-2xl border border-white/10 bg-[#0f172a] text-white shadow-2xl" align="start">
+                    <CalendarComponent
+                      initialFocus
+                      mode="range"
+                      defaultMonth={customRange?.from}
+                      selected={customRange}
+                      onSelect={setCustomRange}
+                      numberOfMonths={2}
+                      className="text-white bg-[#0f172a] rounded-2xl p-3"
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
               {isManager && <>
                 <Button onClick={handlePDF} size="sm" className="h-10 px-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-violet-500/20 text-slate-300 hover:text-white text-sm font-semibold transition-all"><Download className="h-4 w-4 mr-2"/>PDF</Button>
                 <Button onClick={handleCSV} size="sm" className="h-10 px-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-violet-500/20 text-slate-300 hover:text-white text-sm font-semibold transition-all"><Download className="h-4 w-4 mr-2"/>CSV</Button>
