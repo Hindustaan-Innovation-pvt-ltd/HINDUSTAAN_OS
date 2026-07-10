@@ -634,10 +634,16 @@ export function ProjectCalendarWidget() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                          <DropdownMenuItem onClick={() => setEventToEdit(evt)} className="font-semibold text-sm cursor-pointer">
+                          <DropdownMenuItem onClick={() => {
+                            setIsAllEventsOpen(false);
+                            setEventToEdit(evt);
+                          }} className="font-semibold text-sm cursor-pointer">
                             Edit Event
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setEventToDelete(evt)} className="font-semibold text-sm text-rose-600 focus:text-rose-600 cursor-pointer">
+                          <DropdownMenuItem onClick={() => {
+                            setIsAllEventsOpen(false);
+                            setEventToDelete(evt);
+                          }} className="font-semibold text-sm text-rose-600 focus:text-rose-600 cursor-pointer">
                             Delete Event
                           </DropdownMenuItem>
                         </DropdownMenuContent>
