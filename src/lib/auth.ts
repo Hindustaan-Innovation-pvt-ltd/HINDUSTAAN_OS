@@ -72,7 +72,7 @@ export const loginUser = (email: string, password?: string, rememberMe: boolean 
   const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && (!password || u.password === password));
   
   if (user) {
-    const safeUser = { name: user.name, email: user.email, role: user.role, id: user.id, department: user.department, designation: user.designation };
+    const safeUser = { name: user.name, email: user.email, role: user.role, id: user.id, department: user.department, designation: user.designation, phone: user.phone };
     localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(safeUser));
     sessionStorage.removeItem(LOCAL_SESSION_KEY);
     return safeUser;
