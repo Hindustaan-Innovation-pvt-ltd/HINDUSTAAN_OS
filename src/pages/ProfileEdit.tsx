@@ -360,18 +360,16 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
               {/* Read-Only Professional details hint */}
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/20 dark:bg-slate-900/20 p-4 rounded-xl">
                 <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Read-Only Workplace Information</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-semibold">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Manager</span>
-                    <span className="text-slate-700 dark:text-slate-300">{profile.manager}</span>
-                  </div>
+                <div className={`grid grid-cols-2 ${session?.user?.user_metadata?.role === 'manager' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4 text-xs font-semibold`}>
+                  {session?.user?.user_metadata?.role !== 'manager' && (
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Manager</span>
+                      <span className="text-slate-700 dark:text-slate-300">{profile.manager}</span>
+                    </div>
+                  )}
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Employment Type</span>
                     <span className="text-slate-700 dark:text-slate-300">{profile.employmentType}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Employee ID</span>
-                    <span className="text-slate-700 dark:text-slate-300">{profile.employeeId}</span>
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Joining Date</span>

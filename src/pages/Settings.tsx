@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Shield, Bell, Palette, Link as LinkIcon, CheckCircle2, Moon, Sun, Monitor, ChevronLeft,
-  Clock, Lock, Activity, FlaskConical, Users, Briefcase
+  Clock, Lock, Activity, FlaskConical, Users, Briefcase, MonitorSmartphone
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConnectedApps } from '../components/dashboard/settings/ConnectedApps';

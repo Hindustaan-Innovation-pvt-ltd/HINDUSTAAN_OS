@@ -46,6 +46,9 @@ export const getProfileData = (user: User): ProfileData => {
       const parsed = JSON.parse(saved);
       // Safeguard in case fields are missing
       if (parsed && typeof parsed === 'object') {
+        if (user.role === 'manager') {
+          parsed.role = 'Manager';
+        }
         return {
           ...createDefaultProfile(user),
           ...parsed
@@ -75,10 +78,10 @@ const createDefaultProfile = (user: User): ProfileData => {
   return {
     name: user.name || 'Hindustaan User',
     email: user.email,
-    phone: user.phone || '+91 98765 43210',
+    phone: user.phone || '',
     employeeId: user.id || `EMP${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
     department: user.department || 'Engineering',
-    role: user.role === 'manager' ? 'Engineering Manager' : 'Frontend Developer',
+    role: user.role === 'manager' ? 'Manager' : 'Frontend Developer',
     avatar: localStorage.getItem(`userAvatar_${user.email.toLowerCase()}`) || '',
     manager: user.role === 'manager' ? 'VP of Engineering' : 'Aakash Gupta',
     employmentType: user.role === 'manager' ? 'Employee' : 'Intern',
@@ -87,14 +90,12 @@ const createDefaultProfile = (user: User): ProfileData => {
     endDate: end.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
     workMode: 'Hybrid',
     officeLocation: 'Bengaluru, India',
-    skills: user.role === 'manager' 
-      ? ['Project Management', 'Agile', 'Engineering Leadership', 'Architecture'] 
-      : ['React', 'TypeScript', 'Tailwind CSS', 'Git', 'HTML5', 'CSS3'],
-    aboutMe: 'Passionate professional working at Hindustaan Innovations to build state-of-the-art products.',
-    emergencyContact: '+91 99999 88888',
-    github: 'https://github.com',
-    linkedin: 'https://linkedin.com',
-    portfolio: 'https://hindustaan.in',
+    skills: [],
+    aboutMe: '',
+    emergencyContact: '',
+    github: '',
+    linkedin: '',
+    portfolio: '',
     accountCreated: joining.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
     lastLogin: new Date().toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
     emailVerified: true

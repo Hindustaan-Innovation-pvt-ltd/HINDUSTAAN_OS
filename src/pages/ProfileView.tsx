@@ -177,10 +177,6 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                   <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.phone}</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Employee ID</span>
-                  <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.employeeId}</p>
-                </div>
-                <div className="space-y-1">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Department</span>
                   <p className="text-base font-bold text-slate-800 dark:text-slate-200 capitalize">{profile.department}</p>
                 </div>
@@ -202,27 +198,25 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-1">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Reporting Manager</span>
-                  <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.manager}</p>
-                </div>
+                {session?.user?.user_metadata?.role !== 'manager' && (
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Reporting Manager</span>
+                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.manager}</p>
+                  </div>
+                )}
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Employment Type</span>
                   <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.employmentType}</p>
                 </div>
-                <div className="space-y-1">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Team</span>
-                  <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.team}</p>
-                </div>
+                {session?.user?.user_metadata?.role !== 'manager' && (
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Team</span>
+                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.team}</p>
+                  </div>
+                )}
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Joining Date</span>
                   <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.joiningDate}</p>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    {profile.employmentType === 'Intern' ? 'Internship End Date' : 'Employment End Date'}
-                  </span>
-                  <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.endDate}</p>
                 </div>
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Work Mode</span>
