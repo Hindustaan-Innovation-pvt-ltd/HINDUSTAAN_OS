@@ -556,7 +556,7 @@ export function ProjectCalendarWidget() {
           <div className="p-6 pt-4">
             <ScrollArea className="max-h-[50vh] pr-4">
               <div className="space-y-4">
-                {events
+                {[...events]
                   .sort((a, b) => b.date.getTime() - a.date.getTime())
                   .map((evt) => {
                     const isPast = isBefore(evt.date, startOfDay(today));
