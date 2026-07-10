@@ -171,14 +171,29 @@ export function NotificationCenter() {
         console.error('Error parsing notifications', e);
       }
     }
-    localStorage.setItem('hindustaan_notifications', JSON.stringify(INITIAL_NOTIFICATIONS));
     return INITIAL_NOTIFICATIONS;
   });
 
   React.useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem('hindustaan_notifications');
+      if (saved && saved !== 'null') {
+        try {
+          setNotifications(JSON.parse(saved));
+        } catch (e) {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('hindustaan_notifications_updated', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('hindustaan_notifications_updated', handleStorageChange);
+    };
+  }, []);
+
+  React.useEffect(() => {
     localStorage.setItem('hindustaan_notifications', JSON.stringify(notifications));
   }, [notifications]);
-
   const [activeTab, setActiveTab] = useState('All');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -321,16 +336,21 @@ export function NotificationCenter() {
 
   const unreadCount = notifications.filter(n => n.unread).length;
 
+  const updateNotifications = (newNotifs: any[]) => {
+    setNotifications(newNotifs);
+    localStorage.setItem('hindustaan_notifications', JSON.stringify(newNotifs));
+  };
+
   const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, unread: false })));
+    updateNotifications(notifications.map(n => ({ ...n, unread: false })));
   };
 
   const markAsRead = (id: number) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, unread: false } : n));
+    updateNotifications(notifications.map(n => n.id === id ? { ...n, unread: false } : n));
   };
 
   const clearAll = () => {
-    setNotifications([]);
+    updateNotifications([]);
   };
 
   const filteredNotifications = activeTab === 'All' 
