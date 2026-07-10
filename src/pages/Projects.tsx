@@ -413,15 +413,37 @@ export default function Projects({ session }: { session?: any }) {
                         
                         {/* Task Timeline Bar */}
                         <div className="flex-1 grid grid-cols-7 gap-2">
-                          <div 
-                            className="h-8 rounded-lg shadow-sm flex items-center px-3 text-xs font-bold text-white whitespace-nowrap overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md"
-                            style={{ 
-                              gridColumn: `${task.start + 1} / span ${task.duration}`,
-                              backgroundColor: project.strokeColor || '#f97316'
-                            }}
-                          >
-                            {task.name}
-                          </div>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <div 
+                                className="h-8 rounded-lg shadow-sm flex items-center px-3 text-xs font-bold text-white whitespace-nowrap overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md cursor-pointer"
+                                style={{ 
+                                  gridColumn: `${task.start + 1} / span ${task.duration}`,
+                                  backgroundColor: project.strokeColor || '#f97316'
+                                }}
+                              >
+                                {task.name}
+                              </div>
+                            </PopoverTrigger>
+                            <PopoverContent align="center" className="w-64 p-4 rounded-xl shadow-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-[100]">
+                              <div className="space-y-3">
+                                <div>
+                                  <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{task.name}</h4>
+                                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mt-1">Assigned to: {task.assignee}</p>
+                                </div>
+                                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                  <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-slate-400">Duration</span>
+                                    <span className="text-sm font-black text-slate-700 dark:text-slate-300">{task.duration} Days</span>
+                                  </div>
+                                  <div className="flex flex-col text-right">
+                                    <span className="text-[10px] font-bold text-slate-400">Est. Hours</span>
+                                    <span className="text-sm font-black text-orange-600 dark:text-orange-500">{task.duration * 8}h</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       </div>
                     ))
