@@ -3,105 +3,34 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Shield, Bell, Palette, Link as LinkIcon, CheckCircle2, Moon, Sun, Monitor, ChevronLeft,
-  Clock, Lock, Activity, FlaskConical, Users, Briefcase, MonitorSmartphone
+  User, Shield, Bell, Palette, Link as LinkIcon, Database, Globe, HelpCircle, 
+  Download, MonitorSmartphone, CheckCircle2, Moon, Sun, Monitor, ChevronLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConnectedApps } from '../components/dashboard/settings/ConnectedApps';
 import { Progress } from "@/components/ui/progress";
 import { useTheme } from '../context/ThemeContext';
-import { useUser } from '../context/UserContext';
-import { toast } from 'sonner';
-import { updatePassword, getCurrentUser } from '@/lib/auth';
 
-// Moved to inside component
+const SETTINGS_SECTIONS = [
+  { id: 'profile', label: 'Profile Information', description: 'Manage your personal details and workspace identity.', icon: User },
+  { id: 'security', label: 'Account & Security', description: 'Manage your password and security preferences.', icon: Shield },
+  { id: 'notifications', label: 'Notifications', description: 'Control how and when you receive alerts.', icon: Bell },
+  { id: 'appearance', label: 'Appearance', description: 'Customize how the application looks on your device.', icon: Palette },
+  { id: 'apps', label: 'Connected Apps', description: 'Manage your third-party integrations.', icon: LinkIcon },
+  { id: 'data', label: 'Data & Storage', description: 'Manage local cache and export your data.', icon: Database },
+  { id: 'language', label: 'Language & Region', description: 'Customize your localization settings.', icon: Globe },
+  { id: 'help', label: 'Help & Support', description: 'Get assistance and read documentation.', icon: HelpCircle },
+];
 
-export default function Settings({ session, defaultTab = null }: { session: any, defaultTab?: string | null }) {
-  const { theme, themeMode, setThemeMode, toggleTheme, accentColor, setAccentColor, compactMode, setCompactMode } = useTheme();
+export default function Settings({ session }: { session: any }) {
+  const { theme, toggleTheme } = useTheme();
   const role = session?.user?.user_metadata?.role || 'intern';
   
-
-  const SETTINGS_SECTIONS = [
-    { id: 'security', label: 'Account & Security', description: 'Manage your password and security preferences.', icon: Shield },
-    { id: 'appearance', label: 'Appearance', description: 'Customize how the application looks on your device.', icon: Palette },
-    { id: 'notifications', label: 'Notifications', description: 'Control how and when you receive alerts.', icon: Bell },
-    { id: 'standups', label: 'Standup Settings', description: 'Customize daily standup reminders and formats.', icon: CheckCircle2 },
-    { id: 'worklogs', label: 'Work Log Settings', description: 'Customize work tracking preferences.', icon: Clock },
-    { id: 'privacy', label: 'Privacy', description: 'Manage data privacy and sharing.', icon: Lock },
-    { id: 'integrations', label: 'Integrations', description: 'Manage your third-party integrations.', icon: LinkIcon },
-    { id: 'activity', label: 'Activity Logs', description: 'View your recent account activity.', icon: Activity },
-    { id: 'experimental', label: 'Experimental Features', description: 'Try out new beta features.', icon: FlaskConical },
-  ];
-
-  if (role === 'manager') {
-    SETTINGS_SECTIONS.push(
-      { id: 'team_standups', label: 'Team Standup Defaults', description: 'Configure standup schedule for your team.', icon: Users },
-      { id: 'team_workhours', label: 'Team Work Hour Configuration', description: 'Set work hour targets for your team.', icon: Briefcase }
-    );
-  }
-
-  const [activeTab, setActiveTab] = useState<string | null>(defaultTab || 'security');
-
-  const [workLogSettings, setWorkLogSettings] = useState(() => {
-    const saved = localStorage.getItem('worklog_settings');
-    if (saved) return JSON.parse(saved);
-    return {
-      dailyGoal: 8,
-      weeklyGoal: 40,
-      enableTimer: true,
-      autoTracking: false,
-      autoStopLogout: true,
-      startReminder: true,
-      shortfallReminder: 'End of Day',
-      viewPreference: 'Table View',
-      autoSave: true,
-      productivityInsights: true,
-      exportPdf: true,
-      exportCsv: false,
-      exportCharts: true
-    };
-  });
-
-  const updateWorkLogSetting = (key: string, value: any) => {
-    setWorkLogSettings((prev: any) => ({ ...prev, [key]: value }));
-  };
-
-  const saveWorkLogSettings = () => {
-    localStorage.setItem('worklog_settings', JSON.stringify(workLogSettings));
-    toast.success('Work log settings saved successfully');
-  };
-
-
-  const [standupSettings, setStandupSettings] = useState(() => {
-    const saved = localStorage.getItem('standup_settings');
-    if (saved) return JSON.parse(saved);
-    return {
-      dailyReminder: true,
-      reminderTime: '09:00',
-      timeZone: 'Asia/Kolkata',
-      submissionDeadline: '10:00 AM',
-      formatYesterday: true,
-      formatToday: true,
-      formatBlockers: true,
-      formatNotes: false,
-      emailReminder: true,
-      browserNotif: true,
-      autoSendUnsubmitted: false,
-    };
-  });
-
-  const updateStandupSetting = (key: string, value: any) => {
-    setStandupSettings((prev: any) => ({ ...prev, [key]: value }));
-  };
-
-  const saveStandupSettings = () => {
-    localStorage.setItem('standup_settings', JSON.stringify(standupSettings));
-    toast.success('Standup settings saved successfully');
-  };
+  const [activeTab, setActiveTab] = useState<string | null>(null);
 
   const [toggles, setToggles] = useState({
     taskAssigned: true,
@@ -114,328 +43,89 @@ export default function Settings({ session, defaultTab = null }: { session: any,
     compactMode: false
   });
 
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-
-  const { user, updateUser } = useUser();
-  const avatarUrl = user?.avatar;
-  const userName = user?.name || (role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey');
-  const userRole = user?.role || role;
-
-const handlePasswordUpdate = async () => {
-    if (!currentPassword || !newPassword) {
-      toast.error('Missing fields', { description: 'Please fill in both current and new passwords.' });
-      return;
-    }
-    if (newPassword.length < 6) {
-      toast.error('Weak password', { description: 'New password must be at least 6 characters.' });
-      return;
-    }
-    
-    setIsUpdatingPassword(true);
-    
-    // Simulate slight network delay
-    await new Promise(resolve => setTimeout(resolve, 600));
-    
-    try {
-      const user = getCurrentUser();
-      if (!user) {
-        toast.error('Authentication Error', { description: 'Please log in again to change password.' });
-        return;
-      }
-      
-      const result = updatePassword(user.email, currentPassword, newPassword);
-      if (result.success) {
-        toast.success('Success', { description: result.message });
-        setCurrentPassword('');
-        setNewPassword('');
-      } else {
-        toast.error('Update Failed', { description: result.message });
-      }
-    } finally {
-      setIsUpdatingPassword(false);
-    }
-  };
-
   const handleToggle = (key: keyof typeof toggles) => {
     setToggles(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const renderContent = () => {
     switch(activeTab) {
-      case 'standups':
+      case 'profile':
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Standup Settings</h2>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize how Daily Standups work.</p>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Profile Information</h2>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage your personal details and workspace identity.</p>
             </div>
             
-            {role === 'manager' && (
-              <div className="bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 rounded-xl p-4 flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 shrink-0" />
-                <div>
-                  <h4 className="text-sm font-bold text-purple-900 dark:text-purple-100">Manager Access</h4>
-                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">As a manager, you can set the default standup schedule for your team here.</p>
-                </div>
-              </div>
-            )}
-
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                <div className="p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Daily Standup Reminder</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Receive a reminder to submit your standup.</p>
-                  </div>
-                  <Switch checked={standupSettings.dailyReminder} onCheckedChange={(val) => updateStandupSetting('dailyReminder', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-                
-                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Reminder Time</h4>
-                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">When should we remind you?</p>
-                    </div>
-                    <Input type="time" value={standupSettings.reminderTime} onChange={(e) => updateStandupSetting('reminderTime', e.target.value)} className="w-full sm:w-48 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium focus:border-purple-500 focus:ring-purple-500/20" />
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row gap-8 items-start">
+                  <div className="flex flex-col items-center gap-4 shrink-0">
+                    <Avatar className="h-24 w-24 border-4 border-slate-50 dark:border-slate-900 shadow-md">
+                      <AvatarFallback className="bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 text-2xl font-bold">
+                        {role === 'manager' ? 'AG' : 'TP'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <Button variant="outline" size="sm" className="rounded-xl font-bold border-slate-200 dark:border-slate-700">Change Avatar</Button>
                   </div>
                   
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Time Zone</h4>
-                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Your local time zone.</p>
+                  <div className="flex-1 space-y-4 w-full">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Full Name</label>
+                        <Input defaultValue={role === 'manager' ? 'Aakash Gupta' : 'Tanvy Pandey'} className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-medium" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Email Address</label>
+                        <Input defaultValue={session?.user?.email || 'user@hindustaan.in'} disabled className="rounded-xl bg-slate-100 dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 font-medium text-slate-500" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Department</label>
+                        <Select defaultValue="engineering">
+                          <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-medium">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
+                            <SelectItem value="engineering">Engineering</SelectItem>
+                            <SelectItem value="design">Design</SelectItem>
+                            <SelectItem value="marketing">Marketing</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Role</label>
+                        <Input defaultValue={role === 'manager' ? 'Manager' : 'Frontend Developer Intern'} disabled className="rounded-xl bg-slate-100 dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 font-medium text-slate-500" />
+                      </div>
                     </div>
-                    <Select value={standupSettings.timeZone} onValueChange={(val) => updateStandupSetting('timeZone', val)}>
-                      <SelectTrigger className="w-full sm:w-64 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium focus:ring-purple-500/20 focus:border-purple-500">
-                        <SelectValue placeholder="Select timezone" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                        <SelectItem value="Asia/Kolkata">Asia/Kolkata (IST)</SelectItem>
-                        <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
-                        <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
-                        <SelectItem value="America/Los_Angeles">America/Los_Angeles (PST)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Standup Submission Deadline</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Time when standup is marked as late.</p>
-                  </div>
-                  <Select value={standupSettings.submissionDeadline} onValueChange={(val) => updateStandupSetting('submissionDeadline', val)}>
-                    <SelectTrigger className="w-full sm:w-48 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium focus:ring-purple-500/20 focus:border-purple-500">
-                      <SelectValue placeholder="Select deadline" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                      <SelectItem value="09:00 AM">9:00 AM</SelectItem>
-                      <SelectItem value="10:00 AM">10:00 AM</SelectItem>
-                      <SelectItem value="11:00 AM">11:00 AM</SelectItem>
-                      <SelectItem value="Custom Time">Custom Time</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
-              <CardHeader className="border-b border-slate-100 dark:border-slate-800/60 pb-4">
-                <CardTitle className="text-lg">Standup Format</CardTitle>
-                <CardDescription>Select what sections are included in your daily standup.</CardDescription>
-              </CardHeader>
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                <div className="p-4 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Yesterday's Work</span>
-                  <Switch checked={standupSettings.formatYesterday} onCheckedChange={(val) => updateStandupSetting('formatYesterday', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-                <div className="p-4 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Today's Plan</span>
-                  <Switch checked={standupSettings.formatToday} onCheckedChange={(val) => updateStandupSetting('formatToday', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-                <div className="p-4 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Blockers</span>
-                  <Switch checked={standupSettings.formatBlockers} onCheckedChange={(val) => updateStandupSetting('formatBlockers', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-                <div className="p-4 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Additional Notes</span>
-                  <Switch checked={standupSettings.formatNotes} onCheckedChange={(val) => updateStandupSetting('formatNotes', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-              </div>
-            </Card>
-
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                <div className="p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Enable Email Reminder</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Send a quick email before the deadline.</p>
-                  </div>
-                  <Switch checked={standupSettings.emailReminder} onCheckedChange={(val) => updateStandupSetting('emailReminder', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-                <div className="p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Enable Browser Notification</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Show a push notification on your desktop.</p>
-                  </div>
-                  <Switch checked={standupSettings.browserNotif} onCheckedChange={(val) => updateStandupSetting('browserNotif', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-                <div className="p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Auto-send Reminder</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Send a final reminder if standup is not submitted on time.</p>
-                  </div>
-                  <Switch checked={standupSettings.autoSendUnsubmitted} onCheckedChange={(val) => updateStandupSetting('autoSendUnsubmitted', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-              </div>
-            </Card>
-            
-            <div className="flex justify-end pt-4 pb-8">
-              <Button onClick={saveStandupSettings} className="rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg shadow-purple-500/20 font-bold px-8 transition-transform active:scale-95">
-                Save Changes
-              </Button>
-            </div>
-          </div>
-        );
-      case 'worklogs':
-        return (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Work Log Settings</h2>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize work tracking and productivity preferences.</p>
-            </div>
-            
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Daily Work Goal (Hours)</h4>
-                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Your target hours per day.</p>
+                    
+                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800/60">
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Internship Details</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Cohort</span>
+                          <span className="text-sm font-bold text-slate-900 dark:text-white">Summer 2026</span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Manager</span>
+                          <span className="text-sm font-bold text-slate-900 dark:text-white">Aakash Gupta</span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Start Date</span>
+                          <span className="text-sm font-bold text-slate-900 dark:text-white">Jun 1, 2026</span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">End Date</span>
+                          <span className="text-sm font-bold text-slate-900 dark:text-white">Sep 1, 2026</span>
+                        </div>
+                      </div>
                     </div>
-                    <Input type="number" value={workLogSettings.dailyGoal} onChange={(e) => updateWorkLogSetting('dailyGoal', Number(e.target.value))} className="w-full sm:w-48 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium focus:border-purple-500 focus:ring-purple-500/20" />
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Weekly Goal (Hours)</h4>
-                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Your target hours per week.</p>
-                    </div>
-                    <Input type="number" value={workLogSettings.weeklyGoal} onChange={(e) => updateWorkLogSetting('weeklyGoal', Number(e.target.value))} className="w-full sm:w-48 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium focus:border-purple-500 focus:ring-purple-500/20" />
                   </div>
                 </div>
-
-                <div className="p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Enable Work Timer</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Show a running timer in the dashboard.</p>
-                  </div>
-                  <Switch checked={workLogSettings.enableTimer} onCheckedChange={(val) => updateWorkLogSetting('enableTimer', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-                
-                <div className="p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Enable Automatic Time Tracking</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Automatically log time spent active.</p>
-                  </div>
-                  <Switch checked={workLogSettings.autoTracking} onCheckedChange={(val) => updateWorkLogSetting('autoTracking', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-                
-                <div className="p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Auto Stop Timer on Logout</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Stop any running timer when you log out.</p>
-                  </div>
-                  <Switch checked={workLogSettings.autoStopLogout} onCheckedChange={(val) => updateWorkLogSetting('autoStopLogout', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-                
-                <div className="p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Reminder to Start Logging</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Remind if no work is logged during work hours.</p>
-                  </div>
-                  <Switch checked={workLogSettings.startReminder} onCheckedChange={(val) => updateWorkLogSetting('startReminder', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-                
-                <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Shortfall Reminder</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">When to remind about low hours.</p>
-                  </div>
-                  <Select value={workLogSettings.shortfallReminder} onValueChange={(val) => updateWorkLogSetting('shortfallReminder', val)}>
-                    <SelectTrigger className="w-full sm:w-48 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium focus:ring-purple-500/20 focus:border-purple-500">
-                      <SelectValue placeholder="Select schedule" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                      <SelectItem value="Every 1 Hour">Every 1 Hour</SelectItem>
-                      <SelectItem value="Every 2 Hours">Every 2 Hours</SelectItem>
-                      <SelectItem value="End of Day">End of Day</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">View Preference</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Default layout for work logs.</p>
-                  </div>
-                  <Select value={workLogSettings.viewPreference} onValueChange={(val) => updateWorkLogSetting('viewPreference', val)}>
-                    <SelectTrigger className="w-full sm:w-48 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium focus:ring-purple-500/20 focus:border-purple-500">
-                      <SelectValue placeholder="Select view" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                      <SelectItem value="Timeline View">Timeline View</SelectItem>
-                      <SelectItem value="Table View">Table View</SelectItem>
-                      <SelectItem value="Calendar View">Calendar View</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Auto-save Work Logs</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Automatically save draft work logs.</p>
-                  </div>
-                  <Switch checked={workLogSettings.autoSave} onCheckedChange={(val) => updateWorkLogSetting('autoSave', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-                
-                <div className="p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Enable Productivity Insights</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70 transition-colors">Show AI suggestions for work efficiency.</p>
-                  </div>
-                  <Switch checked={workLogSettings.productivityInsights} onCheckedChange={(val) => updateWorkLogSetting('productivityInsights', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-              </div>
+              </CardContent>
+              <CardFooter className="p-6 pt-0 flex justify-end">
+                <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold px-6">Save Changes</Button>
+              </CardFooter>
             </Card>
-
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
-              <CardHeader className="border-b border-slate-100 dark:border-slate-800/60 pb-4">
-                <CardTitle className="text-lg">Export Preferences</CardTitle>
-                <CardDescription>Select what to include when exporting work logs.</CardDescription>
-              </CardHeader>
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                <div className="p-4 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Export as PDF</span>
-                  <Switch checked={workLogSettings.exportPdf} onCheckedChange={(val) => updateWorkLogSetting('exportPdf', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-                <div className="p-4 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Export as CSV</span>
-                  <Switch checked={workLogSettings.exportCsv} onCheckedChange={(val) => updateWorkLogSetting('exportCsv', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-                <div className="p-4 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group cursor-pointer">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">Include Charts</span>
-                  <Switch checked={workLogSettings.exportCharts} onCheckedChange={(val) => updateWorkLogSetting('exportCharts', val)} className="data-[state=checked]:bg-purple-600" />
-                </div>
-              </div>
-            </Card>
-
-            <div className="flex justify-end pt-4 pb-8">
-              <Button onClick={saveWorkLogSettings} className="rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg shadow-purple-500/20 font-bold px-8 transition-transform active:scale-95">
-                Save Changes
-              </Button>
-            </div>
           </div>
         );
       case 'security':
@@ -454,15 +144,13 @@ const handlePasswordUpdate = async () => {
               <CardContent className="space-y-4">
                 <div className="space-y-1.5 max-w-md">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Current Password</label>
-                  <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700" />
+                  <Input type="password" placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700" />
                 </div>
                 <div className="space-y-1.5 max-w-md">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">New Password</label>
-                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700" />
+                  <Input type="password" placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700" />
                 </div>
-                <Button onClick={handlePasswordUpdate} disabled={isUpdatingPassword} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold mt-2">
-                  {isUpdatingPassword ? 'Updating...' : 'Update Password'}
-                </Button>
+                <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold mt-2">Update Password</Button>
               </CardContent>
             </Card>
 
@@ -581,36 +269,34 @@ const handlePasswordUpdate = async () => {
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Theme Preferences</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <button 
-                      onClick={() => setThemeMode('light')}
+                      onClick={() => theme !== 'light' && toggleTheme()}
                       className={cn(
                         "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all",
-                        themeMode === 'light' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
+                        theme === 'light' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
                       )}
                     >
-                      <Sun className={cn("h-8 w-8", themeMode === 'light' ? "text-orange-600" : "text-slate-400")} />
-                      <span className={cn("text-sm font-bold", themeMode === 'light' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Light Theme</span>
+                      <Sun className={cn("h-8 w-8", theme === 'light' ? "text-orange-600" : "text-slate-400")} />
+                      <span className={cn("text-sm font-bold", theme === 'light' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Light Theme</span>
                     </button>
                     
                     <button 
-                      onClick={() => setThemeMode('dark')}
+                      onClick={() => theme !== 'dark' && toggleTheme()}
                       className={cn(
                         "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all",
-                        themeMode === 'dark' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
+                        theme === 'dark' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
                       )}
                     >
-                      <Moon className={cn("h-8 w-8", themeMode === 'dark' ? "text-orange-600" : "text-slate-400")} />
-                      <span className={cn("text-sm font-bold", themeMode === 'dark' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Dark Theme</span>
+                      <Moon className={cn("h-8 w-8", theme === 'dark' ? "text-orange-600" : "text-slate-400")} />
+                      <span className={cn("text-sm font-bold", theme === 'dark' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Dark Theme</span>
                     </button>
 
                     <button 
-                      onClick={() => setThemeMode('system')}
                       className={cn(
-                        "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all",
-                        themeMode === 'system' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
+                        "flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 opacity-50 cursor-not-allowed"
                       )}
                     >
-                      <Monitor className={cn("h-8 w-8", themeMode === 'system' ? "text-orange-600" : "text-slate-400")} />
-                      <span className={cn("text-sm font-bold", themeMode === 'system' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>System Theme</span>
+                      <Monitor className="h-8 w-8 text-slate-400" />
+                      <span className="text-sm font-bold text-slate-600 dark:text-slate-400">System Theme</span>
                     </button>
                   </div>
                 </div>
@@ -618,11 +304,11 @@ const handlePasswordUpdate = async () => {
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Accent Color</h3>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setAccentColor('orange')} className={cn("h-8 w-8 rounded-full bg-[#f97316] hover:scale-110 transition-transform", accentColor === 'orange' && "ring-4 ring-[#f97316]/30 dark:ring-[#f97316]/50")}></button>
-                    <button onClick={() => setAccentColor('blue')} className={cn("h-8 w-8 rounded-full bg-[#3b82f6] hover:scale-110 transition-transform", accentColor === 'blue' && "ring-4 ring-[#3b82f6]/30 dark:ring-[#3b82f6]/50")}></button>
-                    <button onClick={() => setAccentColor('emerald')} className={cn("h-8 w-8 rounded-full bg-[#10b981] hover:scale-110 transition-transform", accentColor === 'emerald' && "ring-4 ring-[#10b981]/30 dark:ring-[#10b981]/50")}></button>
-                    <button onClick={() => setAccentColor('rose')} className={cn("h-8 w-8 rounded-full bg-[#f43f5e] hover:scale-110 transition-transform", accentColor === 'rose' && "ring-4 ring-[#f43f5e]/30 dark:ring-[#f43f5e]/50")}></button>
-                    <button onClick={() => setAccentColor('purple')} className={cn("h-8 w-8 rounded-full bg-[#a855f7] hover:scale-110 transition-transform", accentColor === 'purple' && "ring-4 ring-[#a855f7]/30 dark:ring-[#a855f7]/50")}></button>
+                    <button className="h-8 w-8 rounded-full bg-orange-500 ring-4 ring-orange-500/20"></button>
+                    <button className="h-8 w-8 rounded-full bg-blue-500 hover:scale-110 transition-transform"></button>
+                    <button className="h-8 w-8 rounded-full bg-emerald-500 hover:scale-110 transition-transform"></button>
+                    <button className="h-8 w-8 rounded-full bg-rose-500 hover:scale-110 transition-transform"></button>
+                    <button className="h-8 w-8 rounded-full bg-purple-500 hover:scale-110 transition-transform"></button>
                   </div>
                 </div>
 
@@ -631,13 +317,160 @@ const handlePasswordUpdate = async () => {
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">Compact Mode</h3>
                     <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Reduce spacing to fit more content on screen.</p>
                   </div>
-                  <Switch checked={compactMode} onCheckedChange={setCompactMode} />
+                  <Switch checked={toggles.compactMode} onCheckedChange={() => handleToggle('compactMode')} />
                 </div>
               </CardContent>
             </Card>
           </div>
         );
+      case 'apps':
+        return (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <ConnectedApps />
+          </div>
+        );
+      case 'data':
+        return (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Data & Storage</h2>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage local cache and export your data.</p>
+            </div>
 
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
+              <CardContent className="p-6 space-y-6">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Storage Used</h3>
+                    <span className="text-xs font-bold text-slate-500">45 MB / 500 MB</span>
+                  </div>
+                  <Progress value={9} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
+                  <p className="text-[10px] font-semibold text-slate-500 mt-2">Cache size includes local drafts and offline data.</p>
+                </div>
+                
+                <div className="flex gap-3">
+                  <Button variant="outline" className="rounded-xl border-slate-200 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Clear Cache</Button>
+                </div>
+
+                <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Export Data</h3>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-4">Download a copy of your work logs, tasks, and standups.</p>
+                  <Button className="rounded-xl bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold">
+                    <Download className="mr-2 h-4 w-4" /> Download Reports (CSV)
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case 'language':
+        return (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Language & Region</h2>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize your localization settings.</p>
+            </div>
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
+              <CardContent className="p-6 space-y-6">
+                <div className="space-y-1.5 max-w-md">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Language</label>
+                  <Select defaultValue="en">
+                    <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-medium">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
+                      <SelectItem value="en">English (US)</SelectItem>
+                      <SelectItem value="hi">Hindi (India)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5 max-w-md">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Time Zone</label>
+                  <Select defaultValue="ist">
+                    <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-medium">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
+                      <SelectItem value="ist">India Standard Time (IST) - UTC+05:30</SelectItem>
+                      <SelectItem value="utc">Universal Time Coordinated (UTC)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5 max-w-md">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Date Format</label>
+                  <Select defaultValue="dmy">
+                    <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-medium">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
+                      <SelectItem value="mdy">MM/DD/YYYY</SelectItem>
+                      <SelectItem value="dmy">DD/MM/YYYY</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case 'help':
+        return (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Help & Support</h2>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Get assistance and read documentation.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-6 flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                    <HelpCircle className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white">FAQ</h3>
+                    <p className="text-sm font-medium text-slate-500 mt-1">Find answers to common questions about Hindustaan OS.</p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-6 flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
+                    <Database className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white">Documentation</h3>
+                    <p className="text-sm font-medium text-slate-500 mt-1">Read detailed guides on using workspace tools.</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-6 flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
+                    <MonitorSmartphone className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white">Contact Support</h3>
+                    <p className="text-sm font-medium text-slate-500 mt-1">Get in touch with our internal IT team.</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-6 flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400">
+                    <Shield className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white">Report Bug</h3>
+                    <p className="text-sm font-medium text-slate-500 mt-1">Report unexpected behavior or errors.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
       default:
         return null;
     }
