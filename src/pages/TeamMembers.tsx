@@ -612,7 +612,7 @@ export default function TeamMembers() {
           <form onSubmit={handleReassignSubmit} className="space-y-4 pt-4">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Team Member</label>
-              <Input disabled value={reassignIntern?.name || ''} className="rounded-xl bg-slate-50 dark:bg-slate-900" />
+              <Input disabled value={reassignIntern?.name || ''} className="rounded-xl bg-slate-50 dark:bg-slate-900 dark:text-white" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">New Project</label>
@@ -636,7 +636,7 @@ export default function TeamMembers() {
                 required 
                 value={reassignMessage} 
                 onChange={(e) => setReassignMessage(e.target.value)}
-                className="rounded-xl resize-none h-24 border-slate-200 dark:border-slate-800"
+                className="rounded-xl resize-none h-24 bg-slate-50 dark:bg-slate-900 dark:text-white border-slate-200 dark:border-slate-800"
                 placeholder="Explain the reassignment..."
               />
             </div>
@@ -660,7 +660,7 @@ export default function TeamMembers() {
           <form onSubmit={handleWhatsAppSubmit} className="space-y-4 pt-4">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">To</label>
-              <Input disabled value={whatsappIntern?.name || ''} className="rounded-xl bg-slate-50 dark:bg-slate-900" />
+              <Input disabled value={whatsappIntern?.name || ''} className="rounded-xl bg-slate-50 dark:bg-slate-900 dark:text-white" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Message</label>
@@ -668,7 +668,7 @@ export default function TeamMembers() {
                 required 
                 value={whatsappMessage} 
                 onChange={(e) => setWhatsappMessage(e.target.value)}
-                className="rounded-xl resize-none h-32 border-slate-200 dark:border-slate-800"
+                className="rounded-xl resize-none h-32 bg-slate-50 dark:bg-slate-900 dark:text-white border-slate-200 dark:border-slate-800"
                 placeholder="Type your message here..."
               />
             </div>
