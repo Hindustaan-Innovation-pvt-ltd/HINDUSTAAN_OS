@@ -87,7 +87,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
   const empBar  = trendData;
 
   const handleCSV = ()=>{ const csv="data:text/csv;charset=utf-8,Date,Employee,Project,Task,Hours,Status\n"+filtered.map(l=>`"${l.date}","${l.name}","${l.project}","${l.task}",${l.hours},"${l.status}"`).join('\n'); const a=document.createElement('a'); a.href=encodeURI(csv); a.download='work_logs.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); toast.success('CSV Exported'); };
-  const handlePDF = ()=>{ try{ const doc=new jsPDF(); doc.text(isManager?'Team Productivity Overview':'My Work Summary',14,15); autoTable(doc,{startY:25,head:[['Date','Employee','Project','Task','Hours','Status']],body:filtered.map(l=>[l.date,l.name,l.project,l.task,`${l.hours}h`,l.status])}); doc.save('work_logs.pdf'); toast.success('PDF Exported'); }catch{ toast.error('Failed'); } };
+  const handlePDF = ()=>{ try{ const doc=new jsPDF(); doc.text(isManager?"Employee's Productivity Overview":'My Work Summary',14,15); autoTable(doc,{startY:25,head:[['Date','Employee','Project','Task','Hours','Status']],body:filtered.map(l=>[l.date,l.name,l.project,l.task,`${l.hours}h`,l.status])}); doc.save('work_logs.pdf'); toast.success('PDF Exported'); }catch{ toast.error('Failed'); } };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -102,7 +102,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                 <Clock className="h-7 w-7 text-violet-400" />
               </div>
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-white">{isManager ? 'Team Productivity Overview' : 'My Work Summary'}</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white">{isManager ? "Employee's Productivity Overview" : 'My Work Summary'}</h2>
                 <p className="text-sm text-slate-400 mt-1 flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5"/>Generated dynamically from work logs</p>
               </div>
             </div>
