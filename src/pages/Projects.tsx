@@ -121,8 +121,11 @@ export default function Projects({ session }: { session?: any }) {
           assignee: t.assignee
         });
       });
+      const isProjectCompleted = p.status === 'Completed' || (p.tasks && p.tasks.length > 0 && p.tasks.every((t: any) => t.status === 'Done'));
+
       return {
         ...p,
+        isCompleted: isProjectCompleted,
         iconColor: `${palette.bg} ${palette.text}`,
         strokeColor: palette.stroke,
         headerBg: palette.bg,
@@ -387,7 +390,7 @@ export default function Projects({ session }: { session?: any }) {
                   </div>
                   
                   {/* Task Bars or Completed Status */}
-                  {project.status === 'Completed' ? (
+                  {project.isCompleted ? (
                     <div className="flex items-center relative group animate-in fade-in slide-in-from-right-4 duration-500">
                       <div className="w-48 shrink-0 pr-4 border-l-4 pl-3 py-1 border-emerald-500">
                          <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Completed</p>
