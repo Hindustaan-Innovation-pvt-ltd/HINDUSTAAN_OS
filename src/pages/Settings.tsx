@@ -20,6 +20,7 @@ import { updatePassword, getCurrentUser } from '@/lib/auth';
 
 const SETTINGS_SECTIONS = [
   { id: 'profile', label: 'Profile Information', description: 'Manage your personal details and workspace identity.', icon: User },
+  { id: 'standups', label: 'Standup Settings', description: 'Customize daily standup reminders and formats.', icon: CheckCircle2 },
   { id: 'security', label: 'Account & Security', description: 'Manage your password and security preferences.', icon: Shield },
   { id: 'notifications', label: 'Notifications', description: 'Control how and when you receive alerts.', icon: Bell },
   { id: 'appearance', label: 'Appearance', description: 'Customize how the application looks on your device.', icon: Palette },
@@ -34,6 +35,33 @@ export default function Settings({ session, defaultTab = null }: { session: any,
   const role = session?.user?.user_metadata?.role || 'intern';
   
   const [activeTab, setActiveTab] = useState<string | null>(defaultTab);
+
+  const [standupSettings, setStandupSettings] = useState(() => {
+    const saved = localStorage.getItem('standup_settings');
+    if (saved) return JSON.parse(saved);
+    return {
+      dailyReminder: true,
+      reminderTime: '09:00',
+      timeZone: 'Asia/Kolkata',
+      submissionDeadline: '10:00 AM',
+      formatYesterday: true,
+      formatToday: true,
+      formatBlockers: true,
+      formatNotes: false,
+      emailReminder: true,
+      browserNotif: true,
+      autoSendUnsubmitted: false,
+    };
+  });
+
+  const updateStandupSetting = (key: string, value: any) => {
+    setStandupSettings((prev: any) => ({ ...prev, [key]: value }));
+  };
+
+  const saveStandupSettings = () => {
+    localStorage.setItem('standup_settings', JSON.stringify(standupSettings));
+    toast.success('Standup settings saved successfully');
+  };
 
   const [toggles, setToggles] = useState({
     taskAssigned: true,
@@ -236,6 +264,140 @@ export default function Settings({ session, defaultTab = null }: { session: any,
                 </Button>
               </CardFooter>
             </Card>
+          </div>
+        );
+      case 'standups':
+        return (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Standup Settings</h2>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize how Daily Standups work.</p>
+            </div>
+            
+            {role === 'manager' && (
+              <div className="bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 rounded-xl p-4 flex items-start gap-3">
+                <CheckCircle2 className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 shrink-0" />
+                <div>
+                  <h4 className="text-sm font-bold text-purple-900 dark:text-purple-100">Manager Access</h4>
+                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">As a manager, you can set the default standup schedule for your team here.</p>
+                </div>
+              </div>
+            )}
+
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Daily Standup Reminder</h4>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Receive a reminder to submit your standup.</p>
+                  </div>
+                  <Switch checked={standupSettings.dailyReminder} onCheckedChange={(val) => updateStandupSetting('dailyReminder', val)} />
+                </div>
+                
+                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">Reminder Time</h4>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">When should we remind you?</p>
+                    </div>
+                    <Input type="time" value={standupSettings.reminderTime} onChange={(e) => updateStandupSetting('reminderTime', e.target.value)} className="w-full sm:w-48 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium" />
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">Time Zone</h4>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Your local time zone.</p>
+                    </div>
+                    <Select value={standupSettings.timeZone} onValueChange={(val) => updateStandupSetting('timeZone', val)}>
+                      <SelectTrigger className="w-full sm:w-64 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium">
+                        <SelectValue placeholder="Select timezone" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                        <SelectItem value="Asia/Kolkata">Asia/Kolkata (IST)</SelectItem>
+                        <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
+                        <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
+                        <SelectItem value="America/Los_Angeles">America/Los_Angeles (PST)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Standup Submission Deadline</h4>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Time when standup is marked as late.</p>
+                  </div>
+                  <Select value={standupSettings.submissionDeadline} onValueChange={(val) => updateStandupSetting('submissionDeadline', val)}>
+                    <SelectTrigger className="w-full sm:w-48 bg-white dark:bg-slate-950 rounded-xl border-slate-200 dark:border-slate-700 font-medium">
+                      <SelectValue placeholder="Select deadline" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                      <SelectItem value="09:00 AM">9:00 AM</SelectItem>
+                      <SelectItem value="10:00 AM">10:00 AM</SelectItem>
+                      <SelectItem value="11:00 AM">11:00 AM</SelectItem>
+                      <SelectItem value="Custom Time">Custom Time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/60 pb-4">
+                <CardTitle className="text-lg">Standup Format</CardTitle>
+                <CardDescription>Select what sections are included in your daily standup.</CardDescription>
+              </CardHeader>
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Yesterday's Work</span>
+                  <Switch checked={standupSettings.formatYesterday} onCheckedChange={(val) => updateStandupSetting('formatYesterday', val)} />
+                </div>
+                <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Today's Plan</span>
+                  <Switch checked={standupSettings.formatToday} onCheckedChange={(val) => updateStandupSetting('formatToday', val)} />
+                </div>
+                <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Blockers</span>
+                  <Switch checked={standupSettings.formatBlockers} onCheckedChange={(val) => updateStandupSetting('formatBlockers', val)} />
+                </div>
+                <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Additional Notes</span>
+                  <Switch checked={standupSettings.formatNotes} onCheckedChange={(val) => updateStandupSetting('formatNotes', val)} />
+                </div>
+              </div>
+            </Card>
+
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Enable Email Reminder</h4>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Send a quick email before the deadline.</p>
+                  </div>
+                  <Switch checked={standupSettings.emailReminder} onCheckedChange={(val) => updateStandupSetting('emailReminder', val)} />
+                </div>
+                <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Enable Browser Notification</h4>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Show a push notification on your desktop.</p>
+                  </div>
+                  <Switch checked={standupSettings.browserNotif} onCheckedChange={(val) => updateStandupSetting('browserNotif', val)} />
+                </div>
+                <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Auto-send Reminder</h4>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Send a final reminder if standup is not submitted on time.</p>
+                  </div>
+                  <Switch checked={standupSettings.autoSendUnsubmitted} onCheckedChange={(val) => updateStandupSetting('autoSendUnsubmitted', val)} />
+                </div>
+              </div>
+            </Card>
+            
+            <div className="flex justify-end pt-4 pb-8">
+              <Button onClick={saveStandupSettings} className="rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg shadow-purple-500/20 font-bold px-8 transition-transform active:scale-95">
+                Save Changes
+              </Button>
+            </div>
           </div>
         );
       case 'security':
