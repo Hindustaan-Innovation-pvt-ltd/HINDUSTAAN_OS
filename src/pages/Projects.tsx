@@ -108,7 +108,7 @@ export default function Projects({ session }: { session?: any }) {
         ...p,
         timelineTasks: pTasks.slice(0, 4) // Show up to 4 tasks per project
       };
-    }).filter(p => p.timelineTasks.length > 0).slice(0, 3); // Show up to 3 active projects in this mini-view
+    }); // Show all projects in this view
   }, [displayedProjects, selectedWeekDate]);
 
   if (selectedProject) {
@@ -355,27 +355,35 @@ export default function Projects({ session }: { session?: any }) {
                   </div>
                   
                   {/* Task Bars */}
-                  {project.timelineTasks.map((task: any) => (
-                    <div key={task.id} className="flex items-center relative group animate-in fade-in slide-in-from-right-4 duration-500">
-                      {/* Task Name Label */}
-                      <div className={cn("w-48 shrink-0 pr-4 border-l-4 pl-3 py-1", project.iconColor ? project.iconColor.replace('bg-', 'border-') : 'border-transparent')}>
-                        <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{task.name}</p>
-                        <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">{task.assignee}</p>
-                      </div>
-                      
-                      {/* Task Timeline Bar */}
-                      <div className="flex-1 grid grid-cols-7 gap-2">
-                        <div 
-                          className={cn("h-8 rounded-lg shadow-sm flex items-center px-3 text-xs font-bold text-white whitespace-nowrap overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md", task.color)}
-                          style={{ 
-                            gridColumn: `${task.start + 1} / span ${task.duration}` 
-                          }}
-                        >
-                          {task.name}
+                  {project.timelineTasks.length > 0 ? (
+                    project.timelineTasks.map((task: any) => (
+                      <div key={task.id} className="flex items-center relative group animate-in fade-in slide-in-from-right-4 duration-500">
+                        {/* Task Name Label */}
+                        <div className={cn("w-48 shrink-0 pr-4 border-l-4 pl-3 py-1", project.iconColor ? project.iconColor.replace('bg-', 'border-') : 'border-transparent')}>
+                          <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{task.name}</p>
+                          <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">{task.assignee}</p>
+                        </div>
+                        
+                        {/* Task Timeline Bar */}
+                        <div className="flex-1 grid grid-cols-7 gap-2">
+                          <div 
+                            className={cn("h-8 rounded-lg shadow-sm flex items-center px-3 text-xs font-bold text-white whitespace-nowrap overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md", task.color)}
+                            style={{ 
+                              gridColumn: `${task.start + 1} / span ${task.duration}` 
+                            }}
+                          >
+                            {task.name}
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="flex items-center relative group animate-in fade-in slide-in-from-right-4 duration-500">
+                      <div className="w-48 shrink-0 pr-4 border-l-4 pl-3 py-1 border-slate-200 dark:border-slate-800">
+                        <p className="text-sm font-bold text-slate-400 dark:text-slate-600 truncate">No tasks scheduled</p>
+                      </div>
                     </div>
-                  ))}
+                  )}
                 </div>
               ))}
 
