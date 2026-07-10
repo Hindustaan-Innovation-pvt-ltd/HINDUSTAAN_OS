@@ -91,7 +91,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[98vw] sm:w-[95vw] xl:w-[92vw] max-w-[1800px] h-[92vh] overflow-hidden rounded-[32px] border border-white/10 bg-[#070a14]/96 backdrop-blur-[32px] p-0 shadow-[0_32px_80px_rgba(0,0,0,0.7)] animate-in fade-in zoom-in-95 duration-300">
+      <DialogContent className="w-[98vw] sm:w-[95vw] xl:w-[92vw] max-w-[1800px] sm:max-w-none h-[92vh] overflow-hidden rounded-[32px] border border-white/10 bg-[#070a14]/96 backdrop-blur-[32px] p-0 shadow-[0_32px_80px_rgba(0,0,0,0.7)] animate-in fade-in zoom-in-95 duration-300">
         <style>{`.ms::-webkit-scrollbar{width:5px}.ms::-webkit-scrollbar-thumb{background:rgba(139,92,246,0.4);border-radius:99px}`}</style>
 
         {/* ── STICKY HEADER ── */}
