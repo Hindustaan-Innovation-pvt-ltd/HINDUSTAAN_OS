@@ -635,7 +635,6 @@ export function ProjectCalendarWidget() {
         </DialogContent>
       </Dialog>
 
-
       <Dialog open={!!eventToDelete} onOpenChange={(open) => !open && setEventToDelete(null)}>
         <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
           <DialogHeader>
@@ -746,7 +745,6 @@ export function ProjectCalendarWidget() {
           </form>
         </DialogContent>
       </Dialog>
-
     </Card>
     </>
   );
