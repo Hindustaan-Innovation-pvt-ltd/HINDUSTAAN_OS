@@ -12,7 +12,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', class
   return (
     <div className={cn(
       "flex items-center bg-transparent border-none shadow-none", 
-      isAuth ? "flex-col justify-center space-y-3 text-center" : "flex-row",
+      isAuth ? "flex-col items-center text-center" : "flex-row",
       className
     )}>
       {/* 
@@ -25,14 +25,14 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', class
           alt="Project OS Logo" 
           className={cn(
             "object-contain transition-all duration-200",
-            isAuth ? "h-20 w-20 sm:h-24 sm:w-24" : "h-9 w-9"
+            isAuth ? "h-32 w-32" : "h-9 w-9"
           )}
         />
       </div>
       
       <h1 className={cn(
-        "font-bold tracking-tight text-slate-900 dark:text-white",
-        isAuth ? "text-2xl sm:text-3xl mt-3 flex flex-col items-center" : "text-lg ml-2 flex items-center"
+        "tracking-tight text-slate-900 dark:text-white",
+        isAuth ? "text-3xl md:text-4xl font-extrabold mt-3 flex flex-col items-center" : "text-lg ml-2 flex items-center font-bold"
       )}>
         {isAuth ? (
           <>
