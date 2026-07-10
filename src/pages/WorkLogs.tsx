@@ -22,7 +22,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
-import { GLOBAL_LOGS, INITIAL_TASKS } from '@/data/mockData';
+import { INITIAL_TASKS } from '@/data/mockData';
+import { mockWorkLogs } from '@/data/mockWorkLogs';
 
 const ONLINE_TEAM_MEMBERS = [
   { id: 'u-1', name: 'Amanda Smith', initials: 'AS', role: 'Frontend Lead', task: 'Component Refactoring', project: 'Frontend Core', color: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
@@ -100,8 +101,20 @@ function ActiveSessionWidget({ secondsElapsed, formatTime, currentUser }: Active
 
 export default function WorkLogs({ session }: { session?: any }) {
   const [logs, setLogs] = useState<any[]>(() => {
-    const saved = localStorage.getItem('work_logs_list');
-    return saved ? JSON.parse(saved) : GLOBAL_LOGS;
+    const saved = localStorage.getItem('work_logs_list_v2');
+    if (saved) return JSON.parse(saved);
+    
+    return mockWorkLogs.map(log => ({
+      id: log.id,
+      name: log.employeeName,
+      initials: log.avatarInitials,
+      date: log.formattedDate,
+      rawDate: log.date,
+      project: log.project,
+      task: log.task,
+      hours: log.hours,
+      status: log.status || 'Approved'
+    }));
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -114,7 +127,7 @@ export default function WorkLogs({ session }: { session?: any }) {
       isMounted.current = true;
       return;
     }
-    localStorage.setItem('work_logs_list', JSON.stringify(logs));
+    localStorage.setItem('work_logs_list_v2', JSON.stringify(logs));
   }, [logs]);
 
   // Resolve current user based on session
