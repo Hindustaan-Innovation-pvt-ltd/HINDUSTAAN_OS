@@ -15,6 +15,8 @@ import WorkLogs from './pages/WorkLogs';
 import DailyStandups from './pages/DailyStandups';
 import ContributionScores from './pages/ContributionScores';
 import Register from './pages/Register';
+import ProfileView from './pages/ProfileView';
+import ProfileEdit from './pages/ProfileEdit';
 // Supabase client removed for mock auth implementation
 
 import { ThemeProvider } from './context/ThemeContext';
@@ -34,6 +36,36 @@ function App() {
   const [prefilledEmail, setPrefilledEmail] = useState('');
   const [prefilledName, setPrefilledName] = useState('');
   const [prefilledRole, setPrefilledRole] = useState('manager');
+
+  // Router listener to synchronize pathname with React currentView state
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const path = window.location.pathname;
+      if (path === '/profile') {
+        setCurrentView('My Profile');
+      } else if (path === '/profile/edit') {
+        setCurrentView('Edit Profile');
+      }
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    handleLocationChange(); // run once on mount
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
+
+  const handleNavigate = (view: string) => {
+    if (view === 'My Profile') {
+      window.history.pushState({}, '', '/profile');
+      window.dispatchEvent(new Event('popstate'));
+    } else if (view === 'Edit Profile') {
+      window.history.pushState({}, '', '/profile/edit');
+      window.dispatchEvent(new Event('popstate'));
+    } else {
+      if (window.location.pathname !== '/') {
+        window.history.pushState({}, '', '/');
+      }
+      setCurrentView(view);
+    }
+  };
 
   useEffect(() => {
     const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
@@ -100,7 +132,7 @@ function App() {
         ) : (
           <DashboardShell
             currentView={currentView}
-            onNavigate={setCurrentView}
+            onNavigate={handleNavigate}
             role={session.user?.user_metadata?.role || 'employee'}
             isMinimized={isSidebarMinimized}
             onMinimizeChange={setIsSidebarMinimized}
@@ -176,7 +208,12 @@ function App() {
             {(currentView === 'Projects' || currentView === 'My Projects') && <Projects session={session} />}
             {currentView === 'About Us' && <AboutUs />}
             {currentView === 'Settings' && <Settings session={session} />}
-            {currentView === 'My Profile' && <Settings session={session} defaultTab="profile" />}
+            {currentView === 'My Profile' && (
+              <ProfileView session={session} onNavigate={handleNavigate} />
+            )}
+            {currentView === 'Edit Profile' && (
+              <ProfileEdit session={session} onNavigate={handleNavigate} />
+            )}
             {currentView === 'Team Members' && <TeamMembers />}
 
             {/* New Pages */}
@@ -189,7 +226,7 @@ function App() {
             {/* Fallback for anything else */}
             {![
               'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
-              'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Team Members',
+              'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Edit Profile', 'Team Members',
               'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
               'Contribution Scores', 'My Performance'
             ].includes(currentView) && (
