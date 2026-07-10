@@ -970,7 +970,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
                         <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} />
                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} allowDecimals={false} domain={[0, 1]} />
-                        <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px' }} />
+                        <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px', backgroundColor: isDarkMode ? '#0f172a' : '#fff', color: isDarkMode ? '#f8fafc' : '#0f172a', borderColor: isDarkMode ? '#1e293b' : '#e2e8f0' }} />
                         <Bar dataKey="submitted" fill="#f97316" radius={[4, 4, 0, 0]} barSize={20} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -1020,7 +1020,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               {/* Quick Notes */}
               <Card className="rounded-2xl border-amber-200 dark:border-amber-800/60 shadow-sm bg-amber-50/40 dark:bg-amber-950/15 overflow-hidden">
                 <CardHeader className="pb-3 border-b border-amber-100 dark:border-amber-900/30">
-                  <CardTitle className="text-base flex items-center text-amber-850 dark:text-amber-300">
+                  <CardTitle className="text-base flex items-center text-amber-900 dark:text-amber-300">
                     <Edit3 className="h-5 w-5 text-amber-600 dark:text-amber-400 mr-2" />
                     Quick Notes
                   </CardTitle>
@@ -1164,9 +1164,9 @@ export default function DailyStandups({ session }: { session?: any }) {
                     onChange={(e) => setSelectedTaskId(e.target.value)}
                     className="w-full h-11 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 font-medium text-sm appearance-none cursor-pointer"
                   >
-                    <option value="" disabled className="text-slate-400">Select task...</option>
+                    <option value="" disabled className="text-slate-400 dark:bg-slate-900">Select task...</option>
                     {upcomingDeadlines.map((t: any) => (
-                      <option key={t.id} value={t.id}>
+                      <option key={t.id} value={t.id} className="dark:bg-slate-900">
                         {t.title} (Due: {new Date(t.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
                       </option>
                     ))}
@@ -1272,7 +1272,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               <textarea 
                 value={editingReply?.text || ''}
                 onChange={(e) => setEditingReply(prev => prev ? { ...prev, text: e.target.value } : null)}
-                className="w-full h-32 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-500 resize-none"
+                className="w-full h-32 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-orange-500 resize-none"
               />
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -1304,7 +1304,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               <input 
                 value={meetingLink}
                 onChange={(e) => setMeetingLink(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-500"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-orange-500"
               />
             </div>
             <div className="space-y-1.5">
@@ -1312,7 +1312,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               <textarea 
                 value={meetingMessage}
                 onChange={(e) => setMeetingMessage(e.target.value)}
-                className="w-full h-24 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-500 resize-none"
+                className="w-full h-24 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-orange-500 resize-none"
               />
             </div>
             <div className="flex flex-col gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
