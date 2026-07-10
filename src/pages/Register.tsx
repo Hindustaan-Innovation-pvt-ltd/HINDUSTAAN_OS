@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { registerUser } from '@/lib/auth';
 
-export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () => void }) {
+export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (email?: string, name?: string, role?: string) => void }) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -80,7 +80,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
 
       if (success) {
         toast.success('Account created successfully.', { description: 'Please login.' });
-        onNavigateToLogin();
+        onNavigateToLogin(formData.email, formData.name, formData.role);
       } else {
         toast.error('Email is already registered. Please login.');
       }
@@ -208,9 +208,12 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-                {/* Employee ID */}
+                {/* Employee / Manager ID */}
                 <div className="space-y-1">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Emp ID <span className="text-[9px] text-slate-400 normal-case">(Opt)</span></label>
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  {formData.role === 'manager' ? 'Manager ID' : 'Emp ID'}{' '}
+                  <span className="text-[9px] text-slate-400 normal-case">(Opt)</span>
+                </label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                     <Hash className="h-4 w-4" />
@@ -221,7 +224,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
                     value={formData.employeeId}
                     onChange={handleChange}
                     className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-9 pr-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
-                    placeholder="EMP001"
+                    placeholder={formData.role === 'manager' ? 'MGR001' : 'EMP001'}
                     />
                 </div>
                 </div>
@@ -321,7 +324,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: () 
               <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Already have an account? </span>
               <button 
                 type="button" 
-                onClick={onNavigateToLogin}
+                onClick={() => onNavigateToLogin()}
                 className="text-[13px] font-extrabold text-orange-600 hover:text-orange-700 hover:underline transition-all ml-1"
               >
                 Login
