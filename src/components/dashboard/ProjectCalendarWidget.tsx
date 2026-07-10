@@ -196,7 +196,17 @@ export function ProjectCalendarWidget() {
   };
 
   return (
-    <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+    <>
+      <datalist id="event-types">
+        <option value="milestone">Milestone</option>
+        <option value="deadline">Deadline</option>
+        <option value="meeting">Meeting</option>
+        <option value="leave">Leave / OOO</option>
+        <option value="sync">Sync</option>
+        <option value="review">Review</option>
+        <option value="brainstorm">Brainstorming</option>
+      </datalist>
+      <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
       <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/30 dark:bg-slate-900/10">
         <div className="flex items-center justify-between">
           <div>
@@ -549,14 +559,6 @@ export function ProjectCalendarWidget() {
             <div className="space-y-2">
               <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Type</Label>
               <Input name="type" list="event-types" defaultValue={scheduleType === 'event' ? 'milestone' : 'sync'} className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500" placeholder="e.g. Milestone, Launch..." />
-              <datalist id="event-types">
-                <option value="milestone">Milestone</option>
-                <option value="deadline">Deadline</option>
-                <option value="leave">Leave / OOO</option>
-                <option value="sync">Sync</option>
-                <option value="review">Review</option>
-                <option value="brainstorm">Brainstorming</option>
-              </datalist>
             </div>
             
             <DialogFooter className="pt-4 sm:justify-end">
@@ -756,5 +758,6 @@ export function ProjectCalendarWidget() {
         </DialogContent>
       </Dialog>
     </Card>
+    </>
   );
 }
