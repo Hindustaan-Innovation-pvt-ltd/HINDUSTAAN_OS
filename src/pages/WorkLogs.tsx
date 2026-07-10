@@ -15,6 +15,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import {
   Select,
   SelectContent,
@@ -135,7 +137,7 @@ export default function WorkLogs({ session }: { session?: any }) {
   const [statusFilter, setStatusFilter] = useState('All');
   const [projectFilter, setProjectFilter] = useState('All');
   const [employeeFilter, setEmployeeFilter] = useState('All');
-  const [dateRangeFilter, setDateRangeFilter] = useState('This Month');
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(new Date());
   const [activeTab, setActiveTab] = useState('all');
   const [selectedSpecificDate, setSelectedSpecificDate] = useState<string>(todayStr);
 
@@ -248,18 +250,12 @@ export default function WorkLogs({ session }: { session?: any }) {
       if (isNaN(logDate.getTime())) return true; // keep if invalid mock date
 
       let inRange = true;
-      if (dateRangeFilter === 'Today') {
-        inRange = isSameDay(logDate, todayDate);
-      } else if (dateRangeFilter === 'Yesterday') {
-        inRange = isSameDay(logDate, subDays(todayDate, 1));
-      } else if (dateRangeFilter === 'Last 7 Days') {
-        inRange = logDate >= subDays(todayDate, 7) && logDate <= todayDate;
-      } else if (dateRangeFilter === 'This Month') {
-        inRange = logDate >= startOfMonth(todayDate) && logDate <= todayDate;
+      if (dateFilter) {
+        inRange = isSameDay(logDate, dateFilter);
       }
       return inRange;
     });
-  }, [logs, currentUser, dateRangeFilter]);
+  }, [logs, currentUser, dateFilter]);
 
   const uniqueProjects = useMemo(() => Array.from(new Set(logs.map(l => l.project))), [logs]);
   const uniqueEmployees = useMemo(() => Array.from(new Set(logs.map(l => l.name))), [logs]);
@@ -373,18 +369,22 @@ export default function WorkLogs({ session }: { session?: any }) {
         </div>
         
         <div className="flex flex-wrap gap-3">
-          <Select value={dateRangeFilter} onValueChange={setDateRangeFilter}>
-            <SelectTrigger className="w-[160px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
-              <SelectValue placeholder="Date Range" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="Today">Today</SelectItem>
-              <SelectItem value="Yesterday">Yesterday</SelectItem>
-              <SelectItem value="Last 7 Days">Last 7 Days</SelectItem>
-              <SelectItem value="This Month">This Month</SelectItem>
-              <SelectItem value="Custom Range">Custom Range</SelectItem>
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-[160px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0F172A] dark:text-white justify-start hover:bg-[#F1F5F9] dark:hover:bg-slate-800 transition-colors shadow-sm">
+                <CalendarIcon className="mr-2 h-4 w-4 text-[#6366F1]" />
+                {dateFilter ? format(dateFilter, "do MMMM") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl" align="start">
+              <CalendarComponent
+                mode="single"
+                selected={dateFilter}
+                onSelect={setDateFilter}
+                className="bg-white dark:bg-slate-900 text-[#0F172A] dark:text-white rounded-2xl p-3"
+              />
+            </PopoverContent>
+          </Popover>
 
           {currentUser.role === 'manager' && (
             <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
