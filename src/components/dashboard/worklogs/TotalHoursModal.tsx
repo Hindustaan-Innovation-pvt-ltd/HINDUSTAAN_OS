@@ -123,15 +123,6 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
 
         {/* ── SCROLLABLE BODY ── */}
         <div className="ms flex-1 overflow-y-auto px-10 py-10 space-y-12">
-          {/* STAT CARDS */}
-          <div className={`grid gap-8 ${isManager ? 'grid-cols-2 xl:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
-            <StatCard label={isManager ? "Employees' Total Hours" : "My Total Hours"} value={`${total.toFixed(1)}h`} sub={`${filtered.length} log entries`} icon={Clock} from="from-violet-600/90" to="to-indigo-700/90" border="border-violet-500/30"/>
-            <StatCard label="Approved Hours" value={`${approved.toFixed(1)}h`} sub="Manager reviewed" icon={CheckCircle2} from="from-emerald-600/90" to="to-teal-700/90" border="border-emerald-500/30"/>
-            <StatCard label="Pending Review" value={`${pending.toFixed(1)}h`} sub="Awaiting approval" icon={TrendingUp} from="from-amber-500/90" to="to-orange-600/90" border="border-amber-500/30"/>
-            {isManager
-              ? <StatCard label="Active Employees" value={`${employees.length}`} sub="Contributing this period" icon={Users} from="from-blue-600/90" to="to-cyan-700/90" border="border-blue-500/30"/>
-              : null}
-          </div>
 
           {/* ── MANAGER VIEW ── */}
           {isManager && (
