@@ -140,6 +140,7 @@ function App() {
                   if (userStr) {
                     const user = JSON.parse(userStr);
                     setSession({ user: { email: user.email, user_metadata: { role: user.role, name: user.name, department: user.department } } });
+                    handleNavigate('Dashboard');
                   }
                 }}
                 onNavigateToRegister={() => {
@@ -304,6 +305,8 @@ function App() {
               
               localStorage.removeItem('hindustaan_user');
               sessionStorage.removeItem('hindustaan_user');
+              window.history.pushState({}, '', '/');
+              setCurrentView('Dashboard');
               setSession(null);
             }}
           >
