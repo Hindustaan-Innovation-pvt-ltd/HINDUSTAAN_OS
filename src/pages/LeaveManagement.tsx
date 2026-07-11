@@ -229,18 +229,23 @@ export default function LeaveManagement({ session }: { session: any }) {
   // Future Backend Flow:
   // Employee Applies Leave -> Manager Approves -> POST /api/leaves/:id/approve -> Backend sends email to HR -> Calendar updates automatically
 
-  const handleApprove = (id: number) => {
+  // TODO: PATCH /api/leaves/:id/approve
+  const handleApprove = async (id: number): Promise<void> => {
     const leaveObj = leaveData.find((l: any) => l.id === id);
     if (!leaveObj) return;
 
-    setLeaveData((prev: any[]) => prev.map((l: any) => {
-      if (l.id === id) {
-        return { ...l, status: 'Approved', hrNotified: true };
-      }
-      return l;
-    }));
+    setApprovingId(id);
+    // Simulate async network call (replace with real API)
+    await new Promise(resolve => setTimeout(resolve, 600));
 
-    toast.success('Leave Approved Successfully.', {
+    // Optimistic UI: update status immediately
+    setLeaveData((prev: any[]) => prev.map((l: any) =>
+      l.id === id ? { ...l, status: 'Approved', hrNotified: true } : l
+    ));
+
+    setApprovingId(null);
+
+    toast.success('✅ Leave approved successfully.', {
       description: 'HR has been notified via email.'
     });
 
@@ -255,13 +260,10 @@ export default function LeaveManagement({ session }: { session: any }) {
       time: 'Just now',
       unread: true,
       group: 'Today',
-      metadata: {
-        type: 'leave_approved',
-        date: leaveDateFormatted
-      }
+      metadata: { type: 'leave_approved', date: leaveDateFormatted }
     };
     const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
-    let empNotifications = [];
+    let empNotifications: any[] = [];
     if (savedEmpNotifications) {
       try { empNotifications = JSON.parse(savedEmpNotifications); } catch (e) {}
     }
@@ -271,18 +273,23 @@ export default function LeaveManagement({ session }: { session: any }) {
     window.dispatchEvent(new Event('leave-data-updated'));
   };
 
-  const handleReject = (id: number) => {
+  // TODO: PATCH /api/leaves/:id/reject
+  const handleReject = async (id: number): Promise<void> => {
     const leaveObj = leaveData.find((l: any) => l.id === id);
     if (!leaveObj) return;
 
-    setLeaveData((prev: any[]) => prev.map((l: any) => {
-      if (l.id === id) {
-        return { ...l, status: 'Rejected' };
-      }
-      return l;
-    }));
+    setRejectingId(id);
+    // Simulate async network call (replace with real API)
+    await new Promise(resolve => setTimeout(resolve, 600));
 
-    toast.error('Leave Rejected', {
+    // Optimistic UI: update status immediately
+    setLeaveData((prev: any[]) => prev.map((l: any) =>
+      l.id === id ? { ...l, status: 'Rejected' } : l
+    ));
+
+    setRejectingId(null);
+
+    toast.error('❌ Leave request rejected.', {
       description: 'Employee has been notified.'
     });
 
@@ -297,13 +304,10 @@ export default function LeaveManagement({ session }: { session: any }) {
       time: 'Just now',
       unread: true,
       group: 'Today',
-      metadata: {
-        type: 'leave_rejected',
-        date: leaveDateFormatted
-      }
+      metadata: { type: 'leave_rejected', date: leaveDateFormatted }
     };
     const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
-    let empNotifications = [];
+    let empNotifications: any[] = [];
     if (savedEmpNotifications) {
       try { empNotifications = JSON.parse(savedEmpNotifications); } catch (e) {}
     }
@@ -700,24 +704,40 @@ export default function LeaveManagement({ session }: { session: any }) {
           {/* Manager: Team Requests */}
           <TabsContent value="requests">
             <div className="space-y-6">
-              <AnimatePresence>
+              <AnimatePresence mode="popLayout">
                 {leaveData.filter((l: any) => l.status === 'Pending').length === 0 ? (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-24 bg-white/40 dark:bg-slate-900/40 rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 shadow-sm backdrop-blur-xl">
-                    <div className="mx-auto w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                      <CheckCircle2 className="h-10 w-10" />
+                  <motion.div
+                    key="empty-state"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    className="text-center py-24 bg-white/40 dark:bg-slate-900/40 rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 shadow-sm backdrop-blur-xl"
+                  >
+                    <div className="mx-auto w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                      <CheckCircle2 className="h-12 w-12" />
                     </div>
-                    <h3 className="text-2xl font-black mb-2 text-slate-900 dark:text-white">All Caught Up!</h3>
-                    <p className="text-slate-500 font-medium">There are no pending leave requests to approve.</p>
+                    <h3 className="text-2xl font-black mb-2 text-slate-900 dark:text-white">🎉 All Leave Requests Processed!</h3>
+                    <p className="text-slate-500 font-medium mb-8">No pending approvals remaining. Great work!</p>
+                    <Button
+                      variant="outline"
+                      className="rounded-xl font-bold border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      onClick={() => setActiveTab('calendar')}
+                    >
+                      <CalendarDays className="h-4 w-4 mr-2" />
+                      View Leave Calendar
+                    </Button>
                   </motion.div>
                 ) : (
                   leaveData.filter((l: any) => l.status === 'Pending').map((req: any) => (
                     <motion.div 
                       key={req.id}
+                      layout
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, height: 0, margin: 0, overflow: 'hidden' }}
+                      exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
                       className={cn(
-                        "border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-950 backdrop-blur-xl shadow-lg rounded-3xl overflow-hidden flex flex-col hover:shadow-xl transition-all cursor-pointer",
+                        "border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-950 backdrop-blur-xl shadow-lg rounded-3xl overflow-hidden flex flex-col hover:shadow-xl transition-shadow cursor-pointer",
                         highlightedRequestId === req.id && "ring-2 ring-purple-500 animate-pulse border-purple-500"
                       )}
                       onClick={() => {

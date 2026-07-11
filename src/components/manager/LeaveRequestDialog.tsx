@@ -7,9 +7,8 @@ import { CalendarDays, Check, XCircle, Loader2, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast as sonnerToast } from 'sonner';
 
-const toast = ({ title, description }: { title: string; description: string }) => {
-  sonnerToast.success(title, { description });
-};
+// TODO: PATCH /api/leaves/:id/approve
+// TODO: PATCH /api/leaves/:id/reject
 
 export interface LeaveRequest {
   id: number;
@@ -54,9 +53,8 @@ export default function LeaveRequestDialog({
     try {
       await onApprove(request.id);
       onOpenChange(false);
-      toast({
-        title: "Action Completed",
-        description: "Leave request status updated successfully."
+      sonnerToast.success('✅ Leave approved successfully.', {
+        description: 'HR has been notified via email.'
       });
     } catch (error) {
       sonnerToast.error('Failed to approve leave request.');
@@ -70,9 +68,8 @@ export default function LeaveRequestDialog({
     try {
       await onReject(request.id);
       onOpenChange(false);
-      toast({
-        title: "Action Completed",
-        description: "Leave request status updated successfully."
+      sonnerToast.error('❌ Leave request rejected.', {
+        description: 'Employee has been notified.'
       });
     } catch (error) {
       sonnerToast.error('Failed to reject leave request.');
