@@ -30,8 +30,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
 import { GlobalSearch } from '../dashboard/GlobalSearch';
-import { NotificationCenter } from '../dashboard/NotificationCenter';
-import { EmployeeNotificationCenter } from '../dashboard/EmployeeNotificationCenter';
+import { NotificationBell } from '../dashboard/NotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -414,7 +413,7 @@ export default function DashboardShell({
                 {isDark ? <Sun className="h-5 w-5 sm:h-6 sm:w-6" /> : <Moon className="h-5 w-5 sm:h-6 sm:w-6" />}
               </button>
 
-              {role === 'manager' ? <NotificationCenter /> : <EmployeeNotificationCenter />}
+              <NotificationBell onNavigate={onNavigate} />
             </div>
           </div>
 

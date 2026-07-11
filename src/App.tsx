@@ -49,6 +49,10 @@ function App() {
         setCurrentView('My Profile');
       } else if (path === '/profile/edit') {
         setCurrentView('Edit Profile');
+      } else if (path === '/manager/leave-management' || path === '/employee/leave') {
+        setCurrentView('Leave Management');
+      } else if (path === '/') {
+        setCurrentView('Dashboard');
       }
     };
     window.addEventListener('popstate', handleLocationChange);
@@ -59,10 +63,14 @@ function App() {
   const handleNavigate = (view: string) => {
     if (view === 'My Profile') {
       window.history.pushState({}, '', '/profile');
-      window.dispatchEvent(new Event('popstate'));
+      setCurrentView('My Profile');
     } else if (view === 'Edit Profile') {
       window.history.pushState({}, '', '/profile/edit');
-      window.dispatchEvent(new Event('popstate'));
+      setCurrentView('Edit Profile');
+    } else if (view === 'Leave Management') {
+      const role = session?.user?.user_metadata?.role || 'employee';
+      window.history.pushState({}, '', role === 'manager' ? '/manager/leave-management' : '/employee/leave');
+      setCurrentView('Leave Management');
     } else {
       if (window.location.pathname !== '/') {
         window.history.pushState({}, '', '/');
@@ -132,6 +140,7 @@ function App() {
                   if (userStr) {
                     const user = JSON.parse(userStr);
                     setSession({ user: { email: user.email, user_metadata: { role: user.role, name: user.name, department: user.department } } });
+                    handleNavigate('Dashboard');
                   }
                 }}
                 onNavigateToRegister={() => {
@@ -296,6 +305,8 @@ function App() {
               
               localStorage.removeItem('hindustaan_user');
               sessionStorage.removeItem('hindustaan_user');
+              window.history.pushState({}, '', '/');
+              setCurrentView('Dashboard');
               setSession(null);
             }}
           >
