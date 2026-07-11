@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { WhatsAppBroadcastDialog } from "./WhatsAppBroadcastDialog";
 import { FigjamDialog } from "./FigjamDialog";
 import { EmployeeCalendar } from "./EmployeeCalendar";
+import { TotalHoursModal } from "./worklogs/TotalHoursModal";
 import { GLOBAL_ACTIVITY_FEED, INITIAL_TASKS, GLOBAL_LOGS } from '@/data/mockData';
 import { format, isSameDay, isAfter, startOfDay } from 'date-fns';
 import { getCurrentUser } from '@/lib/auth';
@@ -43,6 +44,10 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   const [isFigjamOpen, setIsFigjamOpen] = useState(false);
   const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
+  const [isTasksModalOpen, setIsTasksModalOpen] = useState(false);
+  const [isHoursModalOpen, setIsHoursModalOpen] = useState(false);
+  const [isContributionModalOpen, setIsContributionModalOpen] = useState(false);
+  const [isStandupModalOpen, setIsStandupModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [extensionDays, setExtensionDays] = useState(1);
   const [extensionReason, setExtensionReason] = useState('');
@@ -181,10 +186,13 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       .slice(0, 5);
   }, [calendarEvents]);
 
-  // Compute log hours this week from localStorage
-  const [loggedHours, setLoggedHours] = useState(() => {
+  const [allLogs, setAllLogs] = useState<any[]>(() => {
     const saved = localStorage.getItem('work_logs_list');
-    const logs = saved ? JSON.parse(saved) : GLOBAL_LOGS;
+    return saved ? JSON.parse(saved) : GLOBAL_LOGS;
+  });
+
+  const [loggedHours, setLoggedHours] = useState(() => {
+    const logs = allLogs;
     const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && log.name.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())));
     return userLogs.reduce((acc: number, log: any) => acc + log.hours, 0);
   });
@@ -192,6 +200,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   useEffect(() => {
     const handleLogsChange = (logsStr: string | null) => {
       const logs = logsStr ? JSON.parse(logsStr) : GLOBAL_LOGS;
+      setAllLogs(logs);
       const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && log.name.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())));
       setLoggedHours(userLogs.reduce((acc: number, log: any) => acc + log.hours, 0));
     };
@@ -203,6 +212,47 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       if (e.detail.key === 'work_logs_list') handleLogsChange(e.detail.value);
     };
 
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    };
+  }, [currentUserName]);
+
+  // Read todays standup
+  const [todaysStandup, setTodaysStandup] = useState<any>(() => {
+    const saved = localStorage.getItem('hindustaan_standups');
+    if (saved && saved !== 'null') {
+      const standups = JSON.parse(saved);
+      return standups.find((s: any) => 
+        s.user.toLowerCase() === currentUserName.toLowerCase() || 
+        (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && s.user.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
+      );
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hindustaan_standups' && e.newValue) {
+        const standups = JSON.parse(e.newValue);
+        setTodaysStandup(standups.find((s: any) => 
+          s.user.toLowerCase() === currentUserName.toLowerCase() || 
+          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && s.user.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
+        ) || null);
+      }
+    };
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'hindustaan_standups') {
+        const standups = typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : e.detail.value;
+        setTodaysStandup(standups.find((s: any) => 
+          s.user.toLowerCase() === currentUserName.toLowerCase() || 
+          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && s.user.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
+        ) || null);
+      }
+    };
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
     
@@ -382,7 +432,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Today's Tasks */}
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+        <Card onClick={() => setIsTasksModalOpen(true)} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
           <CardContent className="p-5 flex flex-col justify-between h-full gap-4">
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
@@ -398,7 +448,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
         </Card>
 
         {/* Hours Logged */}
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+        <Card onClick={() => setIsHoursModalOpen(true)} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
           <CardContent className="p-5 flex flex-col justify-between h-full gap-3">
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400">
@@ -416,7 +466,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
         </Card>
 
         {/* Contribution Score */}
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+        <Card onClick={() => setIsContributionModalOpen(true)} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
           <CardContent className="p-5 flex items-center justify-between h-full gap-4">
             <div className="flex flex-col h-full justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400">
@@ -440,17 +490,25 @@ export default function InternDashboard({ session }: InternDashboardProps) {
         </Card>
 
         {/* Standup Status */}
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+        <Card onClick={() => setIsStandupModalOpen(true)} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
           <CardContent className="p-5 flex flex-col justify-between h-full gap-4">
             <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 className="h-5 w-5" />
+              <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", todaysStandup ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400")}>
+                {todaysStandup ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
               </div>
-              <Badge variant="outline" className="border-emerald-200 text-emerald-700 bg-emerald-50 dark:border-emerald-900/50 dark:text-emerald-400 dark:bg-emerald-500/10 font-bold">✅ Submitted</Badge>
+              {todaysStandup ? (
+                <Badge variant="outline" className="border-emerald-200 text-emerald-700 bg-emerald-50 dark:border-emerald-900/50 dark:text-emerald-400 dark:bg-emerald-500/10 font-bold">✅ Submitted</Badge>
+              ) : (
+                <Badge variant="outline" className="border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-500/10 font-bold">❌ Not Submitted</Badge>
+              )}
             </div>
             <div>
               <p className="text-2xl font-black text-slate-900 dark:text-white">Standup</p>
-              <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">Logged at 9:10 AM</p>
+              {todaysStandup ? (
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">Logged at {todaysStandup.time}</p>
+              ) : (
+                <p className="text-sm font-bold text-rose-500 dark:text-rose-400 mt-1">Action Required</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -694,7 +752,104 @@ export default function InternDashboard({ session }: InternDashboardProps) {
           <EmployeeCalendar />
         </div>
       </div>
-      
+
+      {/* KPI Modals */}
+      <Dialog open={isTasksModalOpen} onOpenChange={setIsTasksModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Active Tasks Summary</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-sm text-slate-500 mb-4">You currently have <strong>{activeTasksCount}</strong> active tasks.</p>
+            <ScrollArea className="h-[300px] pr-4">
+              <div className="space-y-3">
+                {tasks.filter(t => t.status !== 'Done').map(task => (
+                  <div key={task.id} className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg flex justify-between items-center border border-slate-100 dark:border-slate-800">
+                    <div className="min-w-0 pr-4">
+                      <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{task.title}</p>
+                      <p className="text-xs text-slate-500 mt-1">{task.project_tag}</p>
+                    </div>
+                    <Badge variant="outline" className="shrink-0">{task.priority}</Badge>
+                  </div>
+                ))}
+                {activeTasksCount === 0 && (
+                  <div className="text-center py-8 text-slate-500 text-sm">No active tasks! You're all caught up.</div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <TotalHoursModal 
+        isOpen={isHoursModalOpen}
+        onOpenChange={setIsHoursModalOpen}
+        logs={allLogs}
+        role={role}
+        currentUser={{ name: currentUserName, email }}
+      />
+
+      <Dialog open={isContributionModalOpen} onOpenChange={setIsContributionModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Contribution Details</DialogTitle>
+          </DialogHeader>
+          <div className="py-6 flex flex-col items-center text-center">
+            <div className="h-20 w-20 rounded-full bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center mb-4">
+              <Trophy className="h-10 w-10 text-purple-500" />
+            </div>
+            <h3 className="text-4xl font-black mb-2 text-slate-900 dark:text-white">88%</h3>
+            <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mb-4">↑ +6 points this week</p>
+            <p className="text-sm text-slate-500 px-4">Your contribution score is a unified metric calculated automatically based on your <strong>completed tasks</strong>, <strong>logged hours</strong>, and <strong>milestones achieved</strong>.</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isStandupModalOpen} onOpenChange={setIsStandupModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Daily Standup</DialogTitle>
+          </DialogHeader>
+          <div className="py-6 flex flex-col items-center text-center">
+            <div className={cn("h-20 w-20 rounded-full flex items-center justify-center mb-4", todaysStandup ? "bg-emerald-50 dark:bg-emerald-500/10" : "bg-rose-50 dark:bg-rose-500/10")}>
+              {todaysStandup ? <CheckCircle2 className="h-10 w-10 text-emerald-500" /> : <AlertCircle className="h-10 w-10 text-rose-500" />}
+            </div>
+            
+            {todaysStandup ? (
+              <>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Standup Submitted</h3>
+                <p className="text-sm text-slate-500 mt-2">Logged today at {todaysStandup.time}</p>
+                
+                <div className="mt-6 w-full text-left bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-3">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Yesterday</p>
+                    <p className="text-sm text-slate-700 dark:text-slate-300">{todaysStandup.yesterday || "No update"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Today</p>
+                    <p className="text-sm text-slate-700 dark:text-slate-300">{todaysStandup.today || "No update"}</p>
+                  </div>
+                  {todaysStandup.blockers && todaysStandup.blockers.toLowerCase() !== "none" && todaysStandup.blockers.toLowerCase() !== "none." && (
+                    <div>
+                      <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-1">Blockers</p>
+                      <p className="text-sm text-rose-600 dark:text-rose-400">{todaysStandup.blockers}</p>
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-6 bg-emerald-50 dark:bg-emerald-900/30 py-2 px-4 rounded-full inline-block">Great job keeping the team updated!</p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Standup Not Submitted</h3>
+                <p className="text-sm text-slate-500 mt-2 px-4">You haven't submitted your daily standup yet.</p>
+                <p className="text-xs font-semibold text-rose-500 mt-6 bg-rose-50 dark:bg-rose-900/30 py-2 px-4 rounded-full inline-block">Please go to the Daily Standup tab to submit!</p>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <WhatsAppBroadcastDialog open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen} />
       <FigjamDialog open={isFigjamOpen} onOpenChange={setIsFigjamOpen} />
 
