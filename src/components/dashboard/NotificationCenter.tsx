@@ -41,17 +41,21 @@ export function NotificationCenter() {
       try {
         const tasks = JSON.parse(savedTasks);
         let taskFound = false;
+        let originalDueDate = '';
+        let extendedDueDate = '';
         const updatedTasks = tasks.map((t: any) => {
           if (t.id === taskId || String(t.id) === String(taskId)) {
             taskFound = true;
             const current = new Date(t.due_date);
             if (!isNaN(current.getTime())) {
+              originalDueDate = t.due_date; // save original before updating
               current.setDate(current.getDate() + Number(days));
               // Format back to YYYY-MM-DD
               const year = current.getFullYear();
               const month = String(current.getMonth() + 1).padStart(2, '0');
               const day = String(current.getDate()).padStart(2, '0');
-              t.due_date = `${year}-${month}-${day}`;
+              extendedDueDate = `${year}-${month}-${day}`;
+              t.due_date = extendedDueDate;
             }
           }
           return t;
@@ -59,6 +63,18 @@ export function NotificationCenter() {
         if (taskFound) {
           localStorage.setItem('hindustaan_tasks_list', JSON.stringify(updatedTasks));
           window.dispatchEvent(new Event('tasks-updated'));
+
+          // Also record the approved extension so the employee can see both dates
+          const savedExtensions = localStorage.getItem('hindustaan_approved_extensions');
+          let approvedExtensions: any[] = [];
+          if (savedExtensions) {
+            try { approvedExtensions = JSON.parse(savedExtensions); } catch (e) { /* noop */ }
+          }
+          // Remove previous extension record for same task if exists, then add fresh one
+          approvedExtensions = approvedExtensions.filter((ex: any) => String(ex.taskId) !== String(taskId));
+          approvedExtensions.push({ taskId: String(taskId), originalDueDate, extendedDueDate, days: Number(days), approvedAt: Date.now() });
+          localStorage.setItem('hindustaan_approved_extensions', JSON.stringify(approvedExtensions));
+          window.dispatchEvent(new Event('extensions-updated'));
         }
       } catch (e) {
         console.error('Error updating task list', e);

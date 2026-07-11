@@ -129,7 +129,7 @@ export default function DailyStandups({ session }: { session?: any }) {
   const role = session?.user?.user_metadata?.role || currentUser?.role || 'employee';
   const email = session?.user?.email || currentUser?.email || 'user@hindustaan.in';
   
-  const currentUserName = currentUser?.name || 'Tanvy';
+  const currentUserName = session?.user?.user_metadata?.name || currentUser?.name || 'Tanvy';
 
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
@@ -245,6 +245,28 @@ export default function DailyStandups({ session }: { session?: any }) {
       group: 'Today',
     });
 
+    // If manager is replying, also notify the employee in their notification panel
+    if (role === 'manager') {
+      const savedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
+      let empNotifs: any[] = [];
+      if (savedEmpNotifs && savedEmpNotifs !== 'null') {
+        try { empNotifs = JSON.parse(savedEmpNotifs); } catch (e) { console.error(e); }
+      }
+      const replyNotif = {
+        id: Date.now(),
+        category: 'Standups',
+        icon: '💬',
+        title: 'Manager Replied to Your Standup',
+        message: `${currentUserName} replied: "${replyText.trim().slice(0, 80)}${replyText.trim().length > 80 ? '...' : ''}"`  ,
+        time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+        unread: true,
+        group: 'Today',
+        priority: 'Important'
+      };
+      localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([replyNotif, ...empNotifs]));
+      window.dispatchEvent(new Event('employee-notifications-updated'));
+    }
+
     toast.success('Reply sent successfully!');
     setReplyStandupId(null);
     setReplyText('');
@@ -287,6 +309,29 @@ export default function DailyStandups({ session }: { session?: any }) {
     toast.success('Reply deleted');
   };
 
+  // Helper: push a notification into the employee's notification panel
+  const pushEmployeeStandupNotification = (title: string, message: string) => {
+    if (role === 'manager') return; // only for employees
+    const savedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
+    let empNotifs: any[] = [];
+    if (savedEmpNotifs && savedEmpNotifs !== 'null') {
+      try { empNotifs = JSON.parse(savedEmpNotifs); } catch (e) { console.error(e); }
+    }
+    const newNotif = {
+      id: Date.now(),
+      category: 'Standups',
+      icon: '📝',
+      title,
+      message,
+      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      unread: true,
+      group: 'Today',
+      priority: 'Success'
+    };
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newNotif, ...empNotifs]));
+    window.dispatchEvent(new Event('employee-notifications-updated'));
+  };
+
   const handleUpdateSubmit = () => {
     if (!formData.yesterday || !formData.today) {
       toast.error('Please fill in your updates for yesterday and today.');
@@ -306,6 +351,17 @@ export default function DailyStandups({ session }: { session?: any }) {
     };
 
     setStandups([newStandup, ...standups.filter((s) => s.user !== currentUserName)]);
+
+    // Also add to the top of standup history
+    const historyEntry = {
+      ...newStandup,
+      dateGroup: 'Today'
+    };
+    setHistory(prev => [historyEntry, ...prev]);
+
+    // Add to employee's own notification panel
+    pushEmployeeStandupNotification('Standup Updated', `Your daily standup update was submitted successfully at ${newStandup.time}.`);
+
     addNotification({
       type: 'success',
       category: 'Team',
@@ -368,8 +424,30 @@ export default function DailyStandups({ session }: { session?: any }) {
       ]
     };
 
+    // 1. Save to manager notifications (with Approve/Reject action buttons)
     const updatedNotifications = [newReqNotification, ...currentNotifications];
     localStorage.setItem('hindustaan_notifications', JSON.stringify(updatedNotifications));
+    window.dispatchEvent(new Event('notifications-updated'));
+
+    // 2. Also save a "Pending" status notification to employee notifications panel
+    const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
+    let empNotifications: any[] = [];
+    if (savedEmpNotifications && savedEmpNotifications !== 'null') {
+      try { empNotifications = JSON.parse(savedEmpNotifications); } catch (e) { console.error(e); }
+    }
+    const empPendingNotification = {
+      id: Date.now() + 1,
+      category: 'Tasks',
+      icon: '⏳',
+      title: 'Extension Request Sent',
+      message: `Your ${extensionDays}-day extension request for "${selectedTask.title}" has been submitted and is pending manager approval.`,
+      time: 'Just now',
+      unread: true,
+      group: 'Today',
+      priority: 'Important'
+    };
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([empPendingNotification, ...empNotifications]));
+    window.dispatchEvent(new Event('employee-notifications-updated'));
 
     toast.success('Extension Request Submitted!', {
       description: `Requested ${extensionDays} days for "${selectedTask.title}".`
@@ -396,6 +474,12 @@ export default function DailyStandups({ session }: { session?: any }) {
   const savedTasks = localStorage.getItem('hindustaan_tasks_list');
   const allTasks = (savedTasks && savedTasks !== 'null') ? JSON.parse(savedTasks) : [];
   const allTasksArray = Array.isArray(allTasks) ? allTasks : [];
+
+  // Load approved deadline extensions to show both original and extended dates
+  const savedApprovedExtensions = localStorage.getItem('hindustaan_approved_extensions');
+  const approvedExtensions: any[] = (savedApprovedExtensions && savedApprovedExtensions !== 'null')
+    ? (() => { try { return JSON.parse(savedApprovedExtensions); } catch { return []; } })()
+    : [];
   
   const firstName = (currentUserName || '').split(' ')[0].toLowerCase();
   const myTasks = allTasksArray.filter((t: any) =>
@@ -442,10 +526,11 @@ export default function DailyStandups({ session }: { session?: any }) {
 
   const [showHistory, setShowHistory] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
+  const [historyDateFilter, setHistoryDateFilter] = useState('');
 
   // Filter standups to show only logged in employee (recent 2-3) if role is not manager
   const displayStandups = role !== 'manager'
-    ? standups.filter(s => s && s.user && s.user.toLowerCase().includes(firstName)).slice(0, 3)
+    ? history.filter(s => s && s.user && s.user.toLowerCase().includes(firstName)).slice(0, 3)
     : standups;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -465,7 +550,7 @@ export default function DailyStandups({ session }: { session?: any }) {
     };
     
     // Add the new standup to the top of active standups list (slides older ones right)
-    setStandups(prev => [newStandup, ...prev]);
+    setStandups(prev => [newStandup, ...prev.filter(s => s.user !== currentUserName)]);
 
     // Also add to the top of standup history
     const historyEntry = {
@@ -473,6 +558,9 @@ export default function DailyStandups({ session }: { session?: any }) {
       dateGroup: 'Today'
     };
     setHistory(prev => [historyEntry, ...prev]);
+
+    // Add to employee's own notification panel
+    pushEmployeeStandupNotification('Standup Submitted', `Your daily standup was submitted successfully at ${newStandup.time}.`);
     
     addNotification({
       type: 'success',
@@ -500,11 +588,37 @@ export default function DailyStandups({ session }: { session?: any }) {
     setSentReminders(prev => new Set(prev).add(standup.id));
   };
 
+  const getEntryDateString = (h: any) => {
+    if (h.id && h.id.startsWith('s-')) {
+      const timestamp = parseInt(h.id.slice(2), 10);
+      if (!isNaN(timestamp)) {
+        return new Date(timestamp).toISOString().split('T')[0];
+      }
+    }
+    
+    const today = new Date();
+    if (h.dateGroup === 'Today') {
+      return today.toISOString().split('T')[0];
+    } else if (h.dateGroup === 'Yesterday') {
+      today.setDate(today.getDate() - 1);
+      return today.toISOString().split('T')[0];
+    } else if (h.dateGroup === '2 Days Ago') {
+      today.setDate(today.getDate() - 2);
+      return today.toISOString().split('T')[0];
+    }
+    return '';
+  };
+
   // Filter history to show only logged in employee standups if role is not manager
   const filteredHistory = history.filter(h => {
     if (!h || !h.user) return false;
     if (role !== 'manager') {
-      return h.user.toLowerCase().includes(firstName);
+      const matchesUser = h.user.toLowerCase().includes(firstName);
+      if (!matchesUser) return false;
+      if (historyDateFilter) {
+        return getEntryDateString(h) === historyDateFilter;
+      }
+      return true;
     }
     return h.user.toLowerCase().includes(historySearch.toLowerCase());
   });
@@ -543,17 +657,39 @@ export default function DailyStandups({ session }: { session?: any }) {
         </div>
 
         {/* Search & Filter */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center">
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search history by name..."
-              value={historySearch}
-              onChange={(e) => setHistorySearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none text-slate-900 dark:text-white placeholder:text-slate-400"
-            />
-          </div>
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
+          {role !== 'manager' ? (
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <span className="text-xs font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider">Search by Date:</span>
+              <input
+                type="date"
+                value={historyDateFilter}
+                onChange={(e) => setHistoryDateFilter(e.target.value)}
+                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none text-[#0F172A] dark:text-white focus:ring-2 focus:ring-orange-500/50 [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:cursor-pointer dark:[&::-webkit-calendar-picker-indicator]:invert dark:[&::-webkit-calendar-picker-indicator]:opacity-80 dark:[&::-webkit-calendar-picker-indicator]:hover:opacity-100"
+              />
+              {historyDateFilter && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setHistoryDateFilter('')}
+                  className="h-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search history by name..."
+                value={historySearch}
+                onChange={(e) => setHistorySearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none text-slate-900 dark:text-white placeholder:text-slate-400"
+              />
+            </div>
+          )}
           <Badge className="bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-400 border border-orange-100 dark:border-orange-900/50 font-bold px-3 py-1 text-xs">
             {filteredHistory.length} Total Submissions
           </Badge>
@@ -859,13 +995,12 @@ export default function DailyStandups({ session }: { session?: any }) {
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{reply.user}</span>
                         <div className="flex items-center gap-2">
-                          {(reply.user === currentUserName || role === 'manager') && (
+                          {/* Employees can't edit any replies — only manager can edit/delete their own */}
+                          {role === 'manager' && reply.user === currentUserName && (
                             <div className="flex items-center gap-1.5 transition-opacity">
-                              {reply.user === currentUserName && (
-                                <button onClick={(e) => { e.stopPropagation(); setEditingReply({ standupId: standup.id, replyId: reply.id, text: reply.text }); }} className="text-slate-400 hover:text-orange-600 transition-colors" title="Edit Reply">
-                                  <Edit3 className="h-3.5 w-3.5" />
-                                </button>
-                              )}
+                              <button onClick={(e) => { e.stopPropagation(); setEditingReply({ standupId: standup.id, replyId: reply.id, text: reply.text }); }} className="text-slate-400 hover:text-orange-600 transition-colors" title="Edit Reply">
+                                <Edit3 className="h-3.5 w-3.5" />
+                              </button>
                               <button onClick={(e) => { e.stopPropagation(); handleDeleteReply(standup.id, reply.id); }} className="text-slate-400 hover:text-rose-600 transition-colors" title="Delete Reply">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -981,6 +1116,10 @@ export default function DailyStandups({ session }: { session?: any }) {
                         } else if (task.isToday) {
                           colorClass = "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 px-2 py-0.5 rounded";
                         }
+
+                        // Check if this task has an approved extension
+                        const approvedExt = approvedExtensions.find((ex: any) => String(ex.taskId) === String(task.id));
+
                         return (
                           <div key={task.id} className="py-3 flex items-center justify-between first:pt-0 last:pb-0">
                             <div className="flex flex-col">
@@ -988,9 +1127,27 @@ export default function DailyStandups({ session }: { session?: any }) {
                               <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-0.5">{task.project_tag}</span>
                             </div>
                             <div className="flex items-center gap-4">
-                              <span className={cn("text-xs font-bold font-mono", colorClass)}>
-                                {task.due_date}
-                              </span>
+                              {approvedExt ? (
+                                // Show both original and extended deadline
+                                <div className="flex flex-col items-end gap-0.5">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] text-slate-400 font-semibold">Original:</span>
+                                    <span className="text-xs font-bold font-mono text-slate-500 dark:text-slate-400 line-through">
+                                      {approvedExt.originalDueDate}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Extended:</span>
+                                    <span className={cn("text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400")}>
+                                      {approvedExt.extendedDueDate}
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className={cn("text-xs font-bold font-mono", colorClass)}>
+                                  {task.due_date}
+                                </span>
+                              )}
                               <Badge className={cn(
                                 "text-[10px] font-black border-0 uppercase tracking-wider",
                                 task.priority === 'High' ? "bg-rose-100 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400" :

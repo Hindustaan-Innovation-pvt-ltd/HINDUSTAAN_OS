@@ -153,6 +153,20 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('hindustaan_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
+  // Listen for external writes to localStorage (e.g. from employee dashboard extension requests)
+  useEffect(() => {
+    const handleExternalUpdate = () => {
+      const saved = localStorage.getItem('hindustaan_notifications');
+      if (saved && saved !== 'null') {
+        try {
+          setNotifications(JSON.parse(saved));
+        } catch (e) { console.error(e); }
+      }
+    };
+    window.addEventListener('notifications-updated', handleExternalUpdate);
+    return () => window.removeEventListener('notifications-updated', handleExternalUpdate);
+  }, []);
+
   const addNotification = (notif: Omit<NotificationItem, 'id' | 'time' | 'unread'>) => {
     const newNotification: NotificationItem = {
       ...notif,
