@@ -54,6 +54,11 @@ const getInitials = (name: string) => {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 };
 
+const parseLocalDate = (dateStr: string) => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 export default function LeaveManagement({ session }: { session: any }) {
   const role = session?.user?.user_metadata?.role || 'manager';
   const isManager = role === 'manager';
@@ -263,9 +268,8 @@ export default function LeaveManagement({ session }: { session: any }) {
     const isTodayDate = isSameDay(date, new Date());
     const leavesOnDate = leaveData.filter(l => {
       if (l.status !== 'Approved') return false;
-      const start = new Date(l.start);
-      start.setHours(0,0,0,0);
-      const end = new Date(l.end);
+      const start = parseLocalDate(l.start);
+      const end = parseLocalDate(l.end);
       end.setHours(23,59,59,999);
       return date >= start && date <= end;
     });
@@ -305,9 +309,8 @@ export default function LeaveManagement({ session }: { session: any }) {
   // Selected date leaves
   const selectedDateLeaves = selectedDate ? leaveData.filter(l => {
     if (l.status !== 'Approved') return false;
-    const start = new Date(l.start);
-    start.setHours(0,0,0,0);
-    const end = new Date(l.end);
+    const start = parseLocalDate(l.start);
+    const end = parseLocalDate(l.end);
     end.setHours(23,59,59,999);
     return selectedDate >= start && selectedDate <= end;
   }) : [];
@@ -318,15 +321,14 @@ export default function LeaveManagement({ session }: { session: any }) {
   
   const todayLeavesCount = leaveData.filter(l => {
     if (l.status !== 'Approved') return false;
-    const start = new Date(l.start);
-    start.setHours(0,0,0,0);
-    const end = new Date(l.end);
+    const start = parseLocalDate(l.start);
+    const end = parseLocalDate(l.end);
     end.setHours(23,59,59,999);
     const now = new Date();
     return now >= start && now <= end;
   }).length;
 
-  const upcomingLeavesCount = leaveData.filter(l => l.status === 'Approved' && new Date(l.start) > new Date()).length;
+  const upcomingLeavesCount = leaveData.filter(l => l.status === 'Approved' && parseLocalDate(l.start) > new Date()).length;
 
   return (
     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 pb-20 w-full p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">
