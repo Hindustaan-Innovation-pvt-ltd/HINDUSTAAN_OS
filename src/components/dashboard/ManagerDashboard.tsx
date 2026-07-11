@@ -140,8 +140,21 @@ function ManagerDashboardInner() {
   const [messageUser, setMessageUser] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
   const [isMessageSent, setIsMessageSent] = useState(false);
-  const [blockers, setBlockers] = useState(INITIAL_BLOCKERS);
-  const [activityFeed, setActivityFeed] = useState<any[]>(ACTIVITY_FEED_MOCK);
+  const [blockers, setBlockers] = useState(() => {
+    const saved = localStorage.getItem('hindustaan_blockers');
+    return saved ? JSON.parse(saved) : INITIAL_BLOCKERS;
+  });
+  
+  const [alerts, setAlerts] = useState(() => {
+    const saved = localStorage.getItem('hindustaan_alerts');
+    return saved ? JSON.parse(saved) : NOTIFICATIONS;
+  });
+
+  const [activityFeed, setActivityFeed] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_activity_feed');
+    return saved ? JSON.parse(saved) : ACTIVITY_FEED_MOCK;
+  });
+
   const [tasks, setTasks] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_tasks_list');
     try {
@@ -156,10 +169,33 @@ function ManagerDashboardInner() {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'hindustaan_tasks_list' && e.newValue) {
         setTasks(JSON.parse(e.newValue));
+      } else if (e.key === 'hindustaan_activity_feed' && e.newValue) {
+        setActivityFeed(JSON.parse(e.newValue));
+      } else if (e.key === 'hindustaan_blockers' && e.newValue) {
+        setBlockers(JSON.parse(e.newValue));
+      } else if (e.key === 'hindustaan_alerts' && e.newValue) {
+        setAlerts(JSON.parse(e.newValue));
       }
     };
+    
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'hindustaan_tasks_list') {
+        setTasks(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : INITIAL_TASKS);
+      } else if (e.detail.key === 'hindustaan_activity_feed') {
+        setActivityFeed(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : ACTIVITY_FEED_MOCK);
+      } else if (e.detail.key === 'hindustaan_blockers') {
+        setBlockers(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : INITIAL_BLOCKERS);
+      } else if (e.detail.key === 'hindustaan_alerts') {
+        setAlerts(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : NOTIFICATIONS);
+      }
+    };
+
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    };
   }, []);
 
   const totalTasksCount = (tasks || []).length;
@@ -169,10 +205,10 @@ function ManagerDashboardInner() {
 
   useEffect(() => {
     const teamMembers = [
-      { id: 'u-1', defaultOffset: 2 * 3600 + 15 * 60 + 30 }, // Amanda Smith
-      { id: 'u-2', defaultOffset: 3600 + 45 * 60 + 12 },    // Rahul Sharma
-      { id: 'u-3', defaultOffset: 45 * 60 + 5 },            // Priya Patel
-      { id: 'u-4', defaultOffset: 3 * 3600 + 10 * 60 + 40 } // Tanvy Pandey
+      { id: 'u-1', defaultOffset: 2 * 3600 + 15 * 60 + 30 },
+      { id: 'u-2', defaultOffset: 3600 + 45 * 60 + 12 },
+      { id: 'u-3', defaultOffset: 45 * 60 + 5 },
+      { id: 'u-4', defaultOffset: 3 * 3600 + 10 * 60 + 40 }
     ];
 
     const updateSessions = () => {
@@ -183,23 +219,11 @@ function ManagerDashboardInner() {
           const startTime = parseInt(loginTimeStr, 10);
           sessions[member.id] = { time: Math.floor((Date.now() - startTime) / 1000), isOnline: true };
         } else {
-          // Default mock status so the workspace looks alive
-          sessions[member.id] = { time: member.defaultOffset, isOnline: true };
+          // Changed to actually reflect offline status if real data doesn't exist
+          sessions[member.id] = { time: 0, isOnline: false };
         }
       });
       setActiveSessions(sessions);
-      
-      const storedActivity = localStorage.getItem('hindustaan_activity_feed');
-      try {
-        if (storedActivity) {
-          const parsed = JSON.parse(storedActivity);
-          setActivityFeed(Array.isArray(parsed) ? parsed : ACTIVITY_FEED_MOCK);
-        } else {
-          localStorage.setItem('hindustaan_activity_feed', JSON.stringify(ACTIVITY_FEED_MOCK));
-        }
-      } catch (e) {
-        setActivityFeed(ACTIVITY_FEED_MOCK);
-      }
     };
 
     updateSessions();
@@ -224,22 +248,21 @@ function ManagerDashboardInner() {
   const mappedProjects: any[] = allMappedProjects.slice(0, 5);
 
   const dynamicDeadlines = React.useMemo(() => {
-    let tasksList: any[] = [];
-    (projects || []).forEach(p => {
-      if (!p) return;
-      (p.tasks || []).forEach((t: any) => {
-        if (t && t.status !== 'Done') {
-          tasksList.push({
-            id: t.id + p.id,
-            task: t.title,
-            priority: 'High',
-            assignee: t.assignee || 'Unassigned'
-          });
-        }
-      });
-    });
-    return tasksList.slice(0, 4);
-  }, [projects]);
+    return (tasks || [])
+      .filter(t => t && t.status !== 'Done')
+      .sort((a, b) => {
+        if (a.priority === 'High' && b.priority !== 'High') return -1;
+        if (b.priority === 'High' && a.priority !== 'High') return 1;
+        return 0;
+      })
+      .slice(0, 4)
+      .map(t => ({
+        id: t.id,
+        task: t.title,
+        priority: t.priority || 'High',
+        assignee: t.assignee_name || t.assignee || 'Unassigned'
+      }));
+  }, [tasks]);
 
   const formatTime = (totalSeconds: number) => {
     const h = Math.floor(totalSeconds / 3600);
@@ -699,7 +722,7 @@ function ManagerDashboardInner() {
             <CardContent className="p-0 flex-1 overflow-hidden">
               <ScrollArea className="h-full max-h-[250px]">
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {NOTIFICATIONS.map((notif) => (
+                  {alerts.map((notif: any) => (
                     <div 
                       key={notif.id} 
                       onClick={() => { import('sonner').then(m => m.toast.success(`Opening system: ${notif.text}`)) }}
