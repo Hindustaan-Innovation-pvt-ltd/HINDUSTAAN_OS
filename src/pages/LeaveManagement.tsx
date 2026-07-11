@@ -226,10 +226,11 @@ export default function LeaveManagement({ session }: { session: any }) {
   // Employee Applies Leave -> Manager Approves -> POST /api/leaves/:id/approve -> Backend sends email to HR -> Calendar updates automatically
 
   const handleApprove = (id: number) => {
-    let leaveObj: any = null;
+    const leaveObj = leaveData.find((l: any) => l.id === id);
+    if (!leaveObj) return;
+
     setLeaveData((prev: any[]) => prev.map((l: any) => {
       if (l.id === id) {
-        leaveObj = l;
         return { ...l, status: 'Approved', hrNotified: true };
       }
       return l;
@@ -240,7 +241,7 @@ export default function LeaveManagement({ session }: { session: any }) {
     });
 
     // Add employee notification
-    const leaveDateFormatted = leaveObj ? leaveObj.start : 'July 15';
+    const leaveDateFormatted = leaveObj.start;
     const newEmpNotification = {
       id: Date.now(),
       category: 'Leave Management',
@@ -267,10 +268,11 @@ export default function LeaveManagement({ session }: { session: any }) {
   };
 
   const handleReject = (id: number) => {
-    let leaveObj: any = null;
+    const leaveObj = leaveData.find((l: any) => l.id === id);
+    if (!leaveObj) return;
+
     setLeaveData((prev: any[]) => prev.map((l: any) => {
       if (l.id === id) {
-        leaveObj = l;
         return { ...l, status: 'Rejected' };
       }
       return l;
@@ -281,7 +283,7 @@ export default function LeaveManagement({ session }: { session: any }) {
     });
 
     // Add employee notification
-    const leaveDateFormatted = leaveObj ? leaveObj.start : 'July 15';
+    const leaveDateFormatted = leaveObj.start;
     const newEmpNotification = {
       id: Date.now(),
       category: 'Leave Management',
