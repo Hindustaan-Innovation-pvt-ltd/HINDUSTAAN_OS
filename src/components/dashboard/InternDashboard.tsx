@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   CheckCircle2, Clock, Calendar as CalendarIcon, Flag, Activity, 
   ArrowRight, MoreVertical, PlayCircle, Trophy, Target, AlertCircle, Sparkles, LayoutDashboard
@@ -14,10 +14,13 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { WhatsAppBroadcastDialog } from "./WhatsAppBroadcastDialog";
 import { FigjamDialog } from "./FigjamDialog";
 import { EmployeeCalendar } from "./EmployeeCalendar";
 import { GLOBAL_ACTIVITY_FEED, INITIAL_TASKS, GLOBAL_LOGS } from '@/data/mockData';
+import { format, isSameDay, isAfter, startOfDay } from 'date-fns';
 import { getCurrentUser } from '@/lib/auth';
 import { useProjects } from '@/context/ProjectContext';
 import { useUser } from '@/context/UserContext';
@@ -39,6 +42,10 @@ localStorage.setItem = function(key, value) {
 export default function InternDashboard({ session }: InternDashboardProps) {
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   const [isFigjamOpen, setIsFigjamOpen] = useState(false);
+  const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState('');
+  const [extensionDays, setExtensionDays] = useState(1);
+  const [extensionReason, setExtensionReason] = useState('');
 
   // Resolve current user based on session
   const role = session?.user?.user_metadata?.role || 'intern';
@@ -120,6 +127,60 @@ export default function InternDashboard({ session }: InternDashboardProps) {
     return activityFeed.filter((act: any) => act.user === currentUserName || act.user.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())).slice(0, 5);
   }, [activityFeed, currentUserName]);
 
+  // --- Upcoming Events (read-only, synced from manager's calendar) ---
+  const EMPLOYEE_MOCK_EVENTS = [
+    { id: '1', date: new Date(2026, 6, 12), type: 'deadline', title: 'Backend Deadline' },
+    { id: '2', date: new Date(2026, 6, 15), type: 'milestone', title: 'Sprint Planning' },
+    { id: '4', date: new Date(2026, 6, 20), type: 'leave', title: 'Priya on Leave' },
+    { id: '5', date: new Date(2026, 7, 1), type: 'milestone', title: 'Alpha Release' },
+  ];
+
+  const [calendarEvents, setCalendarEvents] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_calendar_events');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.map((e: any) => ({ ...e, date: new Date(e.date) }));
+      } catch { return EMPLOYEE_MOCK_EVENTS; }
+    }
+    return EMPLOYEE_MOCK_EVENTS;
+  });
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hindustaan_calendar_events' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          setCalendarEvents(parsed.map((evt: any) => ({ ...evt, date: new Date(evt.date) })));
+        } catch {}
+      }
+    };
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'hindustaan_calendar_events') {
+        try {
+          const parsed = typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : e.detail.value;
+          if (Array.isArray(parsed)) {
+            setCalendarEvents(parsed.map((evt: any) => ({ ...evt, date: new Date(evt.date) })));
+          }
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    };
+  }, []);
+
+  const employeeUpcomingEvents = useMemo(() => {
+    const today = new Date();
+    return calendarEvents
+      .filter(e => isAfter(e.date, startOfDay(today)) || isSameDay(e.date, startOfDay(today)))
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(0, 5);
+  }, [calendarEvents]);
+
   // Compute log hours this week from localStorage
   const [loggedHours, setLoggedHours] = useState(() => {
     const saved = localStorage.getItem('work_logs_list');
@@ -161,7 +222,128 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   };
 
   const activeTasksCount = tasks.filter(t => t.status !== 'Done').length;
+
+  // Compute upcoming deadlines (handling relative dates like 'Today' and 'Tomorrow')
+  const upcomingDeadlines = useMemo(() => {
+    return tasks
+      .filter((t: any) => t && t.status !== 'Done' && t.due_date)
+      .map((t: any) => {
+        let dueDate: Date | null = null;
+        const rawDate = t.due_date.toLowerCase().trim();
+        
+        if (rawDate === 'today') {
+          dueDate = new Date();
+        } else if (rawDate === 'tomorrow') {
+          dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + 1);
+        } else {
+          dueDate = new Date(t.due_date);
+        }
+        
+        return { ...t, parsedDate: dueDate };
+      })
+      .filter((t: any) => t.parsedDate && !isNaN(t.parsedDate.getTime()))
+      .map((t: any) => {
+        const dueDate = t.parsedDate;
+        const todayDate = new Date();
+        todayDate.setHours(0,0,0,0);
+        dueDate.setHours(0,0,0,0);
+        const isOverdue = dueDate < todayDate;
+        const isToday = dueDate.getTime() === todayDate.getTime();
+        return { ...t, isOverdue, isToday };
+      })
+      .sort((a: any, b: any) => a.parsedDate.getTime() - b.parsedDate.getTime())
+      .slice(0, 5);
+  }, [tasks]);
+
+  // Load approved deadline extensions
+  const savedApprovedExtensions = localStorage.getItem('hindustaan_approved_extensions');
+  const approvedExtensions: any[] = (savedApprovedExtensions && savedApprovedExtensions !== 'null')
+    ? (() => { try { return JSON.parse(savedApprovedExtensions); } catch { return []; } })()
+    : [];
   const dueTodayCount = tasks.filter(t => t.due_date.toLowerCase().includes('today') || t.due_date.toLowerCase().includes('12') || t.due_date.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase())).length;
+
+  const handleExtensionSubmit = () => {
+    if (!selectedTaskId) {
+      toast.error('Please select a task.');
+      return;
+    }
+    if (!extensionReason.trim()) {
+      toast.error('Please provide a reason for the extension.');
+      return;
+    }
+    const selectedTask = upcomingDeadlines.find((t: any) => String(t.id) === String(selectedTaskId));
+    if (!selectedTask) {
+      toast.error('Selected task not found.');
+      return;
+    }
+
+    const savedNotifications = localStorage.getItem('hindustaan_notifications');
+    let currentNotifications = [];
+    if (savedNotifications && savedNotifications !== 'null') {
+      try {
+        currentNotifications = JSON.parse(savedNotifications);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    const newReqNotification = {
+      id: Date.now(),
+      type: 'request',
+      category: 'Tasks',
+      icon: '⏳',
+      title: 'Deadline Extension Request',
+      message: `${currentUserName} requested a ${extensionDays}-day extension for "${selectedTask.title}". Reason: ${extensionReason}`,
+      time: 'Just now',
+      unread: true,
+      group: 'Today',
+      metadata: {
+        type: 'deadline_extension',
+        taskId: selectedTaskId,
+        days: Number(extensionDays),
+        employeeName: currentUserName,
+        taskTitle: selectedTask.title,
+        reason: extensionReason
+      },
+      actions: [
+        { label: 'Approve', primary: true, actionType: 'approve_extension' },
+        { label: 'Reject', primary: false, actionType: 'reject_extension' }
+      ]
+    };
+
+    const updatedNotifications = [newReqNotification, ...currentNotifications];
+    localStorage.setItem('hindustaan_notifications', JSON.stringify(updatedNotifications));
+    window.dispatchEvent(new Event('notifications-updated'));
+
+    const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
+    let empNotifications: any[] = [];
+    if (savedEmpNotifications && savedEmpNotifications !== 'null') {
+      try { empNotifications = JSON.parse(savedEmpNotifications); } catch (e) { console.error(e); }
+    }
+    const empPendingNotification = {
+      id: Date.now() + 1,
+      category: 'Tasks',
+      icon: '⏳',
+      title: 'Extension Request Sent',
+      message: `Your ${extensionDays}-day extension request for "${selectedTask.title}" has been submitted and is pending manager approval.`,
+      time: 'Just now',
+      unread: true,
+      group: 'Today',
+      priority: 'Important'
+    };
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([empPendingNotification, ...empNotifications]));
+    window.dispatchEvent(new Event('employee-notifications-updated'));
+
+    toast.success('Extension Request Submitted!', {
+      description: `Requested ${extensionDays} days for "${selectedTask.title}".`
+    });
+
+    setIsExtensionModalOpen(false);
+    setSelectedTaskId('');
+    setExtensionDays(1);
+    setExtensionReason('');
+  };
 
   const today = new Date();
   const hour = new Date().getHours();
@@ -340,28 +522,41 @@ export default function InternDashboard({ session }: InternDashboardProps) {
         
         {/* Right Column (4) */}
         <div className="lg:col-span-4 flex flex-col gap-4 md:gap-5">
-          {/* Recent Highlights */}
+          {/* Upcoming Events (read-only) */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col flex-1 h-full overflow-hidden">
             <CardHeader className="p-4 md:p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
               <CardTitle className="text-base font-bold flex items-center text-slate-900 dark:text-white">
-                <Activity className="h-4 w-4 text-orange-500 mr-2" />
-                Recent Highlights
+                <Clock className="h-4 w-4 text-orange-500 mr-2" />
+                Upcoming Events
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0 flex-1 relative">
               <ScrollArea className="absolute inset-0 h-full w-full">
-                <div className="p-4 md:p-5 space-y-4">
-                {userActivities.length > 0 ? userActivities.map((act: any) => (
-                  <div key={act.id} className="relative pl-6 py-1 before:absolute before:left-2 before:top-3 before:bottom-[-16px] before:w-px before:bg-slate-100 dark:before:bg-slate-800 last:before:hidden">
-                    <div className="absolute left-[3px] top-2 h-2.5 w-2.5 rounded-full bg-slate-200 dark:bg-slate-700 ring-4 ring-white dark:ring-slate-950" />
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-tight">
-                      {act.action} {act.target && <span className="font-bold text-slate-900 dark:text-white">{act.target}</span>}
-                    </p>
-                    <p className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wider">{act.time}</p>
-                  </div>
-                )) : (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No recent activity.</p>
-                )}
+                <div className="p-4 md:p-5 space-y-3">
+                  {employeeUpcomingEvents.length > 0 ? employeeUpcomingEvents.map((evt: any) => (
+                    <div key={evt.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-950 shadow-sm border border-slate-100 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-500/30 transition-all">
+                      <div className="flex flex-col items-center justify-center h-11 w-11 rounded-lg bg-orange-50 dark:bg-orange-500/10 shrink-0">
+                        <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase leading-none">{format(evt.date, 'MMM')}</span>
+                        <span className="text-sm font-black text-orange-700 dark:text-orange-300 leading-none mt-1">{format(evt.date, 'dd')}</span>
+                      </div>
+                      <div className="flex flex-col overflow-hidden flex-1">
+                        <span className="text-sm font-bold text-slate-900 dark:text-white truncate">{evt.title}</span>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <div className={cn("h-1.5 w-1.5 rounded-full",
+                            evt.type === 'deadline' ? 'bg-rose-500' :
+                            evt.type === 'milestone' ? 'bg-purple-500' :
+                            evt.type === 'completed' ? 'bg-emerald-500' :
+                            evt.type === 'leave' ? 'bg-amber-500' :
+                            evt.type === 'meeting' ? 'bg-blue-500' :
+                            'bg-slate-500'
+                          )} />
+                          <span className="text-[10px] font-semibold text-slate-500 capitalize">{evt.type}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="text-xs text-slate-500 italic p-4 text-center bg-white dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">No upcoming events.</div>
+                  )}
                 </div>
               </ScrollArea>
             </CardContent>
@@ -414,38 +609,81 @@ export default function InternDashboard({ session }: InternDashboardProps) {
         </div>
 
         <div className="space-y-4 md:space-y-5 h-full">
-          {/* Upcoming Deadlines */}
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-full overflow-hidden">
-            <CardHeader className="p-4 md:p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
-              <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
-                <AlertCircle className="mr-2 h-4 w-4 text-orange-500" />
+          {/* Upcoming Deadlines (rich card from DailyStandups) */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col h-full">
+            <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800">
+              <CardTitle className="text-base flex items-center whitespace-nowrap">
+                <CalendarIcon className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2 shrink-0" />
                 Upcoming Deadlines
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 flex-1 relative min-h-0">
-              <ScrollArea className="absolute inset-0 h-full w-full">
-                <div className="p-4 md:p-5 space-y-4">
-                  {tasks.filter(t => t.status !== 'Done').slice(0, 3).map((task, idx) => (
-                    <div key={task.id} className="relative pl-6 py-1 before:absolute before:left-2 before:top-2.5 before:bottom-[-16px] before:w-px before:bg-slate-200 dark:before:bg-slate-700 last:before:hidden">
-                      <div className={cn(
-                        "absolute left-0 top-2.5 h-4 w-4 rounded-full border-4 border-white dark:border-slate-950",
-                        idx === 0 ? "bg-rose-500" : idx === 1 ? "bg-amber-500" : "bg-slate-300 dark:bg-slate-600"
-                      )} />
-                      <span className={cn(
-                        "text-xs font-black uppercase tracking-wider mb-0.5 block",
-                        idx === 0 ? "text-rose-600 dark:text-rose-400" : idx === 1 ? "text-amber-600 dark:text-amber-500" : "text-slate-500"
-                      )}>{task.due_date}</span>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">{task.title}</p>
-                      {task.priority === 'High' && (
-                        <Badge variant="outline" className="mt-1.5 text-[10px] border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-900/20 font-bold uppercase tracking-wider">High Priority</Badge>
-                      )}
-                    </div>
-                  ))}
-                  {tasks.filter(t => t.status !== 'Done').length === 0 && (
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No upcoming deadlines. 🎉</p>
-                  )}
+            <CardContent className="pt-4 flex-1 flex flex-col">
+              {role !== 'manager' && (
+                <div className="flex justify-end mb-3">
+                  <Button 
+                    onClick={() => setIsExtensionModalOpen(true)} 
+                    size="sm"
+                    className="h-8 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm border border-indigo-600 hover:border-indigo-700 text-xs transition-all duration-200"
+                  >
+                    Request Extension
+                  </Button>
                 </div>
-              </ScrollArea>
+              )}
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                {upcomingDeadlines.length > 0 ? (
+                  upcomingDeadlines.map((task: any) => {
+                    let colorClass = "text-slate-600 dark:text-slate-400";
+                    if (task.isOverdue) {
+                      colorClass = "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20 px-2 py-0.5 rounded";
+                    } else if (task.isToday) {
+                      colorClass = "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 px-2 py-0.5 rounded";
+                    }
+
+                    const approvedExt = approvedExtensions.find((ex: any) => String(ex.taskId) === String(task.id));
+
+                    return (
+                      <div key={task.id} className="py-3 flex items-center justify-between first:pt-0 last:pb-0">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-900 dark:text-white">{task.title}</span>
+                          <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-0.5">{task.project_tag}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          {approvedExt ? (
+                            <div className="flex flex-col items-end gap-0.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-slate-400 font-semibold">Original:</span>
+                                <span className="text-xs font-bold font-mono text-slate-500 dark:text-slate-400 line-through">
+                                  {approvedExt.originalDueDate}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Extended:</span>
+                                <span className={cn("text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400")}>
+                                  {approvedExt.extendedDueDate}
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <span className={cn("text-xs font-bold font-mono", colorClass)}>
+                              {task.due_date}
+                            </span>
+                          )}
+                          <Badge className={cn(
+                            "text-[10px] font-black border-0 uppercase tracking-wider",
+                            task.priority === 'High' ? "bg-rose-100 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400" :
+                            task.priority === 'Normal' ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400" :
+                            "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                          )}>
+                            {task.priority}
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="py-6 text-center text-slate-400 font-medium text-sm">No upcoming deadlines. All caught up!</div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -459,6 +697,84 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       
       <WhatsAppBroadcastDialog open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen} />
       <FigjamDialog open={isFigjamOpen} onOpenChange={setIsFigjamOpen} />
+
+      {/* Deadline Extension Dialog */}
+      <Dialog open={isExtensionModalOpen} onOpenChange={setIsExtensionModalOpen}>
+        <DialogContent className="sm:max-w-[450px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+            <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">Request Deadline Extension</DialogTitle>
+          </DialogHeader>
+          <div className="p-6 space-y-4">
+            <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Select Task / Milestone</label>
+              {upcomingDeadlines.length > 0 ? (
+                <div className="relative">
+                  <select
+                    value={selectedTaskId}
+                    onChange={(e) => setSelectedTaskId(e.target.value)}
+                    className="w-full h-11 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 font-medium text-sm appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled className="text-slate-400 dark:bg-slate-900">Select task...</option>
+                    {upcomingDeadlines.map((t: any) => (
+                      <option key={t.id} value={t.id} className="dark:bg-slate-900">
+                        {t.title} (Due: {new Date(t.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="p-3 text-center text-xs text-rose-500 font-bold bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-100 dark:border-rose-900/30">
+                  No pending deadlines found to extend.
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Days Extension Required</label>
+              <input 
+                type="number" 
+                min="1" 
+                max="30"
+                value={extensionDays}
+                onChange={(e) => setExtensionDays(Math.max(1, Number(e.target.value)))}
+                className="w-full h-11 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 font-medium text-sm"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Reason for Extension</label>
+              <textarea 
+                value={extensionReason}
+                onChange={(e) => setExtensionReason(e.target.value)}
+                placeholder="Please state why you need this extension..."
+                className="w-full h-24 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
+              />
+            </div>
+
+            <div className="pt-2 flex justify-between gap-3">
+              <Button 
+                onClick={() => {
+                  setIsExtensionModalOpen(false);
+                  setSelectedTaskId('');
+                  setExtensionDays(1);
+                  setExtensionReason('');
+                }} 
+                variant="outline" 
+                className="flex-1 h-11 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleExtensionSubmit} 
+                disabled={upcomingDeadlines.length === 0}
+                className="flex-1 h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold shadow-sm"
+              >
+                Submit Request
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

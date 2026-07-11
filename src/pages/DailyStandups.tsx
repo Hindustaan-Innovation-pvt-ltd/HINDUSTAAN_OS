@@ -1114,7 +1114,8 @@ export default function DailyStandups({ session }: { session?: any }) {
             {/* Left side (8 cols): Upcoming Deadlines + Weekly Standup Activity */}
             <div className="lg:col-span-8 space-y-8">
               
-              {/* Upcoming Deadlines */}
+              {/* Upcoming Deadlines (shown only for manager - employee sees it on their Dashboard) */}
+              {role === 'manager' && (
               <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm">
                 <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
                   <div>
@@ -1124,15 +1125,6 @@ export default function DailyStandups({ session }: { session?: any }) {
                     </CardTitle>
                     <CardDescription>Track key milestones and scheduled due dates.</CardDescription>
                   </div>
-                  {role !== 'manager' && (
-                    <Button 
-                      onClick={() => setIsExtensionModalOpen(true)} 
-                      size="sm"
-                      className="h-8 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm border border-indigo-600 hover:border-indigo-700 text-xs transition-all duration-200"
-                    >
-                      Request Extension
-                    </Button>
-                  )}
                 </CardHeader>
                 <CardContent className="pt-4">
                   <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -1194,6 +1186,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                   </div>
                 </CardContent>
               </Card>
+              )}
 
               {/* Weekly Standup Activity */}
               <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm">

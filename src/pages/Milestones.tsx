@@ -248,7 +248,7 @@ export default function Milestones({ session }: { session?: any }) {
                   Find out how milestones are calculated and track your journey to the next level.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-6 space-y-6 flex-grow flex flex-col justify-between">
+              <CardContent className="pt-5 space-y-5">
                 {/* Highlight explanation box */}
                 <div className="p-4 rounded-xl bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 flex items-start gap-3">
                   <HelpCircle className="h-5 w-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
@@ -261,7 +261,7 @@ export default function Milestones({ session }: { session?: any }) {
                 </div>
 
                 {/* Level Stepper */}
-                <div className="relative pl-6 border-l-2 border-slate-100 dark:border-slate-800 flex-grow flex flex-col justify-between gap-4 mt-6">
+                <div className="relative pl-6 border-l-2 border-slate-100 dark:border-slate-800 flex flex-col gap-4 mt-4">
                   {/* Step 1 */}
                   <div className="relative">
                     <div className="absolute -left-[25px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white ring-4 ring-white dark:ring-slate-950">
