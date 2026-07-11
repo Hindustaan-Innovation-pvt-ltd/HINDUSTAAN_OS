@@ -29,6 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { LeaveCalendar } from '@/components/dashboard/LeaveCalendar';
+import { LeaveApplicationWithDrafts } from '@/components/dashboard/LeaveApplicationWithDrafts';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
@@ -74,32 +75,6 @@ export default function LeaveManagement({ session }: { session: any }) {
     localStorage.setItem('hindustaan_leave_data', JSON.stringify(leaveData));
   }, [leaveData]);
 
-  useEffect(() => {
-    const storedDraft = localStorage.getItem('hindustaan_leave_draft');
-    if (storedDraft) {
-      try {
-        const draft = JSON.parse(storedDraft);
-        if (draft.leaveType) setLeaveType(draft.leaveType);
-        if (draft.emergencyContact) setEmergencyContact(draft.emergencyContact);
-        if (draft.startDate) setStartDate(draft.startDate);
-        if (draft.endDate) setEndDate(draft.endDate);
-        if (draft.reason) setReason(draft.reason);
-        toast.info('Draft Restored', {
-          description: 'Restored your unsaved leave application draft.'
-        });
-      } catch (e) {
-        console.error("Error restoring draft", e);
-      }
-    }
-  }, []);
-
-  // Apply Leave Form State
-  const [leaveType, setLeaveType] = useState('casual');
-  const [emergencyContact, setEmergencyContact] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [reason, setReason] = useState('');
-
   // Calendar State
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
@@ -108,53 +83,19 @@ export default function LeaveManagement({ session }: { session: any }) {
   const [activeRequestId, setActiveRequestId] = useState<number | null>(null);
   const [commentText, setCommentText] = useState('');
 
-  // File Upload State
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0]);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setSelectedFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleClearFile = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
   // 2. Email Notification Placeholder Flow - Loading States
   const [approvingId, setApprovingId] = useState<number | null>(null);
   const [rejectingId, setRejectingId] = useState<number | null>(null);
 
-  const handleApplyLeave = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!startDate || !endDate || !reason) {
-      toast.error('Missing Fields', { description: 'Please fill in all required fields.' });
-      return;
-    }
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    if (end < start) {
-      toast.error('Invalid Dates', { description: 'End date cannot be before start date.' });
-      return;
-    }
+  const onSubmitLeave = (leave: {
+    type: string;
+    emergencyContact: string;
+    startDate: string;
+    endDate: string;
+    reason: string;
+  }) => {
+    const start = parseLocalDate(leave.startDate);
+    const end = parseLocalDate(leave.endDate);
 
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
@@ -175,46 +116,18 @@ export default function LeaveManagement({ session }: { session: any }) {
       employee: employeeName,
       avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(employeeName)}`,
       department: employeeDept,
-      type: typeMapping[leaveType] || "Casual Leave",
-      start: startDate,
-      end: endDate,
+      type: typeMapping[leave.type] || "Casual Leave",
+      start: leave.startDate,
+      end: leave.endDate,
       appliedOn: format(new Date(), 'yyyy-MM-dd'),
-      reason: reason,
+      reason: leave.reason,
       status: "Pending" as const,
       days: diffDays,
       hrNotified: false
     };
 
     setLeaveData((prev: any[]) => [newRequest, ...prev]);
-
-    // Reset form & clear draft
-    setLeaveType('casual');
-    setEmergencyContact('');
-    setStartDate('');
-    setEndDate('');
-    setReason('');
-    setSelectedFile(null);
-    localStorage.removeItem('hindustaan_leave_draft');
-
-    toast.success('Leave Request Submitted', {
-      description: 'Your leave request has been sent for approval.'
-    });
-
-    setActiveTab('history');
-  };
-
-  const handleSaveDraft = () => {
-    const draft = {
-      leaveType,
-      emergencyContact,
-      startDate,
-      endDate,
-      reason
-    };
-    localStorage.setItem('hindustaan_leave_draft', JSON.stringify(draft));
-    toast.success('Draft Saved Successfully', {
-      description: 'Your leave application draft has been saved locally.'
-    });
+    return true;
   };
 
   // 10. Future Backend Integration Comments
@@ -370,93 +283,7 @@ export default function LeaveManagement({ session }: { session: any }) {
         <div className="mt-8">
           {/* Employee: Apply Leave */}
           <TabsContent value="apply">
-            <Card className="border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-950/40 backdrop-blur-2xl shadow-xl rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-slate-100 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 pb-6">
-                <CardTitle className="text-xl font-bold">Apply for Leave</CardTitle>
-                <CardDescription>Submit a new leave request. Subject to manager approval.</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6 md:p-8">
-                <form id="leave-form" onSubmit={handleApplyLeave} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="font-bold text-slate-700 dark:text-slate-300">Leave Type</Label>
-                      <Select value={leaveType} onValueChange={setLeaveType} required>
-                        <SelectTrigger className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500">
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl shadow-xl">
-                          <SelectItem value="casual">Casual Leave (CL)</SelectItem>
-                          <SelectItem value="sick">Sick Leave (SL)</SelectItem>
-                          <SelectItem value="wfh">Work From Home</SelectItem>
-                          <SelectItem value="half">Half Day</SelectItem>
-                          <SelectItem value="emergency">Emergency Leave</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label className="font-bold text-slate-700 dark:text-slate-300">Emergency Contact Number</Label>
-                      <Input type="tel" placeholder="+91" value={emergencyContact} onChange={(e) => setEmergencyContact(e.target.value)} className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" required />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="font-bold text-slate-700 dark:text-slate-300">Start Date</Label>
-                      <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="font-bold text-slate-700 dark:text-slate-300">End Date</Label>
-                      <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" />
-                    </div>
-
-                    <div className="space-y-2 md:col-span-2">
-                      <Label className="font-bold text-slate-700 dark:text-slate-300">Reason for Leave</Label>
-                      <Textarea value={reason} onChange={(e) => setReason(e.target.value)} required placeholder="Please provide a valid reason..." className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 min-h-[120px] shadow-sm font-medium resize-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" />
-                    </div>
-
-                    <div className="space-y-2 md:col-span-2">
-                      <Label className="font-bold text-slate-700 dark:text-slate-300">Attachment (Optional)</Label>
-                      <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".svg,.png,.jpg,.jpeg,.pdf" />
-                      <div 
-                        onClick={() => fileInputRef.current?.click()}
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
-                        className={cn("border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer group shadow-sm", selectedFile ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/10" : "border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-100/50 dark:hover:bg-slate-800/50")}
-                      >
-                        {selectedFile ? (
-                          <>
-                            <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4">
-                              <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{selectedFile.name}</p>
-                            <p className="text-xs font-semibold text-slate-500 mt-1">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                            <Button variant="ghost" size="sm" onClick={handleClearFile} className="mt-4 h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">Remove File</Button>
-                          </>
-                        ) : (
-                          <>
-                            <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                              <UploadCloud className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Click to upload or drag and drop</p>
-                            <p className="text-xs font-semibold text-slate-500 mt-1">SVG, PNG, JPG, PDF (max. 5MB)</p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </form>
-              </CardContent>
-              <CardFooter className="p-6 md:p-8 bg-slate-50/80 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
-                <Button variant="outline" type="button" onClick={handleSaveDraft} className="rounded-xl font-bold h-12 px-6 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Draft
-                </Button>
-                <Button type="submit" form="leave-form" className="rounded-xl font-bold h-12 px-6 bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25">
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit Request
-                </Button>
-              </CardFooter>
-            </Card>
+            <LeaveApplicationWithDrafts onSubmitLeave={onSubmitLeave} />
           </TabsContent>
 
           {/* Employee: My History */}
