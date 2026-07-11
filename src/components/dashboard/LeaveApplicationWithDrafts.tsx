@@ -215,7 +215,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Leave Application Form */}
       <Card className="lg:col-span-2 border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-950/40 backdrop-blur-2xl shadow-xl rounded-3xl overflow-hidden">
-        <CardHeader className="border-b border-slate-100 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 pb-6">
+        <CardHeader className="border-b border-slate-100 dark:border-slate-800/60 pb-6">
           <CardTitle className="text-xl font-bold">Apply for Leave</CardTitle>
           <CardDescription>Submit a new leave request. Subject to manager approval.</CardDescription>
         </CardHeader>
@@ -335,7 +335,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
             </div>
           </form>
         </CardContent>
-        <CardFooter className="p-6 md:p-8 bg-slate-50/80 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+        <CardFooter className="p-6 md:p-8 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
           <Button
             variant="outline"
             type="button"
@@ -358,7 +358,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
 
       {/* Saved Drafts Panel */}
       <Card className="lg:col-span-1 border border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-950/40 backdrop-blur-2xl shadow-xl rounded-3xl overflow-hidden flex flex-col">
-        <CardHeader className="border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/80 dark:bg-slate-900/80 pb-4">
+        <CardHeader className="border-b border-slate-100 dark:border-slate-800/60 pb-4">
           <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             Saved Drafts

@@ -284,7 +284,7 @@ export default function LeaveManagement({ session }: { session: any }) {
           {/* Employee: My History */}
           <TabsContent value="history">
             <Card className="border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-950/40 backdrop-blur-2xl shadow-xl rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-slate-100 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/60">
                 <CardTitle className="text-xl font-bold">Leave History</CardTitle>
                 <CardDescription>Track the status of your past and upcoming leaves.</CardDescription>
               </CardHeader>
