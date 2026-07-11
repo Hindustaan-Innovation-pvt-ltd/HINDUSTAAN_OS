@@ -388,47 +388,47 @@ export default function LeaveManagement({ session }: { session: any }) {
       </div>
 
       {isManager && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="rounded-2xl border-white/40 dark:border-slate-800/60 bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/10 backdrop-blur-xl shadow-sm border">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-amber-500/20">
+              <div className="p-3 rounded-xl bg-amber-500/20 shrink-0">
                 <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               </div>
-              <div>
-                <p className="text-xs font-bold text-amber-700/70 dark:text-amber-400/70 uppercase tracking-wider">Pending Requests</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-amber-700/70 dark:text-amber-400/70 uppercase tracking-wider truncate">Pending Requests</p>
                 <p className="text-2xl font-black text-amber-900 dark:text-amber-100">{pendingRequestsCount}</p>
               </div>
             </CardContent>
           </Card>
           <Card className="rounded-2xl border-white/40 dark:border-slate-800/60 bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/10 backdrop-blur-xl shadow-sm border">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-emerald-500/20">
+              <div className="p-3 rounded-xl bg-emerald-500/20 shrink-0">
                 <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <div>
-                <p className="text-xs font-bold text-emerald-700/70 dark:text-emerald-400/70 uppercase tracking-wider">Approved This Month</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-emerald-700/70 dark:text-emerald-400/70 uppercase tracking-wider truncate">Approved This Month</p>
                 <p className="text-2xl font-black text-emerald-900 dark:text-emerald-100">{approvedThisMonthCount}</p>
               </div>
             </CardContent>
           </Card>
           <Card className="rounded-2xl border-white/40 dark:border-slate-800/60 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/10 backdrop-blur-xl shadow-sm border">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-purple-500/20">
+              <div className="p-3 rounded-xl bg-purple-500/20 shrink-0">
                 <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
-              <div>
-                <p className="text-xs font-bold text-purple-700/70 dark:text-purple-400/70 uppercase tracking-wider">On Leave Today</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-purple-700/70 dark:text-purple-400/70 uppercase tracking-wider truncate">On Leave Today</p>
                 <p className="text-2xl font-black text-purple-900 dark:text-purple-100">{todayLeavesCount}</p>
               </div>
             </CardContent>
           </Card>
           <Card className="rounded-2xl border-white/40 dark:border-slate-800/60 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/10 backdrop-blur-xl shadow-sm border">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-blue-500/20">
+              <div className="p-3 rounded-xl bg-blue-500/20 shrink-0">
                 <CalendarDays className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
-              <div>
-                <p className="text-xs font-bold text-blue-700/70 dark:text-blue-400/70 uppercase tracking-wider">Upcoming Leaves</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-blue-700/70 dark:text-blue-400/70 uppercase tracking-wider truncate">Upcoming Leaves</p>
                 <p className="text-2xl font-black text-blue-900 dark:text-blue-100">{upcomingLeavesCount}</p>
               </div>
             </CardContent>
@@ -437,17 +437,17 @@ export default function LeaveManagement({ session }: { session: any }) {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 w-full max-w-3xl flex flex-wrap sm:flex-nowrap h-auto items-center">
+        <TabsList className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 w-full max-w-3xl flex flex-col sm:flex-row h-auto items-stretch sm:items-center gap-1 sm:gap-0">
           {!isManager ? (
             <>
-              <TabsTrigger value="apply" className="flex-1 justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 break-words whitespace-normal sm:whitespace-nowrap">Apply Leave</TabsTrigger>
-              <TabsTrigger value="history" className="flex-1 justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 break-words whitespace-normal sm:whitespace-nowrap">My History</TabsTrigger>
-              <TabsTrigger value="balance" className="flex-1 justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 break-words whitespace-normal sm:whitespace-nowrap">Leave Balance</TabsTrigger>
+              <TabsTrigger value="apply" className="flex-1 w-full sm:w-auto justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">Apply Leave</TabsTrigger>
+              <TabsTrigger value="history" className="flex-1 w-full sm:w-auto justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">My History</TabsTrigger>
+              <TabsTrigger value="balance" className="flex-1 w-full sm:w-auto justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">Leave Balance</TabsTrigger>
             </>
           ) : (
             <>
-              <TabsTrigger value="requests" className="flex-1 justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 break-words whitespace-normal sm:whitespace-nowrap">Employee's Leave Requests</TabsTrigger>
-              <TabsTrigger value="calendar" className="flex-1 justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 break-words whitespace-normal sm:whitespace-nowrap">Employee's Leave Calendar</TabsTrigger>
+              <TabsTrigger value="requests" className="flex-1 w-full sm:w-auto justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">Employee's Leave Requests</TabsTrigger>
+              <TabsTrigger value="calendar" className="flex-1 w-full sm:w-auto justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">Employee's Leave Calendar</TabsTrigger>
             </>
           )}
         </TabsList>
