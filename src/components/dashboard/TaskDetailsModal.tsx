@@ -4,6 +4,9 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
+import { format, parse } from 'date-fns';
 
 // --- Types ---
 export type Role = 'manager' | 'intern';
@@ -175,22 +178,17 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                 <Clock className="h-3.5 w-3.5 mr-1.5" /> Priority Level
               </label>
               {isManager ? (
-                <div className="relative">
-                  <select 
-                    value={editedTask.priority}
-                    onChange={(e) => handleUpdateField('priority', e.target.value as Priority)}
-                    className={cn(
-                      "appearance-none w-full pl-3 pr-8 py-2 rounded-lg text-sm font-semibold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all",
-                      getPriorityStyles(editedTask.priority)
-                    )}
-                  >
-                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="High">High</option>
-                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Medium">Medium</option>
-                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Normal">Normal</option>
-                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Low">Low</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none opacity-50" />
-                </div>
+                <Select value={editedTask.priority} onValueChange={(val) => handleUpdateField('priority', val as Priority)}>
+                  <SelectTrigger className={cn("w-full h-10 rounded-lg text-sm font-semibold shadow-sm transition-colors", getPriorityStyles(editedTask.priority))}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Normal">Normal</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
               ) : (
                 <div className="mt-1">
                   <span className={cn("px-3 py-1 rounded-md text-sm font-semibold border inline-block", getPriorityStyles(editedTask.priority))}>
@@ -210,22 +208,26 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                   {getInitials(editedTask.assignee_name)}
                 </div>
                 {isManager ? (
-                  <select
+                  <Select
                     value={editedTask.assignee_id}
-                    onChange={(e) => {
-                      const selected = GLOBAL_TEAM_MEMBERS.find(u => u.id === e.target.value);
+                    onValueChange={(val) => {
+                      const selected = GLOBAL_TEAM_MEMBERS.find(u => u.id === val);
                       if (selected) {
                         const updated = { ...editedTask, assignee_id: selected.id, assignee_name: selected.name } as Task;
                         setEditedTask(updated);
                         if (onUpdateTask) onUpdateTask(updated);
                       }
                     }}
-                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
                   >
-                    {GLOBAL_TEAM_MEMBERS.map(member => (
-                      <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={member.id} value={member.id}>{member.name}</option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full h-9 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold shadow-sm hover:bg-purple-50 hover:border-purple-300 dark:hover:bg-purple-950/20 dark:hover:border-purple-700 transition-colors">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {GLOBAL_TEAM_MEMBERS.map(member => (
+                        <SelectItem key={member.id} value={member.id}>{member.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 ) : (
                   <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{editedTask.assignee_name}</span>
                 )}
@@ -238,11 +240,17 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                 <Calendar className="h-3.5 w-3.5 mr-1.5" /> Target Deadline
               </label>
               {isManager ? (
-                <input 
-                  type="date"
-                  value={editedTask.due_date ? new Date(editedTask.due_date).toISOString().split('T')[0] : ''}
-                  onChange={(e) => handleUpdateField('due_date', e.target.value)} // Simplifying date format mapping for mockup
-                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                <DatePicker
+                  value={(() => {
+                    try {
+                      const d = new Date(editedTask.due_date);
+                      return isNaN(d.getTime()) ? undefined : d;
+                    } catch { return undefined; }
+                  })()}
+                  onChange={(date) => {
+                    if (date) handleUpdateField('due_date', format(date, 'yyyy-MM-dd'));
+                  }}
+                  placeholder="Select deadline"
                 />
               ) : (
                 <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 inline-block">
@@ -257,18 +265,16 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                 <Activity className="h-3.5 w-3.5 mr-1.5" /> Current Status
               </label>
               {isManager ? (
-                <div className="relative">
-                  <select 
-                    value={editedTask.status}
-                    onChange={(e) => handleStatusChange(e.target.value as Status)}
-                    className="appearance-none w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
-                  >
+                <Select value={editedTask.status} onValueChange={(val) => handleStatusChange(val as Status)}>
+                  <SelectTrigger className="w-full h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold shadow-sm hover:bg-purple-50 hover:border-purple-300 dark:hover:bg-purple-950/20 dark:hover:border-purple-700 transition-colors">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
                     {STATUSES.map(s => (
-                      <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={s} value={s}>{s}</option>
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none opacity-50" />
-                </div>
+                  </SelectContent>
+                </Select>
               ) : (
                 <div className="mt-1">
                   <span className="px-3 py-1 rounded-md text-sm font-semibold border inline-block bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700">

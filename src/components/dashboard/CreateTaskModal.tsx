@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { X, Calendar, User, Tag, Clock } from 'lucide-react';
+import { X, User, Tag, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Task, Priority } from './TaskDetailsModal';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
+import { format } from 'date-fns';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -17,7 +20,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask }: Creat
   const [projectTag, setProjectTag] = useState('');
   const [priority, setPriority] = useState<Priority>('Normal');
   const [assigneeId, setAssigneeId] = useState('');
-  const [dueDate, setDueDate] = useState('');
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
 
   if (!isOpen) return null;
 
@@ -35,7 +38,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask }: Creat
       assignee_name: assignee ? assignee.name : 'Unassigned',
       assignee_id: assigneeId || 'unassigned',
       priority,
-      due_date: dueDate || new Date().toISOString().split('T')[0],
+      due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : new Date().toISOString().split('T')[0],
       status: 'To Do'
     };
 
@@ -47,7 +50,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask }: Creat
     setProjectTag('');
     setPriority('Normal');
     setAssigneeId('');
-    setDueDate('');
+    setDueDate(undefined);
     onClose();
   };
 
@@ -99,16 +102,17 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask }: Creat
               <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
                 <Clock className="h-3.5 w-3.5 mr-1.5" /> Priority Level
               </label>
-              <select 
-                value={priority}
-                onChange={e => setPriority(e.target.value as Priority)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
-              >
-                <option className="bg-white dark:bg-slate-800" value="High">High</option>
-                <option className="bg-white dark:bg-slate-800" value="Medium">Medium</option>
-                <option className="bg-white dark:bg-slate-800" value="Normal">Normal</option>
-                <option className="bg-white dark:bg-slate-800" value="Low">Low</option>
-              </select>
+              <Select value={priority} onValueChange={(val) => setPriority(val as Priority)}>
+                <SelectTrigger className="w-full h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold shadow-sm hover:bg-purple-50 hover:border-purple-300 dark:hover:bg-purple-950/20 dark:hover:border-purple-700 transition-colors">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Normal">Normal</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Assignee */}
@@ -116,30 +120,27 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask }: Creat
               <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
                 <User className="h-3.5 w-3.5 mr-1.5" /> Assign To <span className="text-rose-500">*</span>
               </label>
-              <select 
-                required
-                value={assigneeId}
-                onChange={e => setAssigneeId(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
-              >
-                <option className="bg-white dark:bg-slate-800" value="" disabled>Select Assignee...</option>
-                {GLOBAL_TEAM_MEMBERS.map(member => (
-                  <option className="bg-white dark:bg-slate-800" key={member.id} value={member.id}>{member.name}</option>
-                ))}
-              </select>
+              <Select value={assigneeId} onValueChange={setAssigneeId} required>
+                <SelectTrigger className="w-full h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold shadow-sm hover:bg-purple-50 hover:border-purple-300 dark:hover:bg-purple-950/20 dark:hover:border-purple-700 transition-colors">
+                  <SelectValue placeholder="Select Assignee..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {GLOBAL_TEAM_MEMBERS.map(member => (
+                    <SelectItem key={member.id} value={member.id}>{member.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Due Date */}
             <div>
               <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
-                <Calendar className="h-3.5 w-3.5 mr-1.5" /> Due Date <span className="text-rose-500">*</span>
+                Due Date <span className="text-rose-500">*</span>
               </label>
-              <input 
-                required
-                type="date"
+              <DatePicker
                 value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                onChange={setDueDate}
+                placeholder="Select due date"
               />
             </div>
           </div>
