@@ -70,10 +70,10 @@ export function EmployeeCalendar() {
               classNames={{
                 day: "h-9 w-9 p-0 text-sm font-bold rounded-xl text-slate-700 dark:text-slate-300 transition-colors cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center aria-selected:opacity-100",
                 caption_label: "text-sm font-bold text-slate-900 dark:text-white",
-                button_previous: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-slate-700 dark:text-slate-300 absolute left-1",
-                button_next: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-slate-700 dark:text-slate-300 absolute right-1",
+                button_previous: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-slate-700 dark:text-slate-300 absolute left-1 flex items-center justify-center",
+                button_next: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-slate-700 dark:text-slate-300 absolute right-1 flex items-center justify-center",
                 weekday: "text-[0.8rem] font-bold text-slate-500 dark:text-slate-400 w-9 text-center",
-                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 text-slate-900 dark:text-white"
+                month: "w-full relative text-slate-900 dark:text-white",
               }}
               components={{
                 DayButton: ({ day, modifiers, ...props }) => {

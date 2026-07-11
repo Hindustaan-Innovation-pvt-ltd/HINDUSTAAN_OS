@@ -463,7 +463,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
         <div className="lg:col-span-8 flex flex-col gap-4 md:gap-5">
           
           {/* My Today's Tasks */}
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-full">
             <CardHeader className="flex flex-row items-center justify-between p-4 md:p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
               <CardTitle className="text-lg font-bold flex items-center text-slate-900 dark:text-white">
                 <CheckCircle2 className="h-5 w-5 text-orange-500 mr-2" />
@@ -473,8 +473,8 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                 View All Tasks <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            <CardContent className="p-0 flex-1 flex flex-col">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800 flex-1 flex flex-col justify-center">
                 {tasks.length > 0 ? tasks.map(task => (
                   <div key={task.id} className="p-4 md:p-5 py-2.5 md:py-3 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
                     <div className="flex-1 min-w-0">
@@ -509,7 +509,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                     </div>
                   </div>
                 )) : (
-                  <div className="p-12 flex flex-col items-center justify-center text-center">
+                  <div className="p-12 flex flex-col items-center justify-center text-center flex-1">
                     <span className="text-4xl mb-4">🎉</span>
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white">You're all caught up.</h3>
                     <p className="text-sm font-medium text-slate-500 mt-1">Great job! Enjoy your free time or ask for more work.</p>
