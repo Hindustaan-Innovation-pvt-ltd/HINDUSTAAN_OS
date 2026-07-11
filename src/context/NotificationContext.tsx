@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { toast } from 'sonner';
 
 export type NotificationType = 'task' | 'success' | 'alert' | 'warning' | 'info' | 'user' | 'request' | 'danger' | 'file' | 'meeting' | 'message';
 
@@ -158,7 +159,18 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'hindustaan_notifications' && e.newValue) {
         try {
-          setNotifications(JSON.parse(e.newValue));
+          const newNotifs = JSON.parse(e.newValue);
+          setNotifications(prev => {
+            const newNotif = newNotifs[0];
+            if (newNotif && (!prev.length || newNotif.id !== prev[0].id)) {
+              toast.info(newNotif.title, {
+                description: newNotif.message,
+                icon: newNotif.icon,
+                duration: 8000,
+              });
+            }
+            return newNotifs;
+          });
         } catch (e) { console.error(e); }
       }
     };
@@ -167,7 +179,18 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       const saved = localStorage.getItem('hindustaan_notifications');
       if (saved && saved !== 'null') {
         try {
-          setNotifications(JSON.parse(saved));
+          const newNotifs = JSON.parse(saved);
+          setNotifications(prev => {
+            const newNotif = newNotifs[0];
+            if (newNotif && (!prev.length || newNotif.id !== prev[0].id)) {
+              toast.info(newNotif.title, {
+                description: newNotif.message,
+                icon: newNotif.icon,
+                duration: 8000,
+              });
+            }
+            return newNotifs;
+          });
         } catch (e) { console.error(e); }
       }
     };

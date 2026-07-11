@@ -133,6 +133,7 @@ export function ProjectCalendarWidget() {
   }, [events]);
 
   const [isAllEventsOpen, setIsAllEventsOpen] = useState(false);
+  const [eventToView, setEventToView] = useState<ProjectEvent | null>(null);
   const [eventToEdit, setEventToEdit] = useState<ProjectEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<ProjectEvent | null>(null);
   
@@ -164,10 +165,11 @@ export function ProjectCalendarWidget() {
   const workingDays = totalDays; // Simplification, could exclude weekends
 
   const upcomingEvents = useMemo(() => {
+    // Keep events in "Upcoming" until 24 hours after their date
+    const cutoffDate = new Date(today.getTime() - 24 * 60 * 60 * 1000);
     return events
-      .filter(e => isAfter(e.date, startOfDay(today)) || isSameDay(e.date, startOfDay(today)))
-      .sort((a, b) => a.date.getTime() - b.date.getTime())
-      .slice(0, 4);
+      .filter(e => isAfter(e.date, cutoffDate))
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [events, today]);
 
   const handleDayClick = (day: Date) => {
@@ -382,9 +384,9 @@ export function ProjectCalendarWidget() {
               <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center"><Clock className="mr-2 h-4 w-4 text-orange-500" /> Upcoming Events</h4>
               <Button onClick={() => setIsAllEventsOpen(true)} variant="ghost" size="sm" className="h-6 px-2 text-[10px] font-bold text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-500/10 cursor-pointer">History</Button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[320px] overflow-y-auto pr-2">
               {upcomingEvents.length > 0 ? upcomingEvents.map((evt) => (
-                <div key={evt.id} className="group relative flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-950 shadow-sm border border-slate-100 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-500/30 transition-all pr-8">
+                <div key={evt.id} onClick={() => setEventToView(evt)} className="group relative flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-950 shadow-sm border border-slate-100 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-500/30 transition-all pr-8 cursor-pointer">
                   <div className="flex flex-col items-center justify-center h-11 w-11 rounded-lg bg-orange-50 dark:bg-orange-500/10 shrink-0">
                     <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase leading-none">{format(evt.date, 'MMM')}</span>
                     <span className="text-sm font-black text-orange-700 dark:text-orange-300 leading-none mt-1">{format(evt.date, 'dd')}</span>
@@ -403,10 +405,10 @@ export function ProjectCalendarWidget() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                      <DropdownMenuItem onClick={() => setEventToEdit(evt)} className="font-semibold text-sm cursor-pointer">
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEventToEdit(evt); }} className="font-semibold text-sm cursor-pointer">
                         Edit Event
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setEventToDelete(evt)} className="font-semibold text-sm text-rose-600 focus:text-rose-600 cursor-pointer">
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEventToDelete(evt); }} className="font-semibold text-sm text-rose-600 focus:text-rose-600 cursor-pointer">
                         Delete Event
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -790,6 +792,74 @@ export function ProjectCalendarWidget() {
               <Button type="submit" className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold">Save Changes</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!eventToView} onOpenChange={(open) => !open && setEventToView(null)}>
+        <DialogContent className="sm:max-w-[500px] rounded-3xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 p-0 overflow-hidden shadow-2xl">
+          {eventToView && (
+            <>
+              <div className="p-8 border-b border-slate-100 dark:border-slate-800/60 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900/50 dark:to-slate-950">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className={cn("h-14 w-14 rounded-2xl flex flex-col items-center justify-center text-white shadow-lg", getEventColor(eventToView.type))}>
+                    <span className="text-[11px] font-bold uppercase tracking-wider opacity-90 leading-none">{format(eventToView.date, 'MMM')}</span>
+                    <span className="text-xl font-black leading-none mt-1">{format(eventToView.date, 'dd')}</span>
+                  </div>
+                  <div>
+                    <Badge variant="outline" className={cn("mb-2 border-0 uppercase tracking-widest text-[9px] font-black px-2.5 py-0.5", getEventBadgeStyles(eventToView.type))}>
+                      {eventToView.type}
+                    </Badge>
+                    <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {eventToView.title}
+                    </DialogTitle>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400">
+                  <Clock className="h-4 w-4" />
+                  <span>{format(eventToView.date, 'EEEE, MMMM do, yyyy')} {eventToView.time && `• ${eventToView.time}`}</span>
+                </div>
+              </div>
+              
+              <div className="p-8 space-y-8 bg-white dark:bg-slate-950">
+                {eventToView.description && (
+                  <div className="space-y-3">
+                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Details & Links</label>
+                    <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800/60">
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
+                        {eventToView.description}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {eventToView.assignees && eventToView.assignees.length > 0 && (
+                  <div className="space-y-3">
+                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center justify-between">
+                      <span>Participants ({eventToView.assignees.length})</span>
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {eventToView.assignees.map((assignee, idx) => (
+                        <div key={idx} className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full pl-1 pr-3 py-1 shadow-sm">
+                          <Avatar className="h-6 w-6 mr-2">
+                            <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-[9px] font-bold">
+                              {assignee.initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{assignee.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="px-8 py-5 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900 flex justify-end">
+                <Button onClick={() => setEventToView(null)} className="rounded-xl px-8 font-bold bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
+                  Close
+                </Button>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </Card>

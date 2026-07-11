@@ -225,7 +225,7 @@ export default function LeaveManagement({ session }: { session: any }) {
     setApprovingId(id);
     // Simulate API call
     setTimeout(() => {
-      setLeaveData(prev => prev.map(l => l.id === id ? { ...l, status: 'Approved', hrNotified: true } : l));
+      setLeaveData((prev: any[]) => prev.map((l: any) => l.id === id ? { ...l, status: 'Approved', hrNotified: true } : l));
       setApprovingId(null);
       toast.success('Leave Approved Successfully.', {
         description: 'HR has been notified via email.'
@@ -240,7 +240,7 @@ export default function LeaveManagement({ session }: { session: any }) {
     setRejectingId(id);
     // Simulate API call
     setTimeout(() => {
-      setLeaveData(prev => prev.map(l => l.id === id ? { ...l, status: 'Rejected' } : l));
+      setLeaveData((prev: any[]) => prev.map((l: any) => l.id === id ? { ...l, status: 'Rejected' } : l));
       setRejectingId(null);
       toast.error('Leave Rejected', {
         description: 'Employee has been notified.'
@@ -266,7 +266,7 @@ export default function LeaveManagement({ session }: { session: any }) {
   const CustomDay = (props: any) => {
     const { date } = props;
     const isTodayDate = isSameDay(date, new Date());
-    const leavesOnDate = leaveData.filter(l => {
+    const leavesOnDate = leaveData.filter((l: any) => {
       if (l.status !== 'Approved') return false;
       const start = parseLocalDate(l.start);
       const end = parseLocalDate(l.end);
@@ -276,7 +276,7 @@ export default function LeaveManagement({ session }: { session: any }) {
 
     const leaveCount = leavesOnDate.length;
     const tooltipText = leaveCount > 0 
-      ? `${format(date, 'MMM d, yyyy')}\n\nEmployees on Leave:\n` + leavesOnDate.map(l => `• ${l.employee} (${l.type})`).join('\n') 
+      ? `${format(date, 'MMM d, yyyy')}\n\nEmployees on Leave:\n` + leavesOnDate.map((l: any) => `• ${l.employee} (${l.type})`).join('\n') 
       : '';
 
     return (
@@ -307,7 +307,7 @@ export default function LeaveManagement({ session }: { session: any }) {
   };
 
   // Selected date leaves
-  const selectedDateLeaves = selectedDate ? leaveData.filter(l => {
+  const selectedDateLeaves = selectedDate ? leaveData.filter((l: any) => {
     if (l.status !== 'Approved') return false;
     const start = parseLocalDate(l.start);
     const end = parseLocalDate(l.end);
@@ -316,10 +316,10 @@ export default function LeaveManagement({ session }: { session: any }) {
   }) : [];
 
   // Statistics
-  const pendingRequestsCount = leaveData.filter(l => l.status === 'Pending').length;
-  const approvedThisMonthCount = leaveData.filter(l => l.status === 'Approved' && new Date(l.appliedOn).getMonth() === new Date().getMonth()).length;
+  const pendingRequestsCount = leaveData.filter((l: any) => l.status === 'Pending').length;
+  const approvedThisMonthCount = leaveData.filter((l: any) => l.status === 'Approved' && new Date(l.appliedOn).getMonth() === new Date().getMonth()).length;
   
-  const todayLeavesCount = leaveData.filter(l => {
+  const todayLeavesCount = leaveData.filter((l: any) => {
     if (l.status !== 'Approved') return false;
     const start = parseLocalDate(l.start);
     const end = parseLocalDate(l.end);
@@ -328,7 +328,7 @@ export default function LeaveManagement({ session }: { session: any }) {
     return now >= start && now <= end;
   }).length;
 
-  const upcomingLeavesCount = leaveData.filter(l => l.status === 'Approved' && parseLocalDate(l.start) > new Date()).length;
+  const upcomingLeavesCount = leaveData.filter((l: any) => l.status === 'Approved' && parseLocalDate(l.start) > new Date()).length;
 
   return (
     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 pb-20 w-full p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">
@@ -522,7 +522,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {leaveData.filter(l => l.employee === "Tanvy Pandey").map((leave) => (
+                    {leaveData.filter((l: any) => l.employee === "Tanvy Pandey").map((leave: any) => (
                       <tr key={leave.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors group">
                         <td className="px-6 py-5 font-semibold text-slate-600 dark:text-slate-400">{leave.appliedOn}</td>
                         <td className="px-6 py-5 font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -746,7 +746,7 @@ export default function LeaveManagement({ session }: { session: any }) {
           <TabsContent value="requests">
             <div className="space-y-6">
               <AnimatePresence>
-                {leaveData.filter(l => l.status === 'Pending').length === 0 ? (
+                {leaveData.filter((l: any) => l.status === 'Pending').length === 0 ? (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-24 bg-white/40 dark:bg-slate-900/40 rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 shadow-sm backdrop-blur-xl">
                     <div className="mx-auto w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-inner">
                       <CheckCircle2 className="h-10 w-10" />
@@ -755,7 +755,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                     <p className="text-slate-500 font-medium">There are no pending leave requests to approve.</p>
                   </motion.div>
                 ) : (
-                  leaveData.filter(l => l.status === 'Pending').map((req) => (
+                  leaveData.filter((l: any) => l.status === 'Pending').map((req: any) => (
                     <motion.div 
                       key={req.id}
                       initial={{ opacity: 0, y: 10 }}
@@ -912,10 +912,10 @@ export default function LeaveManagement({ session }: { session: any }) {
                         day_disabled: "text-slate-400 opacity-50 dark:text-slate-500",
                         day_range_middle: "aria-selected:bg-slate-100 aria-selected:text-slate-900 dark:aria-selected:bg-slate-800 dark:aria-selected:text-slate-50",
                         day_hidden: "invisible",
-                      }}
+                      } as any}
                       components={{
-                        DayContent: (props) => <CustomDay date={props.date} />
-                      }}
+                        DayContent: (props: any) => <CustomDay date={props.date} />
+                      } as any}
                     />
                   </div>
                 </div>
@@ -934,7 +934,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                       
                       <div className="space-y-4">
                         {selectedDateLeaves.length > 0 ? (
-                          selectedDateLeaves.map((leave, i) => (
+                          selectedDateLeaves.map((leave: any, i: number) => (
                             <div key={i} className="flex items-center gap-4 bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
                               <Avatar className="h-10 w-10 shadow-sm border border-slate-200 dark:border-slate-800">
                                 <AvatarFallback className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold">{getInitials(leave.employee)}</AvatarFallback>

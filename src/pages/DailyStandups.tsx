@@ -193,6 +193,8 @@ export default function DailyStandups({ session }: { session?: any }) {
   const [editingReply, setEditingReply] = useState<{standupId: string, replyId: string, text: string} | null>(null);
 
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
+  const [isSchedulingMeeting, setIsSchedulingMeeting] = useState(false);
+  const [meetingTitle, setMeetingTitle] = useState('Quick Sync Meeting');
   const [meetingLink, setMeetingLink] = useState('https://meet.google.com/new');
   const [meetingMessage, setMeetingMessage] = useState('Hi team, please join the daily standup meeting now!');
   const [selectedMeetingParticipants, setSelectedMeetingParticipants] = useState<string[]>([]);
@@ -596,7 +598,7 @@ export default function DailyStandups({ session }: { session?: any }) {
     const newStandup = {
       id: `s-${Date.now()}`,
       user: currentUserName,
-      initials: (currentUserName || 'E').split(' ').map(n=>n[0]).join(''),
+      initials: (currentUserName || 'E').split(' ').map((n: string) => n[0]).join(''),
       role: role === 'manager' ? 'Product Manager' : 'Developer',
       status: 'Submitted',
       yesterday: formData.yesterday,
@@ -914,12 +916,14 @@ export default function DailyStandups({ session }: { session?: any }) {
             </Button>
           )}
 
-          <Button 
-            onClick={() => setIsMeetingModalOpen(true)} 
-            className="h-10 rounded-xl bg-gradient-to-r from-orange-600 to-rose-600 hover:from-orange-700 hover:to-rose-700 text-white font-bold shadow-md shadow-orange-500/20 border-0 transition-all"
-          >
-            <Video className="h-4 w-4 mr-2" /> Start Meeting
-          </Button>
+          {role === 'manager' && (
+            <Button 
+              onClick={() => setIsMeetingModalOpen(true)} 
+              className="h-10 rounded-xl bg-gradient-to-r from-orange-600 to-rose-600 hover:from-orange-700 hover:to-rose-700 text-white font-bold shadow-md shadow-orange-500/20 border-0 transition-all"
+            >
+              <Video className="h-4 w-4 mr-2" /> Start Meeting
+            </Button>
+          )}
 
           <Button 
             variant="outline" 
@@ -1807,6 +1811,24 @@ export default function DailyStandups({ session }: { session?: any }) {
               </div>
             </div>
 
+            {/* Meeting Title */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
+                <Edit3 className="h-3.5 w-3.5 mr-1.5" /> Meeting Title
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                  <Edit3 className="h-4 w-4" />
+                </div>
+                <input 
+                  value={meetingTitle}
+                  onChange={(e) => setMeetingTitle(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all placeholder:text-slate-400"
+                  placeholder="e.g., Q3 Planning Sync"
+                />
+              </div>
+            </div>
+
             {/* Meeting Link */}
             <div className="space-y-3">
               <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
@@ -1856,74 +1878,116 @@ export default function DailyStandups({ session }: { session?: any }) {
                   return;
                 }
                 
-                // Add Notification to Dashboard Alerts (Manager side alert)
-                const storedAlerts = localStorage.getItem('hindustaan_alerts');
-                const alerts = storedAlerts ? JSON.parse(storedAlerts) : [];
-                const newAlert = {
-                  id: `n${Date.now()}`,
-                  text: `New Meeting: ${meetingMessage.substring(0, 30)}...`,
-                  unread: true
-                };
-                localStorage.setItem('hindustaan_alerts', JSON.stringify([newAlert, ...alerts]));
-                window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_alerts', value: JSON.stringify([newAlert, ...alerts]) } }));
-
-                // Add to Activity Feed
-                const storedFeed = localStorage.getItem('hindustaan_activity_feed');
-                const feed = storedFeed ? JSON.parse(storedFeed) : [];
-                const newActivity = {
-                  id: `a${Date.now()}`,
-                  user: currentUser?.name || 'Manager',
-                  action: 'scheduled a',
-                  target: 'Quick Meeting',
-                  time: 'Just now',
-                  type: 'meeting'
-                };
-                localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newActivity, ...feed]));
-                window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_activity_feed', value: JSON.stringify([newActivity, ...feed]) } }));
-
-                // Add to Upcoming Events (ProjectCalendarWidget)
-                const storedEvents = localStorage.getItem('hindustaan_calendar_events');
-                let calendarEvents = [];
-                try {
-                  calendarEvents = storedEvents ? JSON.parse(storedEvents) : [];
-                } catch (e) {}
+                setIsSchedulingMeeting(true);
                 
-                const newCalendarEvent = {
-                  id: `evt_${Date.now()}`,
-                  date: new Date().toISOString(),
-                  type: 'meeting',
-                  title: 'Quick Sync Meeting',
-                  description: meetingMessage,
-                  time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                  assignees: selectedMeetingParticipants.map(id => {
-                    if (id === 'all_emp') return { name: 'All Employees', initials: 'AE' };
-                    if (id === 'all_mgr') return { name: 'All Managers', initials: 'AM' };
-                    const member = [...EMPLOYEES, ...MANAGERS].find(m => m.id === id);
-                    return { name: member?.name || 'Group', initials: (member?.name || 'G').substring(0,2).toUpperCase() };
-                  }).filter((v, i, a) => a.findIndex(t => (t.name === v.name)) === i) // deduplicate
-                };
-                
-                const newCalendarEventsArray = [...calendarEvents, newCalendarEvent];
-                localStorage.setItem('hindustaan_calendar_events', JSON.stringify(newCalendarEventsArray));
-                window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: JSON.stringify(newCalendarEventsArray) } }));
+                // Simulate backend WhatsApp API delay
+                setTimeout(() => {
+                  // Add Notification to Dashboard Alerts (Manager side alert)
+                  const storedAlerts = localStorage.getItem('hindustaan_alerts');
+                  const alerts = storedAlerts ? JSON.parse(storedAlerts) : [];
+                  const newAlert = {
+                    id: `n${Date.now()}`,
+                    text: `New Meeting: ${meetingMessage.substring(0, 30)}...`,
+                    unread: true
+                  };
+                  localStorage.setItem('hindustaan_alerts', JSON.stringify([newAlert, ...alerts]));
+                  window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_alerts', value: JSON.stringify([newAlert, ...alerts]) } }));
 
-                // DISPATCH TO NOTIFICATION CONTEXT (This syncs across tabs now!)
-                addNotification({
-                  title: 'New Meeting Scheduled',
-                  message: meetingMessage,
-                  type: 'meeting',
-                  icon: '🗓️',
-                  category: 'Messages',
-                  group: 'Today'
-                });
-                
-                toast.success('Meeting link sent directly to team.');
-                setIsMeetingModalOpen(false);
-                setSelectedMeetingParticipants([]);
+                  // Add Notification to Employee Notification Center
+                  const storedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
+                  const empNotifs = storedEmpNotifs ? JSON.parse(storedEmpNotifs) : [];
+                  const newEmpNotif = {
+                    id: Date.now(),
+                    category: 'Standups',
+                    icon: '🗓️',
+                    title: 'New Meeting Scheduled',
+                    message: `${meetingMessage} - Link: ${meetingLink}`,
+                    time: 'Just now',
+                    unread: true,
+                    group: 'Today',
+                    priority: 'Important',
+                    actions: [{ label: 'Join Meeting', primary: true }]
+                  };
+                  localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotif, ...empNotifs]));
+                  window.dispatchEvent(new CustomEvent('employee-notifications-updated'));
+
+                  // Add to Activity Feed
+                  const storedFeed = localStorage.getItem('hindustaan_activity_feed');
+                  const feed = storedFeed ? JSON.parse(storedFeed) : [];
+                  const newActivity = {
+                    id: `a${Date.now()}`,
+                    user: currentUser?.name || 'Manager',
+                    action: 'scheduled a',
+                    target: 'Quick Meeting',
+                    time: 'Just now',
+                    type: 'meeting'
+                  };
+                  localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newActivity, ...feed]));
+                  window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_activity_feed', value: JSON.stringify([newActivity, ...feed]) } }));
+
+                  // Add to Upcoming Events (ProjectCalendarWidget)
+                  const storedEvents = localStorage.getItem('hindustaan_calendar_events');
+                  let calendarEvents = [];
+                  try {
+                    calendarEvents = storedEvents ? JSON.parse(storedEvents) : [];
+                  } catch (e) {}
+                  
+                  const newCalendarEvent = {
+                    id: `evt_${Date.now()}`,
+                    date: new Date().toISOString(),
+                    type: 'meeting',
+                    title: meetingTitle || 'Quick Sync Meeting',
+                    description: `${meetingMessage}\nLink: ${meetingLink}`,
+                    time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                    assignees: selectedMeetingParticipants.map(id => {
+                      if (id === 'all_emp') return { name: 'All Employees', initials: 'AE' };
+                      if (id === 'all_mgr') return { name: 'All Managers', initials: 'AM' };
+                      const member = [...EMPLOYEES, ...MANAGERS].find(m => m.id === id);
+                      return { name: member?.name || 'Group', initials: (member?.name || 'G').substring(0,2).toUpperCase() };
+                    }).filter((v, i, a) => a.findIndex(t => (t.name === v.name)) === i) // deduplicate
+                  };
+                  
+                  const newCalendarEventsArray = [...calendarEvents, newCalendarEvent];
+                  localStorage.setItem('hindustaan_calendar_events', JSON.stringify(newCalendarEventsArray));
+                  window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: JSON.stringify(newCalendarEventsArray) } }));
+
+                  // DISPATCH TO NOTIFICATION CONTEXT (This syncs across tabs now!)
+                  addNotification({
+                    title: 'New Meeting Scheduled',
+                    message: `${meetingMessage} - Link: ${meetingLink}`,
+                    type: 'meeting',
+                    icon: '🗓️',
+                    category: 'Messages',
+                    group: 'Today'
+                  });
+                  
+                  setIsSchedulingMeeting(false);
+                  
+                  toast.success('WhatsApp API: Invitations Dispatched', {
+                    description: `Meeting links securely delivered to ${selectedMeetingParticipants.length} participants via WhatsApp.`,
+                    duration: 5000
+                  });
+                  
+                  setIsMeetingModalOpen(false);
+                  setSelectedMeetingParticipants([]);
+                  setMeetingTitle('Quick Sync Meeting');
+                  setMeetingLink('https://meet.google.com/new');
+                  setMeetingMessage('Hi team, please join the daily standup meeting now!');
+                }, 1500); // Simulate network latency
               }}
-              className="px-8 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black transition-all shadow-xl shadow-orange-500/30 hover:shadow-orange-500/40 hover:-translate-y-0.5"
+              disabled={isSchedulingMeeting}
+              className="px-8 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-black transition-all shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
-              <Send className="h-4 w-4 mr-2.5" /> Schedule & Notify
+              {isSchedulingMeeting ? (
+                <>
+                  <div className="h-4 w-4 mr-2.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  Sending via WhatsApp...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2.5" /> Send via WhatsApp & Notify
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>

@@ -18,7 +18,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
+import { cn, getRelativeTime } from '@/lib/utils';
 import TaskDetailsModal from './TaskDetailsModal';
 import { useNotifications } from '@/context/NotificationContext';
 
@@ -327,7 +327,7 @@ export function NotificationCenter() {
                               )}>
                                 {notification.title}
                               </p>
-                              <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap shrink-0">{notification.time}</span>
+                              <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap shrink-0">{getRelativeTime(notification.id > 1000000 ? notification.id : notification.time)}</span>
                             </div>
                             <p className={cn(
                               "text-xs font-medium leading-relaxed",
