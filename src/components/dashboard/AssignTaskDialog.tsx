@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
 import { CalendarIcon, Check, ChevronsUpDown, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, logActivity } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -136,6 +136,9 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
       key: 'hindustaan_tasks_list',
       newValue: JSON.stringify(updatedTasks)
     }));
+
+    // Log Activity
+    logActivity('Manager', 'assigned task to', assignee ? assignee.name : 'Unknown', 'assign');
 
     setLoading(false);
     toast.success('Task assigned successfully.', {

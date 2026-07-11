@@ -327,7 +327,7 @@ export function NotificationCenter() {
                               )}>
                                 {notification.title}
                               </p>
-                              <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap shrink-0">{getRelativeTime(notification.id > 1000000 ? notification.id : notification.time)}</span>
+                              <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap shrink-0">{getRelativeTime(notification.timestamp || (notification.id > 1000000 ? notification.id : notification.time))}</span>
                             </div>
                             <p className={cn(
                               "text-xs font-medium leading-relaxed",

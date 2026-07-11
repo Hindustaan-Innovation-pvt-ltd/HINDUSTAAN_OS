@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayCircle, CheckCircle2, ChevronLeft, ChevronRight, FolderKanban } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, logActivity } from '@/lib/utils';
 import TaskDetailsModal from '../components/dashboard/TaskDetailsModal';
 import CreateTaskModal from '../components/dashboard/CreateTaskModal';
 import { INITIAL_TASKS } from '@/data/mockData';
@@ -227,9 +227,15 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
     const taskId = e.dataTransfer.getData('taskId');
     if (!taskId) return;
     
-    setTasks(prev => prev.map(task => 
-      task.id === taskId ? { ...task, status } : task
-    ));
+    setTasks(prev => {
+      const task = prev.find(t => t.id === taskId);
+      if (task && task.status !== status) {
+        logActivity(currentUserName, `moved task to ${status}`, task.title, 'task');
+      }
+      return prev.map(task => 
+        task.id === taskId ? { ...task, status } : task
+      );
+    });
     setDraggedTaskId(null);
   };
 
