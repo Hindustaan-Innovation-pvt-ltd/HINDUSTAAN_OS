@@ -30,6 +30,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { LeaveCalendar } from '@/components/dashboard/LeaveCalendar';
 import { LeaveApplicationWithDrafts } from '@/components/dashboard/LeaveApplicationWithDrafts';
+import LeaveRequestDialog from '@/components/manager/LeaveRequestDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
@@ -89,12 +90,11 @@ export default function LeaveManagement({ session }: { session: any }) {
         const reqId = Number(targetId);
         const storedLeaves = localStorage.getItem('hindustaan_leave_data');
         const currentLeaves = storedLeaves ? JSON.parse(storedLeaves) : leaveData;
-        const reqExists = currentLeaves.some((l: any) => l.id === reqId && l.status === 'Pending');
-        if (reqExists) {
+        const foundReq = currentLeaves.find((l: any) => l.id === reqId && l.status === 'Pending');
+        if (foundReq) {
           setHighlightedRequestId(reqId);
-          setActiveRequestId(reqId);
-          setCommentText('');
-          setCommentModalOpen(true);
+          setSelectedRequest(foundReq);
+          setIsRequestDialogOpen(true);
           localStorage.removeItem('selected_leave_request_id');
         }
       }
@@ -147,6 +147,10 @@ export default function LeaveManagement({ session }: { session: any }) {
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [activeRequestId, setActiveRequestId] = useState<number | null>(null);
   const [commentText, setCommentText] = useState('');
+
+  // Leave Request Dialog State
+  const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+  const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
 
   // 2. Email Notification Placeholder Flow - Loading States
   const [approvingId, setApprovingId] = useState<number | null>(null);
@@ -713,9 +717,13 @@ export default function LeaveManagement({ session }: { session: any }) {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, height: 0, margin: 0, overflow: 'hidden' }}
                       className={cn(
-                        "border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-950 backdrop-blur-xl shadow-lg rounded-3xl overflow-hidden flex flex-col hover:shadow-xl transition-all",
+                        "border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-950 backdrop-blur-xl shadow-lg rounded-3xl overflow-hidden flex flex-col hover:shadow-xl transition-all cursor-pointer",
                         highlightedRequestId === req.id && "ring-2 ring-purple-500 animate-pulse border-purple-500"
                       )}
+                      onClick={() => {
+                        setSelectedRequest(req);
+                        setIsRequestDialogOpen(true);
+                      }}
                     >
                       <div className="flex flex-col lg:flex-row lg:items-stretch">
                         
@@ -765,7 +773,10 @@ export default function LeaveManagement({ session }: { session: any }) {
                         <div className="p-6 lg:p-8 flex flex-col gap-3 justify-center w-full lg:w-[280px] bg-slate-50/50 dark:bg-slate-900/30">
                           <Button 
                             className="w-full rounded-xl h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20" 
-                            onClick={() => handleApprove(req.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApprove(req.id);
+                            }}
                             disabled={approvingId === req.id || rejectingId === req.id}
                           >
                             {approvingId === req.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="h-5 w-5 mr-2" /> Approve Leave</>}
@@ -773,7 +784,10 @@ export default function LeaveManagement({ session }: { session: any }) {
                           <Button 
                             variant="outline" 
                             className="w-full rounded-xl h-12 font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 dark:border-rose-900/50 dark:hover:bg-rose-900/20 shadow-sm" 
-                            onClick={() => handleReject(req.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleReject(req.id);
+                            }}
                             disabled={approvingId === req.id || rejectingId === req.id}
                           >
                             {rejectingId === req.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <><XCircle className="h-5 w-5 mr-2" /> Reject</>}
@@ -789,7 +803,10 @@ export default function LeaveManagement({ session }: { session: any }) {
                           <Button 
                             variant="ghost" 
                             className="w-full rounded-xl h-11 font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 mt-2" 
-                            onClick={() => openCommentModal(req.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openCommentModal(req.id);
+                            }}
                           >
                             <MessageSquare className="h-4 w-4 mr-2" />
                             Add Comment
@@ -898,6 +915,14 @@ export default function LeaveManagement({ session }: { session: any }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <LeaveRequestDialog
+        request={selectedRequest}
+        isOpen={isRequestDialogOpen}
+        onOpenChange={setIsRequestDialogOpen}
+        onApprove={handleApprove}
+        onReject={handleReject}
+      />
     </div>
   );
 }
