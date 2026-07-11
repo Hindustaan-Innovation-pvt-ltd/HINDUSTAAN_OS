@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -159,6 +159,34 @@ export default function ContributionScores({ session }: { session?: any }) {
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
   const [analyticsIntern, setAnalyticsIntern] = useState<any>(null);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX) * 2.5;
+    scrollRef.current.scrollLeft = scrollLeft - walk;
+  };
+
   const filteredInterns = MOCK_INTERNS.filter(intern =>
     intern.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     intern.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -212,6 +240,36 @@ export default function ContributionScores({ session }: { session?: any }) {
     });
 
     doc.save(`Team_Contribution_Scores_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
+  const handleExportPersonalPDF = (intern: any) => {
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.text(`Performance Report: ${intern.name}`, 14, 22);
+    
+    doc.setFontSize(11);
+    doc.text(`Department: ${intern.department}`, 14, 30);
+    doc.text(`Project: ${intern.project}`, 14, 38);
+    doc.text(`Generated on: ${format(new Date(), 'PPP')}`, 14, 46);
+
+    const tableData = [
+      ['Total Score', `${intern.score}%`],
+      ['Task Performance', `${intern.taskScore} / 40`],
+      ['Work Log Consistency', `${intern.logScore} / 35`],
+      ['Standup Completion', `${intern.standupScore} / 25`],
+      ['Trend', `${intern.trend}%`],
+      ['Status', intern.status]
+    ];
+
+    autoTable(doc, {
+      startY: 56,
+      head: [['Metric', 'Score']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [249, 115, 22] },
+    });
+
+    doc.save(`${intern.name.replace(/\s+/g, '_')}_Report.pdf`);
   };
 
   if (role === 'employee') {
@@ -541,7 +599,11 @@ export default function ContributionScores({ session }: { session?: any }) {
             Monitor intern performance, identify top contributors, and track productivity trends.
           </p>
         </div>
-
+        <div className="flex items-center gap-3">
+          <Button onClick={handleExportPDF} variant="outline" className="font-bold border-slate-200 dark:border-slate-800 rounded-xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-900">
+            <Download className="mr-2 h-4 w-4" /> Export Report
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -631,7 +693,14 @@ export default function ContributionScores({ session }: { session?: any }) {
                 />
               </div>
             </CardHeader>
-            <CardContent className="p-0 overflow-auto flex-1 relative">
+            <CardContent 
+              className={cn("p-0 overflow-auto flex-1 relative hide-scrollbar", isDragging ? "cursor-grabbing select-none" : "cursor-grab")}
+              ref={scrollRef}
+              onMouseDown={handleMouseDown}
+              onMouseLeave={handleMouseLeave}
+              onMouseUp={handleMouseUp}
+              onMouseMove={handleMouseMove}
+            >
               <table className="w-full whitespace-nowrap text-sm text-left relative">
                 <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-20">
                   <tr>
@@ -648,7 +717,8 @@ export default function ContributionScores({ session }: { session?: any }) {
                   {filteredInterns.map((intern, idx) => (
                     <tr
                       key={intern.id}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group"
+                      className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group cursor-pointer"
+                      onClick={() => setAnalyticsIntern(intern)}
                     >
                       <td className="px-6 py-4 font-black text-slate-400 dark:text-slate-600">
                         #{idx + 1}
@@ -821,7 +891,7 @@ export default function ContributionScores({ session }: { session?: any }) {
         <SheetContent side="right" className="w-full sm:max-w-md lg:max-w-lg overflow-y-auto bg-slate-50 dark:bg-slate-950 p-0 border-l border-slate-200 dark:border-slate-800">
           {analyticsIntern && (
             <div className="flex flex-col min-h-full">
-              <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-10 shadow-sm">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-10 shadow-sm flex items-center justify-between">
                 <SheetTitle className="text-xl sm:text-2xl font-black flex items-center gap-4">
                   <Avatar className="h-14 w-14 border-2 border-white dark:border-slate-800 shadow-sm">
                     <AvatarFallback className="bg-orange-100 text-orange-600 text-lg">
@@ -833,6 +903,9 @@ export default function ContributionScores({ session }: { session?: any }) {
                     <p className="text-sm font-medium text-slate-500 mt-1">{analyticsIntern.department} Intern</p>
                   </div>
                 </SheetTitle>
+                <Button onClick={() => handleExportPersonalPDF(analyticsIntern)} variant="outline" size="icon" className="h-9 w-9 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white border-slate-200 dark:border-slate-800 shrink-0" title="Export PDF">
+                  <Download className="h-4 w-4" />
+                </Button>
               </div>
               
               <div className="p-6 space-y-6 flex-1">

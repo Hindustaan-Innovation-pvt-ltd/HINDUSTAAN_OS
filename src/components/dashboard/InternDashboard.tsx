@@ -180,9 +180,10 @@ export default function InternDashboard({ session }: InternDashboardProps) {
 
   const employeeUpcomingEvents = useMemo(() => {
     const today = new Date();
-    return calendarEvents
-      .filter(e => isAfter(e.date, startOfDay(today)) || isSameDay(e.date, startOfDay(today)))
-      .sort((a, b) => a.date.getTime() - b.date.getTime())
+    const cutoffDate = startOfDay(today);
+    return [...calendarEvents]
+      .filter((e: any) => isAfter(e.date, cutoffDate) || isSameDay(e.date, cutoffDate))
+      .reverse()
       .slice(0, 5);
   }, [calendarEvents]);
 
@@ -598,7 +599,10 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                         <span className="text-sm font-black text-orange-700 dark:text-orange-300 leading-none mt-1">{format(evt.date, 'dd')}</span>
                       </div>
                       <div className="flex flex-col overflow-hidden flex-1">
-                        <span className="text-sm font-bold text-slate-900 dark:text-white truncate">{evt.title}</span>
+                        <div className="flex justify-between items-start gap-1">
+                          <span className="text-sm font-bold text-slate-900 dark:text-white truncate" title={evt.title}>{evt.title}</span>
+                          {evt.time && <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 whitespace-nowrap bg-orange-50 dark:bg-orange-500/10 px-1.5 py-0.5 rounded leading-none mt-0.5">{evt.time}</span>}
+                        </div>
                         <div className="flex items-center gap-1.5 mt-1">
                           <div className={cn("h-1.5 w-1.5 rounded-full",
                             evt.type === 'deadline' ? 'bg-rose-500' :

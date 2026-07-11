@@ -1932,6 +1932,18 @@ export default function DailyStandups({ session }: { session?: any }) {
                 placeholder="Type your message here..."
               />
             </div>
+            
+            {/* Open Meeting Room Button */}
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                onClick={() => window.open(meetingLink, '_blank')}
+                className="w-full h-12 rounded-2xl border-2 border-indigo-100 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-500/40 transition-all flex items-center justify-center text-[15px]"
+              >
+                <Video className="w-5 h-5 mr-2.5" />
+                1. Open Meeting Room
+              </Button>
+            </div>
 
           </div>
 
@@ -1993,6 +2005,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                     action: 'scheduled a',
                     target: 'Quick Meeting',
                     time: 'Just now',
+                    timestamp: Date.now(),
                     type: 'meeting'
                   };
                   localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newActivity, ...feed]));

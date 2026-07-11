@@ -7,7 +7,8 @@ import {
   Video, 
   Clock, 
   Flag, 
-  CheckCircle2 
+  CheckCircle2,
+  Settings
 } from 'lucide-react';
 import { format, isSameDay, isBefore, isAfter, startOfDay, addDays, parseISO, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -55,7 +56,7 @@ import { toast } from "sonner";
 import { useNotifications } from '@/context/NotificationContext';
 
 // Data Structures
-type EventType = 'deadline' | 'completed' | 'milestone' | 'leave';
+type EventType = 'deadline' | 'completed' | 'milestone' | 'leave' | 'meeting';
 
 interface ProjectEvent {
   id: string;
@@ -67,8 +68,8 @@ interface ProjectEvent {
   assignees?: { name: string; initials: string }[];
 }
 
-const START_DATE = new Date(2026, 6, 1); // July 1, 2026
-const END_DATE = new Date(2026, 9, 1); // October 1, 2026
+const DEFAULT_START_DATE = new Date(2026, 6, 1); // July 1, 2026
+const DEFAULT_END_DATE = new Date(2026, 9, 1); // October 1, 2026
 
 const MOCK_EVENTS: ProjectEvent[] = [
   { id: '1', date: new Date(2026, 6, 12), type: 'deadline', title: 'Backend Deadline', assignees: [{ name: 'Rahul Sharma', initials: 'RS' }] },
@@ -83,7 +84,17 @@ export function ProjectCalendarWidget() {
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(undefined);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [scheduleType, setScheduleType] = useState<'event'|'meeting'>('event');
+
+  const [startDate, setStartDate] = useState<Date>(() => {
+    const saved = localStorage.getItem('hindustaan_project_start_date');
+    return saved ? new Date(saved) : DEFAULT_START_DATE;
+  });
+  const [endDate, setEndDate] = useState<Date>(() => {
+    const saved = localStorage.getItem('hindustaan_project_end_date');
+    return saved ? new Date(saved) : DEFAULT_END_DATE;
+  });
   const [events, setEvents] = useState<ProjectEvent[]>(() => {
     const saved = localStorage.getItem('hindustaan_calendar_events');
     if (saved) {
@@ -154,22 +165,22 @@ export function ProjectCalendarWidget() {
   const today = new Date();
   
   // Ensure we render the correct default month. If today is outside the project range, show the nearest valid month.
-  const initialMonth = isBefore(today, START_DATE) ? START_DATE : isAfter(today, END_DATE) ? END_DATE : today;
+  const initialMonth = isBefore(today, startDate) ? startDate : isAfter(today, endDate) ? endDate : today;
   const [month, setMonth] = useState<Date>(initialMonth);
 
-  const totalDays = differenceInDays(END_DATE, START_DATE);
-  const daysCompleted = isBefore(today, START_DATE) ? 0 : isAfter(today, END_DATE) ? totalDays : differenceInDays(today, START_DATE);
-  const daysRemaining = totalDays - daysCompleted;
-  const progressPercent = Math.round((daysCompleted / totalDays) * 100);
+  const totalDays = differenceInDays(endDate, startDate);
+  const daysCompleted = isBefore(today, startDate) ? 0 : isAfter(today, endDate) ? totalDays : differenceInDays(today, startDate);
+  const daysRemaining = Math.max(0, totalDays - daysCompleted);
+  const progressPercent = totalDays > 0 ? Math.round((daysCompleted / totalDays) * 100) : 0;
 
   const workingDays = totalDays; // Simplification, could exclude weekends
 
   const upcomingEvents = useMemo(() => {
     // Keep events in "Upcoming" until 24 hours after their date
     const cutoffDate = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-    return events
+    return [...events]
       .filter(e => isAfter(e.date, cutoffDate))
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
+      .reverse();
   }, [events, today]);
 
   const handleDayClick = (day: Date) => {
@@ -198,7 +209,12 @@ export function ProjectCalendarWidget() {
       assignees: [{ name: 'Current User', initials: 'CU' }]
     };
 
-    setEvents(prev => [...prev, newEvent]);
+    setEvents(prev => {
+      const next = [...prev, newEvent];
+      localStorage.setItem('hindustaan_calendar_events', JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: next } }));
+      return next;
+    });
 
     toast.success(`${scheduleType === 'event' ? 'Event' : 'Meeting'} Scheduled Successfully`, {
       description: 'Your calendar has been updated with the new item.',
@@ -243,15 +259,67 @@ export function ProjectCalendarWidget() {
         <option value="review">Review</option>
         <option value="brainstorm">Brainstorming</option>
       </datalist>
-      <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
-      <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/30 dark:bg-slate-900/10">
-        <div className="flex items-center justify-between">
+
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Timeline Settings</DialogTitle>
+            <DialogDescription>
+              Update the project's start and end dates.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Start Date</Label>
+              <Input 
+                type="date" 
+                defaultValue={format(startDate, 'yyyy-MM-dd')} 
+                onChange={(e) => {
+                  const d = new Date(e.target.value);
+                  if (!isNaN(d.getTime())) {
+                    setStartDate(d);
+                    localStorage.setItem('hindustaan_project_start_date', d.toISOString());
+                  }
+                }}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>End Date</Label>
+              <Input 
+                type="date" 
+                defaultValue={format(endDate, 'yyyy-MM-dd')}
+                onChange={(e) => {
+                  const d = new Date(e.target.value);
+                  if (!isNaN(d.getTime())) {
+                    setEndDate(d);
+                    localStorage.setItem('hindustaan_project_end_date', d.toISOString());
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsSettingsOpen(false)}>Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Card className="rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-lg shadow-slate-200/20 dark:shadow-none flex flex-col overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl">
+      <CardHeader className="pb-6 border-b border-slate-100 dark:border-slate-800/60 bg-gradient-to-br from-orange-50/50 via-white to-rose-50/30 dark:from-orange-950/20 dark:via-slate-950 dark:to-rose-950/10 relative">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-orange-400/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="flex items-center justify-between relative z-10">
           <div>
             <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
               <CalendarIcon className="mr-2 h-5 w-5 text-orange-500" />
               Project Timeline
             </CardTitle>
-            <CardDescription className="text-xs font-semibold mt-1">July 1 - Oct 1, 2026</CardDescription>
+            <CardDescription 
+              className="text-xs font-semibold mt-1 cursor-pointer hover:text-orange-600 dark:hover:text-orange-400 transition-colors flex items-center gap-1.5 border border-transparent hover:border-orange-200 dark:hover:border-orange-900/50 hover:bg-orange-50 dark:hover:bg-orange-900/20 w-fit px-1.5 -ml-1.5 py-0.5 rounded-md"
+              onClick={() => setIsSettingsOpen(true)}
+              title="Click to change project dates"
+            >
+              {format(startDate, 'MMM d')} - {format(endDate, 'MMM d, yyyy')}
+              <Settings className="h-3 w-3 opacity-50" />
+            </CardDescription>
           </div>
           
           <div className="flex gap-2">
@@ -262,24 +330,26 @@ export function ProjectCalendarWidget() {
         </div>
 
         {/* Dashboard Summary */}
-        <div className="grid grid-cols-3 gap-4 pt-4 mt-2 border-t border-slate-100 dark:border-slate-800/60">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Working Days</span>
-            <span className="text-xl font-black text-slate-900 dark:text-white">{workingDays}</span>
+        <div className="grid grid-cols-3 gap-3 pt-5 mt-4 border-t border-slate-100/80 dark:border-slate-800/60 relative z-10">
+          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white/80 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/80 shadow-sm">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Working Days</span>
+            <span className="text-2xl font-black text-slate-900 dark:text-white leading-none">{workingDays}</span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Completed</span>
-            <span className="text-xl font-black text-emerald-600 dark:text-emerald-400">{daysCompleted}</span>
+          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100/50 dark:border-emerald-900/30 shadow-sm">
+            <span className="text-[10px] font-bold text-emerald-600/80 dark:text-emerald-500/80 uppercase tracking-wider mb-0.5">Completed</span>
+            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 leading-none">{daysCompleted}</span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Remaining</span>
-            <span className="text-xl font-black text-orange-600 dark:text-orange-400">{daysRemaining}</span>
+          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-orange-50/50 dark:bg-orange-950/20 border border-orange-100/50 dark:border-orange-900/30 shadow-sm">
+            <span className="text-[10px] font-bold text-orange-600/80 dark:text-orange-500/80 uppercase tracking-wider mb-0.5">Remaining</span>
+            <span className="text-2xl font-black text-orange-600 dark:text-orange-400 leading-none">{daysRemaining}</span>
           </div>
         </div>
 
-        <div className="mt-4 flex items-center gap-3">
-          <Progress value={progressPercent} className="h-2 flex-1 bg-slate-100 dark:bg-slate-800 [&>div]:bg-gradient-to-r [&>div]:from-orange-500 [&>div]:to-orange-400" />
-          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{progressPercent}%</span>
+        <div className="mt-5 flex items-center gap-4 relative z-10">
+          <div className="relative flex-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800/80 overflow-hidden shadow-inner">
+            <Progress value={progressPercent} className="h-full bg-transparent [&>div]:bg-gradient-to-r [&>div]:from-orange-500 [&>div]:via-orange-400 [&>div]:to-rose-500" />
+          </div>
+          <span className="text-sm font-black text-slate-700 dark:text-slate-300 w-10 text-right">{progressPercent}%</span>
         </div>
       </CardHeader>
 
@@ -293,18 +363,19 @@ export function ProjectCalendarWidget() {
             onSelect={(day) => day && handleDayClick(day)}
             month={month}
             onMonthChange={setMonth}
-            startMonth={START_DATE}
-            endMonth={END_DATE}
-            className="rounded-xl border-0 p-2 sm:p-4 bg-white dark:bg-slate-950/50 shadow-inner w-full flex justify-center"
+            startMonth={startDate}
+            endMonth={endDate}
+            className="rounded-2xl border border-slate-100/50 dark:border-slate-800/50 p-3 sm:p-5 bg-white/60 dark:bg-slate-950/60 shadow-lg shadow-slate-200/20 dark:shadow-none w-full flex justify-center backdrop-blur-md"
             classNames={{
-              day: "h-10 w-10 p-0 font-normal aria-selected:opacity-100 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative cursor-pointer outline-none focus:ring-2 focus:ring-orange-500/50",
-              today: "bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold border border-orange-200 dark:border-orange-500/30",
-              selected: "bg-orange-500 text-white hover:bg-orange-600 hover:text-white focus:bg-orange-600 focus:text-white font-bold",
-              weekday: "text-slate-500 dark:text-slate-400 rounded-md w-10 font-bold text-[0.75rem] uppercase",
+              month_caption: "flex justify-center pt-1 pb-3 relative items-center w-full",
+              day: "h-10 w-10 p-0 font-normal aria-selected:opacity-100 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-600 dark:hover:text-orange-400 hover:scale-105 transition-all duration-200 relative cursor-pointer outline-none focus:ring-2 focus:ring-orange-500/50",
+              today: "bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-900/10 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-500/30 shadow-sm",
+              selected: "bg-gradient-to-br from-orange-500 to-rose-500 text-white hover:from-orange-600 hover:to-rose-600 hover:text-white focus:from-orange-600 focus:to-rose-600 focus:text-white font-bold shadow-md shadow-orange-500/30 hover:scale-105 transition-all",
+              weekday: "text-slate-400 dark:text-slate-500 rounded-md w-10 font-bold text-[0.75rem] uppercase tracking-wider",
               month: "w-full relative text-slate-900 dark:text-white",
-              caption_label: "text-sm font-bold text-slate-900 dark:text-white",
-              button_previous: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-slate-900 dark:text-white absolute left-1 flex items-center justify-center",
-              button_next: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-slate-900 dark:text-white absolute right-1 flex items-center justify-center",
+              caption_label: "text-sm font-black text-slate-800 dark:text-slate-100 text-center",
+              button_previous: "h-8 w-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0 opacity-70 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white absolute left-1 flex items-center justify-center transition-all shadow-sm z-10",
+              button_next: "h-8 w-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0 opacity-70 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white absolute right-1 flex items-center justify-center transition-all shadow-sm z-10",
             }}
             components={{
               DayButton: ({ day, modifiers, ...props }) => {
@@ -380,22 +451,30 @@ export function ProjectCalendarWidget() {
         {/* Right Side: Upcoming Events & Quick Actions */}
         <div className="p-4 sm:p-6 flex flex-col h-full bg-slate-50/30 dark:bg-slate-900/10 min-w-0 w-full overflow-hidden">
           <div className="flex-1 w-full">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-5">
               <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center"><Clock className="mr-2 h-4 w-4 text-orange-500" /> Upcoming Events</h4>
-              <Button onClick={() => setIsAllEventsOpen(true)} variant="ghost" size="sm" className="h-6 px-2 text-[10px] font-bold text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-500/10 cursor-pointer">History</Button>
+              <Button onClick={() => setIsAllEventsOpen(true)} variant="outline" size="sm" className="h-7 px-3 text-[10px] font-bold text-slate-600 dark:text-slate-300 rounded-full bg-white dark:bg-slate-900 shadow-sm hover:text-orange-600 dark:hover:text-orange-400 transition-all cursor-pointer">View History</Button>
             </div>
-            <div className="space-y-3 max-h-[320px] overflow-y-auto pr-2">
+            <div className="space-y-3.5 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
               {upcomingEvents.length > 0 ? upcomingEvents.map((evt) => (
-                <div key={evt.id} onClick={() => setEventToView(evt)} className="group relative flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-950 shadow-sm border border-slate-100 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-500/30 transition-all pr-8 cursor-pointer">
-                  <div className="flex flex-col items-center justify-center h-11 w-11 rounded-lg bg-orange-50 dark:bg-orange-500/10 shrink-0">
-                    <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase leading-none">{format(evt.date, 'MMM')}</span>
-                    <span className="text-sm font-black text-orange-700 dark:text-orange-300 leading-none mt-1">{format(evt.date, 'dd')}</span>
+                <div key={evt.id} onClick={() => setEventToView(evt)} className="group relative flex items-center gap-3.5 p-3 rounded-2xl bg-white dark:bg-slate-950/80 shadow-sm border border-slate-100 dark:border-slate-800/80 hover:border-orange-200 dark:hover:border-orange-900/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 pr-8 cursor-pointer">
+                  <div className="flex flex-col items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/30 dark:to-orange-900/10 shrink-0 border border-orange-100/50 dark:border-orange-500/20 shadow-inner">
+                    <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase leading-none mb-0.5 tracking-wider">{format(evt.date, 'MMM')}</span>
+                    <span className="text-sm font-black text-orange-700 dark:text-orange-300 leading-none">{format(evt.date, 'dd')}</span>
                   </div>
                   <div className="flex flex-col overflow-hidden flex-1">
                     <span className="text-sm font-bold text-slate-900 dark:text-white truncate">{evt.title}</span>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <div className={cn("h-1.5 w-1.5 rounded-full", getEventColor(evt.type))} />
-                      <span className="text-[10px] font-semibold text-slate-500 capitalize">{evt.type}</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-1.5">
+                        <div className={cn("h-1.5 w-1.5 rounded-full", getEventColor(evt.type))} />
+                        <span className="text-[10px] font-semibold text-slate-500 capitalize">{evt.type}</span>
+                      </div>
+                      {evt.time && (
+                        <>
+                          <span className="text-[10px] text-slate-300 dark:text-slate-700">•</span>
+                          <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 px-1.5 py-0.5 rounded leading-none">{evt.time}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <DropdownMenu>
@@ -421,12 +500,12 @@ export function ProjectCalendarWidget() {
           </div>
 
           {/* Quick Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 w-full mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/60">
+          <div className="flex flex-col sm:flex-row gap-3 w-full mt-6 pt-5 border-t border-slate-100 dark:border-slate-800/60 relative">
             <Button 
               onClick={() => { setScheduleType('event'); setIsScheduleOpen(true); }}
               variant="outline" 
               size="sm" 
-              className="flex-1 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold h-10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm whitespace-nowrap"
+              className="flex-1 rounded-xl border border-orange-200 dark:border-orange-900/30 text-orange-700 dark:text-orange-300 font-bold h-11 bg-gradient-to-b from-orange-50 to-white dark:from-orange-900/20 dark:to-slate-900 hover:from-orange-100 hover:to-orange-50 dark:hover:from-orange-800/30 dark:hover:to-orange-900/20 shadow-sm hover:shadow transition-all whitespace-nowrap"
             >
               <Plus className="mr-2 h-4 w-4 text-orange-500" /> New Event
             </Button>
@@ -434,9 +513,9 @@ export function ProjectCalendarWidget() {
               onClick={() => { setScheduleType('meeting'); setIsScheduleOpen(true); }}
               variant="outline" 
               size="sm" 
-              className="flex-1 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold h-10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm whitespace-nowrap"
+              className="flex-1 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold h-11 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm hover:shadow transition-all whitespace-nowrap"
             >
-              <Video className="mr-2 h-4 w-4 text-orange-500" /> Meeting
+              <Video className="mr-2 h-4 w-4 text-blue-500" /> Sync Meeting
             </Button>
           </div>
         </div>
@@ -853,7 +932,20 @@ export function ProjectCalendarWidget() {
                 )}
               </div>
               
-              <div className="px-8 py-5 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900 flex justify-end">
+              <div className="px-8 py-5 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900 flex justify-end gap-3">
+                {eventToView.type === 'meeting' && eventToView.description?.includes('Link:') && (
+                  <Button 
+                    onClick={() => {
+                      const linkMatch = eventToView.description?.match(/Link:\s*(https?:\/\/[^\s]+)/);
+                      if (linkMatch && linkMatch[1]) {
+                        window.open(linkMatch[1], '_blank');
+                      }
+                    }}
+                    className="rounded-xl px-6 font-bold bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 dark:bg-slate-900 dark:text-indigo-400 dark:border-indigo-500/30 dark:hover:bg-indigo-500/10 shadow-sm"
+                  >
+                    <Video className="w-4 h-4 mr-2" /> Join Meeting
+                  </Button>
+                )}
                 <Button onClick={() => setEventToView(null)} className="rounded-xl px-8 font-bold bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
                   Close
                 </Button>

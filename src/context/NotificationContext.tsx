@@ -17,6 +17,7 @@ export interface NotificationItem {
   title: string;
   message: string;
   time: string;
+  timestamp?: number;
   unread: boolean;
   group: string;
   priority?: string;
@@ -40,6 +41,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     title: 'New Task Assigned',
     message: 'Rahul assigned Authentication Module to Tanvy.',
     time: '2 minutes ago',
+    timestamp: Date.now() - 2 * 60 * 1000,
     unread: true,
     group: 'Today',
     actions: [
@@ -55,6 +57,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     title: 'Task Completed',
     message: 'Tanvy completed Dashboard UI.',
     time: '10 minutes ago',
+    timestamp: Date.now() - 10 * 60 * 1000,
     unread: true,
     group: 'Today',
   },
@@ -67,6 +70,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     message: 'Backend API deadline is tomorrow.',
     priority: 'High',
     time: '1 hour ago',
+    timestamp: Date.now() - 60 * 60 * 1000,
     unread: true,
     group: 'Today',
   },
@@ -78,6 +82,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     title: 'Standup Missing',
     message: 'Priya and Aman haven\'t submitted today\'s standup.',
     time: '2 hours ago',
+    timestamp: Date.now() - 2 * 60 * 60 * 1000,
     unread: false,
     group: 'Today',
   },
@@ -89,6 +94,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     title: 'Work Log Submitted',
     message: 'Rahul logged 7.5 hours today.',
     time: '5 hours ago',
+    timestamp: Date.now() - 5 * 60 * 60 * 1000,
     unread: false,
     group: 'Today',
   },
@@ -98,8 +104,9 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     category: 'Team',
     icon: '👤',
     title: 'New Team Member',
-    message: 'Neha Sharma joined the Frontend Team.',
-    time: 'Yesterday',
+    message: 'Sarah Jenning joined the project.',
+    time: '1 day ago',
+    timestamp: Date.now() - 24 * 60 * 60 * 1000,
     unread: false,
     group: 'Yesterday',
   },
@@ -109,8 +116,9 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     category: 'Team',
     icon: '📅',
     title: 'Leave Request',
-    message: 'Aman requested leave for 12 July.',
-    time: 'Yesterday',
+    message: 'Client feedback document attached.',
+    time: '1 day ago',
+    timestamp: Date.now() - 24 * 60 * 60 * 1000,
     unread: false,
     group: 'Yesterday',
     actions: [
@@ -126,6 +134,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     title: 'Milestone Completed',
     message: 'Sprint 2 milestone completed.',
     time: '2 days ago',
+    timestamp: Date.now() - 2 * 24 * 60 * 60 * 1000,
     unread: false,
     group: 'Earlier',
   },
@@ -137,6 +146,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     title: 'Project Risk',
     message: 'Crime Prediction System is behind schedule.',
     time: '2 days ago',
+    timestamp: Date.now() - 2 * 24 * 60 * 60 * 1000,
     unread: false,
     group: 'Earlier',
   }
@@ -208,6 +218,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       ...notif,
       id: Date.now(),
       time: 'Just now',
+      timestamp: Date.now(),
       unread: true,
     };
     setNotifications(prev => [newNotification, ...prev]);

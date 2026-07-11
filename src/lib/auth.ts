@@ -81,6 +81,14 @@ export const loginUser = (email: string, password?: string, rememberMe: boolean 
 };
 
 export const logoutUser = () => {
+  const user = getCurrentUser();
+  if (user) {
+    let userId = 'u-4';
+    if (user.email.toLowerCase().includes('amanda')) userId = 'u-1';
+    else if (user.email.toLowerCase().includes('rahul')) userId = 'u-2';
+    else if (user.email.toLowerCase().includes('priya')) userId = 'u-3';
+    localStorage.removeItem(`login_time_${userId}`);
+  }
   localStorage.removeItem(LOCAL_SESSION_KEY);
   sessionStorage.removeItem(LOCAL_SESSION_KEY);
 };

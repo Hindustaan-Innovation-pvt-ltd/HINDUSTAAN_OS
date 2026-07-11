@@ -136,7 +136,8 @@ export default function Login({
           user: userName, 
           action: 'logged into', 
           target: 'Project OS', 
-          time: 'Just now', 
+          time: 'Just now',
+          timestamp: Date.now(), 
           type: 'login' 
         };
         localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newEvent, ...feed].slice(0, 20)));
