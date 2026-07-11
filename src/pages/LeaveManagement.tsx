@@ -405,8 +405,8 @@ export default function LeaveManagement({ session }: { session: any }) {
             </>
           ) : (
             <>
-              <TabsTrigger value="requests" className="rounded-xl font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white">Team Requests</TabsTrigger>
-              <TabsTrigger value="calendar" className="rounded-xl font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white">Team Calendar</TabsTrigger>
+              <TabsTrigger value="requests" className="rounded-xl font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white">Employee's Leave Requests</TabsTrigger>
+              <TabsTrigger value="calendar" className="rounded-xl font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white">Employee's Leave Calendar</TabsTrigger>
             </>
           )}
         </TabsList>
@@ -858,7 +858,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                 {/* Calendar Section */}
                 <div className="w-full xl:w-2/3 shrink-0">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Team Calendar</h3>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Employee's Leave Calendar</h3>
                     <div className="flex items-center gap-3">
                       <Button variant="outline" size="sm" onClick={() => { setCalendarMonth(new Date()); setSelectedDate(new Date()); }} className="h-10 rounded-xl font-bold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-sm">
                         Today
@@ -898,10 +898,11 @@ export default function LeaveManagement({ session }: { session: any }) {
                         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
                         month: "space-y-4 w-full",
                         nav: "hidden", // Hide default navigation as we use custom dropdowns above
-                        caption: "hidden", // We use custom header above
-                        table: "w-full border-collapse space-y-1",
-                        head_row: "flex w-full",
-                        head_cell: "text-slate-500 rounded-md w-10 sm:w-14 font-black text-[11px] uppercase tracking-wider flex-1",
+                        caption: "hidden", // Legacy caption
+                        month_caption: "hidden", // v9: Hide month caption since we use custom dropdowns
+                        dropdowns: "hidden", // v9: Hide dropdowns
+                        weekdays: "flex w-full", // v9: weekdays container
+                        weekday: "text-slate-500 dark:text-slate-400 rounded-md w-10 sm:w-14 font-black text-[11px] uppercase tracking-wider flex-1 text-center select-none", // v9: weekday cells
                         row: "flex w-full mt-2",
                         cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 h-10 sm:h-14 w-10 sm:w-14 flex-1 flex items-center justify-center",
                         day: "h-full w-full p-0 font-normal aria-selected:opacity-100",
