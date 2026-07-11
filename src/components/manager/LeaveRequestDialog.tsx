@@ -1,0 +1,166 @@
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { CalendarDays, Check, XCircle, Loader2, Mail } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { toast as sonnerToast } from 'sonner';
+
+const toast = ({ title, description }: { title: string; description: string }) => {
+  sonnerToast.success(title, { description });
+};
+
+export interface LeaveRequest {
+  id: number;
+  employee: string;
+  avatar?: string;
+  department: string;
+  type: string;
+  start: string;
+  end: string;
+  appliedOn: string;
+  reason: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  days: number;
+  hrNotified?: boolean;
+}
+
+interface LeaveRequestDialogProps {
+  request: LeaveRequest | null;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onApprove: (id: number) => Promise<void>;
+  onReject: (id: number) => Promise<void>;
+}
+
+export default function LeaveRequestDialog({
+  request,
+  isOpen,
+  onOpenChange,
+  onApprove,
+  onReject
+}: LeaveRequestDialogProps) {
+  const [isPending, setIsPending] = useState(false);
+
+  if (!request) return null;
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  };
+
+  const handleApprove = async () => {
+    setIsPending(true);
+    try {
+      await onApprove(request.id);
+      onOpenChange(false);
+      toast({
+        title: "Action Completed",
+        description: "Leave request status updated successfully."
+      });
+    } catch (error) {
+      sonnerToast.error('Failed to approve leave request.');
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  const handleReject = async () => {
+    setIsPending(true);
+    try {
+      await onReject(request.id);
+      onOpenChange(false);
+      toast({
+        title: "Action Completed",
+        description: "Leave request status updated successfully."
+      });
+    } catch (error) {
+      sonnerToast.error('Failed to reject leave request.');
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px] rounded-3xl bg-slate-900 text-white border-slate-800 shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-2">
+          <DialogTitle className="text-xl font-black text-slate-100">Leave Request Details</DialogTitle>
+          <DialogDescription className="text-slate-400">
+            Review and take action on the submitted leave application.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="p-6 space-y-6">
+          {/* Employee Info Header */}
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16 border-4 border-slate-800 shadow-md">
+              <AvatarImage src={request.avatar} alt={request.employee} />
+              <AvatarFallback className="bg-slate-850 text-slate-300 font-bold text-xl">
+                {getInitials(request.employee)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h4 className="font-black text-xl text-white">{request.employee}</h4>
+                <Badge variant="secondary" className="bg-slate-800 text-slate-300 border-0 font-bold">
+                  {request.department}
+                </Badge>
+              </div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                APPLIED ON {request.appliedOn}
+              </p>
+            </div>
+          </div>
+
+          {/* Sub-cards: Details and Reason */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Leave Details Sub-card */}
+            <div className="bg-slate-850/50 rounded-2xl p-4 flex flex-col gap-1 border border-slate-800 shadow-sm">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Leave Details</span>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge className="bg-blue-900/30 text-blue-400 border-0 hover:bg-blue-900/40">
+                  {request.type}
+                </Badge>
+                <span className="text-sm font-bold text-slate-300 flex items-center">
+                  <CalendarDays className="h-4 w-4 mr-1.5 text-slate-500" />
+                  {request.days} Day{request.days > 1 ? 's' : ''}
+                </span>
+              </div>
+              <span className="text-sm font-medium text-slate-400 mt-1">
+                {request.start} <span className="text-slate-500 mx-1">→</span> {request.end}
+              </span>
+            </div>
+
+            {/* Reason Sub-card */}
+            <div className="bg-amber-950/10 rounded-2xl p-4 flex flex-col gap-1 border border-amber-900/20 shadow-sm">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-500/70">Reason</span>
+              <p className="text-sm font-medium text-amber-200 mt-1 leading-snug italic">
+                "{request.reason}"
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Dialog Actions Footer */}
+        <DialogFooter className="p-6 bg-slate-950/50 border-t border-slate-850 flex flex-col sm:flex-row gap-3">
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto rounded-xl h-12 font-bold text-rose-400 hover:text-rose-350 hover:bg-rose-950/20 border-rose-900/50 shadow-sm"
+            onClick={handleReject}
+            disabled={isPending}
+          >
+            {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <><XCircle className="h-5 w-5 mr-2" /> Reject</>}
+          </Button>
+          <Button
+            className="w-full sm:w-auto rounded-xl h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20"
+            onClick={handleApprove}
+            disabled={isPending}
+          >
+            {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="h-5 w-5 mr-2" /> Approve Leave</>}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, Video, CheckCircle2, AlertCircle, MessageSquare, Clock, Calendar, CheckSquare, Edit3, Sparkles, TrendingUp, AlertTriangle, Flame, Percent, Search, Trash2, MessageCircle, Users, Briefcase, Send, Check, ChevronDown } from 'lucide-react';
+import { Mic, Video, CheckCircle2, AlertCircle, MessageSquare, Clock, Calendar, CheckSquare, Edit3, Sparkles, TrendingUp, AlertTriangle, Flame, Percent, Search, Trash2, MessageCircle, Users, Briefcase, Send, Check, ChevronDown, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -146,7 +146,7 @@ export default function DailyStandups({ session }: { session?: any }) {
     return (saved && saved !== 'null') ? JSON.parse(saved) : MOCK_HISTORY;
   });
 
-  const [standupSettings] = useState(() => {
+  const [standupSettings, setStandupSettings] = useState(() => {
     const saved = localStorage.getItem('projectos-standup-settings');
     return saved ? JSON.parse(saved) : {
       reminderEnabled: true,
@@ -160,6 +160,25 @@ export default function DailyStandups({ session }: { session?: any }) {
       browserNotification: true
     };
   });
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'projectos-standup-settings' && e.newValue) {
+        setStandupSettings(JSON.parse(e.newValue));
+      }
+    };
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'projectos-standup-settings') {
+        setStandupSettings(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : e.detail.value);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    };
+  }, []);
 
   const isDeadlinePassed = () => {
     if (!standupSettings.deadline) return false;
@@ -554,6 +573,18 @@ export default function DailyStandups({ session }: { session?: any }) {
     ? Math.round((tasksCompletedCount / myTasks.length) * 100)
     : 0;
 
+  const topPriorityTask = React.useMemo(() => {
+    const active = myTasks.filter((t: any) => t && t.status !== 'Done');
+    if (active.length === 0) return null;
+    const weights: Record<string, number> = { 'High': 3, 'Normal': 2, 'Low': 1 };
+    return active.sort((a: any, b: any) => {
+      const wA = weights[a.priority] || 0;
+      const wB = weights[b.priority] || 0;
+      if (wA !== wB) return wB - wA;
+      return new Date(a.due_date || 0).getTime() - new Date(b.due_date || 0).getTime();
+    })[0];
+  }, [myTasks]);
+
   const savedLogs = localStorage.getItem('work_logs_list');
   const allLogs = (savedLogs && savedLogs !== 'null') ? JSON.parse(savedLogs) : [];
   const allLogsArray = Array.isArray(allLogs) ? allLogs : [];
@@ -894,7 +925,7 @@ export default function DailyStandups({ session }: { session?: any }) {
   }
 
   return (
-    <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8">
+    <div className="flex flex-col min-h-full w-full p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
@@ -1076,11 +1107,27 @@ export default function DailyStandups({ session }: { session?: any }) {
             {standup.status === 'Submitted' && (
               <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50 flex items-center justify-between transition-opacity">
                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{standup.time}</span>
-                {role === 'manager' && (
-                  <Button onClick={(e) => { e.stopPropagation(); setReplyStandupId(standup.id); }} variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-500 hover:text-orange-600">
-                    <MessageSquare className="h-3 w-3 mr-1.5" /> Reply
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {role === 'manager' && (
+                    <Button onClick={(e) => { e.stopPropagation(); setReplyStandupId(standup.id); }} variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-500 hover:text-orange-600">
+                      <MessageSquare className="h-3 w-3 mr-1.5" /> Reply
+                    </Button>
+                  )}
+                  {role !== 'manager' && standup.user === currentUserName && !isDeadlinePassed() && (
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFormData({ yesterday: standup.yesterday, today: standup.today, blockers: standup.blockers, notes: '' });
+                        setIsModalOpen(true);
+                      }}
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 text-xs font-bold text-slate-500 hover:text-indigo-600"
+                    >
+                      <Edit3 className="h-3 w-3 mr-1.5" /> Edit
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1217,7 +1264,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               )}
 
               {/* Weekly Standup Activity */}
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm h-[320px] flex flex-col">
                 <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
                   <CardTitle className="text-base flex items-center">
                     <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
@@ -1225,8 +1272,8 @@ export default function DailyStandups({ session }: { session?: any }) {
                   </CardTitle>
                   <CardDescription>Standups submitted over the last 7 days.</CardDescription>
                 </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="h-[200px] w-full">
+                <CardContent className="pt-6 flex-1 min-h-0">
+                  <div className="h-full w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={[
                         { day: 'Mon', submitted: 1 },
@@ -1245,6 +1292,40 @@ export default function DailyStandups({ session }: { session?: any }) {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Current Top Priority Task */}
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm">
+                <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <CardTitle className="text-base flex items-center">
+                    <Target className="h-5 w-5 text-indigo-600 dark:text-indigo-400 mr-2" />
+                    Current Top Priority
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-5">
+                  {topPriorityTask ? (
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-white text-lg mb-1">{topPriorityTask.title}</h4>
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50 font-black uppercase text-[10px]">
+                            {topPriorityTask.priority} Priority
+                          </Badge>
+                          <span className="text-xs font-semibold text-slate-500 flex items-center">
+                            <Clock className="h-3 w-3 mr-1" /> Due: {topPriorityTask.due_date}
+                          </span>
+                        </div>
+                      </div>
+                      <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 font-bold px-3 py-1.5 cursor-default">
+                        {topPriorityTask.status}
+                      </Badge>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center py-4 text-sm font-medium text-slate-400">
+                      No active tasks right now. You're all caught up!
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1288,19 +1369,19 @@ export default function DailyStandups({ session }: { session?: any }) {
               </Card>
 
               {/* Quick Notes */}
-              <Card className="rounded-2xl border-amber-200 dark:border-amber-800/60 shadow-sm bg-amber-50/40 dark:bg-amber-950/15 overflow-hidden">
+              <Card className="rounded-2xl border-amber-200 dark:border-amber-800/60 shadow-sm bg-amber-50/40 dark:bg-amber-950/15 overflow-hidden h-[320px] flex flex-col">
                 <CardHeader className="pb-3 border-b border-amber-100 dark:border-amber-900/30">
                   <CardTitle className="text-base flex items-center text-amber-900 dark:text-amber-300">
                     <Edit3 className="h-5 w-5 text-amber-600 dark:text-amber-400 mr-2" />
                     Quick Notes
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-4">
+                <CardContent className="pt-4 flex-1 min-h-0">
                   <textarea
                     value={note}
                     onChange={handleNoteChange}
                     placeholder="Write a sticky note for today's goals or ideas..."
-                    className="w-full h-32 bg-transparent border-none outline-none resize-none text-sm text-slate-800 dark:text-slate-300 placeholder:text-amber-600/40 dark:placeholder:text-amber-400/30 leading-relaxed font-medium"
+                    className="w-full h-full bg-transparent border-none outline-none resize-none text-sm text-slate-800 dark:text-slate-300 placeholder:text-amber-600/40 dark:placeholder:text-amber-400/30 leading-relaxed font-medium"
                   />
                 </CardContent>
               </Card>
@@ -1384,8 +1465,7 @@ export default function DailyStandups({ session }: { session?: any }) {
             </p>
           </DialogHeader>
           <div className="p-6 space-y-6">
-            {standupSettings.yesterdayWork && (
-              <div className="space-y-2">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
                 <Button 
@@ -1408,8 +1488,6 @@ export default function DailyStandups({ session }: { session?: any }) {
                 className="w-full h-20 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
             </div>
-            )}
-            {standupSettings.todaysPlan && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What will you do today?</label>
@@ -1433,8 +1511,6 @@ export default function DailyStandups({ session }: { session?: any }) {
                 className="w-full h-20 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
             </div>
-            )}
-            {standupSettings.blockers && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Any blockers? (Optional)</label>
@@ -1458,11 +1534,9 @@ export default function DailyStandups({ session }: { session?: any }) {
                 className="w-full h-16 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
             </div>
-            )}
-            {standupSettings.additionalNotes && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Additional Notes</label>
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Additional Notes (Optional)</label>
                 <Button 
                   type="button"
                   variant="ghost" 
@@ -1483,7 +1557,6 @@ export default function DailyStandups({ session }: { session?: any }) {
                 className="w-full h-16 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
             </div>
-            )}
             <div className="pt-2 flex justify-between gap-3">
               <Button onClick={() => setIsModalOpen(false)} variant="outline" className="flex-1 h-11 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold">
                 Cancel

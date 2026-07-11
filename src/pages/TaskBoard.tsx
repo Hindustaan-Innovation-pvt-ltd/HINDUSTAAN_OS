@@ -345,6 +345,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
               key={columnStatus} 
               className={cn(
                 "flex flex-col w-full snap-start",
+                currentUser.role === 'intern' && "h-fit",
                 isSidebarMinimized 
                   ? "min-w-[250px] lg:min-w-0 max-w-[380px] lg:max-w-none flex-1" 
                   : "min-w-[320px] max-w-[320px] shrink-0"
@@ -366,7 +367,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
               </div>
 
               {/* Column Track */}
-              <div className="flex-1 flex flex-col gap-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-2xl p-3 border border-slate-200 dark:border-slate-700/60 min-h-[150px]">
+              <div className={cn("flex flex-col gap-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-2xl p-3 border border-slate-200 dark:border-slate-700/60 min-h-[150px]", currentUser.role !== 'intern' && "flex-1")}>
                 {columnTasks.length === 0 ? (
                   <EmptyColumnPlaceholder status={columnStatus} role={currentUser.role} />
                 ) : (

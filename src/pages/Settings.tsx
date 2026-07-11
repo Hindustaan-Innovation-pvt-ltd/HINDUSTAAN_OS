@@ -356,7 +356,7 @@ export default function Settings({ session }: { session: any }) {
             <Card className="bg-gradient-to-br from-violet-500 to-blue-600 text-white shadow-lg border-0">
               <CardContent className="p-6">
                 <h3 className="text-lg font-bold mb-4 flex items-center"><Clock className="h-5 w-5 mr-2"/> Standup Configuration</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <p className="text-violet-100 text-xs font-semibold uppercase">Reminder</p>
                     <p className="text-xl font-bold">{standupSettings.reminderEnabled ? standupSettings.reminderTime : 'Off'}</p>
@@ -364,12 +364,6 @@ export default function Settings({ session }: { session: any }) {
                   <div>
                     <p className="text-violet-100 text-xs font-semibold uppercase">Deadline</p>
                     <p className="text-xl font-bold">{standupSettings.deadline}</p>
-                  </div>
-                  <div>
-                    <p className="text-violet-100 text-xs font-semibold uppercase">Enabled Sections</p>
-                    <p className="text-xl font-bold">
-                      {[standupSettings.yesterdayWork, standupSettings.todaysPlan, standupSettings.blockers, standupSettings.additionalNotes].filter(Boolean).length}/4
-                    </p>
                   </div>
                   <div>
                     <p className="text-violet-100 text-xs font-semibold uppercase">Notifications</p>
@@ -416,29 +410,7 @@ export default function Settings({ session }: { session: any }) {
                   </div>
                 </div>
 
-                {/* Format Toggles */}
-                <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
-                  <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-4">Standup Format Options</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {[
-                      { key: 'yesterdayWork', label: "Yesterday's Work" },
-                      { key: 'todaysPlan', label: "Today's Plan" },
-                      { key: 'blockers', label: "Blockers" },
-                      { key: 'additionalNotes', label: "Additional Notes" }
-                    ].map(fmt => (
-                      <div key={fmt.key} className="flex items-center justify-between p-3 rounded-xl bg-white/60 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
-                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{fmt.label}</span>
-                        <Switch 
-                          checked={standupSettings[fmt.key as keyof typeof standupSettings] as boolean} 
-                          onCheckedChange={() => handleStandupToggle(fmt.key as keyof typeof standupSettings)} 
-                          className="data-[state=checked]:bg-violet-600 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-700 [&>span]:bg-white"
-                        />
-                      </div>
-                    ))}
-                  </div>
 
-
-                </div>
 
                 {/* Notifications & Automation */}
                 <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
