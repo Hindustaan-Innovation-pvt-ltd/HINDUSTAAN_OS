@@ -1384,8 +1384,7 @@ export default function DailyStandups({ session }: { session?: any }) {
             </p>
           </DialogHeader>
           <div className="p-6 space-y-6">
-            {standupSettings.yesterdayWork && (
-              <div className="space-y-2">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
                 <Button 
@@ -1408,8 +1407,6 @@ export default function DailyStandups({ session }: { session?: any }) {
                 className="w-full h-20 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
             </div>
-            )}
-            {standupSettings.todaysPlan && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What will you do today?</label>
@@ -1433,8 +1430,6 @@ export default function DailyStandups({ session }: { session?: any }) {
                 className="w-full h-20 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
             </div>
-            )}
-            {standupSettings.blockers && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Any blockers? (Optional)</label>
@@ -1458,11 +1453,9 @@ export default function DailyStandups({ session }: { session?: any }) {
                 className="w-full h-16 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
             </div>
-            )}
-            {standupSettings.additionalNotes && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Additional Notes</label>
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Additional Notes (Optional)</label>
                 <Button 
                   type="button"
                   variant="ghost" 
@@ -1483,7 +1476,6 @@ export default function DailyStandups({ session }: { session?: any }) {
                 className="w-full h-16 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
             </div>
-            )}
             <div className="pt-2 flex justify-between gap-3">
               <Button onClick={() => setIsModalOpen(false)} variant="outline" className="flex-1 h-11 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold">
                 Cancel
