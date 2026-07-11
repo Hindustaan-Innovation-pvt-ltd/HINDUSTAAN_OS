@@ -24,31 +24,33 @@ function MetricCard({ name, data, period, onPeriodChange }: { name: string, data
   
   return (
     <Card className="w-full relative overflow-hidden shadow-sm border-slate-200 dark:border-slate-700/60 rounded-2xl">
-      <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 gap-4">
-        <div>
-          <CardTitle className="text-lg flex items-center">
-            <Trophy className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
-            Performance Metric
-          </CardTitle>
-          <CardDescription className="mt-1 font-semibold">{name}</CardDescription>
+      <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800 gap-3">
+        {/* Title row: icon + title on one line, subtitle aligned under title */}
+        <div className="flex items-start gap-2">
+          <Trophy className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5 shrink-0" />
+          <div>
+            <CardTitle className="text-lg leading-tight whitespace-nowrap">Performance Metric</CardTitle>
+            <CardDescription className="mt-0.5 font-semibold">{name}</CardDescription>
+          </div>
         </div>
-        <Tabs value={period} onValueChange={onPeriodChange} className="w-full sm:w-auto">
-          <TabsList className="grid w-full grid-cols-3 sm:w-[300px] bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+        {/* Filter tabs: full-width, fits inside card */}
+        <Tabs value={period} onValueChange={onPeriodChange} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
             <TabsTrigger 
               value="Today"
-              className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
+              className="rounded-lg text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
             >
               Today
             </TabsTrigger>
             <TabsTrigger 
               value="This Week"
-              className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
+              className="rounded-lg text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
             >
               This Week
             </TabsTrigger>
             <TabsTrigger 
               value="This Month"
-              className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
+              className="rounded-lg text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
             >
               This Month
             </TabsTrigger>

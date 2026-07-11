@@ -153,8 +153,16 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('hindustaan_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
-  // Listen for external writes to localStorage (e.g. from employee dashboard extension requests)
+  // Listen for external writes to localStorage (cross-tab sync)
   useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hindustaan_notifications' && e.newValue) {
+        try {
+          setNotifications(JSON.parse(e.newValue));
+        } catch (e) { console.error(e); }
+      }
+    };
+    
     const handleExternalUpdate = () => {
       const saved = localStorage.getItem('hindustaan_notifications');
       if (saved && saved !== 'null') {
@@ -163,8 +171,13 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         } catch (e) { console.error(e); }
       }
     };
+
+    window.addEventListener('storage', handleStorageChange);
     window.addEventListener('notifications-updated', handleExternalUpdate);
-    return () => window.removeEventListener('notifications-updated', handleExternalUpdate);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('notifications-updated', handleExternalUpdate);
+    };
   }, []);
 
   const addNotification = (notif: Omit<NotificationItem, 'id' | 'time' | 'unread'>) => {

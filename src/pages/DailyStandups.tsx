@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, Video, CheckCircle2, AlertCircle, MessageSquare, Clock, Calendar, CheckSquare, Edit3, Sparkles, TrendingUp, AlertTriangle, Flame, Percent, Search, Trash2, MessageCircle } from 'lucide-react';
+import { Mic, Video, CheckCircle2, AlertCircle, MessageSquare, Clock, Calendar, CheckSquare, Edit3, Sparkles, TrendingUp, AlertTriangle, Flame, Percent, Search, Trash2, MessageCircle, Users, Briefcase, Send, Check, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -194,6 +195,20 @@ export default function DailyStandups({ session }: { session?: any }) {
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
   const [meetingLink, setMeetingLink] = useState('https://meet.google.com/new');
   const [meetingMessage, setMeetingMessage] = useState('Hi team, please join the daily standup meeting now!');
+  const [selectedMeetingParticipants, setSelectedMeetingParticipants] = useState<string[]>([]);
+  
+  const EMPLOYEES = [
+    { id: 'u2', name: 'Rahul Sharma', role: 'Backend Developer' },
+    { id: 'u3', name: 'Priya Patel', role: 'Technical Writer' },
+    { id: 'u4', name: 'Tanvy Pandey', role: 'Intern Developer' },
+  ];
+  const MANAGERS = [
+    { id: 'u1', name: 'Amanda Smith', role: 'Frontend Lead' },
+    { id: 'u5', name: 'Rohan Gupta', role: 'Project Manager' },
+  ];
+  
+  const [empExpanded, setEmpExpanded] = useState(false);
+  const [mgrExpanded, setMgrExpanded] = useState(false);
 
   const [activeSpeechField, setActiveSpeechField] = useState<'yesterday' | 'today' | 'blockers' | 'notes' | null>(null);
   const recognitionRef = React.useRef<any>(null);
@@ -1627,51 +1642,296 @@ export default function DailyStandups({ session }: { session?: any }) {
 
       {/* Start & Share Meeting Dialog */}
       <Dialog open={isMeetingModalOpen} onOpenChange={setIsMeetingModalOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
-              <Video className="mr-2 h-5 w-5 text-orange-500" />
-              Start & Share Meeting
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Meeting Link</label>
-              <input 
-                value={meetingLink}
-                onChange={(e) => setMeetingLink(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-orange-500"
-              />
+        <DialogContent className="sm:max-w-[480px] rounded-3xl bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80 p-0 overflow-hidden flex flex-col shadow-2xl">
+          <div className="relative px-8 py-6 border-b border-slate-100 dark:border-slate-800/60 bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
+            <div className="absolute top-0 right-0 p-4 opacity-10 blur-xl pointer-events-none">
+              <div className="h-24 w-24 rounded-full bg-orange-500"></div>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Message to Team</label>
+            <DialogTitle className="relative text-2xl font-black text-slate-900 dark:text-white flex items-center tracking-tight">
+              <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 text-white flex items-center justify-center mr-4 shadow-lg shadow-orange-500/20">
+                <Video className="h-5 w-5" />
+              </div>
+              Schedule Quick Sync
+            </DialogTitle>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 font-medium">Instantly share a meeting link across the workspace.</p>
+          </div>
+          
+          <div className="px-8 py-6 space-y-6 overflow-y-auto max-h-[60vh] bg-white dark:bg-slate-950 relative z-10">
+            
+            {/* Participant Selection */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
+                <CheckSquare className="h-3.5 w-3.5 mr-1.5" /> Target Audience
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Employees Group */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button 
+                      type="button"
+                      className={cn(
+                        "flex items-center justify-between w-full border rounded-3xl p-4 transition-all duration-300 group outline-none focus:ring-2", 
+                        selectedMeetingParticipants.includes('all_emp') || EMPLOYEES.some(e => selectedMeetingParticipants.includes(e.id))
+                          ? "border-indigo-400 shadow-md bg-gradient-to-r from-indigo-50/50 to-white dark:from-indigo-500/10 dark:to-slate-900 ring-2 ring-indigo-500/10" 
+                          : "border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm"
+                      )}
+                    >
+                      <div className="flex items-center">
+                        <div className={cn(
+                          "flex items-center justify-center h-12 w-12 rounded-2xl mr-4 transition-colors",
+                          selectedMeetingParticipants.includes('all_emp') || EMPLOYEES.some(e => selectedMeetingParticipants.includes(e.id))
+                            ? "bg-indigo-500 text-white shadow-md shadow-indigo-500/20"
+                            : "bg-orange-100 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 group-hover:bg-orange-200 dark:group-hover:bg-orange-500/20"
+                        )}>
+                          <Users className="h-6 w-6" />
+                        </div>
+                        <div className="flex flex-col items-start text-left">
+                          <span className="text-[15px] font-black text-slate-900 dark:text-white leading-tight">Employees</span>
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">
+                            {selectedMeetingParticipants.includes('all_emp') 
+                              ? "All Selected" 
+                              : EMPLOYEES.filter(e => selectedMeetingParticipants.includes(e.id)).length > 0 
+                                ? `${EMPLOYEES.filter(e => selectedMeetingParticipants.includes(e.id)).length} Selected` 
+                                : "Select participants"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-50 dark:bg-slate-800 group-hover:bg-slate-100 dark:group-hover:bg-slate-700 transition-colors">
+                        <ChevronDown className="h-4 w-4 text-slate-400 group-data-[state=open]:rotate-180 transition-transform duration-200" />
+                      </div>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[calc(100vw-4rem)] sm:w-64 p-2 rounded-2xl border-slate-100 dark:border-slate-800 shadow-xl" align="start">
+                    <DropdownMenuCheckboxItem
+                      className="rounded-xl py-3 cursor-pointer font-black text-[13px] mb-1 focus:bg-indigo-50 dark:focus:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
+                      checked={selectedMeetingParticipants.includes('all_emp')}
+                      onCheckedChange={(checked) => {
+                        if (checked) setSelectedMeetingParticipants(prev => [...prev, 'all_emp', ...EMPLOYEES.map(e => e.id)]);
+                        else setSelectedMeetingParticipants(prev => prev.filter(id => id !== 'all_emp' && !EMPLOYEES.map(e => e.id).includes(id)));
+                      }}
+                    >
+                      Select All Employees
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                    {EMPLOYEES.map(member => (
+                      <DropdownMenuCheckboxItem
+                        key={member.id}
+                        className="rounded-xl py-2.5 cursor-pointer font-bold text-sm focus:bg-indigo-50 dark:focus:bg-indigo-900/30 focus:text-indigo-700 dark:focus:text-indigo-300 transition-colors"
+                        checked={selectedMeetingParticipants.includes(member.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) setSelectedMeetingParticipants(prev => [...prev, member.id]);
+                          else setSelectedMeetingParticipants(prev => prev.filter(id => id !== member.id && id !== 'all_emp'));
+                        }}
+                      >
+                        <div className="flex items-center ml-2">
+                          <Avatar className="h-6 w-6 mr-2 border border-slate-200 dark:border-slate-700">
+                            <AvatarFallback className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{member.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <span>{member.name}</span>
+                            <span className="text-[9px] font-medium text-slate-400 dark:text-slate-500 leading-none">{member.role}</span>
+                          </div>
+                        </div>
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Managers Group */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button 
+                      type="button"
+                      className={cn(
+                        "flex items-center justify-between w-full border rounded-3xl p-4 transition-all duration-300 group outline-none focus:ring-2", 
+                        selectedMeetingParticipants.includes('all_mgr') || MANAGERS.some(m => selectedMeetingParticipants.includes(m.id))
+                          ? "border-slate-400 shadow-md bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-900 ring-2 ring-slate-400/20" 
+                          : "border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm"
+                      )}
+                    >
+                      <div className="flex items-center">
+                        <div className={cn(
+                          "flex items-center justify-center h-12 w-12 rounded-2xl mr-4 transition-colors",
+                          selectedMeetingParticipants.includes('all_mgr') || MANAGERS.some(m => selectedMeetingParticipants.includes(m.id))
+                            ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-md shadow-slate-500/20"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 group-hover:bg-slate-200 dark:group-hover:bg-slate-700"
+                        )}>
+                          <Briefcase className="h-6 w-6" />
+                        </div>
+                        <div className="flex flex-col items-start text-left">
+                          <span className="text-[15px] font-black text-slate-900 dark:text-white leading-tight">Managers</span>
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">
+                            {selectedMeetingParticipants.includes('all_mgr') 
+                              ? "All Selected" 
+                              : MANAGERS.filter(m => selectedMeetingParticipants.includes(m.id)).length > 0 
+                                ? `${MANAGERS.filter(m => selectedMeetingParticipants.includes(m.id)).length} Selected` 
+                                : "Select participants"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-50 dark:bg-slate-800 group-hover:bg-slate-100 dark:group-hover:bg-slate-700 transition-colors">
+                        <ChevronDown className="h-4 w-4 text-slate-400 group-data-[state=open]:rotate-180 transition-transform duration-200" />
+                      </div>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[calc(100vw-4rem)] sm:w-64 p-2 rounded-2xl border-slate-100 dark:border-slate-800 shadow-xl" align="start">
+                    <DropdownMenuCheckboxItem
+                      className="rounded-xl py-3 cursor-pointer font-black text-[13px] mb-1 focus:bg-slate-100 dark:focus:bg-slate-800 focus:text-slate-900 dark:focus:text-slate-100"
+                      checked={selectedMeetingParticipants.includes('all_mgr')}
+                      onCheckedChange={(checked) => {
+                        if (checked) setSelectedMeetingParticipants(prev => [...prev, 'all_mgr', ...MANAGERS.map(m => m.id)]);
+                        else setSelectedMeetingParticipants(prev => prev.filter(id => id !== 'all_mgr' && !MANAGERS.map(m => m.id).includes(id)));
+                      }}
+                    >
+                      Select All Managers
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                    {MANAGERS.map(member => (
+                      <DropdownMenuCheckboxItem
+                        key={member.id}
+                        className="rounded-xl py-2.5 cursor-pointer font-bold text-sm focus:bg-slate-100 dark:focus:bg-slate-800 focus:text-slate-900 dark:focus:text-slate-100 transition-colors"
+                        checked={selectedMeetingParticipants.includes(member.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) setSelectedMeetingParticipants(prev => [...prev, member.id]);
+                          else setSelectedMeetingParticipants(prev => prev.filter(id => id !== member.id && id !== 'all_mgr'));
+                        }}
+                      >
+                        <div className="flex items-center ml-2">
+                          <Avatar className="h-6 w-6 mr-2 border border-slate-200 dark:border-slate-700">
+                            <AvatarFallback className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{member.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <span>{member.name}</span>
+                            <span className="text-[9px] font-medium text-slate-400 dark:text-slate-500 leading-none">{member.role}</span>
+                          </div>
+                        </div>
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+              </div>
+            </div>
+
+            {/* Meeting Link */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
+                <Search className="h-3.5 w-3.5 mr-1.5" /> Meeting Link
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                  <Video className="h-4 w-4" />
+                </div>
+                <input 
+                  value={meetingLink}
+                  onChange={(e) => setMeetingLink(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all placeholder:text-slate-400"
+                  placeholder="e.g., https://meet.google.com/xyz"
+                />
+              </div>
+            </div>
+
+            {/* Message */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
+                <MessageCircle className="h-3.5 w-3.5 mr-1.5" /> Announcement Message
+              </label>
               <textarea 
                 value={meetingMessage}
                 onChange={(e) => setMeetingMessage(e.target.value)}
-                className="w-full h-24 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-orange-500 resize-none"
+                className="w-full h-24 bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 resize-none transition-all placeholder:text-slate-400 leading-relaxed"
+                placeholder="Type your message here..."
               />
             </div>
-            <div className="flex flex-col gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <Button 
-                onClick={() => {
-                  window.open(meetingLink, '_blank');
-                }}
-                variant="outline"
-                className="w-full rounded-xl font-bold border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-900/50 dark:text-orange-500 dark:hover:bg-orange-500/10"
-              >
-                <Video className="h-4 w-4 mr-2" /> 1. Open Meeting Room
-              </Button>
-              <Button 
-                onClick={() => {
-                  const text = encodeURIComponent(`${meetingMessage}\n\nJoin Link: ${meetingLink}`);
-                  window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
-                  setIsMeetingModalOpen(false);
-                }}
-                className="w-full rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white font-bold transition-colors"
-              >
-                <WhatsappIcon className="h-4 w-4 mr-2" /> 2. Share via WhatsApp
-              </Button>
-            </div>
+
+          </div>
+
+          {/* Action Bar */}
+          <div className="px-8 py-5 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900 flex gap-3 items-center justify-end relative z-10">
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsMeetingModalOpen(false)} 
+              className="px-6 rounded-2xl font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedMeetingParticipants.length === 0) {
+                  toast.error("Please select a target audience.");
+                  return;
+                }
+                
+                // Add Notification to Dashboard Alerts (Manager side alert)
+                const storedAlerts = localStorage.getItem('hindustaan_alerts');
+                const alerts = storedAlerts ? JSON.parse(storedAlerts) : [];
+                const newAlert = {
+                  id: `n${Date.now()}`,
+                  text: `New Meeting: ${meetingMessage.substring(0, 30)}...`,
+                  unread: true
+                };
+                localStorage.setItem('hindustaan_alerts', JSON.stringify([newAlert, ...alerts]));
+                window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_alerts', value: JSON.stringify([newAlert, ...alerts]) } }));
+
+                // Add to Activity Feed
+                const storedFeed = localStorage.getItem('hindustaan_activity_feed');
+                const feed = storedFeed ? JSON.parse(storedFeed) : [];
+                const newActivity = {
+                  id: `a${Date.now()}`,
+                  user: currentUser?.name || 'Manager',
+                  action: 'scheduled a',
+                  target: 'Quick Meeting',
+                  time: 'Just now',
+                  type: 'meeting'
+                };
+                localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newActivity, ...feed]));
+                window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_activity_feed', value: JSON.stringify([newActivity, ...feed]) } }));
+
+                // Add to Upcoming Events (ProjectCalendarWidget)
+                const storedEvents = localStorage.getItem('hindustaan_calendar_events');
+                let calendarEvents = [];
+                try {
+                  calendarEvents = storedEvents ? JSON.parse(storedEvents) : [];
+                } catch (e) {}
+                
+                const newCalendarEvent = {
+                  id: `evt_${Date.now()}`,
+                  date: new Date().toISOString(),
+                  type: 'meeting',
+                  title: 'Quick Sync Meeting',
+                  description: meetingMessage,
+                  time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                  assignees: selectedMeetingParticipants.map(id => {
+                    if (id === 'all_emp') return { name: 'All Employees', initials: 'AE' };
+                    if (id === 'all_mgr') return { name: 'All Managers', initials: 'AM' };
+                    const member = [...EMPLOYEES, ...MANAGERS].find(m => m.id === id);
+                    return { name: member?.name || 'Group', initials: (member?.name || 'G').substring(0,2).toUpperCase() };
+                  }).filter((v, i, a) => a.findIndex(t => (t.name === v.name)) === i) // deduplicate
+                };
+                
+                const newCalendarEventsArray = [...calendarEvents, newCalendarEvent];
+                localStorage.setItem('hindustaan_calendar_events', JSON.stringify(newCalendarEventsArray));
+                window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: JSON.stringify(newCalendarEventsArray) } }));
+
+                // DISPATCH TO NOTIFICATION CONTEXT (This syncs across tabs now!)
+                addNotification({
+                  title: 'New Meeting Scheduled',
+                  message: meetingMessage,
+                  type: 'meeting',
+                  icon: '🗓️',
+                  category: 'Messages',
+                  group: 'Today'
+                });
+                
+                toast.success('Meeting link sent directly to team.');
+                setIsMeetingModalOpen(false);
+                setSelectedMeetingParticipants([]);
+              }}
+              className="px-8 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black transition-all shadow-xl shadow-orange-500/30 hover:shadow-orange-500/40 hover:-translate-y-0.5"
+            >
+              <Send className="h-4 w-4 mr-2.5" /> Schedule & Notify
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
