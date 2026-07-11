@@ -84,7 +84,54 @@ export function ProjectCalendarWidget() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [scheduleType, setScheduleType] = useState<'event'|'meeting'>('event');
-  const [events, setEvents] = useState<ProjectEvent[]>(MOCK_EVENTS);
+  const [events, setEvents] = useState<ProjectEvent[]>(() => {
+    const saved = localStorage.getItem('hindustaan_calendar_events');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.map((e: any) => ({ ...e, date: new Date(e.date) }));
+      } catch (e) {
+        return MOCK_EVENTS;
+      }
+    }
+    return MOCK_EVENTS;
+  });
+
+  React.useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hindustaan_calendar_events' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          setEvents(parsed.map((evt: any) => ({ ...evt, date: new Date(evt.date) })));
+        } catch (err) {}
+      }
+    };
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'hindustaan_calendar_events') {
+        try {
+          const parsed = typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : e.detail.value;
+          if (Array.isArray(parsed)) {
+            setEvents(parsed.map((evt: any) => ({ ...evt, date: new Date(evt.date) })));
+          }
+        } catch (err) {}
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    };
+  }, []);
+
+  // Sync internal events changes back to localStorage (if any local additions happen)
+  React.useEffect(() => {
+    // Only update if it's different to prevent loops, but since setEvents is controlled, it's fine
+    // However, it's safer to just setItem and dispatch directly where events are modified.
+    // For now, we will update localStorage where setEvents is called (like handleScheduleSubmit)
+  }, [events]);
+
   const [isAllEventsOpen, setIsAllEventsOpen] = useState(false);
   const [eventToEdit, setEventToEdit] = useState<ProjectEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<ProjectEvent | null>(null);
