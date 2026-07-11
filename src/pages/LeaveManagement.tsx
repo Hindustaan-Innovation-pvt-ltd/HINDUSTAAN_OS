@@ -177,7 +177,9 @@ export default function LeaveManagement({ session }: { session: any }) {
         title={tooltipText} 
         className={cn(
           "relative w-8 h-8 flex flex-col items-center justify-center rounded-full p-1 cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-800",
-          isTodayDate && "bg-purple-600 text-white font-bold hover:bg-purple-700 dark:hover:bg-purple-700",
+          isTodayDate 
+            ? "bg-purple-600 text-white font-bold hover:bg-purple-700 dark:hover:bg-purple-700" 
+            : "text-slate-800 dark:text-slate-200",
           selectedDate && isSameDay(date, selectedDate) && !isTodayDate && "ring-2 ring-purple-500 ring-offset-2 dark:ring-offset-slate-950"
         )}
       >
@@ -333,12 +335,12 @@ export default function LeaveManagement({ session }: { session: any }) {
 
                     <div className="space-y-2">
                       <Label className="font-bold text-slate-700 dark:text-slate-300">Start Date</Label>
-                      <Input type="date" required className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100" />
+                      <Input type="date" required className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" />
                     </div>
 
                     <div className="space-y-2">
                       <Label className="font-bold text-slate-700 dark:text-slate-300">End Date</Label>
-                      <Input type="date" required className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100" />
+                      <Input type="date" required className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" />
                     </div>
 
                     <div className="space-y-2 md:col-span-2">
