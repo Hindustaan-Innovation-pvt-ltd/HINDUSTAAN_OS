@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CalendarDays, 
@@ -54,12 +54,50 @@ const getInitials = (name: string) => {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 };
 
+const parseLocalDate = (dateStr: string) => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 export default function LeaveManagement({ session }: { session: any }) {
   const role = session?.user?.user_metadata?.role || 'manager';
   const isManager = role === 'manager';
 
   const [activeTab, setActiveTab] = useState(isManager ? 'requests' : 'apply');
-  const [leaveData, setLeaveData] = useState(MOCK_LEAVES);
+  const [leaveData, setLeaveData] = useState(() => {
+    const stored = localStorage.getItem('hindustaan_leave_data');
+    return stored ? JSON.parse(stored) : MOCK_LEAVES;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hindustaan_leave_data', JSON.stringify(leaveData));
+  }, [leaveData]);
+
+  useEffect(() => {
+    const storedDraft = localStorage.getItem('hindustaan_leave_draft');
+    if (storedDraft) {
+      try {
+        const draft = JSON.parse(storedDraft);
+        if (draft.leaveType) setLeaveType(draft.leaveType);
+        if (draft.emergencyContact) setEmergencyContact(draft.emergencyContact);
+        if (draft.startDate) setStartDate(draft.startDate);
+        if (draft.endDate) setEndDate(draft.endDate);
+        if (draft.reason) setReason(draft.reason);
+        toast.info('Draft Restored', {
+          description: 'Restored your unsaved leave application draft.'
+        });
+      } catch (e) {
+        console.error("Error restoring draft", e);
+      }
+    }
+  }, []);
+
+  // Apply Leave Form State
+  const [leaveType, setLeaveType] = useState('casual');
+  const [emergencyContact, setEmergencyContact] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [reason, setReason] = useState('');
 
   // Calendar State
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
@@ -105,8 +143,77 @@ export default function LeaveManagement({ session }: { session: any }) {
 
   const handleApplyLeave = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!startDate || !endDate || !reason) {
+      toast.error('Missing Fields', { description: 'Please fill in all required fields.' });
+      return;
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (end < start) {
+      toast.error('Invalid Dates', { description: 'End date cannot be before start date.' });
+      return;
+    }
+
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    const typeMapping: Record<string, string> = {
+      casual: "Casual Leave",
+      sick: "Sick Leave",
+      wfh: "WFH",
+      half: "Half Day",
+      emergency: "Emergency Leave"
+    };
+
+    const employeeName = session?.user?.user_metadata?.name || "Tanvy Pandey";
+    const employeeDept = session?.user?.user_metadata?.department || "Engineering";
+
+    const newRequest = {
+      id: Date.now(),
+      employee: employeeName,
+      avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(employeeName)}`,
+      department: employeeDept,
+      type: typeMapping[leaveType] || "Casual Leave",
+      start: startDate,
+      end: endDate,
+      appliedOn: format(new Date(), 'yyyy-MM-dd'),
+      reason: reason,
+      status: "Pending" as const,
+      days: diffDays,
+      hrNotified: false
+    };
+
+    setLeaveData((prev: any[]) => [newRequest, ...prev]);
+
+    // Reset form & clear draft
+    setLeaveType('casual');
+    setEmergencyContact('');
+    setStartDate('');
+    setEndDate('');
+    setReason('');
+    setSelectedFile(null);
+    localStorage.removeItem('hindustaan_leave_draft');
+
     toast.success('Leave Request Submitted', {
       description: 'Your leave request has been sent for approval.'
+    });
+
+    setActiveTab('history');
+  };
+
+  const handleSaveDraft = () => {
+    const draft = {
+      leaveType,
+      emergencyContact,
+      startDate,
+      endDate,
+      reason
+    };
+    localStorage.setItem('hindustaan_leave_draft', JSON.stringify(draft));
+    toast.success('Draft Saved Successfully', {
+      description: 'Your leave application draft has been saved locally.'
     });
   };
 
@@ -161,9 +268,8 @@ export default function LeaveManagement({ session }: { session: any }) {
     const isTodayDate = isSameDay(date, new Date());
     const leavesOnDate = leaveData.filter(l => {
       if (l.status !== 'Approved') return false;
-      const start = new Date(l.start);
-      start.setHours(0,0,0,0);
-      const end = new Date(l.end);
+      const start = parseLocalDate(l.start);
+      const end = parseLocalDate(l.end);
       end.setHours(23,59,59,999);
       return date >= start && date <= end;
     });
@@ -203,9 +309,8 @@ export default function LeaveManagement({ session }: { session: any }) {
   // Selected date leaves
   const selectedDateLeaves = selectedDate ? leaveData.filter(l => {
     if (l.status !== 'Approved') return false;
-    const start = new Date(l.start);
-    start.setHours(0,0,0,0);
-    const end = new Date(l.end);
+    const start = parseLocalDate(l.start);
+    const end = parseLocalDate(l.end);
     end.setHours(23,59,59,999);
     return selectedDate >= start && selectedDate <= end;
   }) : [];
@@ -216,15 +321,14 @@ export default function LeaveManagement({ session }: { session: any }) {
   
   const todayLeavesCount = leaveData.filter(l => {
     if (l.status !== 'Approved') return false;
-    const start = new Date(l.start);
-    start.setHours(0,0,0,0);
-    const end = new Date(l.end);
+    const start = parseLocalDate(l.start);
+    const end = parseLocalDate(l.end);
     end.setHours(23,59,59,999);
     const now = new Date();
     return now >= start && now <= end;
   }).length;
 
-  const upcomingLeavesCount = leaveData.filter(l => l.status === 'Approved' && new Date(l.start) > new Date()).length;
+  const upcomingLeavesCount = leaveData.filter(l => l.status === 'Approved' && parseLocalDate(l.start) > new Date()).length;
 
   return (
     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 pb-20 w-full p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">
@@ -301,8 +405,8 @@ export default function LeaveManagement({ session }: { session: any }) {
             </>
           ) : (
             <>
-              <TabsTrigger value="requests" className="rounded-xl font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white">Team Requests</TabsTrigger>
-              <TabsTrigger value="calendar" className="rounded-xl font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white">Team Calendar</TabsTrigger>
+              <TabsTrigger value="requests" className="rounded-xl font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white">Employee's Leave Requests</TabsTrigger>
+              <TabsTrigger value="calendar" className="rounded-xl font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white">Employee's Leave Calendar</TabsTrigger>
             </>
           )}
         </TabsList>
@@ -320,7 +424,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label className="font-bold text-slate-700 dark:text-slate-300">Leave Type</Label>
-                      <Select required>
+                      <Select value={leaveType} onValueChange={setLeaveType} required>
                         <SelectTrigger className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500">
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
@@ -336,22 +440,22 @@ export default function LeaveManagement({ session }: { session: any }) {
                     
                     <div className="space-y-2">
                       <Label className="font-bold text-slate-700 dark:text-slate-300">Emergency Contact Number</Label>
-                      <Input type="tel" placeholder="+91" className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" required />
+                      <Input type="tel" placeholder="+91" value={emergencyContact} onChange={(e) => setEmergencyContact(e.target.value)} className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" required />
                     </div>
 
                     <div className="space-y-2">
                       <Label className="font-bold text-slate-700 dark:text-slate-300">Start Date</Label>
-                      <Input type="date" required className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" />
+                      <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" />
                     </div>
 
                     <div className="space-y-2">
                       <Label className="font-bold text-slate-700 dark:text-slate-300">End Date</Label>
-                      <Input type="date" required className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" />
+                      <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" />
                     </div>
 
                     <div className="space-y-2 md:col-span-2">
                       <Label className="font-bold text-slate-700 dark:text-slate-300">Reason for Leave</Label>
-                      <Textarea required placeholder="Please provide a valid reason..." className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 min-h-[120px] shadow-sm font-medium resize-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" />
+                      <Textarea value={reason} onChange={(e) => setReason(e.target.value)} required placeholder="Please provide a valid reason..." className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 min-h-[120px] shadow-sm font-medium resize-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" />
                     </div>
 
                     <div className="space-y-2 md:col-span-2">
@@ -387,7 +491,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                 </form>
               </CardContent>
               <CardFooter className="p-6 md:p-8 bg-slate-50/80 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
-                <Button variant="outline" type="button" className="rounded-xl font-bold h-12 px-6 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
+                <Button variant="outline" type="button" onClick={handleSaveDraft} className="rounded-xl font-bold h-12 px-6 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
                   <Save className="h-4 w-4 mr-2" />
                   Save Draft
                 </Button>
@@ -754,7 +858,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                 {/* Calendar Section */}
                 <div className="w-full xl:w-2/3 shrink-0">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Team Calendar</h3>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Employee's Leave Calendar</h3>
                     <div className="flex items-center gap-3">
                       <Button variant="outline" size="sm" onClick={() => { setCalendarMonth(new Date()); setSelectedDate(new Date()); }} className="h-10 rounded-xl font-bold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-sm">
                         Today
@@ -794,10 +898,11 @@ export default function LeaveManagement({ session }: { session: any }) {
                         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
                         month: "space-y-4 w-full",
                         nav: "hidden", // Hide default navigation as we use custom dropdowns above
-                        caption: "hidden", // We use custom header above
-                        table: "w-full border-collapse space-y-1",
-                        head_row: "flex w-full",
-                        head_cell: "text-slate-500 rounded-md w-10 sm:w-14 font-black text-[11px] uppercase tracking-wider flex-1",
+                        caption: "hidden", // Legacy caption
+                        month_caption: "hidden", // v9: Hide month caption since we use custom dropdowns
+                        dropdowns: "hidden", // v9: Hide dropdowns
+                        weekdays: "flex w-full", // v9: weekdays container
+                        weekday: "text-slate-500 dark:text-slate-400 rounded-md w-10 sm:w-14 font-black text-[11px] uppercase tracking-wider flex-1 text-center select-none", // v9: weekday cells
                         row: "flex w-full mt-2",
                         cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 h-10 sm:h-14 w-10 sm:w-14 flex-1 flex items-center justify-center",
                         day: "h-full w-full p-0 font-normal aria-selected:opacity-100",
