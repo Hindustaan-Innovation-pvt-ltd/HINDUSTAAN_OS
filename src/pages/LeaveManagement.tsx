@@ -437,17 +437,17 @@ export default function LeaveManagement({ session }: { session: any }) {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 w-full max-w-xl flex items-center">
+        <TabsList className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 w-full max-w-3xl flex flex-wrap sm:flex-nowrap h-auto items-center">
           {!isManager ? (
             <>
-              <TabsTrigger value="apply" className="flex-1 justify-center items-center py-2 px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100">Apply Leave</TabsTrigger>
-              <TabsTrigger value="history" className="flex-1 justify-center items-center py-2 px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100">My History</TabsTrigger>
-              <TabsTrigger value="balance" className="flex-1 justify-center items-center py-2 px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100">Leave Balance</TabsTrigger>
+              <TabsTrigger value="apply" className="flex-1 justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 break-words whitespace-normal sm:whitespace-nowrap">Apply Leave</TabsTrigger>
+              <TabsTrigger value="history" className="flex-1 justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 break-words whitespace-normal sm:whitespace-nowrap">My History</TabsTrigger>
+              <TabsTrigger value="balance" className="flex-1 justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 break-words whitespace-normal sm:whitespace-nowrap">Leave Balance</TabsTrigger>
             </>
           ) : (
             <>
-              <TabsTrigger value="requests" className="flex-1 justify-center items-center py-2 px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100">Employee's Leave Requests</TabsTrigger>
-              <TabsTrigger value="calendar" className="flex-1 justify-center items-center py-2 px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100">Employee's Leave Calendar</TabsTrigger>
+              <TabsTrigger value="requests" className="flex-1 justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 break-words whitespace-normal sm:whitespace-nowrap">Employee's Leave Requests</TabsTrigger>
+              <TabsTrigger value="calendar" className="flex-1 justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 break-words whitespace-normal sm:whitespace-nowrap">Employee's Leave Calendar</TabsTrigger>
             </>
           )}
         </TabsList>
@@ -854,15 +854,15 @@ export default function LeaveManagement({ session }: { session: any }) {
                               <Avatar className="h-10 w-10 shadow-sm border border-slate-200 dark:border-slate-800">
                                 <AvatarFallback className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold">{getInitials(leave.employee)}</AvatarFallback>
                               </Avatar>
-                              <div>
-                                <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{leave.employee}</h4>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className="text-[10px] font-bold text-slate-500 uppercase">Type:</span>
-                                  <Badge variant="secondary" className="bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 hover:bg-rose-100 text-[10px] font-bold py-0 h-4 border border-rose-200 dark:border-rose-800">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-slate-900 dark:text-white leading-tight truncate">{leave.employee}</h4>
+                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                  <span className="text-[10px] font-bold text-slate-500 uppercase shrink-0">Type:</span>
+                                  <Badge variant="secondary" className="bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 hover:bg-rose-100 text-[10px] font-bold py-0 h-4 border border-rose-200 dark:border-rose-800 shrink-0">
                                     {leave.type}
                                   </Badge>
                                   <Badge className={cn(
-                                    "text-[9px] uppercase px-1.5 py-0.5 rounded font-black border",
+                                    "text-[9px] uppercase px-1.5 py-0.5 rounded font-black border shrink-0",
                                     leave.status === 'Approved'
                                       ? "bg-orange-500/20 text-orange-400 border-orange-500/30"
                                       : "bg-purple-500/20 text-purple-400 border-purple-500/30"
