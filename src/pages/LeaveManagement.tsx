@@ -596,6 +596,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                       classNames={{
                         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
                         month: "space-y-4 w-full",
+                        nav: "hidden", // Hide default navigation as we use custom dropdowns above
                         caption: "hidden", // We use custom header above
                         table: "w-full border-collapse space-y-1",
                         head_row: "flex w-full",
