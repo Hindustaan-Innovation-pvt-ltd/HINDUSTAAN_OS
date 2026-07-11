@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ProjectTimeSelect } from '@/components/ui/project-time-select';
 import { Button } from '@/components/ui/button';
+import { useNotifications } from '@/context/NotificationContext';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -398,16 +401,20 @@ export default function Settings({ session }: { session: any }) {
                     <Switch checked={standupSettings.reminderEnabled} onCheckedChange={() => handleStandupToggle('reminderEnabled')} />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Reminder Time</label>
-                      <Input type="time" value={standupSettings.reminderTime} onChange={(e) => handleStandupSelect('reminderTime', e.target.value)} disabled={!standupSettings.reminderEnabled} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Reminder Time</label>
+                        {!standupSettings.reminderEnabled ? (
+                           <Input disabled value={standupSettings.reminderTime} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold" />
+                        ) : (
+                           <ProjectTimeSelect value={standupSettings.reminderTime} onChange={(v) => handleStandupSelect('reminderTime', v)} />
+                        )}
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Submission Deadline</label>
+                        <ProjectTimeSelect value={standupSettings.deadline} onChange={(v) => handleStandupSelect('deadline', v)} />
+                      </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Submission Deadline</label>
-                      <Input type="time" value={standupSettings.deadline} onChange={(e) => handleStandupSelect('deadline', e.target.value)} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold" />
-                    </div>
-                  </div>
                 </div>
 
 

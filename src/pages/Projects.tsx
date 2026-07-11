@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import ProjectDetails from '@/components/projects/ProjectDetails';
 import { Badge } from '@/components/ui/badge';
 import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
+import { ProjectDatePicker } from '@/components/ui/project-date-picker';
+import { ProjectSelect } from '@/components/ui/project-select';
 
 // --- Mock Data ---
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -517,49 +519,43 @@ export default function Projects({ session }: { session?: any }) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Project Lead</label>
-                  <div className="relative">
-                    <select
-                      value={newProject.manager}
-                      onChange={(e) => setNewProject({ ...newProject, manager: e.target.value })}
-                      className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="Unassigned">Unassigned</option>
-                      {GLOBAL_TEAM_MEMBERS.map(member => (
-                        <option key={member.id} value={member.name}>{member.name}</option>
-                      ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
-                  </div>
+                  <ProjectSelect 
+                    value={newProject.manager}
+                    onChange={(val) => setNewProject({ ...newProject, manager: val })}
+                    options={[
+                      { value: 'Unassigned', label: 'Unassigned' },
+                      ...GLOBAL_TEAM_MEMBERS.map(m => ({ value: m.name, label: m.name }))
+                    ]}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Priority</label>
-                  <div className="relative">
-                    <select
-                      value={newProject.priority}
-                      onChange={(e) => setNewProject({ ...newProject, priority: e.target.value })}
-                      className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
-                  </div>
+                  <ProjectSelect 
+                    value={newProject.priority}
+                    onChange={(val) => setNewProject({ ...newProject, priority: val })}
+                    options={[
+                      { value: 'High', label: 'High' },
+                      { value: 'Medium', label: 'Medium' },
+                      { value: 'Low', label: 'Low' }
+                    ]}
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Deadline</label>
-                  <div className="relative">
-                    <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                    <input
-                      type="date"
-                      value={newProject.deadline}
-                      onChange={(e) => setNewProject({ ...newProject, deadline: e.target.value })}
-                      className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all [color-scheme:light] dark:[color-scheme:dark]"
-                    />
-                  </div>
+                  <ProjectDatePicker
+                    value={newProject.deadline ? (() => {
+                      const d = new Date(newProject.deadline);
+                      return isNaN(d.getTime()) ? undefined : d;
+                    })() : undefined}
+                    onChange={(date) => {
+                      if (date) {
+                        setNewProject({ ...newProject, deadline: format(date, 'yyyy-MM-dd') });
+                      }
+                    }}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Estimated Budget</label>
@@ -600,21 +596,19 @@ export default function Projects({ session }: { session?: any }) {
                       }}
                       className="flex-1 h-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     />
-                    <div className="relative w-36 shrink-0">
-                      <select 
+                    <div className="w-36 shrink-0">
+                      <ProjectSelect 
                         value={task.assignee}
-                        onChange={e => {
+                        onChange={val => {
                           const updated = [...newProject.tasks];
-                          updated[index].assignee = e.target.value;
+                          updated[index].assignee = val;
                           setNewProject({...newProject, tasks: updated});
                         }}
-                        className="w-full h-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all appearance-none cursor-pointer"
-                      >
-                        <option value="Unassigned">Unassigned</option>
-                        {GLOBAL_TEAM_MEMBERS.map(member => (
-                          <option key={member.id} value={member.name}>{member.name}</option>
-                        ))}
-                      </select>
+                        options={[
+                          { value: 'Unassigned', label: 'Unassigned' },
+                          ...GLOBAL_TEAM_MEMBERS.map(m => ({ value: m.name, label: m.name }))
+                        ]}
+                      />
                     </div>
                     <button 
                       onClick={() => {

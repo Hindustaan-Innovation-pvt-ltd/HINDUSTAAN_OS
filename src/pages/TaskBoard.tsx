@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayCircle, CheckCircle2, ChevronLeft, ChevronRight, FolderKanban } from 'lucide-react';
+import CreateTaskModal from '@/components/dashboard/CreateTaskModal';
+import TaskDetailsModal from '@/components/dashboard/TaskDetailsModal';
+import { ProjectSelect } from '@/components/ui/project-select';
 import { cn, logActivity } from '@/lib/utils';
-import TaskDetailsModal from '../components/dashboard/TaskDetailsModal';
-import CreateTaskModal from '../components/dashboard/CreateTaskModal';
 import { INITIAL_TASKS } from '@/data/mockData';
 
 // --- Types & Mock Data ---
@@ -277,14 +278,13 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
               <Filter className="h-4 w-4 text-slate-400 dark:text-slate-500 mr-2" />
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Filters</span>
             </div>
-            
-            <select 
-              className="text-sm font-medium text-slate-700 dark:text-slate-200 bg-transparent border-none focus:ring-0 cursor-pointer outline-none px-2"
-              value={projectFilter}
-              onChange={(e) => setProjectFilter(e.target.value)}
-            >
-              {projects.map(p => <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={p} value={p}>{p === 'All' ? 'All Projects' : p}</option>)}
-            </select>
+            <div className="w-40 shrink-0">
+              <ProjectSelect 
+                value={projectFilter}
+                onChange={setProjectFilter}
+                options={projects.map(p => ({ value: p, label: p === 'All' ? 'All Projects' : p }))}
+              />
+            </div>
           </div>
 
           {/* Create Task Button (Managers Only) */}

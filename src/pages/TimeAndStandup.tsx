@@ -276,17 +276,16 @@ export default function TimeAndStandup({ session }: { session?: any }) {
                 <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
                   Assigned Task
                 </label>
-                <select 
-                  required
+                <ProjectSelect 
                   value={selectedTask}
-                  onChange={e => setSelectedTask(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/30 p-3 text-sm text-slate-900 dark:text-white focus:border-orange-500 focus:bg-white dark:bg-slate-900 focus:outline-none focus:ring-4 focus:ring-orange-500/10 cursor-pointer"
-                >
-                  <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="" disabled>Select a task...</option>
-                  <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="t-1">Design Authentication Split Screen</option>
-                  <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="t-2">Configure Supabase RLS Policies</option>
-                  <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="t-3">Implement Kanban Drag-and-Drop</option>
-                </select>
+                  onChange={setSelectedTask}
+                  placeholder="Select a task..."
+                  options={[
+                    { value: "t-1", label: "Design Authentication Split Screen" },
+                    { value: "t-2", label: "Configure Supabase RLS Policies" },
+                    { value: "t-3", label: "Implement Kanban Drag-and-Drop" }
+                  ]}
+                />
               </div>
               
               <div>
