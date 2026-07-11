@@ -187,8 +187,23 @@ export default function DailyStandups({ session }: { session?: any }) {
   const [mgrExpanded, setMgrExpanded] = useState(false);
 
   const [activeSpeechField, setActiveSpeechField] = useState<'yesterday' | 'today' | 'blockers' | null>(null);
+  const recognitionRef = React.useRef<any>(null);
 
   const startListeningForField = (field: 'yesterday' | 'today' | 'blockers') => {
+    // If already listening for this field, stop it (toggle off)
+    if (activeSpeechField === field && recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+      setActiveSpeechField(null);
+      return;
+    }
+
+    // If listening for a different field, stop that first
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       toast.error('Voice commands are not supported in this browser. Please use Google Chrome.');
@@ -203,17 +218,21 @@ export default function DailyStandups({ session }: { session?: any }) {
 
     recognition.onstart = () => {
       setActiveSpeechField(field);
-      toast.info(`Voice input active for "${field}". Speak now...`, { duration: 3000 });
+      toast.info(`Listening for "${field}"... Speak now`, { duration: 2500 });
     };
 
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error', event.error);
       setActiveSpeechField(null);
-      toast.error(`Voice recognition error: ${event.error}`);
+      recognitionRef.current = null;
+      if (event.error !== 'aborted') {
+        toast.error(`Voice error: ${event.error}`);
+      }
     };
 
     recognition.onend = () => {
       setActiveSpeechField(null);
+      recognitionRef.current = null;
     };
 
     recognition.onresult = (event: any) => {
@@ -227,15 +246,13 @@ export default function DailyStandups({ session }: { session?: any }) {
       }
     };
 
+    recognitionRef.current = recognition;
     recognition.start();
   };
 
   const handleOpenVoiceStandup = () => {
+    // Just open the modal — user taps mic icon inside to start listening
     setIsModalOpen(true);
-    // Start listening for 'yesterday' update automatically after modal mounts
-    setTimeout(() => {
-      startListeningForField('yesterday');
-    }, 400);
   };
 
   const handleSendReply = () => {
@@ -867,13 +884,9 @@ export default function DailyStandups({ session }: { session?: any }) {
           {role !== 'manager' && (
             <Button 
               onClick={handleOpenVoiceStandup} 
-              className={cn(
-                "h-10 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold shadow-md shadow-indigo-500/20 border-0 transition-all",
-                activeSpeechField && "animate-pulse bg-red-600 hover:bg-red-700 shadow-red-500/20"
-              )}
+              className="h-10 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold shadow-md shadow-indigo-500/20 border-0 transition-all"
             >
-              <Mic className={cn("h-4 w-4 mr-2", activeSpeechField && "animate-bounce")} /> 
-              {activeSpeechField ? 'Listening...' : 'Submit Update'}
+              <Mic className="h-4 w-4 mr-2" /> Submit Update
             </Button>
           )}
 
