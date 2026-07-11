@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, KeyRound, User, Briefcase, Phone, Hash, ArrowRight, Loader2, Sun, Moon, AlertCircle } from 'lucide-react';
+import { Mail, KeyRound, User, Briefcase, Phone, Hash, ArrowRight, Loader2, Sun, Moon, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,8 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
   const [loading, setLoading] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [showTerms, setShowTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (isDark) {
@@ -236,12 +238,23 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                     <KeyRound className="h-4 w-4" />
                     </div>
-                    <input
-                    type="password"
+                     <input
+                    type={showPassword ? "text" : "password"}
                     {...register("password")}
-                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
+                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
                     placeholder="••••••••"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 cursor-pointer z-20"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
                 </div>
                 {errors.password && <p className="text-[10px] text-red-500 font-medium flex items-center mt-1"><AlertCircle className="w-3 h-3 mr-1"/>{errors.password.message}</p>}
                 </div>
@@ -254,11 +267,22 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                     <KeyRound className="h-4 w-4" />
                     </div>
                     <input
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     {...register("confirmPassword")}
-                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
+                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
                     placeholder="••••••••"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 cursor-pointer z-20"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
                 </div>
                 {errors.confirmPassword && <p className="text-[10px] text-red-500 font-medium flex items-center mt-1"><AlertCircle className="w-3 h-3 mr-1"/>{errors.confirmPassword.message}</p>}
                 </div>
