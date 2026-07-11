@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
+import { LeaveCalendar } from '@/components/dashboard/LeaveCalendar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
@@ -100,7 +101,6 @@ export default function LeaveManagement({ session }: { session: any }) {
   const [reason, setReason] = useState('');
 
   // Calendar State
-  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
   // Comment Modal State
@@ -262,53 +262,9 @@ export default function LeaveManagement({ session }: { session: any }) {
     // TODO: POST /api/leaves/:id/comments
   };
 
-  // Compute Calendar Indicators
-  const CustomDay = (props: any) => {
-    const { date } = props;
-    const isTodayDate = isSameDay(date, new Date());
-    const leavesOnDate = leaveData.filter((l: any) => {
-      if (l.status !== 'Approved') return false;
-      const start = parseLocalDate(l.start);
-      const end = parseLocalDate(l.end);
-      end.setHours(23,59,59,999);
-      return date >= start && date <= end;
-    });
-
-    const leaveCount = leavesOnDate.length;
-    const tooltipText = leaveCount > 0 
-      ? `${format(date, 'MMM d, yyyy')}\n\nEmployees on Leave:\n` + leavesOnDate.map((l: any) => `• ${l.employee} (${l.type})`).join('\n') 
-      : '';
-
-    return (
-      <div 
-        title={tooltipText} 
-        className={cn(
-          "relative w-8 h-8 flex flex-col items-center justify-center rounded-full p-1 cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-800",
-          isTodayDate 
-            ? "bg-purple-600 text-white font-bold hover:bg-purple-700 dark:hover:bg-purple-700" 
-            : "text-slate-800 dark:text-slate-200",
-          selectedDate && isSameDay(date, selectedDate) && !isTodayDate && "ring-2 ring-purple-500 ring-offset-2 dark:ring-offset-slate-950"
-        )}
-      >
-        <span>{date.getDate()}</span>
-        {leaveCount > 0 && (
-          <div className="absolute -top-1 -right-1 flex items-center justify-center">
-            {leaveCount === 1 && <div className="w-2.5 h-2.5 bg-rose-500 rounded-full border border-white dark:border-slate-900" />}
-            {leaveCount > 1 && leaveCount < 5 && (
-              <Badge className="px-1 py-0 h-4 min-w-4 flex items-center justify-center bg-rose-500 hover:bg-rose-600 text-white text-[9px] border border-white dark:border-slate-900 shadow-sm">{leaveCount}</Badge>
-            )}
-            {leaveCount >= 5 && (
-              <Badge className="px-1 py-0 h-4 min-w-4 flex items-center justify-center bg-rose-500 hover:bg-rose-600 text-white text-[9px] border border-white dark:border-slate-900 shadow-sm">5+</Badge>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   // Selected date leaves
   const selectedDateLeaves = selectedDate ? leaveData.filter((l: any) => {
-    if (l.status !== 'Approved') return false;
+    if (l.status === 'Rejected') return false;
     const start = parseLocalDate(l.start);
     const end = parseLocalDate(l.end);
     end.setHours(23,59,59,999);
@@ -857,67 +813,11 @@ export default function LeaveManagement({ session }: { session: any }) {
                 
                 {/* Calendar Section */}
                 <div className="w-full xl:w-2/3 shrink-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Employee's Leave Calendar</h3>
-                    <div className="flex items-center gap-3">
-                      <Button variant="outline" size="sm" onClick={() => { setCalendarMonth(new Date()); setSelectedDate(new Date()); }} className="h-10 rounded-xl font-bold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-sm">
-                        Today
-                      </Button>
-                      <Select value={calendarMonth.getMonth().toString()} onValueChange={v => setCalendarMonth(new Date(calendarMonth.getFullYear(), parseInt(v), 1))}>
-                        <SelectTrigger className="h-10 rounded-xl font-bold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 w-[140px] shadow-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl shadow-xl">
-                          {Array.from({length: 12}).map((_, i) => (
-                            <SelectItem key={i} value={i.toString()}>{format(new Date(2026, i, 1), 'MMMM')}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={calendarMonth.getFullYear().toString()} onValueChange={v => setCalendarMonth(new Date(parseInt(v), calendarMonth.getMonth(), 1))}>
-                        <SelectTrigger className="h-10 rounded-xl font-bold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 w-[100px] shadow-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl shadow-xl">
-                          {[2025, 2026, 2027].map((y) => (
-                            <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="bg-white/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl p-4 md:p-6 shadow-inner overflow-x-auto">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(d) => d && setSelectedDate(d)}
-                      month={calendarMonth}
-                      onMonthChange={setCalendarMonth}
-                      className="w-full flex justify-center"
-                      classNames={{
-                        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                        month: "space-y-4 w-full",
-                        nav: "hidden", // Hide default navigation as we use custom dropdowns above
-                        caption: "hidden", // Legacy caption
-                        month_caption: "hidden", // v9: Hide month caption since we use custom dropdowns
-                        dropdowns: "hidden", // v9: Hide dropdowns
-                        weekdays: "flex w-full", // v9: weekdays container
-                        weekday: "text-slate-500 dark:text-slate-400 rounded-md w-10 sm:w-14 font-black text-[11px] uppercase tracking-wider flex-1 text-center select-none", // v9: weekday cells
-                        row: "flex w-full mt-2",
-                        cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 h-10 sm:h-14 w-10 sm:w-14 flex-1 flex items-center justify-center",
-                        day: "h-full w-full p-0 font-normal aria-selected:opacity-100",
-                        day_selected: "bg-transparent text-slate-900 dark:text-white hover:bg-transparent hover:text-slate-900 dark:hover:text-white focus:bg-transparent focus:text-slate-900 dark:focus:text-white",
-                        day_today: "bg-transparent text-slate-900 dark:text-white",
-                        day_outside: "text-slate-400 opacity-50 dark:text-slate-500",
-                        day_disabled: "text-slate-400 opacity-50 dark:text-slate-500",
-                        day_range_middle: "aria-selected:bg-slate-100 aria-selected:text-slate-900 dark:aria-selected:bg-slate-800 dark:aria-selected:text-slate-50",
-                        day_hidden: "invisible",
-                      } as any}
-                      components={{
-                        DayContent: (props: any) => <CustomDay date={props.date} />
-                      } as any}
-                    />
-                  </div>
+                  <LeaveCalendar
+                    leaves={leaveData}
+                    selectedDate={selectedDate}
+                    onSelectDate={setSelectedDate}
+                  />
                 </div>
                 
                 {/* Day Details Section */}
@@ -945,6 +845,14 @@ export default function LeaveManagement({ session }: { session: any }) {
                                   <span className="text-[10px] font-bold text-slate-500 uppercase">Type:</span>
                                   <Badge variant="secondary" className="bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 hover:bg-rose-100 text-[10px] font-bold py-0 h-4 border border-rose-200 dark:border-rose-800">
                                     {leave.type}
+                                  </Badge>
+                                  <Badge className={cn(
+                                    "text-[9px] uppercase px-1.5 py-0.5 rounded font-black border",
+                                    leave.status === 'Approved'
+                                      ? "bg-orange-500/20 text-orange-400 border-orange-500/30"
+                                      : "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                                  )}>
+                                    {leave.status}
                                   </Badge>
                                 </div>
                               </div>
