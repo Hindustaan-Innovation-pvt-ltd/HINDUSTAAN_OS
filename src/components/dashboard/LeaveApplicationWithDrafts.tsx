@@ -372,7 +372,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
             drafts.map((draft) => (
               <div
                 key={draft.id}
-                className="p-3 my-1 rounded-xl bg-white/80 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-850/80 flex flex-col gap-2 hover:border-slate-350 dark:hover:border-slate-700 transition-colors"
+                className="p-3 my-1 rounded-xl bg-white/80 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-850/80 flex flex-col gap-2 hover:border-slate-350 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/25">
