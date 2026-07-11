@@ -68,6 +68,25 @@ export default function LeaveManagement({ session }: { session: any }) {
     localStorage.setItem('hindustaan_leave_data', JSON.stringify(leaveData));
   }, [leaveData]);
 
+  useEffect(() => {
+    const storedDraft = localStorage.getItem('hindustaan_leave_draft');
+    if (storedDraft) {
+      try {
+        const draft = JSON.parse(storedDraft);
+        if (draft.leaveType) setLeaveType(draft.leaveType);
+        if (draft.emergencyContact) setEmergencyContact(draft.emergencyContact);
+        if (draft.startDate) setStartDate(draft.startDate);
+        if (draft.endDate) setEndDate(draft.endDate);
+        if (draft.reason) setReason(draft.reason);
+        toast.info('Draft Restored', {
+          description: 'Restored your unsaved leave application draft.'
+        });
+      } catch (e) {
+        console.error("Error restoring draft", e);
+      }
+    }
+  }, []);
+
   // Apply Leave Form State
   const [leaveType, setLeaveType] = useState('casual');
   const [emergencyContact, setEmergencyContact] = useState('');
@@ -163,19 +182,34 @@ export default function LeaveManagement({ session }: { session: any }) {
 
     setLeaveData((prev: any[]) => [newRequest, ...prev]);
 
-    // Reset form
+    // Reset form & clear draft
     setLeaveType('casual');
     setEmergencyContact('');
     setStartDate('');
     setEndDate('');
     setReason('');
     setSelectedFile(null);
+    localStorage.removeItem('hindustaan_leave_draft');
 
     toast.success('Leave Request Submitted', {
       description: 'Your leave request has been sent for approval.'
     });
 
     setActiveTab('history');
+  };
+
+  const handleSaveDraft = () => {
+    const draft = {
+      leaveType,
+      emergencyContact,
+      startDate,
+      endDate,
+      reason
+    };
+    localStorage.setItem('hindustaan_leave_draft', JSON.stringify(draft));
+    toast.success('Draft Saved Successfully', {
+      description: 'Your leave application draft has been saved locally.'
+    });
   };
 
   // 10. Future Backend Integration Comments
@@ -455,7 +489,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                 </form>
               </CardContent>
               <CardFooter className="p-6 md:p-8 bg-slate-50/80 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
-                <Button variant="outline" type="button" className="rounded-xl font-bold h-12 px-6 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
+                <Button variant="outline" type="button" onClick={handleSaveDraft} className="rounded-xl font-bold h-12 px-6 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
                   <Save className="h-4 w-4 mr-2" />
                   Save Draft
                 </Button>
