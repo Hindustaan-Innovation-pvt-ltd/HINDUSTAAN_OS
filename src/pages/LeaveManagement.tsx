@@ -286,7 +286,12 @@ export default function LeaveManagement({ session }: { session: any }) {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:w-[600px] bg-slate-100/80 dark:bg-slate-800/50 p-1 backdrop-blur-xl rounded-2xl h-12">
+        <TabsList className={cn(
+          "grid p-1 backdrop-blur-xl rounded-2xl h-12 bg-slate-100/80 dark:bg-slate-800/50",
+          isManager 
+            ? "grid-cols-2 w-full max-w-[400px]" 
+            : "grid-cols-2 md:grid-cols-3 w-full max-w-[600px]"
+        )}>
           {!isManager ? (
             <>
               <TabsTrigger value="apply" className="rounded-xl font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white">Apply Leave</TabsTrigger>
