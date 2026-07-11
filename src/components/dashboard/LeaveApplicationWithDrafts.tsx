@@ -357,13 +357,13 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
       </Card>
 
       {/* Saved Drafts Panel */}
-      <Card className="lg:col-span-1 border border-slate-200 dark:border-slate-800 bg-slate-900/50 text-slate-100 backdrop-blur-2xl shadow-xl rounded-3xl overflow-hidden flex flex-col">
-        <CardHeader className="border-b border-slate-800 bg-slate-950/80 pb-4">
-          <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-            <FileText className="h-5 w-5 text-purple-400" />
+      <Card className="lg:col-span-1 border border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-950/40 backdrop-blur-2xl shadow-xl rounded-3xl overflow-hidden flex flex-col">
+        <CardHeader className="border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/80 dark:bg-slate-900/80 pb-4">
+          <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             Saved Drafts
           </CardTitle>
-          <CardDescription className="text-slate-400 text-xs">
+          <CardDescription className="text-slate-500 dark:text-slate-400 text-xs">
             Manage your unsubmitted leave requests.
           </CardDescription>
         </CardHeader>
@@ -372,36 +372,36 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
             drafts.map((draft) => (
               <div
                 key={draft.id}
-                className="p-3 my-1 rounded-xl bg-slate-950/50 border border-slate-800/80 flex flex-col gap-2 hover:border-slate-700 transition-colors"
+                className="p-3 my-1 rounded-xl bg-white/80 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-850/80 flex flex-col gap-2 hover:border-slate-350 dark:hover:border-slate-700 transition-colors"
               >
                 <div className="flex items-center justify-between">
-                  <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider bg-purple-500/10 text-purple-400 border-purple-500/25">
+                  <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/25">
                     {draft.leaveType}
                   </Badge>
-                  <span className="text-[10px] font-bold text-slate-400">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
                     {draft.startDate ? format(parseLocalDate(draft.startDate), 'MMM d') : '—'}
                     {' '}-{' '}
                     {draft.endDate ? format(parseLocalDate(draft.endDate), 'MMM d') : '—'}
                   </span>
                 </div>
 
-                <p className="text-xs text-slate-300 line-clamp-2 italic">
+                <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 italic">
                   {draft.reason || "No reason specified."}
                 </p>
 
                 {draft.attachment && (
-                  <div className="flex items-center gap-1 text-[10px] text-slate-400 font-semibold truncate bg-slate-900/60 p-1 px-2 rounded-lg border border-slate-800 w-fit max-w-full">
-                    <FileText className="h-3 w-3 text-blue-400 shrink-0" />
+                  <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 font-semibold truncate bg-slate-50 dark:bg-slate-900/60 p-1 px-2 rounded-lg border border-slate-200 dark:border-slate-800 w-fit max-w-full">
+                    <FileText className="h-3 w-3 text-blue-500 dark:text-blue-400" />
                     <span className="truncate">{draft.attachment.name}</span>
                   </div>
                 )}
 
-                <div className="flex justify-end gap-2 border-t border-slate-800/60 pt-2 mt-1">
+                <div className="flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800/60 pt-2 mt-1">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => handleEditDraft(draft)}
-                    className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-slate-900"
+                    className="h-8 w-8 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 hover:bg-slate-100 dark:hover:bg-slate-900"
                     title="Edit Draft"
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -410,7 +410,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDeleteDraft(draft.id)}
-                    className="h-8 w-8 text-rose-400 hover:text-rose-300 hover:bg-slate-900"
+                    className="h-8 w-8 text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 hover:bg-slate-100 dark:hover:bg-slate-900"
                     title="Delete Draft"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -419,7 +419,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
                     variant="ghost"
                     size="icon"
                     onClick={() => handleFormSubmit} // Form submit logic for drafts
-                    className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-slate-900"
+                    className="h-8 w-8 text-emerald-500 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300 hover:bg-slate-100 dark:hover:bg-slate-900"
                     title="Submit Draft"
                     onClickCapture={() => handleRapidSubmit(draft)}
                   >
@@ -429,8 +429,8 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
               </div>
             ))
           ) : (
-            <div className="text-center py-12 px-4 rounded-2xl border border-dashed border-slate-800 bg-slate-950/20">
-              <p className="text-xs font-semibold text-slate-500">No saved drafts found.</p>
+            <div className="text-center py-12 px-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-950/20">
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">No saved drafts found.</p>
             </div>
           )}
         </CardContent>
