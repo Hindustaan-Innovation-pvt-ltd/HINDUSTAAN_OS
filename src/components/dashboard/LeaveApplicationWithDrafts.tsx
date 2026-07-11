@@ -225,7 +225,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
               <div className="space-y-2">
                 <Label className="font-bold text-slate-700 dark:text-slate-300">Leave Type</Label>
                 <Select value={leaveType} onValueChange={setLeaveType} required>
-                  <SelectTrigger className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100">
+                  <SelectTrigger className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 hover:border-purple-500/40 dark:hover:border-purple-400/40 hover:shadow-md hover:shadow-purple-500/5 dark:hover:shadow-purple-500/10 transition-all duration-300">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl shadow-xl">
@@ -245,7 +245,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
                   placeholder="+91"
                   value={emergencyContact}
                   onChange={(e) => setEmergencyContact(e.target.value)}
-                  className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100"
+                  className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 hover:border-purple-500/40 dark:hover:border-purple-400/40 hover:shadow-md hover:shadow-purple-500/5 dark:hover:shadow-purple-500/10 transition-all duration-300"
                   required
                 />
               </div>
@@ -257,7 +257,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   required
-                  className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]"
+                  className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark] hover:border-purple-500/40 dark:hover:border-purple-400/40 hover:shadow-md hover:shadow-purple-500/5 dark:hover:shadow-purple-500/10 transition-all duration-300"
                 />
               </div>
 
@@ -268,7 +268,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   required
-                  className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]"
+                  className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark] hover:border-purple-500/40 dark:hover:border-purple-400/40 hover:shadow-md hover:shadow-purple-500/5 dark:hover:shadow-purple-500/10 transition-all duration-300"
                 />
               </div>
 
@@ -279,7 +279,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
                   onChange={(e) => setReason(e.target.value)}
                   required
                   placeholder="Please provide a valid reason..."
-                  className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 min-h-[120px] shadow-sm font-medium resize-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 min-h-[120px] shadow-sm font-medium resize-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-purple-500/40 dark:hover:border-purple-400/40 hover:shadow-md hover:shadow-purple-500/5 dark:hover:shadow-purple-500/10 transition-all duration-300"
                 />
               </div>
 
@@ -297,10 +297,10 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
                   className={cn(
-                    "border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer group shadow-sm",
+                    "border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-all duration-300 cursor-pointer group shadow-sm",
                     selectedFile
                       ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/10"
-                      : "border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-100/50 dark:hover:bg-slate-800/50"
+                      : "border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 hover:border-purple-500/40 dark:hover:border-purple-400/40 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:shadow-md hover:shadow-purple-500/5 dark:hover:shadow-purple-500/10"
                   )}
                 >
                   {selectedFile ? (
