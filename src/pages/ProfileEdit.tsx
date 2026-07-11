@@ -12,6 +12,7 @@ import {
   User, Mail, Phone, Shield, Briefcase, Calendar, MapPin, 
   Globe, Building, Clock, Camera, ArrowLeft
 } from 'lucide-react';
+import { AvatarUpload } from '@/components/profile/AvatarUpload';
 
 export default function ProfileEdit({ session, onNavigate }: { session?: any, onNavigate: (view: string) => void }) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -28,8 +29,6 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
   const [linkedin, setLinkedin] = useState('');
   const [portfolio, setPortfolio] = useState('');
   const [avatar, setAvatar] = useState('');
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const user = getCurrentUser();
@@ -51,46 +50,7 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
     }
   }, []);
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        
-        // Compress image using canvas
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_SIZE = 256;
-          let width = img.width;
-          let height = img.height;
-          
-          if (width > height) {
-            if (width > MAX_SIZE) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            }
-          } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          setAvatar(compressedDataUrl);
-        };
-        img.src = result;
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+
 
   const handleSave = () => {
     const user = getCurrentUser();
@@ -196,36 +156,13 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
           <CardContent className="p-6 sm:p-8 space-y-8">
             
             {/* Avatar Section */}
-            <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-slate-100 dark:border-slate-800/80">
-              <div className="relative group">
-                <Avatar className="h-24 w-24 border-4 border-slate-50 dark:border-slate-900 shadow-md">
-                  {avatar && <AvatarImage src={avatar} />}
-                  <AvatarFallback className="bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 text-3xl font-black">
-                    {profile.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 p-2 rounded-full bg-orange-600 hover:bg-orange-700 text-white shadow-md border-2 border-white dark:border-slate-900 transition-all scale-95"
-                  title="Upload Image"
-                >
-                  <Camera className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              
-              <div className="space-y-1 text-center sm:text-left">
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  ref={fileInputRef} 
-                  onChange={handleAvatarChange} 
-                />
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">{profile.name}</h3>
-                <p className="text-sm font-semibold text-slate-500">{profile.role}</p>
-              </div>
-            </div>
+            <AvatarUpload
+              avatar={avatar}
+              name={profile.name}
+              role={profile.role}
+              onAvatarChange={(newAvatar) => setAvatar(newAvatar)}
+              email={profile.email}
+            />
 
             {/* Form Fields Section */}
             <div className="space-y-6">
