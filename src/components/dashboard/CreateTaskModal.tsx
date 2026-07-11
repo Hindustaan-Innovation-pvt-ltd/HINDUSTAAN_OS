@@ -105,6 +105,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask }: Creat
                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
               >
                 <option className="bg-white dark:bg-slate-800" value="High">High</option>
+                <option className="bg-white dark:bg-slate-800" value="Medium">Medium</option>
                 <option className="bg-white dark:bg-slate-800" value="Normal">Normal</option>
                 <option className="bg-white dark:bg-slate-800" value="Low">Low</option>
               </select>

@@ -7,7 +7,7 @@ import { INITIAL_TASKS } from '@/data/mockData';
 
 // --- Types & Mock Data ---
 
-type Priority = 'High' | 'Normal' | 'Low';
+type Priority = 'High' | 'Medium' | 'Normal' | 'Low';
 type Status = 'To Do' | 'In Progress' | 'In Review' | 'Done';
 interface Task {
   id: string;
@@ -25,15 +25,26 @@ const COLUMNS: Status[] = ['To Do', 'In Progress', 'In Review', 'Done'];
 
 // --- Helper Components ---
 
-const PriorityBadge = ({ priority }: { priority: Priority }) => {
-  const styles = {
+const PriorityBadge = ({ priority, isEmployeeDashboard }: { priority: Priority; isEmployeeDashboard: boolean }) => {
+  const originalStyles = {
     High: 'bg-rose-100 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/20',
     Normal: 'bg-amber-100 text-amber-700 dark:text-amber-300 border-amber-200',
     Low: 'bg-emerald-100 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/20',
   };
 
+  const fixedStyles = {
+    High: 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300 border-rose-200 dark:border-rose-500/20',
+    Medium: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300 border-blue-200 dark:border-blue-500/20',
+    Normal: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300 border-amber-200 dark:border-amber-500/20',
+    Low: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/20',
+  };
+
+  const styleClass = isEmployeeDashboard
+    ? (fixedStyles[priority] || 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700')
+    : (originalStyles[priority as keyof typeof originalStyles] || '');
+
   return (
-    <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-semibold border", styles[priority])}>
+    <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-semibold border", styleClass)}>
       {priority}
     </span>
   );
@@ -288,7 +299,10 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
         {isOverflowing && (
           <button
             onClick={() => scroll('left')}
-            className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all opacity-0 group-hover/board:opacity-100 cursor-pointer"
+            className={cn(
+              "absolute -left-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all cursor-pointer",
+              currentUser.role === 'intern' ? "opacity-100" : "opacity-0 group-hover/board:opacity-100"
+            )}
             title="Scroll Left"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -299,7 +313,10 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
         {isOverflowing && (
           <button
             onClick={() => scroll('right')}
-            className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all opacity-0 group-hover/board:opacity-100 cursor-pointer"
+            className={cn(
+              "absolute -right-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all cursor-pointer",
+              currentUser.role === 'intern' ? "opacity-100" : "opacity-0 group-hover/board:opacity-100"
+            )}
             title="Scroll Right"
           >
             <ChevronRight className="h-5 w-5" />
@@ -309,7 +326,8 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
         <div 
           ref={scrollContainerRef}
           className={cn(
-            "flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory h-fit w-full scrollbar-hide",
+            "flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory h-fit w-full",
+            currentUser.role === 'intern' ? "hide-scrollbar pb-1" : "scrollbar-hide",
             isSidebarMinimized && "lg:grid lg:grid-cols-4 lg:overflow-x-visible lg:pb-0"
           )}
         >
@@ -368,7 +386,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                               {task.project_tag}
                             </span>
                           </div>
-                          <PriorityBadge priority={task.priority} />
+                          <PriorityBadge priority={task.priority} isEmployeeDashboard={currentUser.role === 'intern'} />
                         </div>
 
                         {/* Title & Description */}

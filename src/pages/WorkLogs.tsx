@@ -171,7 +171,7 @@ export default function WorkLogs({ session }: { session?: any }) {
       currentUserName = 'Priya Patel';
     } else {
       currentUserId = 'u-4';
-      currentUserName = 'Tanvy Pandey';
+      currentUserName = session?.user?.user_metadata?.name || 'Tanvy Pandey';
     }
   }
 
@@ -292,6 +292,79 @@ export default function WorkLogs({ session }: { session?: any }) {
   const pendingHours = useMemo(() => (filteredLogs || []).filter((l: any) => l?.status === 'Pending').reduce((acc: number, log: any) => acc + (log?.hours || 0), 0), [filteredLogs]);
   const activeStaff = useMemo(() => new Set((filteredLogs || []).map(l => l.name)).size, [filteredLogs]);
 
+  const filtersCard = (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] dark:border-slate-800 shadow-sm space-y-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <h3 className="font-bold text-[#0F172A] dark:text-white flex items-center gap-2">
+          <Filter className="h-4 w-4 text-[#6366F1]" /> Filters
+        </h3>
+        <div className="flex items-center bg-[#F1F5F9] dark:bg-slate-800 px-3 py-2 rounded-xl w-full md:w-64 border border-transparent focus-within:border-[#6366F1] transition-colors">
+          <Search className="h-4 w-4 text-[#64748B] mr-2 shrink-0" />
+          <input
+            type="text"
+            placeholder="Search tasks, projects..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-transparent border-none outline-none text-sm font-medium text-[#0F172A] dark:text-white placeholder:text-[#64748B] w-full"
+          />
+        </div>
+      </div>
+      
+      <div className="flex flex-wrap gap-3">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-[160px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0F172A] dark:text-white justify-start hover:bg-[#F1F5F9] dark:hover:bg-slate-800 transition-colors shadow-sm">
+              <CalendarIcon className="mr-2 h-4 w-4 text-[#6366F1]" />
+              {dateFilter ? format(dateFilter, "do MMMM") : <span>Pick a date</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={dateFilter}
+              onSelect={setDateFilter}
+              className="bg-white dark:bg-slate-900 text-[#0F172A] dark:text-white rounded-2xl p-3"
+            />
+          </PopoverContent>
+        </Popover>
+
+        {currentUser.role === 'manager' && (
+          <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+            <SelectTrigger className="w-[160px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
+              <SelectValue placeholder="Employee" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="All">All Employees</SelectItem>
+              {uniqueEmployees.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+
+        <Select value={projectFilter} onValueChange={setProjectFilter}>
+          <SelectTrigger className="w-[160px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
+            <SelectValue placeholder="Project" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="All">All Projects</SelectItem>
+            {uniqueProjects.map(p => <SelectItem key={p as string} value={p as string}>{p as string}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[140px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="All">All Statuses</SelectItem>
+            <SelectItem value="Approved">Approved</SelectItem>
+            <SelectItem value="Pending">Pending</SelectItem>
+            <SelectItem value="Rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
   return (
     <div className="w-full max-w-full overflow-x-hidden p-4 sm:p-6 lg:p-8 space-y-6 relative animate-in fade-in duration-500 bg-[#F8FAFC] dark:bg-slate-950 min-h-screen text-[#0F172A] dark:text-white">
       {/* Header */}
@@ -302,9 +375,12 @@ export default function WorkLogs({ session }: { session?: any }) {
         </div>
       </div>
 
-      {/* Employee Active Session Timer Widget */}
+      {/* Filters Card below Active Timer Card for employees */}
       {currentUser.role === 'employee' && (
-        <ActiveSessionWidget secondsElapsed={secondsElapsed} formatTime={formatTime} currentUser={currentUser} />
+        <>
+          <ActiveSessionWidget secondsElapsed={secondsElapsed} formatTime={formatTime} currentUser={currentUser} />
+          {filtersCard}
+        </>
       )}
 
       {/* Summary Cards */}
@@ -336,91 +412,26 @@ export default function WorkLogs({ session }: { session?: any }) {
           <p className="text-4xl font-black text-[#0F172A] dark:text-white">{pendingHours.toFixed(1)}h</p>
         </div>
 
-        {currentUser.role === 'manager' && (
-          <div 
-            onClick={() => setIsActiveMembersModalOpen(true)}
-            className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-[#E2E8F0] dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-[#64748B] dark:text-slate-400 group-hover:text-emerald-500 transition-colors">Active Employees</h3>
-              <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg"><Users className="h-5 w-5 text-emerald-500" /></div>
-            </div>
-            <p className="text-4xl font-black text-[#0F172A] dark:text-white">{activeStaff}</p>
+        <div 
+          onClick={() => setIsActiveMembersModalOpen(true)}
+          className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-[#E2E8F0] dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-[#64748B] dark:text-slate-400 group-hover:text-emerald-500 transition-colors font-sans">
+              {currentUser.role === 'manager' ? "Active Employees" : "Active Members"}
+            </h3>
+            <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg"><Users className="h-5 w-5 text-emerald-500" /></div>
           </div>
-        )}
-      </div>
-
-      {/* Filter Section */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] dark:border-slate-800 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h3 className="font-bold text-[#0F172A] dark:text-white flex items-center gap-2">
-            <Filter className="h-4 w-4 text-[#6366F1]" /> Filters
-          </h3>
-          <div className="flex items-center bg-[#F1F5F9] dark:bg-slate-800 px-3 py-2 rounded-xl w-full md:w-64 border border-transparent focus-within:border-[#6366F1] transition-colors">
-            <Search className="h-4 w-4 text-[#64748B] mr-2 shrink-0" />
-            <input
-              type="text"
-              placeholder="Search tasks, projects..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none text-sm font-medium text-[#0F172A] dark:text-white placeholder:text-[#64748B] w-full"
-            />
-          </div>
-        </div>
-        
-        <div className="flex flex-wrap gap-3">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-[160px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0F172A] dark:text-white justify-start hover:bg-[#F1F5F9] dark:hover:bg-slate-800 transition-colors shadow-sm">
-                <CalendarIcon className="mr-2 h-4 w-4 text-[#6366F1]" />
-                {dateFilter ? format(dateFilter, "do MMMM") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl" align="start">
-              <CalendarComponent
-                mode="single"
-                selected={dateFilter}
-                onSelect={setDateFilter}
-                className="bg-white dark:bg-slate-900 text-[#0F172A] dark:text-white rounded-2xl p-3"
-              />
-            </PopoverContent>
-          </Popover>
-
-          {currentUser.role === 'manager' && (
-            <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-              <SelectTrigger className="w-[160px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
-                <SelectValue placeholder="Employee" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="All">All Employees</SelectItem>
-                {uniqueEmployees.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          )}
-
-          <Select value={projectFilter} onValueChange={setProjectFilter}>
-            <SelectTrigger className="w-[160px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
-              <SelectValue placeholder="Project" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="All">All Projects</SelectItem>
-              {uniqueProjects.map(p => <SelectItem key={p as string} value={p as string}>{p as string}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="All">All Statuses</SelectItem>
-              <SelectItem value="Approved">Approved</SelectItem>
-              <SelectItem value="Pending">Pending</SelectItem>
-              <SelectItem value="Rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
+          <p className="text-4xl font-black text-[#0F172A] dark:text-white">
+            {currentUser.role === 'manager' 
+              ? activeStaff 
+              : (Object.values(activeSessions).filter((s: any) => s.isOnline).length || ONLINE_TEAM_MEMBERS.length)
+            }
+          </p>
         </div>
       </div>
+
+      {currentUser.role === 'manager' && filtersCard}
 
       {/* Data Cards Section */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

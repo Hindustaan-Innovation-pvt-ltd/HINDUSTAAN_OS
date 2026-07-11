@@ -171,6 +171,58 @@ export default function DailyStandups({ session }: { session?: any }) {
   const [meetingLink, setMeetingLink] = useState('https://meet.google.com/new');
   const [meetingMessage, setMeetingMessage] = useState('Hi team, please join the daily standup meeting now!');
 
+  const [activeSpeechField, setActiveSpeechField] = useState<'yesterday' | 'today' | 'blockers' | null>(null);
+
+  const startListeningForField = (field: 'yesterday' | 'today' | 'blockers') => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error('Voice commands are not supported in this browser. Please use Google Chrome.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setActiveSpeechField(field);
+      toast.info(`Voice input active for "${field}". Speak now...`, { duration: 3000 });
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error', event.error);
+      setActiveSpeechField(null);
+      toast.error(`Voice recognition error: ${event.error}`);
+    };
+
+    recognition.onend = () => {
+      setActiveSpeechField(null);
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      if (transcript) {
+        setFormData(prev => ({
+          ...prev,
+          [field]: prev[field] ? prev[field] + ' ' + transcript : transcript
+        }));
+        toast.success(`Dictated: "${transcript}"`);
+      }
+    };
+
+    recognition.start();
+  };
+
+  const handleOpenVoiceStandup = () => {
+    setIsModalOpen(true);
+    // Start listening for 'yesterday' update automatically after modal mounts
+    setTimeout(() => {
+      startListeningForField('yesterday');
+    }, 400);
+  };
+
   const handleSendReply = () => {
     if (!replyText.trim() || !replyStandupId) return;
     
@@ -661,6 +713,18 @@ export default function DailyStandups({ session }: { session?: any }) {
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
+          {role !== 'manager' && (
+            <Button 
+              onClick={handleOpenVoiceStandup} 
+              className={cn(
+                "h-10 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold shadow-md shadow-indigo-500/20 border-0 transition-all",
+                activeSpeechField && "animate-pulse bg-red-600 hover:bg-red-700 shadow-red-500/20"
+              )}
+            >
+              <Mic className={cn("h-4 w-4 mr-2", activeSpeechField && "animate-bounce")} /> 
+              {activeSpeechField ? 'Listening...' : 'Submit Update'}
+            </Button>
+          )}
 
           <Button 
             onClick={() => setIsMeetingModalOpen(true)} 
@@ -1110,7 +1174,21 @@ export default function DailyStandups({ session }: { session?: any }) {
           </DialogHeader>
           <div className="p-6 space-y-6">
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
+                <Button 
+                  type="button"
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => startListeningForField('yesterday')}
+                  className={cn(
+                    "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
+                    activeSpeechField === 'yesterday' && "text-red-500 animate-pulse hover:text-red-600"
+                  )}
+                >
+                  <Mic className="h-3.5 w-3.5" />
+                </Button>
+              </div>
               <textarea 
                 value={formData.yesterday}
                 onChange={(e) => setFormData({...formData, yesterday: e.target.value})}
@@ -1119,7 +1197,21 @@ export default function DailyStandups({ session }: { session?: any }) {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What will you do today?</label>
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What will you do today?</label>
+                <Button 
+                  type="button"
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => startListeningForField('today')}
+                  className={cn(
+                    "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
+                    activeSpeechField === 'today' && "text-red-500 animate-pulse hover:text-red-600"
+                  )}
+                >
+                  <Mic className="h-3.5 w-3.5" />
+                </Button>
+              </div>
               <textarea 
                 value={formData.today}
                 onChange={(e) => setFormData({...formData, today: e.target.value})}
@@ -1128,7 +1220,21 @@ export default function DailyStandups({ session }: { session?: any }) {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Any blockers? (Optional)</label>
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Any blockers? (Optional)</label>
+                <Button 
+                  type="button"
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => startListeningForField('blockers')}
+                  className={cn(
+                    "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
+                    activeSpeechField === 'blockers' && "text-red-500 animate-pulse hover:text-red-600"
+                  )}
+                >
+                  <Mic className="h-3.5 w-3.5" />
+                </Button>
+              </div>
               <textarea 
                 value={formData.blockers}
                 onChange={(e) => setFormData({...formData, blockers: e.target.value})}
