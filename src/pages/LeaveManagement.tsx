@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CalendarDays, 
@@ -59,7 +59,21 @@ export default function LeaveManagement({ session }: { session: any }) {
   const isManager = role === 'manager';
 
   const [activeTab, setActiveTab] = useState(isManager ? 'requests' : 'apply');
-  const [leaveData, setLeaveData] = useState(MOCK_LEAVES);
+  const [leaveData, setLeaveData] = useState(() => {
+    const stored = localStorage.getItem('hindustaan_leave_data');
+    return stored ? JSON.parse(stored) : MOCK_LEAVES;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hindustaan_leave_data', JSON.stringify(leaveData));
+  }, [leaveData]);
+
+  // Apply Leave Form State
+  const [leaveType, setLeaveType] = useState('casual');
+  const [emergencyContact, setEmergencyContact] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [reason, setReason] = useState('');
 
   // Calendar State
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
@@ -105,9 +119,63 @@ export default function LeaveManagement({ session }: { session: any }) {
 
   const handleApplyLeave = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!startDate || !endDate || !reason) {
+      toast.error('Missing Fields', { description: 'Please fill in all required fields.' });
+      return;
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (end < start) {
+      toast.error('Invalid Dates', { description: 'End date cannot be before start date.' });
+      return;
+    }
+
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    const typeMapping: Record<string, string> = {
+      casual: "Casual Leave",
+      sick: "Sick Leave",
+      wfh: "WFH",
+      half: "Half Day",
+      emergency: "Emergency Leave"
+    };
+
+    const employeeName = session?.user?.user_metadata?.name || "Tanvy Pandey";
+    const employeeDept = session?.user?.user_metadata?.department || "Engineering";
+
+    const newRequest = {
+      id: Date.now(),
+      employee: employeeName,
+      avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(employeeName)}`,
+      department: employeeDept,
+      type: typeMapping[leaveType] || "Casual Leave",
+      start: startDate,
+      end: endDate,
+      appliedOn: format(new Date(), 'yyyy-MM-dd'),
+      reason: reason,
+      status: "Pending" as const,
+      days: diffDays,
+      hrNotified: false
+    };
+
+    setLeaveData((prev: any[]) => [newRequest, ...prev]);
+
+    // Reset form
+    setLeaveType('casual');
+    setEmergencyContact('');
+    setStartDate('');
+    setEndDate('');
+    setReason('');
+    setSelectedFile(null);
+
     toast.success('Leave Request Submitted', {
       description: 'Your leave request has been sent for approval.'
     });
+
+    setActiveTab('history');
   };
 
   // 10. Future Backend Integration Comments
@@ -320,7 +388,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label className="font-bold text-slate-700 dark:text-slate-300">Leave Type</Label>
-                      <Select required>
+                      <Select value={leaveType} onValueChange={setLeaveType} required>
                         <SelectTrigger className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500">
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
@@ -336,22 +404,22 @@ export default function LeaveManagement({ session }: { session: any }) {
                     
                     <div className="space-y-2">
                       <Label className="font-bold text-slate-700 dark:text-slate-300">Emergency Contact Number</Label>
-                      <Input type="tel" placeholder="+91" className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" required />
+                      <Input type="tel" placeholder="+91" value={emergencyContact} onChange={(e) => setEmergencyContact(e.target.value)} className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" required />
                     </div>
 
                     <div className="space-y-2">
                       <Label className="font-bold text-slate-700 dark:text-slate-300">Start Date</Label>
-                      <Input type="date" required className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" />
+                      <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" />
                     </div>
 
                     <div className="space-y-2">
                       <Label className="font-bold text-slate-700 dark:text-slate-300">End Date</Label>
-                      <Input type="date" required className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" />
+                      <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" />
                     </div>
 
                     <div className="space-y-2 md:col-span-2">
                       <Label className="font-bold text-slate-700 dark:text-slate-300">Reason for Leave</Label>
-                      <Textarea required placeholder="Please provide a valid reason..." className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 min-h-[120px] shadow-sm font-medium resize-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" />
+                      <Textarea value={reason} onChange={(e) => setReason(e.target.value)} required placeholder="Please provide a valid reason..." className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 min-h-[120px] shadow-sm font-medium resize-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" />
                     </div>
 
                     <div className="space-y-2 md:col-span-2">
