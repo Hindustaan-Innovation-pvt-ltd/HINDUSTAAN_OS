@@ -69,6 +69,35 @@ export default function LeaveManagement({ session }: { session: any }) {
   const [activeRequestId, setActiveRequestId] = useState<number | null>(null);
   const [commentText, setCommentText] = useState('');
 
+  // File Upload State
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setSelectedFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleClearFile = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   // 2. Email Notification Placeholder Flow - Loading States
   const [approvingId, setApprovingId] = useState<number | null>(null);
   const [rejectingId, setRejectingId] = useState<number | null>(null);
@@ -319,12 +348,31 @@ export default function LeaveManagement({ session }: { session: any }) {
 
                     <div className="space-y-2 md:col-span-2">
                       <Label className="font-bold text-slate-700 dark:text-slate-300">Attachment (Optional)</Label>
-                      <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-8 flex flex-col items-center justify-center text-center bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group shadow-sm">
-                        <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                          <UploadCloud className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Click to upload or drag and drop</p>
-                        <p className="text-xs font-semibold text-slate-500 mt-1">SVG, PNG, JPG, PDF (max. 5MB)</p>
+                      <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".svg,.png,.jpg,.jpeg,.pdf" />
+                      <div 
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragOver={handleDragOver}
+                        onDrop={handleDrop}
+                        className={cn("border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer group shadow-sm", selectedFile ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/10" : "border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-100/50 dark:hover:bg-slate-800/50")}
+                      >
+                        {selectedFile ? (
+                          <>
+                            <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4">
+                              <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{selectedFile.name}</p>
+                            <p className="text-xs font-semibold text-slate-500 mt-1">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                            <Button variant="ghost" size="sm" onClick={handleClearFile} className="mt-4 h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">Remove File</Button>
+                          </>
+                        ) : (
+                          <>
+                            <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                              <UploadCloud className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Click to upload or drag and drop</p>
+                            <p className="text-xs font-semibold text-slate-500 mt-1">SVG, PNG, JPG, PDF (max. 5MB)</p>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
