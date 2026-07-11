@@ -71,8 +71,73 @@ export default function LeaveManagement({ session }: { session: any }) {
     return stored ? JSON.parse(stored) : MOCK_LEAVES;
   });
 
+  const [highlightedRequestId, setHighlightedRequestId] = useState<number | null>(null);
+
+  // Sync tab with URL and check for selected request ID
+  useEffect(() => {
+    const handleRouteAndParams = () => {
+      const path = window.location.pathname;
+      if (path === '/manager/leave-management') {
+        setActiveTab('requests');
+      } else if (path === '/employee/leave') {
+        setActiveTab('history');
+      }
+
+      // Check for selected leave request from notification
+      const targetId = localStorage.getItem('selected_leave_request_id');
+      if (targetId) {
+        const reqId = Number(targetId);
+        const storedLeaves = localStorage.getItem('hindustaan_leave_data');
+        const currentLeaves = storedLeaves ? JSON.parse(storedLeaves) : leaveData;
+        const reqExists = currentLeaves.some((l: any) => l.id === reqId && l.status === 'Pending');
+        if (reqExists) {
+          setHighlightedRequestId(reqId);
+          setActiveRequestId(reqId);
+          setCommentText('');
+          setCommentModalOpen(true);
+          localStorage.removeItem('selected_leave_request_id');
+        }
+      }
+    };
+
+    const handleSync = () => {
+      const stored = localStorage.getItem('hindustaan_leave_data');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setLeaveData((prev: any) => {
+            if (JSON.stringify(prev) !== stored) {
+              return parsed;
+            }
+            return prev;
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handleRouteAndParams);
+    window.addEventListener('leave-data-updated', handleSync);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'hindustaan_leave_data') {
+        handleSync();
+      }
+    });
+
+    // Run once on mount
+    handleRouteAndParams();
+    handleSync();
+
+    return () => {
+      window.removeEventListener('popstate', handleRouteAndParams);
+      window.removeEventListener('leave-data-updated', handleSync);
+    };
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('hindustaan_leave_data', JSON.stringify(leaveData));
+    window.dispatchEvent(new Event('leave-data-updated'));
   }, [leaveData]);
 
   // Calendar State
@@ -127,6 +192,32 @@ export default function LeaveManagement({ session }: { session: any }) {
     };
 
     setLeaveData((prev: any[]) => [newRequest, ...prev]);
+
+    // Add manager notification
+    const newManagerNotification = {
+      id: Date.now(),
+      category: 'Leave Management',
+      icon: '📅',
+      title: 'New Leave Request',
+      message: `${employeeName} applied for leave on ${leave.startDate}`,
+      time: 'Just now',
+      unread: true,
+      group: 'Today',
+      metadata: {
+        requestId: newRequest.id,
+        type: 'leave_request',
+        employee: employeeName,
+        date: leave.startDate
+      }
+    };
+    const savedNotifications = localStorage.getItem('hindustaan_notifications');
+    let managerNotifications = [];
+    if (savedNotifications) {
+      try { managerNotifications = JSON.parse(savedNotifications); } catch (e) {}
+    }
+    localStorage.setItem('hindustaan_notifications', JSON.stringify([newManagerNotification, ...managerNotifications]));
+    window.dispatchEvent(new Event('notifications-updated'));
+
     return true;
   };
 
@@ -135,32 +226,85 @@ export default function LeaveManagement({ session }: { session: any }) {
   // Employee Applies Leave -> Manager Approves -> POST /api/leaves/:id/approve -> Backend sends email to HR -> Calendar updates automatically
 
   const handleApprove = (id: number) => {
-    setApprovingId(id);
-    // Simulate API call
-    setTimeout(() => {
-      setLeaveData((prev: any[]) => prev.map((l: any) => l.id === id ? { ...l, status: 'Approved', hrNotified: true } : l));
-      setApprovingId(null);
-      toast.success('Leave Approved Successfully.', {
-        description: 'HR has been notified via email.'
-      });
-      // TODO: Backend API
-      // POST /api/leaves/:id/approve
-      // Backend will send email to HR automatically
-    }, 1500);
+    let leaveObj: any = null;
+    setLeaveData((prev: any[]) => prev.map((l: any) => {
+      if (l.id === id) {
+        leaveObj = l;
+        return { ...l, status: 'Approved', hrNotified: true };
+      }
+      return l;
+    }));
+
+    toast.success('Leave Approved Successfully.', {
+      description: 'HR has been notified via email.'
+    });
+
+    // Add employee notification
+    const leaveDateFormatted = leaveObj ? leaveObj.start : 'July 15';
+    const newEmpNotification = {
+      id: Date.now(),
+      category: 'Leave Management',
+      icon: '✅',
+      title: 'Leave Approved',
+      message: `Manager approved your leave request for ${leaveDateFormatted}`,
+      time: 'Just now',
+      unread: true,
+      group: 'Today',
+      metadata: {
+        type: 'leave_approved',
+        date: leaveDateFormatted
+      }
+    };
+    const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
+    let empNotifications = [];
+    if (savedEmpNotifications) {
+      try { empNotifications = JSON.parse(savedEmpNotifications); } catch (e) {}
+    }
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
+    window.dispatchEvent(new Event('employee-notifications-updated'));
+    window.dispatchEvent(new Event('notifications-updated'));
+    window.dispatchEvent(new Event('leave-data-updated'));
   };
 
   const handleReject = (id: number) => {
-    setRejectingId(id);
-    // Simulate API call
-    setTimeout(() => {
-      setLeaveData((prev: any[]) => prev.map((l: any) => l.id === id ? { ...l, status: 'Rejected' } : l));
-      setRejectingId(null);
-      toast.error('Leave Rejected', {
-        description: 'Employee has been notified.'
-      });
-      // TODO: Backend API
-      // POST /api/leaves/:id/reject
-    }, 1500);
+    let leaveObj: any = null;
+    setLeaveData((prev: any[]) => prev.map((l: any) => {
+      if (l.id === id) {
+        leaveObj = l;
+        return { ...l, status: 'Rejected' };
+      }
+      return l;
+    }));
+
+    toast.error('Leave Rejected', {
+      description: 'Employee has been notified.'
+    });
+
+    // Add employee notification
+    const leaveDateFormatted = leaveObj ? leaveObj.start : 'July 15';
+    const newEmpNotification = {
+      id: Date.now(),
+      category: 'Leave Management',
+      icon: '❌',
+      title: 'Leave Rejected',
+      message: `Manager rejected your leave request for ${leaveDateFormatted}`,
+      time: 'Just now',
+      unread: true,
+      group: 'Today',
+      metadata: {
+        type: 'leave_rejected',
+        date: leaveDateFormatted
+      }
+    };
+    const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
+    let empNotifications = [];
+    if (savedEmpNotifications) {
+      try { empNotifications = JSON.parse(savedEmpNotifications); } catch (e) {}
+    }
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
+    window.dispatchEvent(new Event('employee-notifications-updated'));
+    window.dispatchEvent(new Event('notifications-updated'));
+    window.dispatchEvent(new Event('leave-data-updated'));
   };
 
   const openCommentModal = (id: number) => {
@@ -171,8 +315,35 @@ export default function LeaveManagement({ session }: { session: any }) {
 
   const submitComment = () => {
     setCommentModalOpen(false);
+    setHighlightedRequestId(null);
     toast.success('Comment saved.');
-    // TODO: POST /api/leaves/:id/comments
+    
+    // Add comment notification for the employee
+    const req = leaveData.find((l: any) => l.id === activeRequestId);
+    if (req) {
+      const newEmpNotification = {
+        id: Date.now(),
+        category: 'Leave Management',
+        icon: '💬',
+        title: 'Leave Commented',
+        message: `Manager commented on your leave request for ${req.start}`,
+        time: 'Just now',
+        unread: true,
+        group: 'Today',
+        metadata: {
+          type: 'leave_commented',
+          date: req.start
+        }
+      };
+      const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
+      let empNotifications = [];
+      if (savedEmpNotifications) {
+        try { empNotifications = JSON.parse(savedEmpNotifications); } catch (e) {}
+      }
+      localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
+      window.dispatchEvent(new Event('employee-notifications-updated'));
+      window.dispatchEvent(new Event('notifications-updated'));
+    }
   };
 
   // Selected date leaves
@@ -539,7 +710,10 @@ export default function LeaveManagement({ session }: { session: any }) {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, height: 0, margin: 0, overflow: 'hidden' }}
-                      className="border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-950 backdrop-blur-xl shadow-lg rounded-3xl overflow-hidden flex flex-col hover:shadow-xl transition-all"
+                      className={cn(
+                        "border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-950 backdrop-blur-xl shadow-lg rounded-3xl overflow-hidden flex flex-col hover:shadow-xl transition-all",
+                        highlightedRequestId === req.id && "ring-2 ring-purple-500 animate-pulse border-purple-500"
+                      )}
                     >
                       <div className="flex flex-col lg:flex-row lg:items-stretch">
                         

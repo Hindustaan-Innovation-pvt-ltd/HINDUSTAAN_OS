@@ -239,7 +239,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
               </div>
 
               <div className="space-y-2">
-                <Label className="font-bold text-slate-700 dark:text-slate-300">Emergency Contact Number</Label>
+                <Label className="font-bold text-slate-700 dark:text-slate-300">Employee's Contact Number</Label>
                 <Input
                   type="tel"
                   placeholder="+91"
