@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   User, Shield, Bell, Palette, Link as LinkIcon, Database, Globe, HelpCircle, 
   Download, MonitorSmartphone, CheckCircle2, Moon, Sun, Monitor, ChevronLeft, Clock,
-  Eye, EyeOff, QrCode, Smartphone, Laptop, AlertTriangle
+  Eye, EyeOff, QrCode, Smartphone, Laptop, AlertTriangle, X
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -298,24 +298,39 @@ export default function Settings({ session }: { session: any }) {
   };
 
   const [standupSettings, setStandupSettings] = useState(() => {
-    const saved = localStorage.getItem('standupSettings');
+    const saved = localStorage.getItem('projectos-standup-settings');
     return saved ? JSON.parse(saved) : {
-      dailyReminder: true,
-      reminderTime: '09:00 AM',
-      timeZone: 'Asia/Kolkata',
-      deadline: '10:00 AM',
-      formatYesterday: true,
-      formatToday: true,
-      formatBlockers: true,
-      formatNotes: true,
+      reminderEnabled: true,
+      reminderTime: '08:00',
+      deadline: '11:00',
+      yesterdayWork: true,
+      todaysPlan: true,
+      blockers: true,
+      additionalNotes: false,
       emailReminder: true,
-      browserNotification: true,
-      autoSendReminder: false
+      browserNotification: true
     };
   });
 
-  const handleStandupToggle = (key: keyof typeof standupSettings) => {
-    setStandupSettings((prev: any) => ({ ...prev, [key]: !prev[key] }));
+  const [notificationState, setNotificationState] = useState<string>(
+    typeof Notification !== 'undefined' ? Notification.permission : 'Not Requested'
+  );
+
+  const requestNotificationPermission = () => {
+    if (typeof Notification !== 'undefined') {
+      Notification.requestPermission().then((permission) => {
+        setNotificationState(permission);
+        if (permission === 'granted') {
+          handleStandupToggle('browserNotification', true);
+        } else {
+          handleStandupToggle('browserNotification', false);
+        }
+      });
+    }
+  };
+
+  const handleStandupToggle = (key: keyof typeof standupSettings, forceValue?: boolean) => {
+    setStandupSettings((prev: any) => ({ ...prev, [key]: forceValue !== undefined ? forceValue : !prev[key] }));
   };
 
   const handleStandupSelect = (key: string, value: string) => {
@@ -323,8 +338,8 @@ export default function Settings({ session }: { session: any }) {
   };
 
   const saveStandupSettings = () => {
-    localStorage.setItem('standupSettings', JSON.stringify(standupSettings));
-    toast.success('Standup Settings Saved', { description: 'Your preferences have been updated successfully.' });
+    localStorage.setItem('projectos-standup-settings', JSON.stringify(standupSettings));
+    toast.success('Standup preferences updated.');
   };
 
   const renderContent = () => {
@@ -337,6 +352,37 @@ export default function Settings({ session }: { session: any }) {
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize how Daily Standups work for you {role === 'manager' && 'and your team'}.</p>
             </div>
             
+            {/* Summary Card */}
+            <Card className="bg-gradient-to-br from-violet-500 to-blue-600 text-white shadow-lg border-0">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-bold mb-4 flex items-center"><Clock className="h-5 w-5 mr-2"/> Standup Configuration</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-violet-100 text-xs font-semibold uppercase">Reminder</p>
+                    <p className="text-xl font-bold">{standupSettings.reminderEnabled ? standupSettings.reminderTime : 'Off'}</p>
+                  </div>
+                  <div>
+                    <p className="text-violet-100 text-xs font-semibold uppercase">Deadline</p>
+                    <p className="text-xl font-bold">{standupSettings.deadline}</p>
+                  </div>
+                  <div>
+                    <p className="text-violet-100 text-xs font-semibold uppercase">Enabled Sections</p>
+                    <p className="text-xl font-bold">
+                      {[standupSettings.yesterdayWork, standupSettings.todaysPlan, standupSettings.blockers, standupSettings.additionalNotes].filter(Boolean).length}/4
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-violet-100 text-xs font-semibold uppercase">Notifications</p>
+                    <p className="text-sm font-bold mt-1 leading-tight">
+                      {standupSettings.emailReminder && standupSettings.browserNotification ? 'Email + Browser' : 
+                       standupSettings.emailReminder ? 'Email Only' : 
+                       standupSettings.browserNotification ? 'Browser Only' : 'None'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="rounded-2xl border-violet-500/20 bg-white/50 dark:bg-slate-900/40 backdrop-blur-xl shadow-lg relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-violet-500/10 to-blue-500/10 rounded-full blur-3xl -z-10 translate-x-1/2 -translate-y-1/2"></div>
               <CardContent className="p-6 space-y-6">
@@ -349,50 +395,24 @@ export default function Settings({ session }: { session: any }) {
                     <div>
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white">Daily Standup Reminder</h4>
                       <p className="text-xs text-slate-500 mt-0.5">Receive an alert to submit your standup.</p>
+                      {standupSettings.reminderEnabled && (
+                        <Badge variant="outline" className="mt-2 text-xs border-violet-200 text-violet-700 bg-violet-50 dark:border-violet-900 dark:text-violet-300 dark:bg-violet-900/20">
+                          Next reminder will be sent at {standupSettings.reminderTime}
+                        </Badge>
+                      )}
                     </div>
-                    <Switch checked={standupSettings.dailyReminder} onCheckedChange={() => handleStandupToggle('dailyReminder')} />
+                    <Switch checked={standupSettings.reminderEnabled} onCheckedChange={() => handleStandupToggle('reminderEnabled')} />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Reminder Time</label>
-                      <Select value={standupSettings.reminderTime} onValueChange={(val) => handleStandupSelect('reminderTime', val)}>
-                        <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                          {['08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <Input type="time" value={standupSettings.reminderTime} onChange={(e) => handleStandupSelect('reminderTime', e.target.value)} disabled={!standupSettings.reminderEnabled} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold" />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Time Zone</label>
-                      <Select value={standupSettings.timeZone} onValueChange={(val) => handleStandupSelect('timeZone', val)}>
-                        <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                          <SelectItem value="Asia/Kolkata">Asia/Kolkata (IST)</SelectItem>
-                          <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
-                          <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Submission Deadline</label>
+                      <Input type="time" value={standupSettings.deadline} onChange={(e) => handleStandupSelect('deadline', e.target.value)} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold" />
                     </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Submission Deadline</label>
-                    <Select value={standupSettings.deadline} onValueChange={(val) => handleStandupSelect('deadline', val)}>
-                      <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        <SelectItem value="9:00 AM">9:00 AM</SelectItem>
-                        <SelectItem value="10:00 AM">10:00 AM</SelectItem>
-                        <SelectItem value="11:00 AM">11:00 AM</SelectItem>
-                        <SelectItem value="Custom">Custom Time</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
 
@@ -401,45 +421,67 @@ export default function Settings({ session }: { session: any }) {
                   <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-4">Standup Format Options</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {[
-                      { key: 'formatYesterday', label: "Yesterday's Work" },
-                      { key: 'formatToday', label: "Today's Plan" },
-                      { key: 'formatBlockers', label: "Blockers" },
-                      { key: 'formatNotes', label: "Additional Notes" }
+                      { key: 'yesterdayWork', label: "Yesterday's Work" },
+                      { key: 'todaysPlan', label: "Today's Plan" },
+                      { key: 'blockers', label: "Blockers" },
+                      { key: 'additionalNotes', label: "Additional Notes" }
                     ].map(fmt => (
                       <div key={fmt.key} className="flex items-center justify-between p-3 rounded-xl bg-white/60 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
                         <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{fmt.label}</span>
-                        <Switch checked={standupSettings[fmt.key as keyof typeof standupSettings] as boolean} onCheckedChange={() => handleStandupToggle(fmt.key as keyof typeof standupSettings)} />
+                        <Switch 
+                          checked={standupSettings[fmt.key as keyof typeof standupSettings] as boolean} 
+                          onCheckedChange={() => handleStandupToggle(fmt.key as keyof typeof standupSettings)} 
+                          className="data-[state=checked]:bg-violet-600 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-700 [&>span]:bg-white"
+                        />
                       </div>
                     ))}
                   </div>
+
+
                 </div>
 
                 {/* Notifications & Automation */}
                 <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
-                  <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-4">Notifications & Automation</h3>
+                  <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-4">Notifications</h3>
                   <div className="space-y-3">
-                    {[
-                      { key: 'emailReminder', label: 'Enable Email Reminder', desc: 'Receive a daily email prompting your standup.' },
-                      { key: 'browserNotification', label: 'Enable Browser Notification', desc: 'Get a push notification in your browser.' },
-                      { key: 'autoSendReminder', label: 'Auto-send reminder if missed', desc: 'Automatically nudge if standup is not submitted by deadline.' }
-                    ].map(notif => (
-                      <div key={notif.key} className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
-                        <div>
-                          <h4 className="text-sm font-bold text-slate-900 dark:text-white">{notif.label}</h4>
-                          <p className="text-xs text-slate-500 mt-0.5">{notif.desc}</p>
-                        </div>
-                        <Switch checked={standupSettings[notif.key as keyof typeof standupSettings] as boolean} onCheckedChange={() => handleStandupToggle(notif.key as keyof typeof standupSettings)} />
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">Email Reminder</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">{standupSettings.emailReminder ? 'Email reminders enabled.' : 'Receive an email prompting your standup.'}</p>
                       </div>
-                    ))}
+                      <Switch checked={standupSettings.emailReminder} onCheckedChange={() => handleStandupToggle('emailReminder')} />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">Browser Notification</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">Status: <span className="font-semibold text-slate-700 dark:text-slate-300 capitalize">{notificationState === 'default' ? 'Not Requested' : notificationState}</span></p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {notificationState !== 'granted' && (
+                          <Button variant="outline" size="sm" onClick={requestNotificationPermission} className="h-8 text-xs font-semibold">Request Permission</Button>
+                        )}
+                        <Switch checked={standupSettings.browserNotification} onCheckedChange={() => {
+                          if (notificationState === 'granted') {
+                            handleStandupToggle('browserNotification');
+                          } else {
+                            requestNotificationPermission();
+                          }
+                        }} disabled={notificationState === 'denied'} />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {role === 'manager' && (
                   <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
                     <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4">Manager Access</h3>
-                    <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30">
-                      <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-3">You can enforce these standup configurations as the default for your entire team.</p>
-                      <Button variant="outline" className="text-xs font-bold border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30">Set as Team Default</Button>
+                    <div className="p-4 flex items-center justify-between rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30">
+                      <div>
+                        <p className="text-sm font-bold text-blue-900 dark:text-blue-100">Apply to Entire Team</p>
+                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">Force these format and deadline configurations as default.</p>
+                      </div>
+                      <Switch className="data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-700 [&>span]:bg-white" />
                     </div>
                   </div>
                 )}

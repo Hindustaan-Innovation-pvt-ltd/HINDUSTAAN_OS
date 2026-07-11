@@ -24,7 +24,8 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
-  LifeBuoy
+  LifeBuoy,
+  CalendarRange
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
@@ -51,6 +52,7 @@ const employeeNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
   { name: 'My Tasks', icon: CheckSquare },
   { name: 'Work Logs', icon: Clock },
+  { name: 'Leave Management', icon: CalendarRange },
   { name: 'Daily Standup', icon: Mic },
   { name: 'My Projects', icon: FolderKanban },
   { name: 'Milestones', icon: Flag },
@@ -65,6 +67,7 @@ const managerNavigation = [
   { name: 'Gantt Timeline', icon: CalendarDays },
   { name: 'Progress Tracker', icon: BarChart2 },
   { name: 'Work Logs', icon: Clock },
+  { name: 'Leave Management', icon: CalendarRange },
   { name: 'Daily Standups', icon: Mic },
   { name: 'Contribution Scores', icon: Trophy },
   { name: 'Team Members', icon: Users },

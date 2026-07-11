@@ -145,6 +145,30 @@ export default function DailyStandups({ session }: { session?: any }) {
     return (saved && saved !== 'null') ? JSON.parse(saved) : MOCK_HISTORY;
   });
 
+  const [standupSettings] = useState(() => {
+    const saved = localStorage.getItem('projectos-standup-settings');
+    return saved ? JSON.parse(saved) : {
+      reminderEnabled: true,
+      reminderTime: '08:00',
+      deadline: '11:00',
+      yesterdayWork: true,
+      todaysPlan: true,
+      blockers: true,
+      additionalNotes: false,
+      emailReminder: true,
+      browserNotification: true
+    };
+  });
+
+  const isDeadlinePassed = () => {
+    if (!standupSettings.deadline) return false;
+    const now = new Date();
+    const [hours, minutes] = standupSettings.deadline.split(':');
+    const deadlineDate = new Date();
+    deadlineDate.setHours(parseInt(hours, 10) || 11, parseInt(minutes, 10) || 0, 0, 0);
+    return now > deadlineDate;
+  };
+
   const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [extensionDays, setExtensionDays] = useState(1);
@@ -159,7 +183,7 @@ export default function DailyStandups({ session }: { session?: any }) {
   }, [history]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ yesterday: '', today: '', blockers: '' });
+  const [formData, setFormData] = useState({ yesterday: '', today: '', blockers: '', notes: '' });
   const [sentReminders, setSentReminders] = useState<Set<string>>(new Set());
   const [viewingStandup, setViewingStandup] = useState<any | null>(null);
   
@@ -171,10 +195,10 @@ export default function DailyStandups({ session }: { session?: any }) {
   const [meetingLink, setMeetingLink] = useState('https://meet.google.com/new');
   const [meetingMessage, setMeetingMessage] = useState('Hi team, please join the daily standup meeting now!');
 
-  const [activeSpeechField, setActiveSpeechField] = useState<'yesterday' | 'today' | 'blockers' | null>(null);
+  const [activeSpeechField, setActiveSpeechField] = useState<'yesterday' | 'today' | 'blockers' | 'notes' | null>(null);
   const recognitionRef = React.useRef<any>(null);
 
-  const startListeningForField = (field: 'yesterday' | 'today' | 'blockers') => {
+  const startListeningForField = (field: 'yesterday' | 'today' | 'blockers' | 'notes') => {
     // If already listening for this field, stop it (toggle off)
     if (activeSpeechField === field && recognitionRef.current) {
       recognitionRef.current.stop();
@@ -389,7 +413,7 @@ export default function DailyStandups({ session }: { session?: any }) {
     });
     toast.success('Standup Update Submitted!');
     setIsModalOpen(false);
-    setFormData({ yesterday: '', today: '', blockers: '' });
+    setFormData({ yesterday: '', today: '', blockers: '', notes: '' });
   };
 
   const handleExtensionSubmit = () => {
@@ -589,7 +613,7 @@ export default function DailyStandups({ session }: { session?: any }) {
     });
 
     setIsModalOpen(false);
-    setFormData({ yesterday: '', today: '', blockers: '' });
+    setFormData({ yesterday: '', today: '', blockers: '', notes: '' });
   };
 
   const submittedCount = displayStandups.filter(s => s.status === 'Submitted').length;
@@ -1335,15 +1359,21 @@ export default function DailyStandups({ session }: { session?: any }) {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[500px] p-0 border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] overflow-hidden rounded-2xl shadow-2xl">
           <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50">
-            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center justify-between">
               Daily Standup
+              {isDeadlinePassed() && (
+                <Badge variant="outline" className="border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:bg-rose-900/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ml-auto">
+                  Standup deadline passed
+                </Badge>
+              )}
             </DialogTitle>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               What did you work on, and what's next?
             </p>
           </DialogHeader>
           <div className="p-6 space-y-6">
-            <div className="space-y-2">
+            {standupSettings.yesterdayWork && (
+              <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
                 <Button 
@@ -1366,6 +1396,8 @@ export default function DailyStandups({ session }: { session?: any }) {
                 className="w-full h-20 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
             </div>
+            )}
+            {standupSettings.todaysPlan && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What will you do today?</label>
@@ -1389,6 +1421,8 @@ export default function DailyStandups({ session }: { session?: any }) {
                 className="w-full h-20 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
             </div>
+            )}
+            {standupSettings.blockers && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Any blockers? (Optional)</label>
@@ -1412,6 +1446,32 @@ export default function DailyStandups({ session }: { session?: any }) {
                 className="w-full h-16 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
             </div>
+            )}
+            {standupSettings.additionalNotes && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Additional Notes</label>
+                <Button 
+                  type="button"
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => startListeningForField('notes')}
+                  className={cn(
+                    "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
+                    activeSpeechField === 'notes' && "text-red-500 animate-pulse hover:text-red-600"
+                  )}
+                >
+                  <Mic className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <textarea 
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                placeholder="Any extra info..."
+                className="w-full h-16 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
+              />
+            </div>
+            )}
             <div className="pt-2 flex justify-between gap-3">
               <Button onClick={() => setIsModalOpen(false)} variant="outline" className="flex-1 h-11 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold">
                 Cancel
