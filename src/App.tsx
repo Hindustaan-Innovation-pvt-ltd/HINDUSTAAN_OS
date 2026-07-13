@@ -21,10 +21,10 @@ import HelpSupport from '@/pages/HelpSupport';
 import LeaveManagement from './pages/LeaveManagement';
 // Supabase client removed for mock auth implementation
 
-import { ThemeProvider } from './context/ThemeContext';
-import { ProjectProvider } from './context/ProjectContext';
-import { UserProvider } from './context/UserContext';
-import { NotificationProvider } from './context/NotificationContext';
+import { ThemeProvider } from '@/context/ThemeContext';
+import { ProjectProvider } from '@/context/ProjectContext';
+import { UserProvider } from '@/context/UserContext';
+import { NotificationProvider } from '@/context/NotificationContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { GLOBAL_LOGS } from '@/data/mockData';
