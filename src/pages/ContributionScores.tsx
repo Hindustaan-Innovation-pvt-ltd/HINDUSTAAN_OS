@@ -163,6 +163,8 @@ export default function ContributionScores({ session }: { session?: any }) {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const [startY, setStartY] = useState(0);
+  const [scrollTopPos, setScrollTopPos] = useState(0);
 
   const [isTableScrolledEnd, setIsTableScrolledEnd] = useState(false);
   const [isRightColScrolledEnd, setIsRightColScrolledEnd] = useState(false);
@@ -182,6 +184,8 @@ export default function ContributionScores({ session }: { session?: any }) {
     setIsDragging(true);
     setStartX(e.pageX - scrollRef.current.offsetLeft);
     setScrollLeft(scrollRef.current.scrollLeft);
+    setStartY(e.pageY - scrollRef.current.offsetTop);
+    setScrollTopPos(scrollRef.current.scrollTop);
   };
 
   const handleMouseLeave = () => {
@@ -196,8 +200,12 @@ export default function ContributionScores({ session }: { session?: any }) {
     if (!isDragging || !scrollRef.current) return;
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startX) * 2.5;
-    scrollRef.current.scrollLeft = scrollLeft - walk;
+    const walkX = (x - startX) * 2.5;
+    scrollRef.current.scrollLeft = scrollLeft - walkX;
+
+    const y = e.pageY - scrollRef.current.offsetTop;
+    const walkY = (y - startY) * 2.5;
+    scrollRef.current.scrollTop = scrollTopPos - walkY;
   };
 
   const filteredInterns = MOCK_INTERNS.filter(intern =>
@@ -707,7 +715,7 @@ export default function ContributionScores({ session }: { session?: any }) {
               </div>
             </CardHeader>
             <CardContent 
-              className={cn("p-0 overflow-auto flex-1 relative hide-scrollbar", isDragging ? "cursor-grabbing select-none" : "cursor-grab")}
+              className={cn("p-0 overflow-auto flex-1 relative", isDragging ? "cursor-grabbing select-none" : "cursor-grab")}
               ref={scrollRef}
               onMouseDown={handleMouseDown}
               onMouseLeave={handleMouseLeave}
@@ -814,7 +822,7 @@ export default function ContributionScores({ session }: { session?: any }) {
 
         {/* Right Column - Charts & Top Performers */}
         <div className="xl:col-span-4 flex flex-col h-auto xl:h-[800px] relative">
-          <div className="flex flex-col space-y-6 overflow-y-auto pr-2 hide-scrollbar pb-10" onScroll={handleRightColScrollEvent}>
+          <div className="flex flex-col space-y-6 overflow-y-auto pr-2 pb-10" onScroll={handleRightColScrollEvent}>
 
           {/* Score Distribution Donut */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">

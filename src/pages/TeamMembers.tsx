@@ -193,9 +193,9 @@ export default function TeamMembers() {
               </DialogHeader>
               <form onSubmit={handleInviteSubmit} className="space-y-6 pt-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500">Manager</label>
-                    <Input required defaultValue={currentUser?.role === 'manager' ? currentUser.name : "Aakash Gupta"} className="rounded-xl" />
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">First Name</label>
+                    <Input required placeholder="E.g. Aakash" className="rounded-xl" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Last Name</label>

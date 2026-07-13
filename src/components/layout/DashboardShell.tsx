@@ -22,10 +22,11 @@ import {
   Settings,
   ChevronDown,
   User,
-  ChevronLeft,
   ChevronRight,
   LifeBuoy,
-  CalendarRange
+  CalendarRange,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
@@ -76,7 +77,7 @@ const managerNavigation = [
 
 import { useUser } from '@/context/UserContext';
 
-const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen, activeNavigation, onSignOut, sidebarWidth, startResizing, isMobile }: any) => {
+const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen, activeNavigation, onSignOut, sidebarWidth, startResizing, isMobile, toggleSidebar }: any) => {
   const { user } = useUser();
   const userName = user?.name || 'Loading...';
   const userInitials = userName !== 'Loading...' ? userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : '';
@@ -88,10 +89,10 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
   return (
     <div className="flex h-full flex-col bg-white dark:bg-slate-900 overflow-hidden relative">
         {/* Branding Badge */}
-        <div className={cn("flex shrink-0 items-center border-b border-slate-100 dark:border-[#5B7CFF]/20 py-4 relative", collapsed ? "justify-center px-0 h-[90px]" : "justify-between px-4 min-h-[90px]")}>
+        <div className={cn("flex shrink-0 items-center border-b border-slate-100 dark:border-[#5B7CFF]/20 py-4 relative", collapsed ? "justify-center px-0 h-[90px] flex-col gap-2" : "justify-between px-4 min-h-[90px]")}>
           <div className="flex items-center group cursor-pointer transition-all duration-300 hover:scale-[1.03]" onClick={() => onNavigate('Dashboard')}>
             {collapsed ? (
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#5B7CFF] to-[#A855F7] flex items-center justify-center text-white font-bold text-lg shadow-[0_0_15px_rgba(91,124,255,0.4)]">
+              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[#5B7CFF] to-[#A855F7] flex items-center justify-center text-white font-bold text-sm shadow-[0_0_15px_rgba(91,124,255,0.4)]">
                 P
               </div>
             ) : (
@@ -102,7 +103,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
           {!isMobile && (
             <div 
               onMouseDown={startResizing}
-              className="absolute -right-[4px] top-0 bottom-0 h-screen w-[8px] cursor-col-resize z-50 flex items-center justify-center group"
+              className="absolute -right-[4px] top-0 bottom-0 h-screen w-[8px] cursor-col-resize z-40 flex items-center justify-center group"
             >
               <div className="h-16 w-[4px] rounded-full bg-[#5B7CFF]/50 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
@@ -320,6 +321,17 @@ export default function DashboardShell({
     }
   }, [isMinimized]);
   
+  const toggleSidebar = React.useCallback(() => {
+    setSidebarWidth(prev => {
+      if (prev < 150) {
+        onMinimizeChange(false);
+        return 280;
+      }
+      onMinimizeChange(true);
+      return 88;
+    });
+  }, [onMinimizeChange]);
+
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -343,9 +355,22 @@ export default function DashboardShell({
         initial={false}
         animate={{ width: sidebarWidth }}
         transition={isDragging ? { duration: 0 } : { duration: 0.3, ease: 'easeInOut' }}
-        className="hidden lg:flex inset-y-0 left-0 z-50 flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 shrink-0 relative select-none"
+        className="hidden lg:flex inset-y-0 left-0 z-40 flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 shrink-0 relative select-none"
       >
-        <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={sidebarWidth} startResizing={startResizing} isMobile={false} />
+        <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={sidebarWidth} startResizing={startResizing} isMobile={false} toggleSidebar={toggleSidebar} />
+        
+        {/* Toggle Button (Desktop) - Seamlessly attached outside */}
+        <button
+          onClick={toggleSidebar}
+          className="absolute -right-[28px] top-8 z-50 flex h-8 w-[28px] items-center justify-center rounded-r-md rounded-l-none border border-l-0 border-slate-200 dark:border-slate-700/60 bg-blue-50 dark:bg-[#0c1222] text-blue-600 dark:text-[#5B7CFF] hover:bg-blue-100 dark:hover:bg-[#151e32] shadow-sm cursor-pointer transition-all duration-200"
+          title={sidebarWidth < 150 ? "Expand Sidebar" : "Shrink Sidebar"}
+        >
+          {sidebarWidth < 150 ? (
+            <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+          )}
+        </button>
       </motion.div>
 
       {/* Main Context Body */}
@@ -368,7 +393,7 @@ export default function DashboardShell({
                   </button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-[280px] border-r border-slate-200 dark:border-[#5B7CFF]/20 flex flex-col">
-                  <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={280} startResizing={() => {}} isMobile={true} />
+                  <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={280} startResizing={() => {}} isMobile={true} toggleSidebar={toggleSidebar} />
                 </SheetContent>
               </Sheet>
 
