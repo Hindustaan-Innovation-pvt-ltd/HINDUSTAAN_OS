@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Login from './pages/Login';
 import DashboardShell from './components/layout/DashboardShell';
 import RoleBasedRouter from './components/dashboard/RoleBasedRouter';
+import AdminDashboard from './pages/AdminDashboard';
+import RolesAndPermissions from './pages/RolesAndPermissions';
 import TaskBoard from './pages/TaskBoard';
 import TimeAndStandup from './pages/TimeAndStandup';
 import Milestones from './pages/Milestones';
@@ -348,6 +350,15 @@ function App() {
             }}
           >
             {currentView === 'Dashboard' && <RoleBasedRouter session={session} />}
+            {currentView === 'Employees' && (
+              <AdminDashboard showOnlyRole="employee" />
+            )}
+            {currentView === 'Managers' && (
+              <AdminDashboard showOnlyRole="manager" />
+            )}
+            {currentView === 'Roles & Permissions' && (
+              <RolesAndPermissions />
+            )}
             {(currentView === 'Tasks' || currentView === 'My Tasks') && (
               <TaskBoard session={session} isSidebarMinimized={isSidebarMinimized} />
             )}
@@ -379,7 +390,12 @@ function App() {
               'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
               'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Edit Profile', 'Team Members',
               'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
+<<<<<<< HEAD
               'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support', 'Security Settings'
+=======
+              'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support',
+              'Employees', 'Managers', 'Roles & Permissions'
+>>>>>>> 303a4aad6613cb10fbcb12b39aa4474ea50e0acc
             ].includes(currentView) && (
               <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
                 <p>Module "{currentView}" is under construction.</p>
