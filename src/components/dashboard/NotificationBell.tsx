@@ -43,7 +43,12 @@ const DEFAULT_MANAGER_NOTIFICATIONS: NotificationItem[] = [
       type: 'leave_request',
       employee: 'Tanvy Pandey',
       date: '2026-07-15'
-    }
+    },
+    actions: [
+      { label: 'Approve', primary: true, actionType: 'approve_leave' },
+      { label: 'Reject', actionType: 'reject_leave' },
+      { label: 'Comment', actionType: 'comment_leave' }
+    ]
   },
   {
     id: 1689360000000 + 2,
@@ -182,6 +187,50 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
 
   const handleActionClick = (e: React.MouseEvent, notification: NotificationItem, actionType: string) => {
     e.stopPropagation();
+
+    if (actionType === 'approve_leave' || actionType === 'reject_leave' || actionType === 'comment_leave') {
+      const requestId = notification.metadata?.requestId;
+      if (!requestId) return;
+
+      if (actionType === 'comment_leave') {
+        const comment = window.prompt("Enter your comment for this leave request:");
+        if (comment) {
+           const existing = JSON.parse(localStorage.getItem('hindustaan_leave_comments') || '[]');
+           existing.push({
+             id: Date.now(),
+             leaveId: requestId,
+             text: comment,
+             author: user?.name || "Manager",
+             timestamp: new Date().toISOString()
+           });
+           localStorage.setItem('hindustaan_leave_comments', JSON.stringify(existing));
+           toast.success("Comment added successfully");
+        }
+        return;
+      }
+
+      const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_requests') || '[]');
+      const updatedLeaves = allLeaves.map((l: any) => {
+        if (l.id === requestId) {
+          return { ...l, status: actionType === 'approve_leave' ? 'Approved' : 'Rejected', hrNotified: true, processedAt: Date.now() };
+        }
+        return l;
+      });
+      localStorage.setItem('hindustaan_leave_requests', JSON.stringify(updatedLeaves));
+      window.dispatchEvent(new Event('leave-requests-updated'));
+
+      const updatedNotifs = notifications.map(n => {
+        if (n.id === notification.id) {
+          return { ...n, unread: false, actions: [] };
+        }
+        return n;
+      });
+      saveNotifications(updatedNotifs);
+      
+      toast.success(actionType === 'approve_leave' ? "Leave request approved" : "Leave request rejected");
+      return;
+    }
+
     window.dispatchEvent(new CustomEvent("notification-action", { detail: { actionType, notification } }));
   };
 
