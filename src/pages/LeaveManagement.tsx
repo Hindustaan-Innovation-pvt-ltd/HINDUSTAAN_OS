@@ -29,6 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { LeaveCalendar } from '@/components/dashboard/LeaveCalendar';
+import { LeaveCommentHistory, type LeaveComment } from '@/components/dashboard/LeaveCommentHistory';
 import { LeaveApplicationWithDrafts } from '@/components/dashboard/LeaveApplicationWithDrafts';
 import LeaveRequestDialog from '@/components/manager/LeaveRequestDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -73,6 +74,72 @@ export default function LeaveManagement({ session }: { session: any }) {
   });
 
   const [highlightedRequestId, setHighlightedRequestId] = useState<number | null>(null);
+  const [leaveComments, setLeaveComments] = useState<LeaveComment[]>(() => {
+    const stored = localStorage.getItem('hindustaan_leave_comments');
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hindustaan_leave_comments', JSON.stringify(leaveComments));
+  }, [leaveComments]);
+
+  const handleEditComment = (commentId: string, newText: string) => {
+    setLeaveComments(prev => prev.map(c => {
+      if (c.id === commentId) {
+        const updated = { ...c, comment: newText, edited: true, updatedAt: new Date().toISOString() };
+        
+        // Update employee notification
+        const req = leaveData.find((l: any) => l.id === c.leaveId);
+        if (req) {
+          const empNotifs = JSON.parse(localStorage.getItem('hindustaan_employee_notifications') || '[]');
+          const notif = {
+            id: Date.now(),
+            category: 'Leave Management',
+            icon: '💬',
+            title: 'Leave Comment Edited',
+            message: `💬 ${session?.user?.user_metadata?.name || 'Manager'} edited comment:
+"${newText}"`,
+            time: 'Just now',
+            unread: true,
+            group: 'Today',
+            metadata: { type: 'leave_commented', date: req.start, requestId: req.id }
+          };
+          localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([notif, ...empNotifs]));
+          window.dispatchEvent(new Event('employee-notifications-updated'));
+        }
+        return updated;
+      }
+      return c;
+    }));
+    toast.success('Comment updated');
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    const comment = leaveComments.find(c => c.id === commentId);
+    setLeaveComments(prev => prev.filter(c => c.id !== commentId));
+    
+    if (comment) {
+        const req = leaveData.find((l: any) => l.id === comment.leaveId);
+        if (req) {
+          const empNotifs = JSON.parse(localStorage.getItem('hindustaan_employee_notifications') || '[]');
+          const notif = {
+            id: Date.now(),
+            category: 'Leave Management',
+            icon: '🗑️',
+            title: 'Leave Comment Deleted',
+            message: `Comment was removed by ${session?.user?.user_metadata?.name || 'Manager'}.`,
+            time: 'Just now',
+            unread: true,
+            group: 'Today',
+            metadata: { type: 'leave_commented', date: req.start, requestId: req.id }
+          };
+          localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([notif, ...empNotifs]));
+          window.dispatchEvent(new Event('employee-notifications-updated'));
+        }
+    }
+    toast.success('Comment deleted');
+  };
+
 
   // Sync tab with URL and check for selected request ID
   useEffect(() => {
@@ -201,9 +268,14 @@ export default function LeaveManagement({ session }: { session: any }) {
     const newManagerNotification = {
       id: Date.now(),
       category: 'Leave Management',
-      icon: '📅',
+      icon: '📝',
       title: 'New Leave Request',
-      message: `${employeeName} applied for leave on ${leave.startDate}`,
+      message: `${employeeName}
+
+${leave.type} • ${diffDays} Day${diffDays > 1 ? 's' : ''}
+
+Reason:
+"${leave.reason}"`,
       time: 'Just now',
       unread: true,
       group: 'Today',
@@ -212,7 +284,12 @@ export default function LeaveManagement({ session }: { session: any }) {
         type: 'leave_request',
         employee: employeeName,
         date: leave.startDate
-      }
+      },
+      actions: [
+        { label: 'Approve', primary: true, actionType: 'approve_leave' },
+        { label: 'Reject', primary: false, actionType: 'reject_leave' },
+        { label: 'Comment', primary: false, actionType: 'comment_leave' }
+      ]
     };
     const savedNotifications = localStorage.getItem('hindustaan_notifications');
     let managerNotifications = [];
@@ -320,6 +397,19 @@ export default function LeaveManagement({ session }: { session: any }) {
   };
 
   const submitComment = () => {
+    if (!commentText.trim()) return;
+    const newComment: LeaveComment = {
+      id: `lc-${Date.now()}`,
+      leaveId: activeRequestId!,
+      managerId: session?.user?.id || 'm1',
+      managerName: session?.user?.user_metadata?.name || 'Rahul Sharma',
+      comment: commentText.trim(),
+      edited: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    setLeaveComments(prev => [...prev, newComment]);
+    
     setCommentModalOpen(false);
     setHighlightedRequestId(null);
     toast.success('Comment saved.');
@@ -327,28 +417,26 @@ export default function LeaveManagement({ session }: { session: any }) {
     // Add comment notification for the employee
     const req = leaveData.find((l: any) => l.id === activeRequestId);
     if (req) {
+      const savedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
+      let empNotifs = savedEmpNotifs && savedEmpNotifs !== 'null' ? JSON.parse(savedEmpNotifs) : [];
       const newEmpNotification = {
         id: Date.now(),
         category: 'Leave Management',
         icon: '💬',
-        title: 'Leave Commented',
-        message: `Manager commented on your leave request for ${req.start}`,
+        title: 'Manager Commented',
+        message: `💬 ${newComment.managerName} commented:
+"${newComment.comment}"`,
         time: 'Just now',
         unread: true,
         group: 'Today',
         metadata: {
           type: 'leave_commented',
-          date: req.start
+          date: req.start,
+          requestId: req.id
         }
       };
-      const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
-      let empNotifications = [];
-      if (savedEmpNotifications) {
-        try { empNotifications = JSON.parse(savedEmpNotifications); } catch (e) {}
-      }
-      localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
+      localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifs]));
       window.dispatchEvent(new Event('employee-notifications-updated'));
-      window.dispatchEvent(new Event('notifications-updated'));
     }
   };
 
@@ -437,17 +525,17 @@ export default function LeaveManagement({ session }: { session: any }) {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 w-full max-w-3xl flex flex-col sm:flex-row h-auto items-stretch sm:items-center gap-1 sm:gap-0">
+        <TabsList className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 w-full max-w-3xl flex flex-col sm:flex-row !h-auto items-stretch sm:items-center gap-1 sm:gap-0">
           {!isManager ? (
             <>
-              <TabsTrigger value="apply" className="flex-1 w-full sm:w-auto justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">Apply Leave</TabsTrigger>
-              <TabsTrigger value="history" className="flex-1 w-full sm:w-auto justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">My History</TabsTrigger>
-              <TabsTrigger value="balance" className="flex-1 w-full sm:w-auto justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">Leave Balance</TabsTrigger>
+              <TabsTrigger value="apply" className="!h-auto flex-1 w-full sm:w-auto min-h-[40px] justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">Apply Leave</TabsTrigger>
+              <TabsTrigger value="history" className="!h-auto flex-1 w-full sm:w-auto min-h-[40px] justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">My History</TabsTrigger>
+              <TabsTrigger value="balance" className="!h-auto flex-1 w-full sm:w-auto min-h-[40px] justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">Leave Balance</TabsTrigger>
             </>
           ) : (
             <>
-              <TabsTrigger value="requests" className="flex-1 w-full sm:w-auto justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">Employee's Leave Requests</TabsTrigger>
-              <TabsTrigger value="calendar" className="flex-1 w-full sm:w-auto justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">Employee's Leave Calendar</TabsTrigger>
+              <TabsTrigger value="requests" className="!h-auto flex-1 w-full sm:w-auto min-h-[40px] justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">Employee's Leave Requests</TabsTrigger>
+              <TabsTrigger value="calendar" className="!h-auto flex-1 w-full sm:w-auto min-h-[40px] justify-center items-center py-2 px-2 sm:px-4 rounded-lg font-medium text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-slate-100 whitespace-normal sm:whitespace-nowrap">Employee's Leave Calendar</TabsTrigger>
             </>
           )}
         </TabsList>
@@ -814,6 +902,15 @@ export default function LeaveManagement({ session }: { session: any }) {
                         </div>
 
                       </div>
+                        <div className="px-6 lg:px-8 pb-6 lg:pb-8">
+                          <LeaveCommentHistory 
+                            leaveId={req.id} 
+                            comments={leaveComments} 
+                            isManager={true} 
+                            onEditComment={handleEditComment} 
+                            onDeleteComment={handleDeleteComment} 
+                          />
+                        </div>
                     </motion.div>
                   ))
                 )}

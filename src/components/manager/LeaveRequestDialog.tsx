@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Check, XCircle, Loader2, Mail } from 'lucide-react';
+import { CalendarDays, Check, XCircle, Loader2, Mail, Activity, MessageSquare } from 'lucide-react';
+import type { LeaveComment } from '@/components/dashboard/LeaveCommentHistory';
 import { cn } from '@/lib/utils';
 import { toast as sonnerToast } from 'sonner';
 
@@ -42,6 +43,15 @@ export default function LeaveRequestDialog({
   onReject
 }: LeaveRequestDialogProps) {
   const [isPending, setIsPending] = useState(false);
+  const [leaveComments, setLeaveComments] = useState<LeaveComment[]>([]);
+  React.useEffect(() => {
+    if (isOpen && request) {
+      const stored = localStorage.getItem('hindustaan_leave_comments');
+      if (stored) {
+        setLeaveComments(JSON.parse(stored).filter((c: any) => c.leaveId === request.id));
+      }
+    }
+  }, [isOpen, request]);
 
   if (!request) return null;
 
@@ -95,7 +105,6 @@ export default function LeaveRequestDialog({
           {/* Employee Info Header */}
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16 border-4 border-slate-800 shadow-md">
-              <AvatarImage src={request.avatar} alt={request.employee} />
               <AvatarFallback className="bg-slate-850 text-slate-300 font-bold text-xl">
                 {getInitials(request.employee)}
               </AvatarFallback>
@@ -138,6 +147,55 @@ export default function LeaveRequestDialog({
               <p className="text-sm font-medium text-amber-200 mt-1 leading-snug italic">
                 "{request.reason}"
               </p>
+            </div>
+          </div>
+          {/* Activity Timeline Sub-card */}
+          <div className="bg-slate-850/30 rounded-2xl p-5 border border-slate-800 shadow-sm col-span-1 md:col-span-2 mt-2">
+            <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-4 flex items-center">
+              <Activity className="h-3.5 w-3.5 mr-1.5" /> Activity Timeline
+            </h4>
+            <div className="space-y-4 relative before:absolute before:inset-0 before:ml-[5px] before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-700 before:to-transparent">
+              {/* Application Step */}
+              <div className="relative flex items-start gap-4 z-10">
+                <div className="h-3 w-3 rounded-full bg-slate-600 mt-1 shrink-0 ring-4 ring-slate-900" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-slate-300 font-medium">
+                    <span className="font-bold text-white">{request.employee}</span> applied for leave.
+                  </p>
+                  <p className="text-[10px] font-bold text-slate-500 mt-0.5">{request.appliedOn}</p>
+                </div>
+              </div>
+
+              {/* Comments */}
+              {leaveComments.map((comment) => (
+                <div key={comment.id} className="relative flex items-start gap-4 z-10">
+                  <div className="h-3 w-3 rounded-full bg-blue-500 mt-1 shrink-0 ring-4 ring-slate-900" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-slate-300 font-medium">
+                      <span className="font-bold text-white">{comment.managerName}</span> commented.
+                    </p>
+                    <div className="bg-slate-800/50 rounded-lg p-3 mt-2 border border-slate-700/50">
+                      <p className="text-xs text-slate-400 italic">"{comment.comment}"</p>
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-500 mt-1">
+                      {new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {/* Status Change */}
+              {request.status !== 'Pending' && (
+                <div className="relative flex items-start gap-4 z-10">
+                  <div className={`h-3 w-3 rounded-full mt-1 shrink-0 ring-4 ring-slate-900 ${request.status === 'Approved' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-slate-300 font-medium">
+                      Leave was <span className={`font-bold ${request.status === 'Approved' ? 'text-emerald-400' : 'text-rose-400'}`}>{request.status.toLowerCase()}</span>.
+                    </p>
+                    <p className="text-[10px] font-bold text-slate-500 mt-0.5">Today</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

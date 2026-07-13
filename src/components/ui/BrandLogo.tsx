@@ -16,16 +16,22 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', class
       className
     )}>
       {/* 
-        Image wrapper with light drop-shadow/mix-blend for canvas sanitization.
-        This allows the white circle in the PNG to pop cleanly on both light and dark themes 
+        The new neon P logo has significant transparent padding around the visible graphic.
+        We use an overflow-hidden wrapper with scaled-up image to crop the padding 
+        and make the visible logo fill the space properly.
       */}
-      <div className="relative flex items-center justify-center drop-shadow-md dark:drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]">
+      <div className={cn(
+        "relative flex items-center justify-center overflow-hidden rounded-xl",
+        isAuth ? "h-36 w-36" : "h-10 w-10"
+      )}>
         <img 
-          src="/project-os-logo-new.png" 
+          src="/new-brand-logo.png" 
           alt="Project OS Logo" 
           className={cn(
             "object-contain transition-all duration-200",
-            isAuth ? "h-32 w-32" : "h-9 w-9"
+            isAuth 
+              ? "h-[220%] w-[220%] max-w-none" 
+              : "h-[220%] w-[220%] max-w-none"
           )}
         />
       </div>
