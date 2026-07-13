@@ -106,14 +106,10 @@ export function LeaveCalendar({ leaves, selectedDate, onSelectDate }: LeaveCalen
             months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full",
             month: "space-y-4 w-full",
             nav: "hidden", // Hide navigation buttons, we use custom dropdowns
-            caption: "hidden", // Hide default caption
-            month_caption: "hidden", // Hide v9 month caption
-            dropdowns: "hidden", // Hide v9 dropdowns
             weekdays: "grid grid-cols-7 gap-y-3 text-center items-center justify-items-center mt-4 border-b border-slate-100 dark:border-slate-800 pb-2",
             weekday: "text-slate-500 dark:text-slate-400 font-medium text-sm text-center select-none w-9 h-9 flex items-center justify-center",
             week: "grid grid-cols-7 gap-y-3 text-center items-center justify-items-center mt-2",
             day: "h-9 w-9 p-0 flex items-center justify-center relative",
-            day_hidden: "invisible",
           }}
           components={{
             DayButton: ({ day, modifiers, ...props }) => {
