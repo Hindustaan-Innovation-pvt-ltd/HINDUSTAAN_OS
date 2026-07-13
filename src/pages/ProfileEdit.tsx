@@ -139,7 +139,7 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
+          <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center">
             Edit Profile
           </h2>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">

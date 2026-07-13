@@ -208,7 +208,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20 font-bold uppercase tracking-wider text-[10px]">Enterprise View</Badge>
           </div>
-          <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
             Master Gantt Schedule
           </h2>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Cross-functional project timelines and resource allocation.</p>

@@ -12,7 +12,7 @@ class ManagerErrorBoundary extends Component<{ children: React.ReactNode }, { ha
     if (this.state.hasError) {
       return (
         <div className="p-10 m-10 bg-rose-50 border border-rose-200 rounded-xl overflow-auto text-rose-900">
-          <h2 className="text-xl font-bold mb-4">Dashboard Crash Detected</h2>
+          <h2 className="text-page-title mb-4">Dashboard Crash Detected</h2>
           <pre className="text-xs font-mono whitespace-pre-wrap">{this.state.error?.stack || this.state.error?.toString()}</pre>
         </div>
       );
@@ -309,7 +309,7 @@ function ManagerDashboardInner() {
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-page-title tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
             {greeting}, {userName} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
           <p className="text-orange-500 font-medium tracking-wide mt-1 break-words whitespace-normal">

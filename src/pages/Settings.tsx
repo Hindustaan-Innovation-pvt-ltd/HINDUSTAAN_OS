@@ -351,7 +351,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Standup Settings</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white">Standup Settings</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize how Daily Standups work for you {role === 'manager' && 'and your team'}.</p>
             </div>
             
@@ -479,7 +479,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Account & Security</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white">Account & Security</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage your password and security preferences.</p>
             </div>
             
@@ -635,7 +635,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Notification Preferences</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white">Notification Preferences</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Control how and when you receive alerts.</p>
             </div>
             
@@ -697,7 +697,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Appearance</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white">Appearance</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize how the application looks on your device.</p>
             </div>
             
@@ -771,7 +771,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Data & Storage</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white">Data & Storage</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage local cache and export your data.</p>
             </div>
 
@@ -805,7 +805,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Language & Region</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white">Language & Region</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize your localization settings.</p>
             </div>
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
@@ -854,7 +854,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Help & Support</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white">Help & Support</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Get assistance and read documentation.</p>
             </div>
             
@@ -919,7 +919,7 @@ export default function Settings({ session }: { session: any }) {
       {!activeTab ? (
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Settings Overview</h1>
+            <h1 className="text-page-title tracking-tight text-slate-900 dark:text-white">Settings Overview</h1>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">Manage your account preferences and application configuration.</p>
           </div>
           

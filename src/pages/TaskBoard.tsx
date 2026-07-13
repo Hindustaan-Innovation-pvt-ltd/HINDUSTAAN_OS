@@ -316,7 +316,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
       {/* Header & Interactive Toolbar Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Kanban Board</h2>
+          <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">Kanban Board</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Manage cohort sprint velocity and track active tasks.</p>
         </div>
         

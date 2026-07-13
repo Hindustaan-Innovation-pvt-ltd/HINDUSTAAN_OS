@@ -1,4 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .text-hero-title {
+    font-size: 42px;
+    font-weight: 700;
+  }
+  .text-page-title {
+    font-size: 32px;
+    font-weight: 700;
+  }
+  .text-section-title {
+    font-size: 24px;
+    font-weight: 700;
+  }
+  .text-card-title {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .text-sidebar-item {
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .text-body {
+    font-size: 16px;
+    font-weight: 400;
+  }
+  .text-label {
+    font-size: 13px;
+    font-weight: 400;
+  }
+  .text-button {
+    font-size: 15px;
+    font-weight: 600;
+  }
+}
 
 @variant dark (&:where(.dark, .dark *));
 

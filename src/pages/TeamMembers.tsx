@@ -170,7 +170,7 @@ export default function TeamMembers() {
       {/* Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center">
+          <h2 className="text-page-title text-slate-900 dark:text-white flex items-center">
             <Users className="mr-2 h-6 w-6 text-orange-500" />
             Team Members
           </h2>

@@ -35,7 +35,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
+          <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center">
             <User className="mr-3 h-8 w-8 text-orange-500" />
             My Profile
           </h2>

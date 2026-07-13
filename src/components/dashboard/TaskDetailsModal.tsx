@@ -160,7 +160,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                 placeholder="Task Title..."
               />
             ) : (
-              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white py-1">{editedTask.title}</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white py-1">{editedTask.title}</h2>
             )}
           </div>
         </DialogHeader>
