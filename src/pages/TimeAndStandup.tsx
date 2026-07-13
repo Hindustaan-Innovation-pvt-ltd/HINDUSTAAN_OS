@@ -83,7 +83,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto space-y-8">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Team Submissions</h2>
+          <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">Team Submissions</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Review daily standups and time logs for all employees.</p>
         </div>
 
@@ -156,7 +156,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Daily Core Tracking</h2>
+          <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">Daily Core Tracking</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Submit your morning standup and log project hours.</p>
         </div>
       </div>

@@ -111,7 +111,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
         {/* Left Section - Branding (Hidden on Mobile) */}
         <div className="hidden lg:flex flex-col justify-center w-[45%] xl:w-[50%] p-12 xl:p-24 border-r border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-sm z-10">
           <div className="max-w-xl">
-            <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 whitespace-nowrap">
+            <h1 className="text-page-title tracking-tight text-slate-900 dark:text-white mb-6 whitespace-nowrap">
               Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-green-600">Project OS</span>
             </h1>
             

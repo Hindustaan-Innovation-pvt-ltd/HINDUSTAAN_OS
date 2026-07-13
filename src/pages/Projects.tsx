@@ -159,7 +159,7 @@ export default function Projects({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Project Timeline</h2>
+          <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">Project Timeline</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">High-level Gantt chart outlining task execution over the current week.</p>
         </div>
         {role === 'manager' && (

@@ -120,7 +120,7 @@ export default function ProgressTracker({ session }: { session?: any }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Progress Tracker</h2>
+            <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">Progress Tracker</h2>
             {isAborted && (
               <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-200 border-transparent dark:bg-red-900/40 dark:text-red-400 font-bold uppercase tracking-wider text-[10px]">
                 Aborted

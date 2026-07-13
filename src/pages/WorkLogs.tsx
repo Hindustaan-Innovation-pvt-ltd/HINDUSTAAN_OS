@@ -446,7 +446,7 @@ export default function WorkLogs({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-[#0F172A] dark:text-white">Work Logs</h2>
+          <h2 className="text-page-title tracking-tight text-[#0F172A] dark:text-white">Work Logs</h2>
           <p className="text-sm text-[#64748B] dark:text-slate-400 mt-1">Manage team timesheets and logged hours efficiently.</p>
         </div>
       </div>

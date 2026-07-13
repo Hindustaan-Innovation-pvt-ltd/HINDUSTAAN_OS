@@ -100,7 +100,7 @@ export default function OverviewDashboard() {
       
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Project Overview</h2>
+        <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">Project Overview</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Real-time metrics and sprint velocity tracking.</p>
       </div>
 
@@ -121,7 +121,7 @@ export default function OverviewDashboard() {
             <h3 className="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-sm font-semibold">Active Projects</h3>
           </div>
           <div className="flex items-baseline space-x-2 mb-4">
-            <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white">12</h2>
+            <h2 className="text-page-title text-slate-900 dark:text-white">12</h2>
           </div>
           {/* Progress Bar (12/15 = 80%) */}
           <div className="mt-auto">
@@ -149,7 +149,7 @@ export default function OverviewDashboard() {
             <h3 className="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-sm font-semibold">Tasks In Progress</h3>
           </div>
           <div className="flex items-baseline space-x-2 mb-4">
-            <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white">28</h2>
+            <h2 className="text-page-title text-slate-900 dark:text-white">28</h2>
           </div>
           {/* Progress Bar (28/50 hypothetical = 56%) */}
           <div className="mt-auto">
@@ -179,7 +179,7 @@ export default function OverviewDashboard() {
             <h3 className="text-rose-900/60 text-sm font-semibold">Tasks Overdue</h3>
           </div>
           <div className="flex items-baseline space-x-2 mb-4 relative z-10">
-            <h2 className="text-4xl font-extrabold text-rose-600 dark:text-rose-400">5</h2>
+            <h2 className="text-page-title text-rose-600 dark:text-rose-400">5</h2>
           </div>
           {/* Progress Bar (5/100 hypothetical risk tolerance = 5%) */}
           <div className="mt-auto relative z-10">
