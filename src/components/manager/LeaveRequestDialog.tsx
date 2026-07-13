@@ -200,24 +200,26 @@ export default function LeaveRequestDialog({
           </div>
         </div>
 
-        {/* Dialog Actions Footer */}
-        <DialogFooter className="p-6 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row gap-3">
-          <Button
-            variant="outline"
-            className="w-full sm:w-auto rounded-xl h-12 font-bold text-rose-400 hover:text-rose-350 hover:bg-rose-950/20 border-rose-900/50 shadow-sm"
-            onClick={handleReject}
-            disabled={isPending}
-          >
-            {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <><XCircle className="h-5 w-5 mr-2" /> Reject</>}
-          </Button>
-          <Button
-            className="w-full sm:w-auto rounded-xl h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20"
-            onClick={handleApprove}
-            disabled={isPending}
-          >
-            {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="h-5 w-5 mr-2" /> Approve Leave</>}
-          </Button>
-        </DialogFooter>
+        {/* Dialog Actions Footer - Only for Pending Requests */}
+        {request.status === 'Pending' && (
+          <DialogFooter className="p-6 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row gap-3">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto rounded-xl h-12 font-bold text-rose-400 hover:text-rose-350 hover:bg-rose-950/20 border-rose-900/50 shadow-sm"
+              onClick={handleReject}
+              disabled={isPending}
+            >
+              {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <><XCircle className="h-5 w-5 mr-2" /> Reject</>}
+            </Button>
+            <Button
+              className="w-full sm:w-auto rounded-xl h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20"
+              onClick={handleApprove}
+              disabled={isPending}
+            >
+              {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="h-5 w-5 mr-2" /> Approve Leave</>}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

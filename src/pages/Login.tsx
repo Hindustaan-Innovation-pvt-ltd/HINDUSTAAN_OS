@@ -16,13 +16,15 @@ export default function Login({
   onNavigateToRegister,
   defaultEmail = '',
   defaultName = '',
-  defaultRole = 'manager'
+  defaultRole = 'manager',
+  isAdminLogin = false
 }: { 
   onMockLogin?: (role: string, email?: string) => void, 
   onNavigateToRegister?: () => void,
   defaultEmail?: string,
   defaultName?: string,
-  defaultRole?: string
+  defaultRole?: string,
+  isAdminLogin?: boolean
 }) {
   const [name, setName] = useState(defaultName);
   const [email, setEmail] = useState(defaultEmail);
@@ -33,7 +35,7 @@ export default function Login({
   
   // Authentication Modes
   const [isOTPMode, setIsOTPMode] = useState(false);
-  const [mockRole, setMockRole] = useState(defaultRole);
+  const [mockRole, setMockRole] = useState(isAdminLogin ? 'admin' : defaultRole);
   
   // OTP State
   const [showOTPDialog, setShowOTPDialog] = useState(false);
@@ -80,7 +82,12 @@ export default function Login({
       return null;
     }
     
-    if (user.role !== mockRole) {
+    if (isAdminLogin && user.role !== 'admin') {
+      toast.error('Unauthorized Access', {
+        description: 'Admin privileges required.',
+      });
+      return null;
+    } else if (!isAdminLogin && user.role !== mockRole) {
       toast.error('Incorrect Access Type', {
         description: `Your account is registered as ${user.role.charAt(0).toUpperCase() + user.role.slice(1)}.\n\nPlease switch to ${user.role.charAt(0).toUpperCase() + user.role.slice(1)} Access.`,
       });
@@ -426,32 +433,34 @@ export default function Login({
               </button>
             </div>
 
-            <div className="flex items-center justify-center space-x-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl w-full">
-              <button
-                type="button"
-                onClick={() => setMockRole('manager')}
-                className={cn(
-                  "flex-1 py-1 text-[11px] font-bold rounded-lg transition-all",
-                  mockRole === 'manager' 
-                    ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm" 
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                )}
-              >
-                Manager Access
-              </button>
-              <button
-                type="button"
-                onClick={() => setMockRole('employee')}
-                className={cn(
-                  "flex-1 py-1 text-[11px] font-bold rounded-lg transition-all",
-                  mockRole === 'employee' 
-                    ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm" 
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                )}
-              >
-                Employee Access
-              </button>
-            </div>
+            {!isAdminLogin && (
+              <div className="flex items-center justify-center space-x-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl w-full">
+                <button
+                  type="button"
+                  onClick={() => setMockRole('manager')}
+                  className={cn(
+                    "flex-1 py-1 text-[11px] font-bold rounded-lg transition-all",
+                    mockRole === 'manager' 
+                      ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm" 
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                  )}
+                >
+                  Manager Access
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMockRole('employee')}
+                  className={cn(
+                    "flex-1 py-1 text-[11px] font-bold rounded-lg transition-all",
+                    mockRole === 'employee' 
+                      ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm" 
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                  )}
+                >
+                  Employee Access
+                </button>
+              </div>
+            )}
 
             <div>
               <button
@@ -470,16 +479,18 @@ export default function Login({
               </button>
             </div>
             
-            <div className="text-center pt-2 pb-0.5">
-              <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Don't have an account? </span>
-              <button 
-                type="button" 
-                onClick={onNavigateToRegister}
-                className="text-[13px] font-extrabold text-orange-600 hover:text-orange-700 hover:underline transition-all ml-1"
-              >
-                Create Account
-              </button>
-            </div>
+            {!isAdminLogin && (
+              <div className="text-center pt-2 pb-0.5">
+                <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Don't have an account? </span>
+                <button 
+                  type="button" 
+                  onClick={onNavigateToRegister}
+                  className="text-[13px] font-extrabold text-orange-600 hover:text-orange-700 hover:underline transition-all ml-1"
+                >
+                  Create Account
+                </button>
+              </div>
+            )}
           </form>
         </div>
         </div>

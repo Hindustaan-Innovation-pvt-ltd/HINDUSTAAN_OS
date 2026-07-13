@@ -2,7 +2,7 @@ export interface User {
   id?: string;
   name: string;
   email: string;
-  role: 'manager' | 'employee';
+  role: 'manager' | 'employee' | 'admin';
   designation?: string;
   department?: string;
   phone?: string;
@@ -38,6 +38,16 @@ export const initializeAuth = () => {
         designation: 'Frontend Developer',
         department: 'Engineering',
         dateJoined: new Date().toISOString()
+      },
+      {
+        id: 'ADM001',
+        name: 'System Admin',
+        email: 'admin@hindustaan.in',
+        password: 'Admin@123',
+        role: 'admin',
+        designation: 'System Administrator',
+        department: 'IT',
+        dateJoined: new Date().toISOString()
       }
     ];
     localStorage.setItem(USERS_KEY, JSON.stringify(demoUsers));
@@ -72,7 +82,8 @@ export const loginUser = (email: string, password?: string, rememberMe: boolean 
   const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && (!password || u.password === password));
   
   if (user) {
-    const safeUser = { name: user.name, email: user.email, role: user.role, id: user.id, department: user.department, designation: user.designation, phone: user.phone };
+    const accessToken = `mock-token-${Date.now()}`;
+    const safeUser = { name: user.name, email: user.email, role: user.role, id: user.id, department: user.department, designation: user.designation, phone: user.phone, accessToken, userId: user.id };
     localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(safeUser));
     sessionStorage.removeItem(LOCAL_SESSION_KEY);
     return safeUser;
