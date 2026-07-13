@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayCircle, CheckCircle2, ChevronLeft, ChevronRight, FolderKanban, AlertTriangle } from 'lucide-react';
 import { cn, logActivity } from '@/lib/utils';
+import { toast } from 'sonner';
 import TaskDetailsModal from '../components/dashboard/TaskDetailsModal';
 import CreateTaskModal from '../components/dashboard/CreateTaskModal';
 import { INITIAL_TASKS } from '@/data/mockData';
@@ -222,10 +223,37 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
     e.preventDefault(); // Necessary to allow dropping
   };
 
+  const validateTaskLimit = (status: Status, excludeTaskId: string) => {
+    if (currentUser.role !== 'intern') return { valid: true, message: '' };
+    const targetStatusTasks = baseTasks.filter(t => t.status === status && t.id !== excludeTaskId);
+    const count = targetStatusTasks.length;
+    
+    if (status === 'To Do' && count >= 8) {
+      return { valid: false, message: 'You cannot have more than 8 tasks in To Do.' };
+    }
+    if (status === 'In Progress' && count >= 2) {
+      return { valid: false, message: 'You cannot have more than 2 tasks In Progress simultaneously. Please complete or review existing tasks.' };
+    }
+    if (status === 'In Review' && count >= 5) {
+      return { valid: false, message: 'You cannot have more than 5 tasks In Review at the same time.' };
+    }
+    return { valid: true, message: '' };
+  };
+
   const handleDrop = (e: React.DragEvent, status: Status) => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('taskId');
     if (!taskId) return;
+    
+    const taskToMove = tasks.find(t => t.id === taskId);
+    if (taskToMove && taskToMove.status !== status) {
+      const { valid, message } = validateTaskLimit(status, taskId);
+      if (!valid) {
+        toast.error('Task Limit Exceeded', { description: message });
+        setDraggedTaskId(null);
+        return;
+      }
+    }
     
     setTasks(prev => {
       const task = prev.find(t => t.id === taskId);
@@ -240,6 +268,17 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
   };
 
   const handleUpdateTask = (updatedTask: Task) => {
+    const originalTask = tasks.find(t => t.id === updatedTask.id);
+    
+    if (originalTask && originalTask.status !== updatedTask.status) {
+      const { valid, message } = validateTaskLimit(updatedTask.status, updatedTask.id);
+      if (!valid) {
+        toast.error('Task Limit Exceeded', { description: message });
+        setSelectedTask({ ...originalTask });
+        return;
+      }
+    }
+    
     setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
     setSelectedTask(updatedTask);
   };
@@ -358,7 +397,14 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                 <div className="flex items-center space-x-2">
                   <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">{columnStatus}</h3>
                   <span className="flex h-5 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800 px-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    {columnTasks.length}
+                    {currentUser.role === 'intern' ? (
+                      columnStatus === 'To Do' ? `${columnTasks.length}/8` :
+                      columnStatus === 'In Progress' ? `${columnTasks.length}/2` :
+                      columnStatus === 'In Review' ? `${columnTasks.length}/5` :
+                      columnTasks.length
+                    ) : (
+                      columnTasks.length
+                    )}
                   </span>
                 </div>
                 <button className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300 transition-colors">
