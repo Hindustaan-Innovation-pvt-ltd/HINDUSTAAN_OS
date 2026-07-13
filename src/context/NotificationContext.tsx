@@ -7,6 +7,7 @@ export type NotificationType = 'task' | 'success' | 'alert' | 'warning' | 'info'
 export interface NotificationAction {
   label: string;
   primary: boolean;
+  actionType?: string;
 }
 
 export interface NotificationItem {
