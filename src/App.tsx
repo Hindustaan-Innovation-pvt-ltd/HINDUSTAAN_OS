@@ -19,6 +19,7 @@ import ProfileView from './pages/ProfileView';
 import ProfileEdit from './pages/ProfileEdit';
 import HelpSupport from '@/pages/HelpSupport';
 import LeaveManagement from './pages/LeaveManagement';
+import SecuritySettings from './pages/SecuritySettings';
 // Supabase client removed for mock auth implementation
 
 import { ThemeProvider } from '@/context/ThemeContext';
@@ -368,16 +369,17 @@ function App() {
             {currentView === 'Progress Tracker' && <ProgressTracker session={session} />}
             {currentView === 'Work Logs' && <WorkLogs session={session} />}
             {(currentView === 'Daily Standups' || currentView === 'Daily Standup') && <DailyStandups session={session} />}
-            {(currentView === 'Contribution Scores' || currentView === 'My Performance') && <ContributionScores session={session} />}
+            {currentView === 'Contribution Scores' || currentView === 'My Performance' ? <ContributionScores session={session} /> : null}
             {currentView === 'Leave Management' && <LeaveManagement session={session} />}
             {currentView === 'Help & Support' && <HelpSupport session={session} />}
+            {currentView === 'Security Settings' && <SecuritySettings session={session} />}
 
             {/* Fallback for anything else */}
             {![
               'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
               'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Edit Profile', 'Team Members',
               'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
-              'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support'
+              'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support', 'Security Settings'
             ].includes(currentView) && (
               <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
                 <p>Module "{currentView}" is under construction.</p>
