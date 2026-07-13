@@ -260,11 +260,14 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
 
     const existing = JSON.parse(localStorage.getItem('hindustaan_leave_comments') || '[]');
     existing.push({
-      id: Date.now(),
+      id: Date.now().toString(),
       leaveId: requestId,
-      text: commentText,
-      author: user?.name || "Manager",
-      timestamp: new Date().toISOString()
+      managerId: user?.id || 'manager-1',
+      managerName: user?.name || "Manager",
+      comment: commentText,
+      edited: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
     localStorage.setItem('hindustaan_leave_comments', JSON.stringify(existing));
 

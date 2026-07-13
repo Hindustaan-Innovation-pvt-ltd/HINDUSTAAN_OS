@@ -36,7 +36,7 @@ export function LeaveCommentHistory({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
 
-  const leaveComments = comments.filter(c => c.leaveId === leaveId).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const leaveComments = comments.filter(c => c.leaveId === leaveId).sort((a, b) => new Date(a.createdAt || (a as any).timestamp || 0).getTime() - new Date(b.createdAt || (b as any).timestamp || 0).getTime());
 
   if (leaveComments.length === 0) return null;
 
@@ -52,19 +52,19 @@ export function LeaveCommentHistory({
           <div key={comment.id} className="relative flex items-start gap-4 z-10 group">
             <Avatar className="h-10 w-10 ring-4 ring-white dark:ring-slate-900 shadow-sm shrink-0">
               <AvatarFallback className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 font-bold">
-                {comment.managerName.split(' ').map(n => n[0]).join('')}
+                {((comment.managerName || (comment as any).author || 'M').split(' ').map((n: string) => n[0]).join(''))}
               </AvatarFallback>
             </Avatar>
             
             <div className="flex-1 min-w-0 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-sm text-slate-900 dark:text-white">{comment.managerName}</span>
+                  <span className="font-bold text-sm text-slate-900 dark:text-white">{comment.managerName || (comment as any).author || 'Manager'}</span>
                   <span className="text-slate-300 dark:text-slate-600">•</span>
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center">
                     <Clock className="h-3 w-3 mr-1" />
-                    {new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })},{' '}
-                    {new Date(comment.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                    {new Date(comment.createdAt || (comment as any).timestamp || new Date()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })},{' '}
+                    {new Date(comment.createdAt || (comment as any).timestamp || new Date()).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                   </span>
                   {comment.edited && (
                     <span className="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md">(Edited)</span>
@@ -74,7 +74,7 @@ export function LeaveCommentHistory({
                 {isManager && onEditComment && onDeleteComment && (
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
-                      onClick={() => { setEditingId(comment.id); setEditText(comment.comment); }}
+                      onClick={() => { setEditingId(comment.id); setEditText(comment.comment || (comment as any).text || ''); }}
                       className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                       title="Edit"
                     >
@@ -114,7 +114,7 @@ export function LeaveCommentHistory({
                 </div>
               ) : (
                 <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap font-medium">
-                  "{comment.comment}"
+                  "{comment.comment || (comment as any).text}"
                 </p>
               )}
             </div>
