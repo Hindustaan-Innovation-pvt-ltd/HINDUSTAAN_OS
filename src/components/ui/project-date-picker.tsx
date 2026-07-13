@@ -51,7 +51,7 @@ export function ProjectDatePicker({
             day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-600 dark:hover:text-orange-400 hover:scale-105 transition-all duration-200 relative cursor-pointer outline-none",
             today: "bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-900/10 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-500/30 shadow-sm",
             selected: "bg-gradient-to-br from-orange-500 to-rose-500 text-white hover:from-orange-600 hover:to-rose-600 hover:text-white focus:from-orange-600 focus:to-rose-600 focus:text-white font-bold shadow-md shadow-orange-500/30 hover:scale-105 transition-all",
-            weekday: "text-slate-400 dark:text-slate-500 rounded-md w-9 font-bold text-[0.75rem] uppercase tracking-wider",
+            weekday: "text-slate-400 dark:text-slate-500 rounded-md w-9 font-bold text-[0.75rem]  ",
             month_caption: "flex justify-center pt-1 relative items-center text-slate-900 dark:text-white",
           }}
         />

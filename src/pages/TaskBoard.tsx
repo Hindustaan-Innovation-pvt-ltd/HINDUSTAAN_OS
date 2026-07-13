@@ -46,7 +46,7 @@ const PriorityBadge = ({ priority, isEmployeeDashboard }: { priority: Priority; 
     : (originalStyles[priority as keyof typeof originalStyles] || '');
 
   return (
-    <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-semibold border", styleClass)}>
+    <span className={cn("px-2.5 py-0.5 rounded-full text-label font-semibold border", styleClass)}>
       {priority}
     </span>
   );
@@ -91,8 +91,8 @@ const EmptyColumnPlaceholder = ({ status, role }: { status: Status; role: 'manag
       color
     )}>
       <Icon className="h-7 w-7 mb-2.5 opacity-90 animate-pulse" />
-      <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100">{title}</h4>
-      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[220px] leading-normal font-medium">{desc}</p>
+      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">{title}</h4>
+      <p className="text-label text-slate-500 dark:text-slate-400 mt-1 max-w-[220px] leading-normal font-medium">{desc}</p>
     </div>
   );
 };
@@ -324,7 +324,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
       {/* Header & Interactive Toolbar Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Kanban Board</h2>
+          <h2 className="text-2xl font-bold  text-slate-900 dark:text-white">Kanban Board</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Manage cohort sprint velocity and track active tasks.</p>
         </div>
         
@@ -345,7 +345,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
           <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-slate-900 p-2 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700/60">
             <div className="flex items-center px-3 border-r border-slate-200 dark:border-slate-700/60">
               <Filter className="h-4 w-4 text-slate-400 dark:text-slate-500 mr-2" />
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Filters</span>
+              <span className="text-label font-semibold text-slate-500 dark:text-slate-400  ">Filters</span>
             </div>
             <div className="w-40 shrink-0">
               <ProjectSelect 
@@ -430,8 +430,8 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
               {/* Column Header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">{columnStatus}</h3>
-                  <span className="flex h-5 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800 px-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200  ">{columnStatus}</h3>
+                  <span className="flex h-5 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800 px-2 text-label font-semibold text-slate-600 dark:text-slate-300">
                     {currentUser.role === 'intern' ? (
                       columnStatus === 'To Do' ? `${columnTasks.length}/8` :
                       columnStatus === 'In Progress' ? `${columnTasks.length}/2` :
@@ -470,7 +470,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center space-x-1.5 min-w-0">
                             <FolderKanban className="h-3.5 w-3.5 text-orange-500/80 shrink-0" />
-                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate max-w-[130px]">
+                            <span className="text-label font-bold text-slate-500 dark:text-slate-400 truncate max-w-[130px]">
                               {task.project_tag}
                             </span>
                           </div>
@@ -481,7 +481,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                         <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1 leading-tight group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
                           {task.title}
                         </h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4">
+                        <p className="text-label text-slate-500 dark:text-slate-400 line-clamp-2 mb-4">
                           {task.description}
                         </p>
 
@@ -489,7 +489,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                         <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 mt-auto">
                           <div className="flex items-center space-x-1.5 text-slate-400 dark:text-slate-500">
                             <Calendar className="h-3.5 w-3.5" />
-                            <span className="text-xs font-semibold">Deadline: {task.due_date}</span>
+                            <span className="text-label font-semibold">Deadline: {task.due_date}</span>
                           </div>
                           
                           <div 

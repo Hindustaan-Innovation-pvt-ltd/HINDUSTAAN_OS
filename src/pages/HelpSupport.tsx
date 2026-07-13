@@ -43,7 +43,7 @@ export default function HelpSupport({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-[#0F172A] dark:text-white flex items-center gap-2">
+          <h2 className="text-2xl font-bold  text-[#0F172A] dark:text-white flex items-center gap-2">
             <LifeBuoy className="h-6 w-6 text-indigo-500" />
             Help & Support
           </h2>
@@ -72,7 +72,7 @@ export default function HelpSupport({ session }: { session?: any }) {
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between group cursor-pointer hover:border-indigo-300 transition-colors" onClick={() => setActiveTab('faqs')}>
               <div>
                 <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Total FAQs</p>
-                <h3 className="text-3xl font-black text-slate-900 dark:text-white">{mockFAQs.length}</h3>
+                <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{mockFAQs.length}</h3>
               </div>
               <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl group-hover:scale-110 transition-transform"><MessageCircle className="h-6 w-6 text-indigo-500" /></div>
             </div>
@@ -80,7 +80,7 @@ export default function HelpSupport({ session }: { session?: any }) {
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between group cursor-pointer hover:border-emerald-300 transition-colors" onClick={() => setActiveTab('documentation')}>
               <div>
                 <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Docs Available</p>
-                <h3 className="text-3xl font-black text-slate-900 dark:text-white">{mockDocs.length}</h3>
+                <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{mockDocs.length}</h3>
               </div>
               <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl group-hover:scale-110 transition-transform"><BookOpen className="h-6 w-6 text-emerald-500" /></div>
             </div>
@@ -88,7 +88,7 @@ export default function HelpSupport({ session }: { session?: any }) {
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between group cursor-pointer hover:border-amber-300 transition-colors" onClick={() => setActiveTab('tickets')}>
               <div>
                 <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Open Tickets</p>
-                <h3 className="text-3xl font-black text-slate-900 dark:text-white">{mockTickets.length}</h3>
+                <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{mockTickets.length}</h3>
               </div>
               <div className="p-3 bg-amber-50 dark:bg-amber-500/10 rounded-xl group-hover:scale-110 transition-transform"><AlertTriangle className="h-6 w-6 text-amber-500" /></div>
             </div>
@@ -96,7 +96,7 @@ export default function HelpSupport({ session }: { session?: any }) {
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between group cursor-pointer hover:border-rose-300 transition-colors" onClick={() => setActiveTab('bugs')}>
               <div>
                 <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Reported Bugs</p>
-                <h3 className="text-3xl font-black text-slate-900 dark:text-white">{mockBugs.length}</h3>
+                <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{mockBugs.length}</h3>
               </div>
               <div className="p-3 bg-rose-50 dark:bg-rose-500/10 rounded-xl group-hover:scale-110 transition-transform"><Bug className="h-6 w-6 text-rose-500" /></div>
             </div>
@@ -109,17 +109,17 @@ export default function HelpSupport({ session }: { session?: any }) {
                 <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Ticket T-0998 Resolved</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Admin closed your support ticket "Unable to login".</p>
+                  <p className="text-label text-slate-500 dark:text-slate-400">Admin closed your support ticket "Unable to login".</p>
                 </div>
-                <span className="text-xs text-slate-400 ml-auto">2h ago</span>
+                <span className="text-label text-slate-400 ml-auto">2h ago</span>
               </div>
               <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
                 <FileText className="h-5 w-5 text-indigo-500 shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">New Documentation Added</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">"Using Standups" was added to the Docs portal.</p>
+                  <p className="text-label text-slate-500 dark:text-slate-400">"Using Standups" was added to the Docs portal.</p>
                 </div>
-                <span className="text-xs text-slate-400 ml-auto">Yesterday</span>
+                <span className="text-label text-slate-400 ml-auto">Yesterday</span>
               </div>
             </div>
           </div>
@@ -154,7 +154,7 @@ export default function HelpSupport({ session }: { session?: any }) {
                   >
                     <div>
                       <p className="font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{faq.question}</p>
-                      <p className="text-xs text-slate-500 mt-1 font-medium">{faq.category}</p>
+                      <p className="text-label text-slate-500 mt-1 font-medium">{faq.category}</p>
                     </div>
                     {expandedFAQ === faq.id ? <ChevronDown className="h-5 w-5 text-indigo-500 shrink-0" /> : <ChevronRight className="h-5 w-5 text-slate-400 shrink-0" />}
                   </button>
@@ -221,7 +221,7 @@ export default function HelpSupport({ session }: { session?: any }) {
                         )}>{ticket.status}</Badge>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={cn("text-xs font-bold uppercase tracking-wider", 
+                        <span className={cn("text-label font-bold  ", 
                           ticket.priority === 'High' ? 'text-rose-500' : 'text-amber-500'
                         )}>{ticket.priority}</span>
                       </td>
@@ -266,7 +266,7 @@ export default function HelpSupport({ session }: { session?: any }) {
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-xs font-bold uppercase tracking-wider text-rose-600">{bug.severity}</span>
+                        <span className="text-label font-bold   text-rose-600">{bug.severity}</span>
                       </td>
                     </tr>
                   ))}

@@ -379,7 +379,7 @@ export default function DashboardShell({
               
               {/* Greeting Desktop */}
               <div className="hidden lg:flex items-center">
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                <h1 className="text-xl font-bold  text-slate-900 dark:text-white">
                   {currentView}
                 </h1>
               </div>
@@ -397,7 +397,7 @@ export default function DashboardShell({
                   <span className="truncate">Search workspace...</span>
                   <div className="flex items-center gap-1 shrink-0 ml-2">
                     <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-1.5 font-mono text-[10px] font-medium text-slate-500 dark:text-slate-400">
-                      <span className="text-xs">⌘</span>K
+                      <span className="text-label">⌘</span>K
                     </kbd>
                   </div>
                 </div>
@@ -434,7 +434,7 @@ export default function DashboardShell({
             {children}
           </div>
           {/* Global Footer */}
-          <footer className="w-full py-4 px-6 mt-auto border-t border-slate-200/60 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-semibold text-slate-400 dark:text-slate-500 bg-white/30 dark:bg-slate-950/30 shrink-0">
+          <footer className="w-full py-4 px-6 mt-auto border-t border-slate-200/60 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-label font-semibold text-slate-400 dark:text-slate-500 bg-white/30 dark:bg-slate-950/30 shrink-0">
             <p>Hindustaan Innovations Pvt. Ltd.</p>
             <p>&copy; 2026 Project OS All rights reserved</p>
           </footer>

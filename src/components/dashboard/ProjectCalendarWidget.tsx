@@ -338,7 +338,7 @@ export function ProjectCalendarWidget() {
               Project Timeline
             </CardTitle>
             <CardDescription 
-              className="text-xs font-semibold mt-1 cursor-pointer hover:text-orange-600 dark:hover:text-orange-400 transition-colors flex items-center gap-1.5 border border-transparent hover:border-orange-200 dark:hover:border-orange-900/50 hover:bg-orange-50 dark:hover:bg-orange-900/20 w-fit px-1.5 -ml-1.5 py-0.5 rounded-md"
+              className="text-label font-semibold mt-1 cursor-pointer hover:text-orange-600 dark:hover:text-orange-400 transition-colors flex items-center gap-1.5 border border-transparent hover:border-orange-200 dark:hover:border-orange-900/50 hover:bg-orange-50 dark:hover:bg-orange-900/20 w-fit px-1.5 -ml-1.5 py-0.5 rounded-md"
               onClick={() => setIsSettingsOpen(true)}
               title="Click to change project dates"
             >
@@ -357,16 +357,16 @@ export function ProjectCalendarWidget() {
         {/* Dashboard Summary */}
         <div className="grid grid-cols-3 gap-3 pt-5 mt-4 border-t border-slate-100/80 dark:border-slate-800/60 relative z-10">
           <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white/80 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/80 shadow-sm">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Working Days</span>
-            <span className="text-2xl font-black text-slate-900 dark:text-white leading-none">{workingDays}</span>
+            <span className="text-[10px] font-bold text-slate-500   mb-0.5">Working Days</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-white leading-none">{workingDays}</span>
           </div>
           <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100/50 dark:border-emerald-900/30 shadow-sm">
-            <span className="text-[10px] font-bold text-emerald-600/80 dark:text-emerald-500/80 uppercase tracking-wider mb-0.5">Completed</span>
-            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 leading-none">{daysCompleted}</span>
+            <span className="text-[10px] font-bold text-emerald-600/80 dark:text-emerald-500/80   mb-0.5">Completed</span>
+            <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 leading-none">{daysCompleted}</span>
           </div>
           <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-orange-50/50 dark:bg-orange-950/20 border border-orange-100/50 dark:border-orange-900/30 shadow-sm">
-            <span className="text-[10px] font-bold text-orange-600/80 dark:text-orange-500/80 uppercase tracking-wider mb-0.5">Remaining</span>
-            <span className="text-2xl font-black text-orange-600 dark:text-orange-400 leading-none">{daysRemaining}</span>
+            <span className="text-[10px] font-bold text-orange-600/80 dark:text-orange-500/80   mb-0.5">Remaining</span>
+            <span className="text-2xl font-bold text-orange-600 dark:text-orange-400 leading-none">{daysRemaining}</span>
           </div>
         </div>
 
@@ -374,7 +374,7 @@ export function ProjectCalendarWidget() {
           <div className="relative flex-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800/80 overflow-hidden shadow-inner">
             <Progress value={progressPercent} className="h-full bg-transparent [&>div]:bg-gradient-to-r [&>div]:from-orange-500 [&>div]:via-orange-400 [&>div]:to-rose-500" />
           </div>
-          <span className="text-sm font-black text-slate-700 dark:text-slate-300 w-10 text-right">{progressPercent}%</span>
+          <span className="text-sm font-bold text-slate-700 dark:text-slate-300 w-10 text-right">{progressPercent}%</span>
         </div>
       </CardHeader>
 
@@ -396,9 +396,9 @@ export function ProjectCalendarWidget() {
               day: "h-10 w-10 p-0 font-normal aria-selected:opacity-100 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-600 dark:hover:text-orange-400 hover:scale-105 transition-all duration-200 relative cursor-pointer outline-none focus:ring-2 focus:ring-orange-500/50",
               today: "bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-900/10 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-500/30 shadow-sm",
               selected: "bg-gradient-to-br from-orange-500 to-rose-500 text-white hover:from-orange-600 hover:to-rose-600 hover:text-white focus:from-orange-600 focus:to-rose-600 focus:text-white font-bold shadow-md shadow-orange-500/30 hover:scale-105 transition-all",
-              weekday: "text-slate-400 dark:text-slate-500 rounded-md w-10 font-bold text-[0.75rem] uppercase tracking-wider",
+              weekday: "text-slate-400 dark:text-slate-500 rounded-md w-10 font-bold text-[0.75rem]  ",
               month: "w-full relative text-slate-900 dark:text-white",
-              caption_label: "text-sm font-black text-slate-800 dark:text-slate-100 text-center",
+              caption_label: "text-sm font-bold text-slate-800 dark:text-slate-100 text-center",
               button_previous: "h-8 w-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0 opacity-70 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white absolute left-1 flex items-center justify-center transition-all shadow-sm z-10",
               button_next: "h-8 w-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0 opacity-70 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white absolute right-1 flex items-center justify-center transition-all shadow-sm z-10",
             }}
@@ -445,14 +445,14 @@ export function ProjectCalendarWidget() {
                         {events.length > 0 ? (
                           <div className="space-y-1.5 mt-2">
                             {events.map((e, idx) => (
-                              <div key={idx} className="flex items-center gap-2 text-xs">
+                              <div key={idx} className="flex items-center gap-2 text-label">
                                 <div className={cn("h-2 w-2 rounded-full", getEventColor(e.type))} />
                                 <span>{e.title}</span>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 italic">No scheduled events</p>
+                          <p className="text-label text-slate-400 dark:text-slate-500 mt-1 italic">No scheduled events</p>
                         )}
                       </TooltipContent>
                     )}
@@ -465,11 +465,11 @@ export function ProjectCalendarWidget() {
 
         {/* Legend */}
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 px-2">
-          <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-orange-500" /><span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Today</span></div>
-          <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-emerald-500" /><span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Completed</span></div>
-          <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-rose-500" /><span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Deadline</span></div>
-          <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-purple-500" /><span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Milestone</span></div>
-          <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-amber-400" /><span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Leave</span></div>
+          <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-orange-500" /><span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 ">Today</span></div>
+          <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-emerald-500" /><span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 ">Completed</span></div>
+          <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-rose-500" /><span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 ">Deadline</span></div>
+          <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-purple-500" /><span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 ">Milestone</span></div>
+          <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-amber-400" /><span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 ">Leave</span></div>
         </div>
         </div>
 
@@ -484,8 +484,8 @@ export function ProjectCalendarWidget() {
               {upcomingEvents.length > 0 ? upcomingEvents.map((evt) => (
                 <div key={evt.id} onClick={() => setEventToView(evt)} className="group relative flex items-center gap-3.5 p-3 rounded-2xl bg-white dark:bg-slate-950/80 shadow-sm border border-slate-100 dark:border-slate-800/80 hover:border-orange-200 dark:hover:border-orange-900/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 pr-8 cursor-pointer">
                   <div className="flex flex-col items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/30 dark:to-orange-900/10 shrink-0 border border-orange-100/50 dark:border-orange-500/20 shadow-inner">
-                    <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase leading-none mb-0.5 tracking-wider">{format(evt.date, 'MMM')}</span>
-                    <span className="text-sm font-black text-orange-700 dark:text-orange-300 leading-none">{format(evt.date, 'dd')}</span>
+                    <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400  leading-none mb-0.5 ">{format(evt.date, 'MMM')}</span>
+                    <span className="text-sm font-bold text-orange-700 dark:text-orange-300 leading-none">{format(evt.date, 'dd')}</span>
                   </div>
                   <div className="flex flex-col overflow-hidden flex-1">
                     <span className="text-sm font-bold text-slate-900 dark:text-white truncate">{evt.title}</span>
@@ -519,7 +519,7 @@ export function ProjectCalendarWidget() {
                   </DropdownMenu>
                 </div>
               )) : (
-                <div className="text-xs text-slate-500 italic p-4 text-center bg-white dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">No upcoming events.</div>
+                <div className="text-label text-slate-500 italic p-4 text-center bg-white dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">No upcoming events.</div>
               )}
             </div>
           </div>
@@ -553,7 +553,7 @@ export function ProjectCalendarWidget() {
             <>
               <div className="p-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
                 <SheetHeader>
-                  <SheetTitle className="text-2xl font-black text-slate-900 dark:text-white">
+                  <SheetTitle className="text-2xl font-bold text-slate-900 dark:text-white">
                     {format(selectedDay, 'EEEE')}
                   </SheetTitle>
                   <SheetDescription className="text-sm font-bold text-slate-500 flex items-center">
@@ -583,7 +583,7 @@ export function ProjectCalendarWidget() {
                                   <div>
                                     <h4 className="font-bold text-sm text-slate-900 dark:text-white">{evt.title}</h4>
                                       <div className="flex items-center gap-1.5 mt-0.5">
-                                        <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{evt.type}</span>
+                                        <span className="text-[10px] font-semibold text-slate-500  ">{evt.type}</span>
                                         {evt.time && (
                                           <>
                                             <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
@@ -611,7 +611,7 @@ export function ProjectCalendarWidget() {
                       <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center">
                         <CheckCircle2 className="h-6 w-6 text-slate-300 dark:text-slate-600 mb-2" />
                         <span className="text-sm font-semibold text-slate-500">No events scheduled.</span>
-                        <Button variant="link" className="text-orange-500 h-auto p-0 mt-1 text-xs font-bold">Schedule something</Button>
+                        <Button variant="link" className="text-orange-500 h-auto p-0 mt-1 text-label font-bold">Schedule something</Button>
                       </div>
                     )}
                   </div>
@@ -655,7 +655,7 @@ export function ProjectCalendarWidget() {
               {scheduleType === 'event' ? <CalendarIcon className="w-32 h-32 transform rotate-12 translate-x-4 -translate-y-4 text-white" /> : <Video className="w-32 h-32 transform rotate-12 translate-x-4 -translate-y-4 text-white" />}
             </div>
             <DialogHeader className="relative z-10 text-left">
-              <DialogTitle className="text-2xl font-black text-white flex items-center gap-3">
+              <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
                 <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-md border border-white/20 shadow-inner">
                   {scheduleType === 'event' ? <CalendarIcon className="h-6 w-6 text-white" /> : <Video className="h-6 w-6 text-white" />}
                 </div>
@@ -669,23 +669,23 @@ export function ProjectCalendarWidget() {
           
           <form onSubmit={handleScheduleSubmit} className="p-6 space-y-6">
             <div className="space-y-2.5">
-              <Label htmlFor="title" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Title</Label>
+              <Label htmlFor="title" className="text-[11px] font-bold text-slate-500 dark:text-slate-400  ">Event Title</Label>
               <Input id="title" name="title" placeholder={scheduleType === 'event' ? "e.g. Q3 Roadmap Review" : "e.g. Weekly Standup Sync"} required className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 text-slate-900 dark:text-white transition-all duration-300 shadow-sm text-base font-semibold" />
             </div>
             
             <div className="grid grid-cols-2 gap-5">
               <div className="space-y-2.5 relative">
-                <Label htmlFor="date" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</Label>
+                <Label htmlFor="date" className="text-[11px] font-bold text-slate-500 dark:text-slate-400  ">Date</Label>
                 <ProjectDatePicker name="date" value={scheduleDate} onChange={(d) => d && setScheduleDate(d)} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 text-slate-900 dark:text-white transition-all duration-300 shadow-sm pl-4 font-semibold" />
               </div>
               <div className="space-y-2.5">
-                <Label htmlFor="time" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Time</Label>
+                <Label htmlFor="time" className="text-[11px] font-bold text-slate-500 dark:text-slate-400  ">Time</Label>
                 <PremiumTimePicker name="time" value={scheduleTime} onChange={setScheduleTime} />
               </div>
             </div>
 
             <div className="space-y-2.5">
-              <Label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Type</Label>
+              <Label className="text-[11px] font-bold text-slate-500 dark:text-slate-400  ">Event Type</Label>
               <div className="relative group">
                 <Input name="type" list="event-types" defaultValue={scheduleType === 'event' ? 'milestone' : 'sync'} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 text-slate-900 dark:text-white transition-all duration-300 shadow-sm pl-12 font-semibold" placeholder="e.g. Milestone, Launch..." />
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 pointer-events-none group-hover:scale-110 transition-transform">
@@ -698,7 +698,7 @@ export function ProjectCalendarWidget() {
               <Button type="button" variant="ghost" onClick={() => setIsScheduleOpen(false)} className="rounded-xl font-bold h-12 px-6 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
                 Cancel
               </Button>
-              <Button type="submit" className="rounded-xl h-12 px-8 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black shadow-[0_8px_20px_-8px_rgba(249,115,22,0.6)] hover:shadow-[0_12px_25px_-8px_rgba(249,115,22,0.8)] transition-all duration-300 hover:-translate-y-0.5 border-0">
+              <Button type="submit" className="rounded-xl h-12 px-8 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold shadow-[0_8px_20px_-8px_rgba(249,115,22,0.6)] hover:shadow-[0_12px_25px_-8px_rgba(249,115,22,0.8)] transition-all duration-300 hover:-translate-y-0.5 border-0">
                 Schedule {scheduleType === 'event' ? 'Event' : 'Meeting'}
               </Button>
             </DialogFooter>
@@ -711,7 +711,7 @@ export function ProjectCalendarWidget() {
         <DialogContent className="sm:max-w-[425px] md:max-w-[600px] rounded-3xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 p-0 overflow-hidden shadow-2xl">
           <div className="bg-slate-50/50 dark:bg-slate-900/20 p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white flex items-center">
+              <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white flex items-center">
                 <Clock className="mr-3 h-6 w-6 text-orange-500" />
                 Event History
               </DialogTitle>
@@ -731,20 +731,20 @@ export function ProjectCalendarWidget() {
                     return (
                     <div key={evt.id} className={cn("flex flex-col sm:flex-row sm:items-center gap-4 p-3.5 rounded-xl border transition-all", isPast ? "bg-slate-50/50 dark:bg-slate-900/20 border-slate-100 dark:border-slate-800/50 opacity-80" : "bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-500/30")}>
                       <div className="flex flex-col items-center justify-center h-14 w-14 rounded-xl bg-white dark:bg-slate-950 shadow-sm border border-slate-200 dark:border-slate-800 shrink-0">
-                        <span className={cn("text-[10px] font-bold uppercase leading-none", isPast ? "text-slate-400 dark:text-slate-500" : "text-slate-500 dark:text-slate-400")}>{format(evt.date, 'MMM')}</span>
-                        <span className={cn("text-lg font-black leading-none mt-1", isPast ? "text-slate-500 dark:text-slate-400" : "text-slate-900 dark:text-white")}>{format(evt.date, 'dd')}</span>
+                        <span className={cn("text-[10px] font-bold  leading-none", isPast ? "text-slate-400 dark:text-slate-500" : "text-slate-500 dark:text-slate-400")}>{format(evt.date, 'MMM')}</span>
+                        <span className={cn("text-lg font-bold leading-none mt-1", isPast ? "text-slate-500 dark:text-slate-400" : "text-slate-900 dark:text-white")}>{format(evt.date, 'dd')}</span>
                       </div>
                       <div className="flex flex-col flex-1 overflow-hidden">
                         <div className="flex items-center gap-2">
                           <span className={cn("text-sm font-bold", isPast ? "text-slate-600 dark:text-slate-400" : "text-slate-900 dark:text-white")}>{evt.title}</span>
-                          {isPast && <Badge variant="outline" className="text-[9px] uppercase tracking-wider font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 py-0 h-4 border-slate-200 dark:border-slate-700">Past</Badge>}
+                          {isPast && <Badge variant="outline" className="text-[9px]   font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 py-0 h-4 border-slate-200 dark:border-slate-700">Past</Badge>}
                         </div>
                         <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                          <Badge variant="outline" className={cn("text-[10px] font-bold uppercase tracking-wider", getEventBadgeStyles(evt.type))}>
+                          <Badge variant="outline" className={cn("text-[10px] font-bold  ", getEventBadgeStyles(evt.type))}>
                             {evt.type}
                           </Badge>
                           {evt.time && (
-                            <span className="text-xs font-semibold text-slate-500 flex items-center">
+                            <span className="text-label font-semibold text-slate-500 flex items-center">
                               <Clock className="h-3 w-3 mr-1" /> {evt.time}
                             </span>
                           )}
@@ -784,7 +784,7 @@ export function ProjectCalendarWidget() {
       <Dialog open={!!eventToDelete} onOpenChange={(open) => !open && setEventToDelete(null)}>
         <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white text-rose-600 flex items-center">
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white text-rose-600 flex items-center">
               Delete Event
             </DialogTitle>
             <DialogDescription className="text-slate-500 font-medium">
@@ -801,7 +801,7 @@ export function ProjectCalendarWidget() {
             setEventToDelete(null);
           }}>
             <div className="space-y-2 py-4">
-              <Label htmlFor="delete-reason" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-rose-600">Reason for Deletion (Required)</Label>
+              <Label htmlFor="delete-reason" className="text-label font-bold text-slate-700 dark:text-slate-300   text-rose-600">Reason for Deletion (Required)</Label>
               <Textarea id="delete-reason" name="reason" required placeholder="e.g. Cancelled by client, duplicated event..." className="rounded-xl border-rose-200 dark:border-rose-500/30 focus-visible:ring-rose-500" />
             </div>
             <DialogFooter className="mt-2">
@@ -819,7 +819,7 @@ export function ProjectCalendarWidget() {
               <CalendarIcon className="w-32 h-32 transform rotate-12 translate-x-4 -translate-y-4 text-white" />
             </div>
             <DialogHeader className="relative z-10 text-left">
-              <DialogTitle className="text-2xl font-black text-white flex items-center gap-3">
+              <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
                 <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-md border border-white/20 shadow-inner">
                   <Settings className="h-6 w-6 text-white" />
                 </div>
@@ -855,23 +855,23 @@ export function ProjectCalendarWidget() {
             setEventToEdit(null);
           }} className="p-6 space-y-6">
             <div className="space-y-2.5">
-              <Label htmlFor="edit-title" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Title</Label>
+              <Label htmlFor="edit-title" className="text-[11px] font-bold text-slate-500 dark:text-slate-400  ">Event Title</Label>
               <Input id="edit-title" name="title" defaultValue={eventToEdit?.title} required className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm text-base font-semibold" />
             </div>
             
             <div className="grid grid-cols-2 gap-5">
               <div className="space-y-2.5 relative">
-                <Label htmlFor="edit-date" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</Label>
+                <Label htmlFor="edit-date" className="text-[11px] font-bold text-slate-500 dark:text-slate-400  ">Date</Label>
                 <ProjectDatePicker name="date" value={editDate} onChange={(d) => d && setEditDate(d)} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-4 font-semibold" />
               </div>
               <div className="space-y-2.5">
-                <Label htmlFor="edit-time" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Time</Label>
+                <Label htmlFor="edit-time" className="text-[11px] font-bold text-slate-500 dark:text-slate-400  ">Time</Label>
                 <PremiumTimePicker name="time" value={editTime} onChange={setEditTime} />
               </div>
             </div>
 
             <div className="space-y-2.5">
-              <Label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Type</Label>
+              <Label className="text-[11px] font-bold text-slate-500 dark:text-slate-400  ">Event Type</Label>
               <div className="relative group">
                 <Input name="type" list="event-types" defaultValue={eventToEdit?.type || 'milestone'} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-12 font-semibold" placeholder="e.g. Deadline, Client Sync..." />
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 pointer-events-none group-hover:scale-110 transition-transform">
@@ -881,7 +881,7 @@ export function ProjectCalendarWidget() {
             </div>
             
             <div className="space-y-2.5">
-              <Label htmlFor="edit-reason" className="text-[11px] font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Reason for Edit (Required)</Label>
+              <Label htmlFor="edit-reason" className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400  ">Reason for Edit (Required)</Label>
               <Textarea id="edit-reason" name="reason" required placeholder="e.g. Rescheduled due to client request..." className="rounded-2xl bg-slate-50 dark:bg-slate-900/50 border-indigo-200 dark:border-indigo-500/30 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm min-h-[90px] pt-4 font-medium" />
             </div>
 
@@ -889,7 +889,7 @@ export function ProjectCalendarWidget() {
               <Button type="button" variant="ghost" onClick={() => setEventToEdit(null)} className="rounded-xl font-bold h-12 px-6 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
                 Cancel
               </Button>
-              <Button type="submit" className="rounded-xl h-12 px-8 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-black shadow-[0_8px_20px_-8px_rgba(99,102,241,0.6)] hover:shadow-[0_12px_25px_-8px_rgba(99,102,241,0.8)] transition-all duration-300 hover:-translate-y-0.5 border-0">
+              <Button type="submit" className="rounded-xl h-12 px-8 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold shadow-[0_8px_20px_-8px_rgba(99,102,241,0.6)] hover:shadow-[0_12px_25px_-8px_rgba(99,102,241,0.8)] transition-all duration-300 hover:-translate-y-0.5 border-0">
                 Save Changes
               </Button>
             </DialogFooter>
@@ -903,14 +903,14 @@ export function ProjectCalendarWidget() {
               <div className="p-8 border-b border-slate-100 dark:border-slate-800/60 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900/50 dark:to-slate-950">
                 <div className="flex items-center gap-4 mb-4">
                   <div className={cn("h-14 w-14 rounded-2xl flex flex-col items-center justify-center text-white shadow-lg", getEventColor(eventToView.type))}>
-                    <span className="text-[11px] font-bold uppercase tracking-wider opacity-90 leading-none">{format(eventToView.date, 'MMM')}</span>
-                    <span className="text-xl font-black leading-none mt-1">{format(eventToView.date, 'dd')}</span>
+                    <span className="text-[11px] font-bold   opacity-90 leading-none">{format(eventToView.date, 'MMM')}</span>
+                    <span className="text-xl font-bold leading-none mt-1">{format(eventToView.date, 'dd')}</span>
                   </div>
                   <div>
-                    <Badge variant="outline" className={cn("mb-2 border-0 uppercase tracking-widest text-[9px] font-black px-2.5 py-0.5", getEventBadgeStyles(eventToView.type))}>
+                    <Badge variant="outline" className={cn("mb-2 border-0   text-[9px] font-bold px-2.5 py-0.5", getEventBadgeStyles(eventToView.type))}>
                       {eventToView.type}
                     </Badge>
-                    <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                    <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white ">
                       {eventToView.title}
                     </DialogTitle>
                   </div>
@@ -925,7 +925,7 @@ export function ProjectCalendarWidget() {
               <div className="p-8 space-y-8 bg-white dark:bg-slate-950">
                 {eventToView.description && (
                   <div className="space-y-3">
-                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Details & Links</label>
+                    <label className="text-[11px] font-bold   text-slate-400 dark:text-slate-500">Details & Links</label>
                     <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800/60">
                       <p className="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
                         {eventToView.description}
@@ -936,7 +936,7 @@ export function ProjectCalendarWidget() {
                 
                 {eventToView.assignees && eventToView.assignees.length > 0 && (
                   <div className="space-y-3">
-                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center justify-between">
+                    <label className="text-[11px] font-bold   text-slate-400 dark:text-slate-500 flex items-center justify-between">
                       <span>Participants ({eventToView.assignees.length})</span>
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -947,7 +947,7 @@ export function ProjectCalendarWidget() {
                               {assignee.initials}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{assignee.name}</span>
+                          <span className="text-label font-bold text-slate-700 dark:text-slate-300">{assignee.name}</span>
                         </div>
                       ))}
                     </div>

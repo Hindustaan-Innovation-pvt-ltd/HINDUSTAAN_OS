@@ -8,7 +8,7 @@ export default function AboutUs() {
       
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">System Documentation</h2>
+        <h2 className="text-2xl font-bold  text-slate-900 dark:text-white">System Documentation</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Corporate Overview & Platform Specifications.</p>
       </div>
 
@@ -29,8 +29,8 @@ export default function AboutUs() {
                   <Building2 className="w-6 h-6 text-orange-600 dark:text-orange-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Hindustaan Innovations Pvt. Ltd.</h3>
-                  <div className="flex items-center text-xs font-semibold text-orange-600 dark:text-orange-400 mt-1 uppercase tracking-wider">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white ">Hindustaan Innovations Pvt. Ltd.</h3>
+                  <div className="flex items-center text-label font-semibold text-orange-600 dark:text-orange-400 mt-1  ">
                     <MapPin className="w-3.5 h-3.5 mr-1" />
                     Raipur, Chhattisgarh, India
                   </div>
@@ -58,8 +58,8 @@ export default function AboutUs() {
                   <MonitorSmartphone className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">About Hindustaan OS</h3>
-                  <div className="flex items-center text-xs font-semibold text-blue-600 dark:text-blue-400 mt-1 uppercase tracking-wider">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white ">About Hindustaan OS</h3>
+                  <div className="flex items-center text-label font-semibold text-blue-600 dark:text-blue-400 mt-1  ">
                     Internal Workforce Productivity Platform (v1.0)
                   </div>
                 </div>
@@ -82,7 +82,7 @@ export default function AboutUs() {
             <div className="flex items-center justify-center p-3 sm:p-0 space-x-3">
               <MapPin className="w-4 h-4 text-slate-400 dark:text-slate-500" />
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Headquarters</span>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500  ">Headquarters</span>
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Raipur, IN</span>
               </div>
             </div>
@@ -90,7 +90,7 @@ export default function AboutUs() {
             <div className="flex items-center justify-center p-3 sm:p-0 space-x-3">
               <Activity className="w-4 h-4 text-slate-400 dark:text-slate-500" />
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Deployment Status</span>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500  ">Deployment Status</span>
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Phase 1 MVP</span>
               </div>
             </div>
@@ -98,7 +98,7 @@ export default function AboutUs() {
             <div className="flex items-center justify-center p-3 sm:p-0 space-x-3">
               <ShieldCheck className="w-4 h-4 text-slate-400 dark:text-slate-500" />
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Access Scope</span>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500  ">Access Scope</span>
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Internal & Confidential</span>
               </div>
             </div>

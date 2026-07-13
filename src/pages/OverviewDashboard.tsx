@@ -80,7 +80,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-xl shadow-lg flex flex-col gap-2">
         <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">{label}</p>
         {payload.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center space-x-2 text-xs font-medium">
+          <div key={index} className="flex items-center space-x-2 text-label font-medium">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
             <span className="text-slate-500 dark:text-slate-400 dark:text-slate-500 capitalize">{entry.name}:</span>
             <span className="text-slate-900 dark:text-white font-bold">{entry.value}</span>
@@ -100,7 +100,7 @@ export default function OverviewDashboard() {
       
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Project Overview</h2>
+        <h2 className="text-2xl font-bold  text-slate-900 dark:text-white">Project Overview</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Real-time metrics and sprint velocity tracking.</p>
       </div>
 
@@ -113,7 +113,7 @@ export default function OverviewDashboard() {
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400">
               <FolderKanban className="h-6 w-6" />
             </div>
-            <span className="text-xs font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 px-2 py-1 rounded-md">
+            <span className="text-label font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 px-2 py-1 rounded-md">
               Target: 15
             </span>
           </div>
@@ -121,11 +121,11 @@ export default function OverviewDashboard() {
             <h3 className="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-sm font-semibold">Active Projects</h3>
           </div>
           <div className="flex items-baseline space-x-2 mb-4">
-            <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white">12</h2>
+            <h2 className="text-4xl font-bold text-slate-900 dark:text-white">12</h2>
           </div>
           {/* Progress Bar (12/15 = 80%) */}
           <div className="mt-auto">
-            <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">
+            <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1.5  ">
               <span>Capacity</span>
               <span>80%</span>
             </div>
@@ -141,7 +141,7 @@ export default function OverviewDashboard() {
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-500 dark:text-amber-400">
               <Loader2 className="h-6 w-6 animate-[spin_3s_linear_infinite]" />
             </div>
-            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 px-2 py-1 rounded-md">
+            <span className="text-label font-bold text-amber-600 dark:text-amber-400 bg-amber-50 px-2 py-1 rounded-md">
               Sprint Load
             </span>
           </div>
@@ -149,11 +149,11 @@ export default function OverviewDashboard() {
             <h3 className="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-sm font-semibold">Tasks In Progress</h3>
           </div>
           <div className="flex items-baseline space-x-2 mb-4">
-            <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white">28</h2>
+            <h2 className="text-4xl font-bold text-slate-900 dark:text-white">28</h2>
           </div>
           {/* Progress Bar (28/50 hypothetical = 56%) */}
           <div className="mt-auto">
-            <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">
+            <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1.5  ">
               <span>Completion Rate</span>
               <span>56%</span>
             </div>
@@ -170,7 +170,7 @@ export default function OverviewDashboard() {
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-100 text-rose-600 dark:text-rose-400">
               <AlertOctagon className="h-6 w-6" />
             </div>
-            <span className="text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-100 px-2 py-1 rounded-md flex items-center">
+            <span className="text-label font-bold text-rose-600 dark:text-rose-400 bg-rose-100 px-2 py-1 rounded-md flex items-center">
               <span className="w-1.5 h-1.5 bg-rose-50 dark:bg-rose-500/100 rounded-full mr-1.5 animate-pulse"></span>
               Action Required
             </span>
@@ -179,11 +179,11 @@ export default function OverviewDashboard() {
             <h3 className="text-rose-900/60 text-sm font-semibold">Tasks Overdue</h3>
           </div>
           <div className="flex items-baseline space-x-2 mb-4 relative z-10">
-            <h2 className="text-4xl font-extrabold text-rose-600 dark:text-rose-400">5</h2>
+            <h2 className="text-4xl font-bold text-rose-600 dark:text-rose-400">5</h2>
           </div>
           {/* Progress Bar (5/100 hypothetical risk tolerance = 5%) */}
           <div className="mt-auto relative z-10">
-            <div className="flex justify-between text-[10px] font-bold text-rose-900/50 mb-1.5 uppercase tracking-wider">
+            <div className="flex justify-between text-[10px] font-bold text-rose-900/50 mb-1.5  ">
               <span>Risk Threshold</span>
               <span>12%</span>
             </div>
@@ -202,9 +202,9 @@ export default function OverviewDashboard() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">Sprint Velocity</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">7-day trailing task resolution volume.</p>
+              <p className="text-label text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">7-day trailing task resolution volume.</p>
             </div>
-            <div className="flex items-center space-x-4 text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500">
+            <div className="flex items-center space-x-4 text-label font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500">
               <div className="flex items-center"><div className="w-2.5 h-2.5 rounded-sm bg-emerald-50 dark:bg-emerald-500/100 mr-2"></div>Completed</div>
               <div className="flex items-center"><div className="w-2.5 h-2.5 rounded-sm bg-amber-400 mr-2"></div>In Progress</div>
               <div className="flex items-center"><div className="w-2.5 h-2.5 rounded-sm bg-rose-50 dark:bg-rose-500/100 mr-2"></div>Overdue</div>
@@ -265,7 +265,7 @@ export default function OverviewDashboard() {
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-6 flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">Upcoming Deadlines</h3>
-            <button className="text-xs font-bold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:text-orange-300 transition-colors">
+            <button className="text-label font-bold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:text-orange-300 transition-colors">
               View All
             </button>
           </div>
@@ -278,12 +278,12 @@ export default function OverviewDashboard() {
                 <div className="flex items-center justify-between mb-2">
                   <div className={cn("flex items-center px-2 py-1 rounded-md", item.bgColor)}>
                     <div className={cn("w-1.5 h-1.5 rounded-full mr-1.5", item.color)}></div>
-                    <span className={cn("text-[10px] font-bold uppercase tracking-wider", item.textColor)}>
+                    <span className={cn("text-[10px] font-bold  ", item.textColor)}>
                       {item.project}
                     </span>
                   </div>
                   
-                  <div className="flex items-center text-slate-400 dark:text-slate-500 text-xs font-semibold group-hover:text-slate-600 dark:text-slate-300 transition-colors">
+                  <div className="flex items-center text-slate-400 dark:text-slate-500 text-label font-semibold group-hover:text-slate-600 dark:text-slate-300 transition-colors">
                     <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
                     {item.dueDate}
                   </div>
@@ -297,7 +297,7 @@ export default function OverviewDashboard() {
                 {/* Bottom Row: Countdown Badge */}
                 <div className="flex items-center justify-end mt-auto pt-3 border-t border-slate-100 dark:border-slate-800">
                   <div className={cn(
-                    "flex items-center px-2.5 py-1 rounded-lg text-xs font-bold",
+                    "flex items-center px-2.5 py-1 rounded-lg text-label font-bold",
                     item.daysLeft <= 2 
                       ? "bg-rose-100 text-rose-700 dark:text-rose-300" 
                       : item.daysLeft <= 4 

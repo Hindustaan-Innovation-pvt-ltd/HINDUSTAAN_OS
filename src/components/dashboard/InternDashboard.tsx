@@ -418,7 +418,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold  text-slate-900 dark:text-white break-words whitespace-normal">
             {greeting}, {currentUserName} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
           <p className="text-base sm:text-lg font-medium text-orange-600 dark:text-orange-400 mt-1 break-words whitespace-normal">
@@ -443,7 +443,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
               <Badge variant="secondary" className="bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 font-bold border-rose-100 dark:border-rose-900/30">{dueTodayCount} Due Today</Badge>
             </div>
             <div>
-              <p className="text-3xl font-black text-slate-900 dark:text-white">{activeTasksCount}</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{activeTasksCount}</p>
               <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">Active Tasks</p>
             </div>
           </CardContent>
@@ -456,10 +456,10 @@ export default function InternDashboard({ session }: InternDashboardProps) {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400">
                 <Clock className="h-5 w-5" />
               </div>
-              <span className="text-xs font-bold text-slate-500">Goal: 8 hrs</span>
+              <span className="text-label font-bold text-slate-500">Goal: 8 hrs</span>
             </div>
             <div>
-              <p className="text-3xl font-black text-slate-900 dark:text-white">{loggedHours.toFixed(1)} <span className="text-lg text-slate-500 font-bold">hrs</span></p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{loggedHours.toFixed(1)} <span className="text-lg text-slate-500 font-bold">hrs</span></p>
               <div className="flex items-center gap-3 mt-2">
                 <Progress value={Math.min(100, (loggedHours / 8) * 100)} className="h-1.5 flex-1 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
               </div>
@@ -476,7 +476,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
               </div>
               <div className="mt-4">
                 <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Contribution</p>
-                <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center">
+                <p className="text-label font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center">
                   ↑ +6 this week
                 </p>
               </div>
@@ -486,7 +486,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                 <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-slate-100 dark:text-slate-800" />
                 <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray="175" strokeDashoffset={175 - (175 * 88) / 100} className="text-orange-500" />
               </svg>
-              <span className="absolute text-sm font-black text-slate-900 dark:text-white">88%</span>
+              <span className="absolute text-sm font-bold text-slate-900 dark:text-white">88%</span>
             </div>
           </CardContent>
         </Card>
@@ -505,7 +505,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
               )}
             </div>
             <div>
-              <p className="text-2xl font-black text-slate-900 dark:text-white">Standup</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">Standup</p>
               {todaysStandup ? (
                 <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">Logged at {todaysStandup.time}</p>
               ) : (
@@ -541,13 +541,13 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                       <div className="flex items-center gap-3 mb-1.5">
                         <h4 className="text-base font-bold text-slate-900 dark:text-white truncate group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{task.title}</h4>
                         <Badge variant="outline" className={cn(
-                          "text-[10px] uppercase tracking-wider font-bold rounded",
+                          "text-[10px]   font-bold rounded",
                           task.priority === 'High' ? "border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-500/10" : 
                           task.priority === 'Normal' || task.priority === 'Medium' ? "border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:bg-amber-500/10" : 
                           "border-slate-200 text-slate-600 bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:bg-slate-800"
                         )}>{task.priority}</Badge>
                       </div>
-                      <div className="flex items-center gap-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      <div className="flex items-center gap-3 text-label font-semibold text-slate-500 dark:text-slate-400">
                         <span className="flex items-center"><LayoutDashboard className="h-3 w-3 mr-1" /> {task.project_tag}</span>
                         <Separator orientation="vertical" className="h-3" />
                         <span className="flex items-center"><CalendarIcon className="h-3 w-3 mr-1" /> {task.due_date}</span>
@@ -557,7 +557,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                       <div className="flex flex-col gap-1.5 w-32 shrink-0">
                         <div className="flex justify-between text-[11px] font-bold">
                           <span className={cn(
-                            task.status === 'Done' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400 uppercase tracking-wider'
+                            task.status === 'Done' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400  '
                           )}>{task.status}</span>
                           <span className="text-slate-900 dark:text-white">{task.progress ?? getProgress(task.status)}%</span>
                         </div>
@@ -596,8 +596,8 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                   {employeeUpcomingEvents.length > 0 ? employeeUpcomingEvents.map((evt: any) => (
                     <div key={evt.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-950 shadow-sm border border-slate-100 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-500/30 transition-all">
                       <div className="flex flex-col items-center justify-center h-11 w-11 rounded-lg bg-orange-50 dark:bg-orange-500/10 shrink-0">
-                        <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase leading-none">{format(evt.date, 'MMM')}</span>
-                        <span className="text-sm font-black text-orange-700 dark:text-orange-300 leading-none mt-1">{format(evt.date, 'dd')}</span>
+                        <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400  leading-none">{format(evt.date, 'MMM')}</span>
+                        <span className="text-sm font-bold text-orange-700 dark:text-orange-300 leading-none mt-1">{format(evt.date, 'dd')}</span>
                       </div>
                       <div className="flex flex-col overflow-hidden flex-1">
                         <div className="flex justify-between items-start gap-1">
@@ -618,7 +618,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                       </div>
                     </div>
                   )) : (
-                    <div className="text-xs text-slate-500 italic p-4 text-center bg-white dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">No upcoming events.</div>
+                    <div className="text-label text-slate-500 italic p-4 text-center bg-white dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">No upcoming events.</div>
                   )}
                 </div>
               </ScrollArea>
@@ -641,7 +641,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             </CardHeader>
             <CardContent className="flex-1 flex flex-col p-4 md:p-5 pt-0">
               <div className="flex items-end gap-2 mb-4">
-                <span className="text-5xl font-black text-slate-900 dark:text-white">88%</span>
+                <span className="text-5xl font-bold text-slate-900 dark:text-white">88%</span>
                 <span className="text-sm font-bold text-slate-500 mb-1">Overall Score</span>
               </div>
               <div className="space-y-3">
@@ -686,7 +686,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                   <Button 
                     onClick={() => setIsExtensionModalOpen(true)} 
                     size="sm"
-                    className="h-8 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm border border-indigo-600 hover:border-indigo-700 text-xs transition-all duration-200"
+                    className="h-8 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm border border-indigo-600 hover:border-indigo-700 text-label transition-all duration-200"
                   >
                     Request Extension
                   </Button>
@@ -708,31 +708,31 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                       <div key={task.id} className="py-3 flex items-center justify-between first:pt-0 last:pb-0">
                         <div className="flex flex-col">
                           <span className="text-sm font-bold text-slate-900 dark:text-white">{task.title}</span>
-                          <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-0.5">{task.project_tag}</span>
+                          <span className="text-[10px] text-slate-400   font-bold mt-0.5">{task.project_tag}</span>
                         </div>
                         <div className="flex items-center gap-4">
                           {approvedExt ? (
                             <div className="flex flex-col items-end gap-0.5">
                               <div className="flex items-center gap-1.5">
                                 <span className="text-[10px] text-slate-400 font-semibold">Original:</span>
-                                <span className="text-xs font-bold font-mono text-slate-500 dark:text-slate-400 line-through">
+                                <span className="text-label font-bold font-mono text-slate-500 dark:text-slate-400 line-through">
                                   {approvedExt.originalDueDate}
                                 </span>
                               </div>
                               <div className="flex items-center gap-1.5">
                                 <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Extended:</span>
-                                <span className={cn("text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400")}>
+                                <span className={cn("text-label font-bold font-mono text-emerald-600 dark:text-emerald-400")}>
                                   {approvedExt.extendedDueDate}
                                 </span>
                               </div>
                             </div>
                           ) : (
-                            <span className={cn("text-xs font-bold font-mono", colorClass)}>
+                            <span className={cn("text-label font-bold font-mono", colorClass)}>
                               {task.due_date}
                             </span>
                           )}
                           <Badge className={cn(
-                            "text-[10px] font-black border-0 uppercase tracking-wider",
+                            "text-[10px] font-bold border-0  ",
                             task.priority === 'High' ? "bg-rose-100 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400" :
                             task.priority === 'Normal' ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400" :
                             "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
@@ -772,7 +772,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                   <div key={task.id} className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg flex justify-between items-center border border-slate-100 dark:border-slate-800">
                     <div className="min-w-0 pr-4">
                       <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{task.title}</p>
-                      <p className="text-xs text-slate-500 mt-1">{task.project_tag}</p>
+                      <p className="text-label text-slate-500 mt-1">{task.project_tag}</p>
                     </div>
                     <Badge variant="outline" className="shrink-0">{task.priority}</Badge>
                   </div>
@@ -803,7 +803,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             <div className="h-20 w-20 rounded-full bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center mb-4">
               <Trophy className="h-10 w-10 text-purple-500" />
             </div>
-            <h3 className="text-4xl font-black mb-2 text-slate-900 dark:text-white">88%</h3>
+            <h3 className="text-4xl font-bold mb-2 text-slate-900 dark:text-white">88%</h3>
             <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mb-4">↑ +6 points this week</p>
             <p className="text-sm text-slate-500 px-4">Your contribution score is a unified metric calculated automatically based on your <strong>completed tasks</strong>, <strong>logged hours</strong>, and <strong>milestones achieved</strong>.</p>
           </div>
@@ -827,28 +827,28 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                 
                 <div className="mt-6 w-full text-left bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-3">
                   <div>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Yesterday</p>
+                    <p className="text-[10px] font-bold text-slate-500   mb-1">Yesterday</p>
                     <p className="text-sm text-slate-700 dark:text-slate-300">{todaysStandup.yesterday || "No update"}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Today</p>
+                    <p className="text-[10px] font-bold text-slate-500   mb-1">Today</p>
                     <p className="text-sm text-slate-700 dark:text-slate-300">{todaysStandup.today || "No update"}</p>
                   </div>
                   {todaysStandup.blockers && todaysStandup.blockers.toLowerCase() !== "none" && todaysStandup.blockers.toLowerCase() !== "none." && (
                     <div>
-                      <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-1">Blockers</p>
+                      <p className="text-[10px] font-bold text-rose-500   mb-1">Blockers</p>
                       <p className="text-sm text-rose-600 dark:text-rose-400">{todaysStandup.blockers}</p>
                     </div>
                   )}
                 </div>
 
-                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-6 bg-emerald-50 dark:bg-emerald-900/30 py-2 px-4 rounded-full inline-block">Great job keeping the team updated!</p>
+                <p className="text-label font-semibold text-emerald-600 dark:text-emerald-400 mt-6 bg-emerald-50 dark:bg-emerald-900/30 py-2 px-4 rounded-full inline-block">Great job keeping the team updated!</p>
               </>
             ) : (
               <>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">Standup Not Submitted</h3>
                 <p className="text-sm text-slate-500 mt-2 px-4">You haven't submitted your daily standup yet.</p>
-                <p className="text-xs font-semibold text-rose-500 mt-6 bg-rose-50 dark:bg-rose-900/30 py-2 px-4 rounded-full inline-block">Please go to the Daily Standup tab to submit!</p>
+                <p className="text-label font-semibold text-rose-500 mt-6 bg-rose-50 dark:bg-rose-900/30 py-2 px-4 rounded-full inline-block">Please go to the Daily Standup tab to submit!</p>
               </>
             )}
           </div>
@@ -866,7 +866,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
           </DialogHeader>
           <div className="p-6 space-y-4">
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Select Task / Milestone</label>
+              <label className="text-[11px] font-bold   text-slate-500 dark:text-slate-400">Select Task / Milestone</label>
               {upcomingDeadlines.length > 0 ? (
                 <div className="relative">
                   <ProjectSelect
@@ -880,14 +880,14 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                   />
                 </div>
               ) : (
-                <div className="p-3 text-center text-xs text-rose-500 font-bold bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-100 dark:border-rose-900/30">
+                <div className="p-3 text-center text-label text-rose-500 font-bold bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-100 dark:border-rose-900/30">
                   No pending deadlines found to extend.
                 </div>
               )}
             </div>
             
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Days Extension Required</label>
+              <label className="text-[11px] font-bold   text-slate-500 dark:text-slate-400">Days Extension Required</label>
               <input 
                 type="number" 
                 min="1" 
@@ -899,7 +899,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Reason for Extension</label>
+              <label className="text-[11px] font-bold   text-slate-500 dark:text-slate-400">Reason for Extension</label>
               <textarea 
                 value={extensionReason}
                 onChange={(e) => setExtensionReason(e.target.value)}

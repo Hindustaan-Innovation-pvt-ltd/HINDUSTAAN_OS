@@ -148,7 +148,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
             key={filter}
             variant="outline"
             className={cn(
-              "cursor-pointer transition-colors px-3 py-1 text-xs font-semibold rounded-full",
+              "cursor-pointer transition-colors px-3 py-1 text-label font-semibold rounded-full",
               activeFilter === filter 
                 ? "bg-orange-500 text-white border-orange-500 hover:bg-orange-600" 
                 : "bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -206,7 +206,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
                       </div>
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-slate-900 dark:text-white">{p.title}</span>
-                        <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{p.status}</span>
+                        <span className="text-[10px] font-semibold text-slate-500  ">{p.status}</span>
                       </div>
                     </div>
                     <ArrowRight className="h-4 w-4 text-slate-300 dark:text-slate-700 opacity-0 group-data-[selected=true]:opacity-100 transition-opacity" />
@@ -225,7 +225,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
                       </div>
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-slate-900 dark:text-white">{t.title}</span>
-                        <span className="text-xs font-medium text-slate-500">{t.assignee} • {t.status}</span>
+                        <span className="text-label font-medium text-slate-500">{t.assignee} • {t.status}</span>
                       </div>
                     </div>
                     <Badge variant="outline" className="text-[10px] border-slate-200 dark:border-slate-800">{t.priority}</Badge>
@@ -240,11 +240,11 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
                   <CommandItem key={m.id} className="flex items-center justify-between p-3 cursor-pointer rounded-xl data-[selected=true]:bg-slate-50 dark:data-[selected=true]:bg-slate-900 transition-colors">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8 border border-slate-200 dark:border-slate-800">
-                        <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold">{m.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+                        <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-label font-bold">{m.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-slate-900 dark:text-white">{m.name}</span>
-                        <span className="text-xs font-medium text-slate-500">{m.role} • {m.department}</span>
+                        <span className="text-label font-medium text-slate-500">{m.role} • {m.department}</span>
                       </div>
                     </div>
                   </CommandItem>
@@ -261,7 +261,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
                     </div>
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-slate-900 dark:text-white">{m.title}</span>
-                      <span className="text-xs font-medium text-slate-500">{m.project} • {m.date}</span>
+                      <span className="text-label font-medium text-slate-500">{m.project} • {m.date}</span>
                     </div>
                   </CommandItem>
                 ))}
@@ -277,7 +277,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
                     </div>
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-slate-900 dark:text-white">{d.title}</span>
-                      <span className="text-xs font-medium text-slate-500">{d.date}</span>
+                      <span className="text-label font-medium text-slate-500">{d.date}</span>
                     </div>
                   </CommandItem>
                 ))}
@@ -293,7 +293,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
                     </div>
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-slate-900 dark:text-white">{s.user} • {s.date}</span>
-                      <span className="text-xs font-medium text-slate-500">{s.summary}</span>
+                      <span className="text-label font-medium text-slate-500">{s.summary}</span>
                     </div>
                   </CommandItem>
                 ))}
@@ -309,7 +309,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
                     </div>
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-slate-900 dark:text-white">{l.user} logged time for {l.task}</span>
-                      <span className="text-xs font-medium text-slate-500">{l.date}</span>
+                      <span className="text-label font-medium text-slate-500">{l.date}</span>
                     </div>
                   </CommandItem>
                 ))}
@@ -325,7 +325,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
                     </div>
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-slate-900 dark:text-white">{n.text}</span>
-                      <span className="text-xs font-medium text-slate-500">{n.time}</span>
+                      <span className="text-label font-medium text-slate-500">{n.time}</span>
                     </div>
                   </CommandItem>
                 ))}
@@ -336,7 +336,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
       </CommandList>
       
       {/* Footer */}
-      <div className="border-t border-slate-100 dark:border-slate-800 p-3 bg-slate-50/50 dark:bg-slate-900/30 flex justify-between items-center text-xs text-slate-500 font-medium">
+      <div className="border-t border-slate-100 dark:border-slate-800 p-3 bg-slate-50/50 dark:bg-slate-900/30 flex justify-between items-center text-label text-slate-500 font-medium">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1"><kbd className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 shadow-sm text-[10px]">↑</kbd> <kbd className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 shadow-sm text-[10px]">↓</kbd> to navigate</span>
           <span className="flex items-center gap-1"><kbd className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 shadow-sm text-[10px]">Enter</kbd> to select</span>

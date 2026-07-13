@@ -45,7 +45,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
         </button>
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{project.name}</h2>
+            <h2 className="text-2xl font-bold  text-slate-900 dark:text-white">{project.name}</h2>
             <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20">
               {project.status}
             </Badge>
@@ -63,7 +63,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Total Tasks</p>
-            <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{totalTasks}</p>
+            <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{totalTasks}</p>
           </div>
           <div className="h-12 w-12 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
             <LayoutGrid className="h-6 w-6" />
@@ -73,7 +73,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Completed</p>
-            <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{completedTasks}</p>
+            <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{completedTasks}</p>
           </div>
           <div className="h-12 w-12 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="h-6 w-6" />
@@ -83,7 +83,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Milestones</p>
-            <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{milestones.length}</p>
+            <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{milestones.length}</p>
           </div>
           <div className="h-12 w-12 rounded-full bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
             <Flag className="h-6 w-6" />
@@ -94,7 +94,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
           <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10" />
           <div className="relative z-10">
             <p className="text-sm font-bold opacity-90">Overall Progress</p>
-            <p className="text-3xl font-black mt-1">{progress}%</p>
+            <p className="text-3xl font-bold mt-1">{progress}%</p>
           </div>
           <div className="relative z-10 h-12 w-12 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
             <Target className="h-6 w-6" />
@@ -127,8 +127,8 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                 
                 <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50 shadow-sm">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-slate-500">{milestone?.date}</span>
-                    <Badge variant="outline" className={cn("text-[10px] uppercase tracking-wider", 
+                    <span className="text-label font-bold text-slate-500">{milestone?.date}</span>
+                    <Badge variant="outline" className={cn("text-[10px]  ", 
                       milestone?.status === 'completed' ? "text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-500/10 dark:border-emerald-500/20" : 
                       milestone?.status === 'in-progress' ? "text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-500/10 dark:border-orange-500/20" : "text-slate-500 border-slate-200 dark:border-slate-800"
                     )}>
@@ -156,7 +156,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
               <div key={status} className="flex flex-col bg-slate-50 dark:bg-slate-950 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">{status}</h4>
-                  <span className="text-xs font-bold text-slate-500 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-800">
+                  <span className="text-label font-bold text-slate-500 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-800">
                     {tasks.filter((t: any) => t?.status === status).length}
                   </span>
                 </div>
@@ -167,14 +167,14 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                           <Users className="h-3 w-3 text-slate-400" />
-                          <span className="text-xs font-medium text-slate-500">{task?.assignee}</span>
+                          <span className="text-label font-medium text-slate-500">{task?.assignee}</span>
                         </div>
                       </div>
                     </div>
                   ))}
                   {tasks.filter((t: any) => t.status === status).length === 0 && (
                     <div className="h-full min-h-[100px] flex items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-lg">
-                      <span className="text-xs font-medium text-slate-400">No tasks</span>
+                      <span className="text-label font-medium text-slate-400">No tasks</span>
                     </div>
                   )}
                 </div>
@@ -190,12 +190,12 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
         {editingTask && (
           <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-0">
             <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50">
-              <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">Edit Task</DialogTitle>
+              <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Edit Task</DialogTitle>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Update task details or move its status.</p>
             </DialogHeader>
             <div className="p-6 space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Task Title</label>
+                <label className="text-label font-bold   text-slate-500 dark:text-slate-400">Task Title</label>
                 <input
                   type="text"
                   value={editingTask.title}
@@ -204,7 +204,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Assignee</label>
+                <label className="text-label font-bold   text-slate-500 dark:text-slate-400">Assignee</label>
                 <ProjectSelect
                   value={editingTask.assignee}
                   onChange={(val) => setEditingTask({ ...editingTask, assignee: val })}
@@ -215,7 +215,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</label>
+                <label className="text-label font-bold   text-slate-500 dark:text-slate-400">Status</label>
                 <ProjectSelect
                   value={editingTask.status}
                   onChange={(val) => setEditingTask({ ...editingTask, status: val })}

@@ -13,7 +13,7 @@ class ManagerErrorBoundary extends Component<{ children: React.ReactNode }, { ha
       return (
         <div className="p-10 m-10 bg-rose-50 border border-rose-200 rounded-xl overflow-auto text-rose-900">
           <h2 className="text-xl font-bold mb-4">Dashboard Crash Detected</h2>
-          <pre className="text-xs font-mono whitespace-pre-wrap">{this.state.error?.stack || this.state.error?.toString()}</pre>
+          <pre className="text-label font-mono whitespace-pre-wrap">{this.state.error?.stack || this.state.error?.toString()}</pre>
         </div>
       );
     }
@@ -309,7 +309,7 @@ function ManagerDashboardInner() {
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold  text-slate-900 dark:text-white break-words whitespace-normal">
             {greeting}, {userName} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
           <p className="text-orange-500 font-medium tracking-wide mt-1 break-words whitespace-normal">
@@ -330,11 +330,11 @@ function ManagerDashboardInner() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400">
                 <FolderKanban className="h-5 w-5" />
               </div>
-              <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">Active</Badge>
+              <Badge variant="outline" className="text-[10px]  font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">Active</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{(projects || []).length}</p>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Total Projects</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{(projects || []).length}</p>
+              <p className="text-label font-semibold text-slate-500 dark:text-slate-400 mt-1">Total Projects</p>
             </div>
           </CardContent>
         </Card>
@@ -345,11 +345,11 @@ function ManagerDashboardInner() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                 <CheckSquare className="h-5 w-5" />
               </div>
-              <Badge variant="outline" className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">All time</Badge>
+              <Badge variant="outline" className="text-[10px]  font-bold text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">All time</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{(projects || []).reduce((acc: number, p: any) => acc + (p.tasks?.length || 0), 0)}</p>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Total Tasks</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{(projects || []).reduce((acc: number, p: any) => acc + (p.tasks?.length || 0), 0)}</p>
+              <p className="text-label font-semibold text-slate-500 dark:text-slate-400 mt-1">Total Tasks</p>
             </div>
           </CardContent>
         </Card>
@@ -360,11 +360,11 @@ function ManagerDashboardInner() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400">
                 <AlertTriangle className="h-5 w-5" />
               </div>
-              <Badge variant="outline" className="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10">High Pri</Badge>
+              <Badge variant="outline" className="text-[10px]  font-bold text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10">High Pri</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dueTodayTasksCount}</p>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tasks Due Today</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{dueTodayTasksCount}</p>
+              <p className="text-label font-semibold text-slate-500 dark:text-slate-400 mt-1">Tasks Due Today</p>
             </div>
           </CardContent>
         </Card>
@@ -378,11 +378,11 @@ function ManagerDashboardInner() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
                 <Users className="h-5 w-5" />
               </div>
-              <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">100% On</Badge>
+              <Badge variant="outline" className="text-[10px]  font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">100% On</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">30</p>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Active Interns</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">30</p>
+              <p className="text-label font-semibold text-slate-500 dark:text-slate-400 mt-1">Active Interns</p>
             </div>
           </CardContent>
         </Card>
@@ -393,11 +393,11 @@ function ManagerDashboardInner() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400">
                 <CalendarClock className="h-5 w-5" />
               </div>
-              <Badge variant="outline" className="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10">Sync at 11</Badge>
+              <Badge variant="outline" className="text-[10px]  font-bold text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10">Sync at 11</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">6</p>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Pending Standups</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">6</p>
+              <p className="text-label font-semibold text-slate-500 dark:text-slate-400 mt-1">Pending Standups</p>
             </div>
           </CardContent>
         </Card>
@@ -408,11 +408,11 @@ function ManagerDashboardInner() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <TrendingUp className="h-5 w-5" />
               </div>
-              <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">+4.2%</Badge>
+              <Badge variant="outline" className="text-[10px]  font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">+4.2%</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">92%</p>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Team Productivity</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">92%</p>
+              <p className="text-label font-semibold text-slate-500 dark:text-slate-400 mt-1">Team Productivity</p>
             </div>
           </CardContent>
         </Card>
@@ -436,7 +436,7 @@ function ManagerDashboardInner() {
                   <Activity className="h-4 w-4 text-orange-600 dark:text-orange-400 mr-2" />
                   Project Progress Overview
                 </CardTitle>
-                <CardDescription className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Top 5 active projects across all cohorts.</CardDescription>
+                <CardDescription className="text-label font-semibold text-slate-500 dark:text-slate-400 mt-1">Top 5 active projects across all cohorts.</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <Button onClick={() => setIsAllProjectsOpen(true)} variant="ghost" size="sm" className="text-orange-600 dark:text-orange-400 font-semibold hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-700 dark:hover:text-orange-300 h-8 cursor-pointer">
@@ -454,16 +454,16 @@ function ManagerDashboardInner() {
                           <span className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
                             {project?.name}
                           </span>
-                          <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", getStatusBadgeStyles(project?.status || 'Active'))}>
+                          <Badge variant="outline" className={cn("text-[10px]  font-bold ", getStatusBadgeStyles(project?.status || 'Active'))}>
                             {project?.status}
                           </Badge>
                         </div>
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Due: {project?.dueDate}</span>
+                        <span className="text-label font-bold text-slate-500 dark:text-slate-400">Due: {project?.dueDate}</span>
                       </div>
                       <div className="flex items-center gap-4">
                         <Progress value={project?.progress || 0} className={cn("h-2 flex-1", project?.status === 'Aborted' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
                         <div className="flex items-center gap-1 justify-end w-16 shrink-0">
-                          <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{project?.progress || 0}%</span>
+                          <span className="text-label font-bold text-slate-700 dark:text-slate-300">{project?.progress || 0}%</span>
                           <button
                             onClick={() => setSelectedProject(project)}
                             className="flex items-center justify-center h-6 w-6 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-orange-600 transition-colors shrink-0"
@@ -487,7 +487,7 @@ function ManagerDashboardInner() {
                   <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400 mr-2" />
                   Active Blockers & Risks
                 </CardTitle>
-                <CardDescription className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Impediments requiring your immediate attention.</CardDescription>
+                <CardDescription className="text-label font-semibold text-slate-500 dark:text-slate-400 mt-1">Impediments requiring your immediate attention.</CardDescription>
               </div>
               <Button onClick={() => setIsAllBlockersOpen(true)} variant="ghost" size="sm" className="text-rose-600 dark:text-rose-400 font-semibold hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-300 cursor-pointer">
                 View All
@@ -533,7 +533,7 @@ function ManagerDashboardInner() {
                               }}
                               variant="ghost"
                               size="sm"
-                              className={cn("h-7 text-xs px-2 font-bold cursor-pointer", blocker.textColor, blocker.hoverTextColor, blocker.hoverBgColor)}
+                              className={cn("h-7 text-label px-2 font-bold cursor-pointer", blocker.textColor, blocker.hoverTextColor, blocker.hoverBgColor)}
                             >
                               Resolve
                             </Button>
@@ -541,7 +541,7 @@ function ManagerDashboardInner() {
                               onClick={() => setMessageUser(blocker.user)}
                               variant="ghost"
                               size="sm"
-                              className="h-7 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold cursor-pointer"
+                              className="h-7 text-label text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold cursor-pointer"
                             >
                               Message
                             </Button>
@@ -550,7 +550,7 @@ function ManagerDashboardInner() {
                         {(blocker as any).managerMessage && (
                           <div className={cn("ml-8 mt-2 p-3 rounded-xl border shadow-sm relative overflow-hidden", isResolved ? "bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100/50 dark:border-emerald-800/30 opacity-75" : "bg-white/60 dark:bg-slate-900/50 border-slate-100 dark:border-slate-700/50")}>
                             <div className={cn("absolute left-0 top-0 bottom-0 w-1", isResolved ? "bg-emerald-500/30" : "bg-orange-500/50")}></div>
-                            <p className={cn("text-[10px] font-bold uppercase tracking-wider mb-1", isResolved ? "text-emerald-600/70 dark:text-emerald-400/70" : "text-slate-500 dark:text-slate-400")}>Your Reply</p>
+                            <p className={cn("text-[10px] font-bold   mb-1", isResolved ? "text-emerald-600/70 dark:text-emerald-400/70" : "text-slate-500 dark:text-slate-400")}>Your Reply</p>
                             <p className={cn("text-sm italic font-medium", isResolved ? "text-emerald-700 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200")}>"{(blocker as any).managerMessage}"</p>
                           </div>
                         )}
@@ -575,7 +575,7 @@ function ManagerDashboardInner() {
                   <Megaphone className="h-4 w-4 text-orange-600 dark:text-orange-400 mr-2" />
                   Team Activity Feed
                 </CardTitle>
-                <CardDescription className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Real-time pulse of workspace execution.</CardDescription>
+                <CardDescription className="text-label font-semibold text-slate-500 dark:text-slate-400 mt-1">Real-time pulse of workspace execution.</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-hidden">
@@ -587,7 +587,7 @@ function ManagerDashboardInner() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3">
                           <Avatar className="h-8 w-8 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                            <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300 text-xs font-bold rounded-lg">
+                            <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300 text-label font-bold rounded-lg">
                               {(activity.user || 'Unknown').split(' ').map((n: string) => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
@@ -630,7 +630,7 @@ function ManagerDashboardInner() {
                             {(deadline.assignee || 'Unassigned').split(' ').map((n: string) => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{deadline.assignee || 'Unassigned'}</span>
+                        <span className="text-label font-semibold text-slate-500 dark:text-slate-400">{deadline.assignee || 'Unassigned'}</span>
                       </div>
                     </div>
                     <DropdownMenu>
@@ -640,8 +640,8 @@ function ManagerDashboardInner() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="rounded-xl">
-                        <DropdownMenuItem onClick={() => { import('sonner').then(m => m.toast.info(`Viewing details for: ${deadline.task}`)) }} className="font-semibold text-xs cursor-pointer">View Details</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setIsAssignTaskOpen(true)} className="font-semibold text-xs cursor-pointer text-orange-600 dark:text-orange-400 focus:text-orange-600">Reassign</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { import('sonner').then(m => m.toast.info(`Viewing details for: ${deadline.task}`)) }} className="font-semibold text-label cursor-pointer">View Details</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setIsAssignTaskOpen(true)} className="font-semibold text-label cursor-pointer text-orange-600 dark:text-orange-400 focus:text-orange-600">Reassign</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -669,7 +669,7 @@ function ManagerDashboardInner() {
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <Avatar className={cn("h-8 w-8 rounded-full border-2 border-white dark:border-slate-950", !isOnline && "grayscale opacity-80")}>
-                            <AvatarFallback className={cn("text-xs font-bold", member.color)}>
+                            <AvatarFallback className={cn("text-label font-bold", member.color)}>
                               {member.initials}
                             </AvatarFallback>
                           </Avatar>
@@ -685,14 +685,14 @@ function ManagerDashboardInner() {
                         </div>
                       </div>
                       {isOnline ? (
-                        <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold animate-pulse">
+                        <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1 font-mono text-label font-bold animate-pulse">
                           <Timer className="h-3.5 w-3.5 text-emerald-500" />
                           <span>{formatTime(sessionTime)}</span>
                         </div>
                       ) : (
-                        <div className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold">
+                        <div className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 rounded-lg flex items-center space-x-1 font-mono text-label font-bold">
                           <Timer className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" />
-                          <span className="uppercase tracking-wider text-[10px]">Offline</span>
+                          <span className="  text-[10px]">Offline</span>
                         </div>
                       )}
                     </div>
@@ -730,7 +730,7 @@ function ManagerDashboardInner() {
                         <p className={cn("text-sm font-medium leading-snug", notif.unread ? "text-slate-900 dark:text-white font-bold" : "text-slate-600 dark:text-slate-400")}>
                           {notif.message || notif.text}
                         </p>
-                        <span className="text-[10px] text-orange-500 font-bold mt-1 uppercase tracking-wider">Tap to open system</span>
+                        <span className="text-[10px] text-orange-500 font-bold mt-1  ">Tap to open system</span>
                       </div>
                     </div>
                   ))}
@@ -753,7 +753,7 @@ function ManagerDashboardInner() {
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Interns</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Names and online status of active interns</p>
+                <p className="text-label text-slate-500 dark:text-slate-400 mt-1">Names and online status of active interns</p>
               </div>
               <button
                 onClick={() => setIsActiveInternsModalOpen(false)}
@@ -770,23 +770,23 @@ function ManagerDashboardInner() {
                   <div key={member.id} className={cn("flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all", !isOnline && "opacity-75 grayscale")}>
                     <div className="flex items-center gap-3">
                       <Avatar className={cn("h-9 w-9 border-2 border-white dark:border-slate-900", member.color)}>
-                        <AvatarFallback className="font-bold text-xs">{member.initials}</AvatarFallback>
+                        <AvatarFallback className="font-bold text-label">{member.initials}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
-                        <span className="text-xs text-slate-500 font-medium">{member.role}</span>
+                        <span className="text-label text-slate-500 font-medium">{member.role}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
                       {isOnline ? (
                         <>
                           <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Online</span>
+                          <span className="text-label font-bold text-emerald-600 dark:text-emerald-400">Online</span>
                         </>
                       ) : (
                         <>
                           <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600" />
-                          <span className="text-xs font-bold text-slate-500">Offline</span>
+                          <span className="text-label font-bold text-slate-500">Offline</span>
                         </>
                       )}
                     </div>
@@ -824,7 +824,7 @@ function ManagerDashboardInner() {
             <>
               <div className="bg-orange-50/50 dark:bg-orange-500/10 p-6 pb-4 border-b border-orange-100 dark:border-orange-900/30">
                 <DialogHeader>
-                  <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                  <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
                     <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-900 shadow-sm">
                       <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 text-sm font-bold">
                         {(messageUser || 'U').split(' ').map((n: string) => n[0]).join('')}
@@ -839,7 +839,7 @@ function ManagerDashboardInner() {
               </div>
               <div className="p-6 pt-4 space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Your Message</Label>
+                  <Label className="text-label font-bold text-slate-700 dark:text-slate-300  ">Your Message</Label>
                   <Textarea
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
@@ -872,11 +872,11 @@ function ManagerDashboardInner() {
                 <CheckCircle2 className="h-8 w-8" />
               </div>
               <div className="space-y-2">
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">Sent!</h3>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Sent!</h3>
                 <p className="text-slate-500 dark:text-slate-400 font-medium">Your message has been delivered to <span className="font-bold text-slate-700 dark:text-slate-200">{messageUser}</span>.</p>
               </div>
               <div className="w-full bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700/50 text-left relative">
-                <span className="absolute -top-2.5 left-4 bg-white dark:bg-slate-900 px-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">What you said</span>
+                <span className="absolute -top-2.5 left-4 bg-white dark:bg-slate-900 px-2 text-[10px] font-bold text-slate-400 dark:text-slate-500  ">What you said</span>
                 <p className="text-sm font-medium text-slate-700 dark:text-slate-300 italic whitespace-pre-wrap">{messageText}</p>
               </div>
               <Button
@@ -894,7 +894,7 @@ function ManagerDashboardInner() {
       <Dialog open={isAllProjectsOpen} onOpenChange={setIsAllProjectsOpen}>
         <DialogContent className="sm:max-w-[425px] md:max-w-[600px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
               <Activity className="mr-2 h-5 w-5 text-orange-600 dark:text-orange-400" />
               All Active Projects
             </DialogTitle>
@@ -912,13 +912,13 @@ function ManagerDashboardInner() {
                         <span className="font-bold text-sm text-slate-900 dark:text-white">
                           {project?.name}
                         </span>
-                        <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", getStatusBadgeStyles(project?.status || 'Active'))}>
+                        <Badge variant="outline" className={cn("text-[10px]  font-bold ", getStatusBadgeStyles(project?.status || 'Active'))}>
                           {project?.status}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-3">
                         <Progress value={project?.progress} className="h-1.5 flex-1 bg-slate-200 dark:bg-slate-800" />
-                        <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 w-8">{project?.progress}%</span>
+                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 w-8">{project?.progress}%</span>
                       </div>
                     </div>
                   </div>
@@ -938,7 +938,7 @@ function ManagerDashboardInner() {
       <Dialog open={isAllBlockersOpen} onOpenChange={setIsAllBlockersOpen}>
         <DialogContent className="sm:max-w-[425px] md:max-w-[600px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
               <AlertTriangle className="mr-2 h-5 w-5 text-rose-600 dark:text-orange-400" />
               All Blockers & Escalations
             </DialogTitle>

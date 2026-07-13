@@ -38,19 +38,19 @@ function MetricCard({ name, data, period, onPeriodChange }: { name: string, data
           <TabsList className="grid w-full grid-cols-3 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
             <TabsTrigger 
               value="Today"
-              className="rounded-lg text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
+              className="rounded-lg text-label data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
             >
               Today
             </TabsTrigger>
             <TabsTrigger 
               value="This Week"
-              className="rounded-lg text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
+              className="rounded-lg text-label data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
             >
               This Week
             </TabsTrigger>
             <TabsTrigger 
               value="This Month"
-              className="rounded-lg text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
+              className="rounded-lg text-label data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 text-slate-600 dark:text-slate-400 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white font-bold transition-all"
             >
               This Month
             </TabsTrigger>
@@ -66,29 +66,29 @@ function MetricCard({ name, data, period, onPeriodChange }: { name: string, data
                 <circle cx="64" cy="64" r="56" fill="transparent" stroke="#f97316" strokeWidth="12" strokeDasharray="351.8" strokeDashoffset={351.8 - (351.8 * score) / 100} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
               </svg>
               <div className="absolute flex flex-col items-center">
-                <span className="text-3xl font-extrabold text-slate-900 dark:text-white">{score}</span>
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Score</span>
+                <span className="text-3xl font-bold text-slate-900 dark:text-white">{score}</span>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500  ">Score</span>
               </div>
             </div>
           </div>
 
           <div className="flex-1 w-full space-y-5">
             <div>
-              <div className="flex justify-between text-xs font-bold mb-2 uppercase tracking-wider">
+              <div className="flex justify-between text-label font-bold mb-2  ">
                 <span className="text-emerald-600 dark:text-emerald-400">Tasks Completed (40%)</span>
                 <span className="text-emerald-700 dark:text-emerald-300">{tasks}/40</span>
               </div>
               <Progress value={(tasks / 40) * 100} className="h-2 [&>div]:bg-emerald-500" />
             </div>
             <div>
-              <div className="flex justify-between text-xs font-bold mb-2 uppercase tracking-wider">
+              <div className="flex justify-between text-label font-bold mb-2  ">
                 <span className="text-orange-600 dark:text-orange-400">Hours Logged (35%)</span>
                 <span className="text-orange-700 dark:text-orange-300">{hours}/35</span>
               </div>
               <Progress value={(hours / 35) * 100} className="h-2 [&>div]:bg-orange-500" />
             </div>
             <div>
-              <div className="flex justify-between text-xs font-bold mb-2 uppercase tracking-wider">
+              <div className="flex justify-between text-label font-bold mb-2  ">
                 <span className="text-amber-600 dark:text-amber-400">Milestones Hit (25%)</span>
                 <span className="text-amber-700 dark:text-amber-300">{miles}/25</span>
               </div>
@@ -144,7 +144,7 @@ export default function Milestones({ session }: { session?: any }) {
       
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Milestones & Contribution</h2>
+        <h2 className="text-2xl font-bold  text-slate-900 dark:text-white">Milestones & Contribution</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Review your performance scores and team contribution metrics.</p>
       </div>
 
@@ -170,7 +170,7 @@ export default function Milestones({ session }: { session?: any }) {
                       <span className={cn("text-slate-500 dark:text-slate-400")}>{project.progress}%</span>
                     </div>
                     <Progress value={project.progress} className={cn("h-3", `[&>div]:${project.color}`)} />
-                    <div className="mt-1 text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500 text-right">
+                    <div className="mt-1 text-[10px]   font-bold text-slate-400 dark:text-slate-500 text-right">
                       {project.status}
                     </div>
                   </div>
@@ -212,7 +212,7 @@ export default function Milestones({ session }: { session?: any }) {
         
         {/* Manager View: All Employee Contributions */}
         <div className="mt-12">
-          <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white mb-6">Team Contributions</h3>
+          <h3 className="text-xl font-bold  text-slate-900 dark:text-white mb-6">Team Contributions</h3>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
             {TEAM.map(member => (
               <MetricCard 
@@ -254,7 +254,7 @@ export default function Milestones({ session }: { session?: any }) {
                   <HelpCircle className="h-5 w-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">How much task completion gets one Milestone?</h4>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                    <p className="text-label text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
                       Every <strong className="text-orange-600 dark:text-orange-400">5 resolved tasks</strong> on your Kanban board triggers <strong className="text-orange-600 dark:text-orange-400">1 Milestone</strong> level-up. Complete tasks to unlock badges and increase your final contribution score!
                     </p>
                   </div>
@@ -268,8 +268,8 @@ export default function Milestones({ session }: { session?: any }) {
                       <ShieldCheck className="h-3 w-3" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Level 1: Milestone Starter</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">Completed 5 tasks. (Unlocked)</p>
+                      <h4 className="text-label font-bold text-slate-800 dark:text-slate-200">Level 1: Milestone Starter</h4>
+                      <p className="text-label text-slate-500 mt-0.5">Completed 5 tasks. (Unlocked)</p>
                     </div>
                   </div>
 
@@ -279,8 +279,8 @@ export default function Milestones({ session }: { session?: any }) {
                       <ShieldCheck className="h-3 w-3" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Level 2: Sprint Runner</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">Completed 10 tasks. (Unlocked)</p>
+                      <h4 className="text-label font-bold text-slate-800 dark:text-slate-200">Level 2: Sprint Runner</h4>
+                      <p className="text-label text-slate-500 mt-0.5">Completed 10 tasks. (Unlocked)</p>
                     </div>
                   </div>
 
@@ -291,10 +291,10 @@ export default function Milestones({ session }: { session?: any }) {
                     </div>
                     <div>
                       <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold text-slate-950 dark:text-white">Level 3: Feature Builder (Active)</h4>
+                        <h4 className="text-label font-bold text-slate-950 dark:text-white">Level 3: Feature Builder (Active)</h4>
                         <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950 px-2 py-0.5 rounded-full border border-orange-100 dark:border-orange-900/30">In Progress</span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5">Requires 15 completed tasks. You are currently at <strong className="text-slate-700 dark:text-slate-300">12 completions</strong> (3 tasks remaining).</p>
+                      <p className="text-label text-slate-500 mt-0.5">Requires 15 completed tasks. You are currently at <strong className="text-slate-700 dark:text-slate-300">12 completions</strong> (3 tasks remaining).</p>
                     </div>
                   </div>
 
@@ -302,8 +302,8 @@ export default function Milestones({ session }: { session?: any }) {
                   <div className="relative">
                     <div className="absolute -left-[25px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800 text-white ring-4 ring-white dark:ring-slate-950" />
                     <div className="opacity-60">
-                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Level 4: Launch Master</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">Requires 20 completed tasks. (Locked)</p>
+                      <h4 className="text-label font-bold text-slate-800 dark:text-slate-200">Level 4: Launch Master</h4>
+                      <p className="text-label text-slate-500 mt-0.5">Requires 20 completed tasks. (Locked)</p>
                     </div>
                   </div>
                 </div>
@@ -330,7 +330,7 @@ export default function Milestones({ session }: { session?: any }) {
                         <span className="text-slate-500 dark:text-slate-400">{project.progress}%</span>
                       </div>
                       <Progress value={project.progress} className={cn("h-3", `[&>div]:${project.color}`)} />
-                      <div className="mt-1 text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500 text-right">
+                      <div className="mt-1 text-[10px]   font-bold text-slate-400 dark:text-slate-500 text-right">
                         {project.status}
                       </div>
                     </div>
@@ -360,7 +360,7 @@ export default function Milestones({ session }: { session?: any }) {
                         <div className={cn("p-2 rounded-lg", ach.color)}>
                           <ach.icon className="h-4 w-4" />
                         </div>
-                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-orange-500 transition-colors">{ach.title}</span>
+                        <span className="text-label font-bold text-slate-800 dark:text-slate-200 group-hover:text-orange-500 transition-colors">{ach.title}</span>
                       </div>
                       <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">{ach.desc}</span>
                     </div>
@@ -397,10 +397,10 @@ export default function Milestones({ session }: { session?: any }) {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="text-xs space-y-1 mt-2">
+                <div className="text-label space-y-1 mt-2">
                   <div className="flex justify-between items-center font-semibold text-slate-600 dark:text-slate-400">
                     <span>Average Contribution:</span>
-                    <span className="font-extrabold text-slate-900 dark:text-white">75%</span>
+                    <span className="font-bold text-slate-900 dark:text-white">75%</span>
                   </div>
                   <div className="flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">
                     <TrendingUp className="h-3.5 w-3.5" />

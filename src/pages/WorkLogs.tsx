@@ -85,8 +85,8 @@ function ActiveSessionWidget({ secondsElapsed, formatTime, currentUser }: Active
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-1 sm:mb-0.5">
-                <h3 className="text-lg sm:text-xl font-black tracking-tight leading-tight">Active Work Session</h3>
-                <span className="flex items-center gap-1 px-2 py-0.5 bg-white/20 border border-white/25 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                <h3 className="text-lg sm:text-xl font-bold  leading-tight">Active Work Session</h3>
+                <span className="flex items-center gap-1 px-2 py-0.5 bg-white/20 border border-white/25 rounded-full text-[10px] font-bold  ">
                   <span className="h-1.5 w-1.5 bg-emerald-300 rounded-full animate-ping" />
                   Live
                 </span>
@@ -97,16 +97,16 @@ function ActiveSessionWidget({ secondsElapsed, formatTime, currentUser }: Active
                   <span className="ml-1.5 text-indigo-200/70 font-normal">· {inProgressTask.project_tag}</span>
                 </p>
               ) : (
-                <p className="text-xs sm:text-sm text-indigo-100/80 font-medium mt-1">Session will be auto-logged on sign out.</p>
+                <p className="text-label sm:text-sm text-indigo-100/80 font-medium mt-1">Session will be auto-logged on sign out.</p>
               )}
             </div>
           </div>
           <div className="shrink-0 bg-black/10 md:bg-transparent rounded-xl md:rounded-none p-4 md:p-0 mt-2 md:mt-0 flex items-center justify-between md:block md:text-right w-full md:w-auto">
-            <p className="text-[10px] sm:text-xs font-bold text-indigo-100 uppercase tracking-widest block md:hidden">Session Time</p>
-            <div className="text-3xl sm:text-4xl md:text-5xl font-black font-mono tracking-wider tabular-nums drop-shadow text-right">
+            <p className="text-[10px] sm:text-label font-bold text-indigo-100   block md:hidden">Session Time</p>
+            <div className="text-3xl sm:text-4xl md:text-5xl font-bold font-mono  tabular-nums drop-shadow text-right">
               {formatTime(secondsElapsed)}
             </div>
-            <p className="text-[10px] font-bold text-indigo-100 uppercase tracking-widest mt-0.5 hidden md:block">Session Time</p>
+            <p className="text-[10px] font-bold text-indigo-100   mt-0.5 hidden md:block">Session Time</p>
           </div>
         </div>
       </div>
@@ -365,7 +365,7 @@ export default function WorkLogs({ session }: { session?: any }) {
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className={cn(
-              "rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0F172A] dark:text-white justify-start hover:bg-[#F1F5F9] dark:hover:bg-slate-800 transition-colors shadow-sm",
+              "rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-label font-bold text-[#0F172A] dark:text-white justify-start hover:bg-[#F1F5F9] dark:hover:bg-slate-800 transition-colors shadow-sm",
               isEmployee ? "w-[140px] h-8" : "w-[160px] h-9"
             )}>
               <CalendarIcon className="mr-2 h-4 w-4 text-[#6366F1]" />
@@ -384,7 +384,7 @@ export default function WorkLogs({ session }: { session?: any }) {
 
         {currentUser.role === 'manager' && (
           <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-            <SelectTrigger className="w-[160px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
+            <SelectTrigger className="w-[160px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-label font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
               <SelectValue placeholder="Employee" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
@@ -396,7 +396,7 @@ export default function WorkLogs({ session }: { session?: any }) {
 
         <Select value={projectFilter} onValueChange={setProjectFilter}>
           <SelectTrigger className={cn(
-            "rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]",
+            "rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-label font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]",
             isEmployee ? "w-[140px] h-8" : "w-[160px] h-9"
           )}>
             <SelectValue placeholder="Project" />
@@ -409,7 +409,7 @@ export default function WorkLogs({ session }: { session?: any }) {
 
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className={cn(
-            "rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]",
+            "rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-label font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]",
             isEmployee ? "w-[120px] h-8" : "w-[140px] h-9"
           )}>
             <SelectValue placeholder="Status" />
@@ -432,7 +432,7 @@ export default function WorkLogs({ session }: { session?: any }) {
               setProjectFilter('All');
               setStatusFilter('All');
             }}
-            className="h-8 text-xs text-[#64748B] hover:text-[#6366F1] font-bold px-2 rounded-xl transition-colors"
+            className="h-8 text-label text-[#64748B] hover:text-[#6366F1] font-bold px-2 rounded-xl transition-colors"
           >
             Clear Filters
           </Button>
@@ -446,7 +446,7 @@ export default function WorkLogs({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-[#0F172A] dark:text-white">Work Logs</h2>
+          <h2 className="text-2xl font-bold  text-[#0F172A] dark:text-white">Work Logs</h2>
           <p className="text-sm text-[#64748B] dark:text-slate-400 mt-1">Manage team timesheets and logged hours efficiently.</p>
         </div>
       </div>
@@ -466,7 +466,7 @@ export default function WorkLogs({ session }: { session?: any }) {
             <h3 className="text-sm font-bold text-[#64748B] dark:text-slate-400 group-hover:text-[#6366F1] transition-colors">{currentUser.role === 'manager' ? "Employee's Total Hours" : 'My Total Hours'}</h3>
             <div className="p-2 bg-[#F1F5F9] dark:bg-slate-800 rounded-lg"><Clock className="h-5 w-5 text-[#6366F1]" /></div>
           </div>
-          <p className="text-4xl font-black text-[#0F172A] dark:text-white">{totalHours.toFixed(1)}h</p>
+          <p className="text-4xl font-bold text-[#0F172A] dark:text-white">{totalHours.toFixed(1)}h</p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-[#E2E8F0] dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
@@ -474,7 +474,7 @@ export default function WorkLogs({ session }: { session?: any }) {
             <h3 className="text-sm font-bold text-[#64748B] dark:text-slate-400">Approved Hours</h3>
             <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg"><CheckCircle2 className="h-5 w-5 text-[#10B981]" /></div>
           </div>
-          <p className="text-4xl font-black text-[#0F172A] dark:text-white">{approvedHours.toFixed(1)}h</p>
+          <p className="text-4xl font-bold text-[#0F172A] dark:text-white">{approvedHours.toFixed(1)}h</p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-[#E2E8F0] dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
@@ -482,7 +482,7 @@ export default function WorkLogs({ session }: { session?: any }) {
             <h3 className="text-sm font-bold text-[#64748B] dark:text-slate-400">Pending Approvals</h3>
             <div className="p-2 bg-amber-50 dark:bg-amber-500/10 rounded-lg"><Timer className="h-5 w-5 text-[#F59E0B]" /></div>
           </div>
-          <p className="text-4xl font-black text-[#0F172A] dark:text-white">{pendingHours.toFixed(1)}h</p>
+          <p className="text-4xl font-bold text-[#0F172A] dark:text-white">{pendingHours.toFixed(1)}h</p>
         </div>
 
         <div 
@@ -495,7 +495,7 @@ export default function WorkLogs({ session }: { session?: any }) {
             </h3>
             <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg"><Users className="h-5 w-5 text-emerald-500" /></div>
           </div>
-          <p className="text-4xl font-black text-[#0F172A] dark:text-white">
+          <p className="text-4xl font-bold text-[#0F172A] dark:text-white">
             {currentUser.role === 'manager' 
               ? activeStaff 
               : (Object.values(activeSessions).filter((s: any) => s.isOnline).length || ONLINE_TEAM_MEMBERS.length)
@@ -514,7 +514,7 @@ export default function WorkLogs({ session }: { session?: any }) {
 
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center tracking-tight">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center ">
               <div className="h-8 w-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mr-3 shadow-inner">
                 <Activity className="h-4 w-4" />
               </div>
@@ -528,11 +528,11 @@ export default function WorkLogs({ session }: { session?: any }) {
           
           {/* Elegant Legend */}
           <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-2xl border border-slate-100 dark:border-slate-700/50 backdrop-blur-sm">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-2 ml-1">Less</span>
+            <span className="text-[10px] font-bold text-slate-400   mr-2 ml-1">Less</span>
             {[0, 2, 5, 8, 10].map((hours, i) => (
               <div key={i} className={cn("w-4 h-4 rounded-md transition-all duration-300", getHeatmapColor(hours))} title={`${hours === 0 ? 0 : hours}+ hours`} />
             ))}
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-2 mr-1">More</span>
+            <span className="text-[10px] font-bold text-slate-400   ml-2 mr-1">More</span>
           </div>
         </div>
 
@@ -547,13 +547,13 @@ export default function WorkLogs({ session }: { session?: any }) {
                   return (
                     <div key={day.toString()} className="flex flex-col items-center justify-center group/day">
                       <span className={cn(
-                        "text-[10px] font-black uppercase tracking-wider mb-1 transition-colors",
+                        "text-[10px] font-bold   mb-1 transition-colors",
                         isToday ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"
                       )}>
                         {format(day, 'EEE')}
                       </span>
                       <span className={cn(
-                        "flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-all",
+                        "flex items-center justify-center w-7 h-7 rounded-full text-label font-bold transition-all",
                         isToday 
                           ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30" 
                           : "text-slate-700 dark:text-slate-300 group-hover/day:bg-slate-100 dark:group-hover/day:bg-slate-800"
@@ -582,7 +582,7 @@ export default function WorkLogs({ session }: { session?: any }) {
                     <div className="w-56 shrink-0 pr-6 flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-sm ring-2 ring-white dark:ring-slate-900 group-hover/row:scale-110 transition-transform",
+                          "w-8 h-8 rounded-full flex items-center justify-center text-label font-bold shadow-sm ring-2 ring-white dark:ring-slate-900 group-hover/row:scale-110 transition-transform",
                           memberData?.color || "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         )}>
                           {memberData?.initials || user.split(' ').map(n => n[0]).join('')}
@@ -592,7 +592,7 @@ export default function WorkLogs({ session }: { session?: any }) {
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs font-black text-slate-400 group-hover/row:text-indigo-500 transition-colors">
+                        <span className="text-label font-bold text-slate-400 group-hover/row:text-indigo-500 transition-colors">
                           {totalWeekHours.toFixed(1)}h
                         </span>
                       </div>
@@ -618,7 +618,7 @@ export default function WorkLogs({ session }: { session?: any }) {
                               "group-hover/cell:scale-[1.15] group-hover/cell:shadow-xl group-hover/cell:z-20"
                             )}>
                               {hours > 0 && (
-                                <span className="text-[10px] font-black opacity-0 group-hover/cell:opacity-100 transition-opacity drop-shadow-md">
+                                <span className="text-[10px] font-bold opacity-0 group-hover/cell:opacity-100 transition-opacity drop-shadow-md">
                                   {hours.toFixed(1)}
                                 </span>
                               )}
@@ -681,10 +681,10 @@ export default function WorkLogs({ session }: { session?: any }) {
                   <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-bold text-[#0F172A] dark:text-white text-base">{log.name}</span>
-                      <div className="flex items-center gap-1 text-xs font-semibold text-[#64748B] bg-[#F1F5F9] dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                      <div className="flex items-center gap-1 text-label font-semibold text-[#64748B] bg-[#F1F5F9] dark:bg-slate-800 px-2 py-0.5 rounded-md">
                         <CalendarIcon className="h-3 w-3" /> {log.date}
                       </div>
-                      <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", getProjectColor(log.project))}>
+                      <Badge variant="outline" className={cn("text-[10px]  font-bold ", getProjectColor(log.project))}>
                         {log.project}
                       </Badge>
                     </div>
@@ -696,13 +696,13 @@ export default function WorkLogs({ session }: { session?: any }) {
 
                 {/* Right side: Badges and Actions */}
                 <div className="flex items-center justify-between md:justify-end gap-4 shrink-0 pl-[64px] md:pl-0 border-t border-[#E2E8F0] dark:border-slate-800 md:border-0 pt-3 md:pt-0">
-                  <Badge variant="outline" className={cn("text-xs font-black tracking-wider px-2.5 py-1", getHoursColor(log.hours))}>
+                  <Badge variant="outline" className={cn("text-label font-bold  px-2.5 py-1", getHoursColor(log.hours))}>
                     <Clock className="h-3 w-3 mr-1.5" /> {log.hours.toFixed(1)}h
                   </Badge>
                   
                   <div className="flex flex-col items-end gap-1.5">
                     <Badge variant="outline" className={cn(
-                      "text-xs font-bold uppercase tracking-wider px-2.5 py-1",
+                      "text-label font-bold   px-2.5 py-1",
                       log.status === 'Approved' ? "bg-emerald-50 text-[#10B981] dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30" :
                       log.status === 'Pending' ? "bg-amber-50 text-[#F59E0B] dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30" :
                       "bg-rose-50 text-rose-600 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30"
@@ -711,7 +711,7 @@ export default function WorkLogs({ session }: { session?: any }) {
                     </Badge>
 
                     {log.source === 'whatsapp' && (
-                      <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 flex items-center gap-1">
+                      <Badge variant="outline" className="text-[10px] font-bold   px-2 py-0.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 flex items-center gap-1">
                         <svg viewBox="0 0 24 24" className="w-3 h-3 fill-current" xmlns="http://www.w3.org/2000/svg">
                           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
                         </svg>
@@ -763,7 +763,7 @@ export default function WorkLogs({ session }: { session?: any }) {
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Team Members</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Currently contributing in the workspace</p>
+                <p className="text-label text-slate-500 dark:text-slate-400 mt-1">Currently contributing in the workspace</p>
               </div>
               <button 
                 onClick={() => setIsActiveMembersModalOpen(false)}
@@ -780,23 +780,23 @@ export default function WorkLogs({ session }: { session?: any }) {
                 <div key={member.id} className={cn("flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-800 transition-all", !isOnline && "opacity-75 grayscale")}>
                   <div className="flex items-center gap-3">
                     <Avatar className={cn("h-9 w-9 border-2 border-white dark:border-slate-900", member.color)}>
-                      <AvatarFallback className="font-bold text-xs">{member.initials}</AvatarFallback>
+                      <AvatarFallback className="font-bold text-label">{member.initials}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
-                      <span className="text-xs text-slate-500 font-medium">{member.role}</span>
+                      <span className="text-label text-slate-500 font-medium">{member.role}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
                     {isOnline ? (
                       <>
                         <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Online</span>
+                        <span className="text-label font-bold text-emerald-600 dark:text-emerald-400">Online</span>
                       </>
                     ) : (
                       <>
                         <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600" />
-                        <span className="text-xs font-bold text-slate-500">Offline</span>
+                        <span className="text-label font-bold text-slate-500">Offline</span>
                       </>
                     )}
                   </div>

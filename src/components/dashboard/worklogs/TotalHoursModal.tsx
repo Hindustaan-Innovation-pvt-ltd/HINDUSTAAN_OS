@@ -23,7 +23,7 @@ function StatCard({ label, value, sub, icon:Icon, from, to, border }:{ label:str
   return (
     <div className={`rounded-[28px] border ${border} bg-gradient-to-br ${from} ${to} p-7 flex flex-col justify-between min-h-[190px]`}>
       <div className="flex items-center justify-between">
-        <p className="text-sm font-bold uppercase tracking-widest text-white/60">{label}</p>
+        <p className="text-sm font-bold   text-white/60">{label}</p>
         <div className="h-10 w-10 rounded-2xl bg-white/15 flex items-center justify-center">
           <Icon className="h-5 w-5 text-white/80" />
         </div>
@@ -39,7 +39,7 @@ function StatCard({ label, value, sub, icon:Icon, from, to, border }:{ label:str
 function Section({ title, icon:Icon, color, children }:{ title:string; icon:any; color:string; children:React.ReactNode }) {
   return (
     <div>
-      <h3 className={`text-xs font-bold uppercase tracking-[0.15em] ${color} flex items-center gap-2 mb-5`}>
+      <h3 className={`text-label font-bold  tracking-[0.15em] ${color} flex items-center gap-2 mb-5`}>
         <Icon className="h-4 w-4" />{title}
       </h3>
       {children}
@@ -245,7 +245,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                                 <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-violet-500/40 to-indigo-500/40 flex items-center justify-center text-white font-bold text-sm">{name.split(' ').map((n:string)=>n[0]).join('')}</div>
                                 <span className="font-semibold text-white text-base">{name}</span>
                               </div>
-                              <span className="font-black text-amber-400 text-lg">{data.hours.toFixed(1)}h</span>
+                              <span className="font-bold text-amber-400 text-lg">{data.hours.toFixed(1)}h</span>
                             </div>
                             <div className="h-1.5 rounded-full bg-white/10 overflow-hidden ml-12">
                               <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all" style={{width:`${pct}%`}}/>
@@ -262,7 +262,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
               <div className="grid xl:grid-cols-3 gap-8">
                 {/* Hours Trend */}
                 <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-8 min-h-[420px]">
-                  <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-indigo-400 flex items-center gap-2 mb-6"><Activity className="h-4 w-4"/>Team Hours Trend</h4>
+                  <h4 className="text-label font-bold  tracking-[0.15em] text-indigo-400 flex items-center gap-2 mb-6"><Activity className="h-4 w-4"/>Team Hours Trend</h4>
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={trendData}>
@@ -277,7 +277,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
 
                 {/* Project Distribution Pie */}
                 <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-8 min-h-[420px]">
-                  <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-violet-400 flex items-center gap-2 mb-6"><FolderKanban className="h-4 w-4"/>Project Distribution</h4>
+                  <h4 className="text-label font-bold  tracking-[0.15em] text-violet-400 flex items-center gap-2 mb-6"><FolderKanban className="h-4 w-4"/>Project Distribution</h4>
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -285,7 +285,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                           {pieData.map((_,i)=><Cell key={i} fill={C[i%C.length]}/>)}
                         </Pie>
                         <Tooltip contentStyle={TT}/>
-                        <Legend iconType="circle" iconSize={10} formatter={(v)=><span className="text-xs text-slate-400">{v}</span>}/>
+                        <Legend iconType="circle" iconSize={10} formatter={(v)=><span className="text-label text-slate-400">{v}</span>}/>
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -293,7 +293,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
 
                 {/* Productivity Ranking */}
                 <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-8 min-h-[420px]">
-                  <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-400 flex items-center gap-2 mb-6"><Users className="h-4 w-4"/>Productivity Ranking</h4>
+                  <h4 className="text-label font-bold  tracking-[0.15em] text-emerald-400 flex items-center gap-2 mb-6"><Users className="h-4 w-4"/>Productivity Ranking</h4>
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={rankData} layout="vertical" margin={{left:8,right:24,top:4,bottom:4}}>
@@ -310,12 +310,12 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
               {/* ROW 3: Table */}
               <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] overflow-hidden">
                 <div className="px-8 py-6 border-b border-white/[0.07]">
-                  <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-slate-400">Employee Productivity Table</h3>
+                  <h3 className="text-label font-bold  tracking-[0.15em] text-slate-400">Employee Productivity Table</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead className="border-b border-white/[0.05]">
-                      <tr>{['Employee','Projects','Tasks','Total Logged','Pending'].map(h=><th key={h} className="px-8 py-5 text-xs font-bold uppercase tracking-wider text-slate-500">{h}</th>)}</tr>
+                      <tr>{['Employee','Projects','Tasks','Total Logged','Pending'].map(h=><th key={h} className="px-8 py-5 text-label font-bold   text-slate-500">{h}</th>)}</tr>
                     </thead>
                     <tbody>
                       {employees.map(([name,data],i)=>(
@@ -345,7 +345,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-7">
                 {/* Projects */}
                 <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-7">
-                  <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-violet-400 flex items-center gap-2 mb-5"><FolderKanban className="h-4 w-4"/>Projects</h4>
+                  <h4 className="text-label font-bold  tracking-[0.15em] text-violet-400 flex items-center gap-2 mb-5"><FolderKanban className="h-4 w-4"/>Projects</h4>
                   <div className="space-y-4">
                     {projectsArr.map(([name,d],i)=>{
                       const pct = total>0?Math.round((d.hours/total)*100):0;
@@ -355,7 +355,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                             <span className="font-bold text-white">{name}</span>
                             <Badge className="bg-violet-500/20 text-violet-300 border-0 font-bold">{d.hours.toFixed(1)}h</Badge>
                           </div>
-                          <p className="text-xs text-slate-400 mb-2">{d.tasks} tasks</p>
+                          <p className="text-label text-slate-400 mb-2">{d.tasks} tasks</p>
                           <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
                             <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500" style={{width:`${pct}%`}}/>
                           </div>
@@ -367,7 +367,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
 
                 {/* Pie */}
                 <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-7">
-                  <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-400 flex items-center gap-2 mb-5"><FolderKanban className="h-4 w-4"/>Hours Per Project</h4>
+                  <h4 className="text-label font-bold  tracking-[0.15em] text-emerald-400 flex items-center gap-2 mb-5"><FolderKanban className="h-4 w-4"/>Hours Per Project</h4>
                   <div className="h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -375,7 +375,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                           {empPie.map((_,i)=><Cell key={i} fill={C[i%C.length]}/>)}
                         </Pie>
                         <Tooltip contentStyle={TT}/>
-                        <Legend iconType="circle" iconSize={8} formatter={(v)=><span className="text-xs text-slate-400">{v}</span>}/>
+                        <Legend iconType="circle" iconSize={8} formatter={(v)=><span className="text-label text-slate-400">{v}</span>}/>
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -383,7 +383,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
 
                 {/* Bar */}
                 <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-7">
-                  <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-blue-400 flex items-center gap-2 mb-5"><Activity className="h-4 w-4"/>Daily Logged Hours</h4>
+                  <h4 className="text-label font-bold  tracking-[0.15em] text-blue-400 flex items-center gap-2 mb-5"><Activity className="h-4 w-4"/>Daily Logged Hours</h4>
                   <div className="h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={empBar} margin={{left:0,right:8,top:4,bottom:0}}>
@@ -399,20 +399,20 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
 
               {/* Timeline */}
               <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-8">
-                <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-indigo-400 flex items-center gap-2 mb-6"><Calendar className="h-4 w-4"/>Task History Timeline</h4>
+                <h4 className="text-label font-bold  tracking-[0.15em] text-indigo-400 flex items-center gap-2 mb-6"><Calendar className="h-4 w-4"/>Task History Timeline</h4>
                 <div className="space-y-6">
                   {timelineMap.map(([date,items],i)=>(
                     <div key={i} className="relative pl-6 border-l-2 border-violet-500/30 pb-2">
                       <div className="absolute w-3 h-3 bg-violet-500 rounded-full -left-[7px] top-1"/>
-                      <h5 className="text-xs font-bold text-slate-400 mb-3">{date}</h5>
+                      <h5 className="text-label font-bold text-slate-400 mb-3">{date}</h5>
                       <div className="grid sm:grid-cols-2 gap-3">
                         {items.map(item=>(
                           <div key={item.id} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] px-5 py-4 flex justify-between items-start gap-3">
                             <div className="min-w-0">
                               <p className="text-sm font-semibold text-slate-200 leading-snug truncate">{item.task}</p>
-                              <p className="text-xs text-slate-500 mt-1">{item.project}</p>
+                              <p className="text-label text-slate-500 mt-1">{item.project}</p>
                             </div>
-                            <Badge className="bg-violet-500/15 text-violet-300 border-violet-500/20 font-bold shrink-0 text-xs">{item.hours}h</Badge>
+                            <Badge className="bg-violet-500/15 text-violet-300 border-violet-500/20 font-bold shrink-0 text-label">{item.hours}h</Badge>
                           </div>
                         ))}
                       </div>

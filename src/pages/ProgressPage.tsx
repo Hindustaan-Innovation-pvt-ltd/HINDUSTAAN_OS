@@ -30,7 +30,7 @@ export default function ProgressPage({ session }: { session?: any }) {
     <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
       
       <div className="mb-8">
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Global Progress</h2>
+        <h2 className="text-2xl font-bold  text-slate-900 dark:text-white">Global Progress</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">High-level view of project velocity and milestones.</p>
       </div>
 
@@ -52,7 +52,7 @@ export default function ProgressPage({ session }: { session?: any }) {
                 <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden shadow-inner">
                   <div className={cn("h-full rounded-full transition-all duration-1000", project.color)} style={{ width: `${project.progress}%` }}></div>
                 </div>
-                <div className="mt-1 text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500 text-right">
+                <div className="mt-1 text-[10px]   font-bold text-slate-400 dark:text-slate-500 text-right">
                   {project.status}
                 </div>
               </div>

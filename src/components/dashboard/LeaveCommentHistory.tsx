@@ -42,7 +42,7 @@ export function LeaveCommentHistory({
 
   return (
     <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-      <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4 flex items-center">
+      <h4 className="text-label font-bold   text-slate-500 dark:text-slate-400 mb-4 flex items-center">
         <MessageSquare className="h-3.5 w-3.5 mr-1.5" /> 
         {isManager ? "Manager Comments History" : "Manager Feedback"}
       </h4>
@@ -61,7 +61,7 @@ export function LeaveCommentHistory({
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-sm text-slate-900 dark:text-white">{comment.managerName}</span>
                   <span className="text-slate-300 dark:text-slate-600">•</span>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center">
+                  <span className="text-[10px] font-bold text-slate-500   flex items-center">
                     <Clock className="h-3 w-3 mr-1" />
                     {new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })},{' '}
                     {new Date(comment.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
@@ -99,14 +99,14 @@ export function LeaveCommentHistory({
                     className="min-h-[80px] text-sm bg-white dark:bg-slate-950 border-blue-200 dark:border-blue-900/50 focus:ring-blue-500/30"
                   />
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} className="h-7 text-xs font-bold">Cancel</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} className="h-7 text-label font-bold">Cancel</Button>
                     <Button 
                       size="sm" 
                       onClick={() => {
                         onEditComment?.(comment.id, editText);
                         setEditingId(null);
                       }}
-                      className="h-7 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white"
+                      className="h-7 text-label font-bold bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       <Check className="h-3 w-3 mr-1" /> Save
                     </Button>

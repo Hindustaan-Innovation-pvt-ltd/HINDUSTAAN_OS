@@ -361,15 +361,15 @@ export default function Settings({ session }: { session: any }) {
                 <h3 className="text-lg font-bold mb-4 flex items-center"><Clock className="h-5 w-5 mr-2"/> Standup Configuration</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <p className="text-violet-100 text-xs font-semibold uppercase">Reminder</p>
+                    <p className="text-violet-100 text-label font-semibold ">Reminder</p>
                     <p className="text-xl font-bold">{standupSettings.reminderEnabled ? standupSettings.reminderTime : 'Off'}</p>
                   </div>
                   <div>
-                    <p className="text-violet-100 text-xs font-semibold uppercase">Deadline</p>
+                    <p className="text-violet-100 text-label font-semibold ">Deadline</p>
                     <p className="text-xl font-bold">{standupSettings.deadline}</p>
                   </div>
                   <div>
-                    <p className="text-violet-100 text-xs font-semibold uppercase">Notifications</p>
+                    <p className="text-violet-100 text-label font-semibold ">Notifications</p>
                     <p className="text-sm font-bold mt-1 leading-tight">
                       {standupSettings.emailReminder && standupSettings.browserNotification ? 'Email + Browser' : 
                        standupSettings.emailReminder ? 'Email Only' : 
@@ -386,14 +386,14 @@ export default function Settings({ session }: { session: any }) {
                 
                 {/* Reminders & Timings */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Timings & Alerts</h3>
+                  <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400  ">Timings & Alerts</h3>
                   
                   <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
                     <div>
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white">Daily Standup Reminder</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">Receive an alert to submit your standup.</p>
+                      <p className="text-label text-slate-500 mt-0.5">Receive an alert to submit your standup.</p>
                       {standupSettings.reminderEnabled && (
-                        <Badge variant="outline" className="mt-2 text-xs border-violet-200 text-violet-700 bg-violet-50 dark:border-violet-900 dark:text-violet-300 dark:bg-violet-900/20">
+                        <Badge variant="outline" className="mt-2 text-label border-violet-200 text-violet-700 bg-violet-50 dark:border-violet-900 dark:text-violet-300 dark:bg-violet-900/20">
                           Next reminder will be sent at {standupSettings.reminderTime}
                         </Badge>
                       )}
@@ -421,12 +421,12 @@ export default function Settings({ session }: { session: any }) {
 
                 {/* Notifications & Automation */}
                 <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
-                  <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-4">Notifications</h3>
+                  <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400   mb-4">Notifications</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
                       <div>
                         <h4 className="text-sm font-bold text-slate-900 dark:text-white">Email Reminder</h4>
-                        <p className="text-xs text-slate-500 mt-0.5">{standupSettings.emailReminder ? 'Email reminders enabled.' : 'Receive an email prompting your standup.'}</p>
+                        <p className="text-label text-slate-500 mt-0.5">{standupSettings.emailReminder ? 'Email reminders enabled.' : 'Receive an email prompting your standup.'}</p>
                       </div>
                       <Switch checked={standupSettings.emailReminder} onCheckedChange={() => handleStandupToggle('emailReminder')} />
                     </div>
@@ -434,11 +434,11 @@ export default function Settings({ session }: { session: any }) {
                     <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
                       <div>
                         <h4 className="text-sm font-bold text-slate-900 dark:text-white">Browser Notification</h4>
-                        <p className="text-xs text-slate-500 mt-0.5">Status: <span className="font-semibold text-slate-700 dark:text-slate-300 capitalize">{notificationState === 'default' ? 'Not Requested' : notificationState}</span></p>
+                        <p className="text-label text-slate-500 mt-0.5">Status: <span className="font-semibold text-slate-700 dark:text-slate-300 capitalize">{notificationState === 'default' ? 'Not Requested' : notificationState}</span></p>
                       </div>
                       <div className="flex items-center gap-2">
                         {notificationState !== 'granted' && (
-                          <Button variant="outline" size="sm" onClick={requestNotificationPermission} className="h-8 text-xs font-semibold">Request Permission</Button>
+                          <Button variant="outline" size="sm" onClick={requestNotificationPermission} className="h-8 text-label font-semibold">Request Permission</Button>
                         )}
                         <Switch checked={standupSettings.browserNotification} onCheckedChange={() => {
                           if (notificationState === 'granted') {
@@ -454,11 +454,11 @@ export default function Settings({ session }: { session: any }) {
 
                 {role === 'manager' && (
                   <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
-                    <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4">Manager Access</h3>
+                    <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400   mb-4">Manager Access</h3>
                     <div className="p-4 flex items-center justify-between rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30">
                       <div>
                         <p className="text-sm font-bold text-blue-900 dark:text-blue-100">Apply to Entire Team</p>
-                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">Force these format and deadline configurations as default.</p>
+                        <p className="text-label text-blue-700 dark:text-blue-300 mt-0.5">Force these format and deadline configurations as default.</p>
                       </div>
                       <Switch className="data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-700 [&>span]:bg-white" />
                     </div>
@@ -486,7 +486,7 @@ export default function Settings({ session }: { session: any }) {
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-lg font-bold">Change Password</CardTitle>
-                <CardDescription className="font-semibold text-xs">Ensure your account is using a long, random password.</CardDescription>
+                <CardDescription className="font-semibold text-label">Ensure your account is using a long, random password.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-1.5 max-w-md relative">
@@ -509,13 +509,13 @@ export default function Settings({ session }: { session: any }) {
                   {newPassword && (
                     <div className="pt-1 space-y-1">
                       <div className="flex items-center justify-between">
-                        <div className="text-[10px] font-bold text-slate-500 uppercase">Strength</div>
-                        <div className={`text-[10px] font-bold uppercase ${pwdStrength.color.replace('bg-', 'text-')}`}>{pwdStrength.label}</div>
+                        <div className="text-[10px] font-bold text-slate-500 ">Strength</div>
+                        <div className={`text-[10px] font-bold  ${pwdStrength.color.replace('bg-', 'text-')}`}>{pwdStrength.label}</div>
                       </div>
                       <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div className={`h-full transition-all duration-300 ${pwdStrength.color}`} style={{ width: pwdStrength.width }}></div>
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">Min 8 chars, 1 uppercase, 1 lowercase, 1 number</div>
+                      <div className="text-label text-slate-500 dark:text-slate-400">Min 8 chars, 1 , 1 lowercase, 1 number</div>
                     </div>
                   )}
                 </div>
@@ -542,7 +542,7 @@ export default function Settings({ session }: { session: any }) {
                       <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">Two-Factor Authentication</h3>
                       {twoFactorEnabled && <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400">2FA Enabled</Badge>}
                     </div>
-                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Add an extra layer of security to your account.</p>
+                    <p className="text-label font-semibold text-slate-500 dark:text-slate-400">Add an extra layer of security to your account.</p>
                   </div>
                   <Switch checked={twoFactorEnabled} onCheckedChange={(checked) => {
                     if (checked) setTwoFactorModalOpen(true);
@@ -559,7 +559,7 @@ export default function Settings({ session }: { session: any }) {
                           {s.device.includes('PC') || s.device.includes('Mac') ? <Laptop className={cn("h-5 w-5", s.current ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400")} /> : <Smartphone className={cn("h-5 w-5", s.current ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400")} />}
                           <div>
                             <p className="text-sm font-bold text-slate-900 dark:text-white">{s.device} • {s.browser}</p>
-                            <p className="text-xs font-medium text-slate-500">{s.location} • {s.date}</p>
+                            <p className="text-label font-medium text-slate-500">{s.location} • {s.date}</p>
                           </div>
                         </div>
                         {s.current ? (
@@ -586,13 +586,13 @@ export default function Settings({ session }: { session: any }) {
                     <QrCode className="w-32 h-32 text-slate-900" />
                   </div>
                   <div className="w-full space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center block">Secret Key</label>
-                    <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-lg text-center font-mono text-sm tracking-widest text-slate-900 dark:text-white select-all">
+                    <label className="text-label font-bold text-slate-500   text-center block">Secret Key</label>
+                    <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-lg text-center font-mono text-sm  text-slate-900 dark:text-white select-all">
                       PRJ-OS-4K8D-92JS-7HF2
                     </div>
                   </div>
                   <div className="w-full space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center block">Enter 6-digit Code</label>
+                    <label className="text-label font-bold text-slate-500   text-center block">Enter 6-digit Code</label>
                     <Input type="text" maxLength={6} placeholder="123456" value={otpValue} onChange={e => setOtpValue(e.target.value.replace(/\D/g, ''))} className="text-center tracking-[1em] font-mono text-lg rounded-xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800" />
                   </div>
                 </div>
@@ -644,28 +644,28 @@ export default function Settings({ session }: { session: any }) {
                 <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">Task Assigned</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">When a new task is assigned to you.</p>
+                    <p className="text-label font-medium text-slate-500 dark:text-slate-400 mt-0.5">When a new task is assigned to you.</p>
                   </div>
                   <Switch checked={toggles.taskAssigned} onCheckedChange={() => handleToggle('taskAssigned')} />
                 </div>
                 <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">Deadline Reminder</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">24 hours before a task is due.</p>
+                    <p className="text-label font-medium text-slate-500 dark:text-slate-400 mt-0.5">24 hours before a task is due.</p>
                   </div>
                   <Switch checked={toggles.deadlineReminder} onCheckedChange={() => handleToggle('deadlineReminder')} />
                 </div>
                 <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">Standup Reminder</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Daily reminder to submit your standup.</p>
+                    <p className="text-label font-medium text-slate-500 dark:text-slate-400 mt-0.5">Daily reminder to submit your standup.</p>
                   </div>
                   <Switch checked={toggles.standupReminder} onCheckedChange={() => handleToggle('standupReminder')} />
                 </div>
                 <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">Project Updates</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">When milestones are reached.</p>
+                    <p className="text-label font-medium text-slate-500 dark:text-slate-400 mt-0.5">When milestones are reached.</p>
                   </div>
                   <Switch checked={toggles.projectUpdates} onCheckedChange={() => handleToggle('projectUpdates')} />
                 </div>
@@ -678,14 +678,14 @@ export default function Settings({ session }: { session: any }) {
                 <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">Email Notifications</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Receive digests and critical alerts via email.</p>
+                    <p className="text-label font-medium text-slate-500 dark:text-slate-400 mt-0.5">Receive digests and critical alerts via email.</p>
                   </div>
                   <Switch checked={toggles.emailNotif} onCheckedChange={() => handleToggle('emailNotif')} />
                 </div>
                 <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">Push Notifications</h4>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Browser notifications for real-time updates.</p>
+                    <p className="text-label font-medium text-slate-500 dark:text-slate-400 mt-0.5">Browser notifications for real-time updates.</p>
                   </div>
                   <Switch checked={toggles.pushNotif} onCheckedChange={() => handleToggle('pushNotif')} />
                 </div>
@@ -753,7 +753,7 @@ export default function Settings({ session }: { session: any }) {
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">Compact Mode</h3>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Reduce spacing to fit more content on screen.</p>
+                    <p className="text-label font-medium text-slate-500 dark:text-slate-400 mt-0.5">Reduce spacing to fit more content on screen.</p>
                   </div>
                   <Switch checked={toggles.compactMode} onCheckedChange={() => handleToggle('compactMode')} />
                 </div>
@@ -780,7 +780,7 @@ export default function Settings({ session }: { session: any }) {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">Storage Used</h3>
-                    <span className="text-xs font-bold text-slate-500">{storageUsed.toFixed(1)} MB / 500 MB</span>
+                    <span className="text-label font-bold text-slate-500">{storageUsed.toFixed(1)} MB / 500 MB</span>
                   </div>
                   <Progress value={(storageUsed / 500) * 100} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
                   <p className="text-[10px] font-semibold text-slate-500 mt-2">Cache size includes local drafts and offline data.</p>
@@ -792,7 +792,7 @@ export default function Settings({ session }: { session: any }) {
 
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Export Data</h3>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-4">Download a copy of your work logs, tasks, and standups.</p>
+                  <p className="text-label font-medium text-slate-500 dark:text-slate-400 mb-4">Download a copy of your work logs, tasks, and standups.</p>
                   <Button onClick={handleDownloadPDF} className="rounded-xl bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold">
                     <Download className="mr-2 h-4 w-4" /> Download Reports (PDF)
                   </Button>
@@ -919,7 +919,7 @@ export default function Settings({ session }: { session: any }) {
       {!activeTab ? (
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Settings Overview</h1>
+            <h1 className="text-3xl font-bold  text-slate-900 dark:text-white">Settings Overview</h1>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">Manage your account preferences and application configuration.</p>
           </div>
           

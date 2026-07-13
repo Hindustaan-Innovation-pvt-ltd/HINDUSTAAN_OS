@@ -111,7 +111,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
         {/* Left Section - Branding (Hidden on Mobile) */}
         <div className="hidden lg:flex flex-col justify-center w-[45%] xl:w-[50%] p-12 xl:p-24 border-r border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-sm z-10">
           <div className="max-w-xl">
-            <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 whitespace-nowrap">
+            <h1 className="text-4xl xl:text-5xl font-bold  text-slate-900 dark:text-white mb-6 whitespace-nowrap">
               Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-green-600">Project OS</span>
             </h1>
             
@@ -147,7 +147,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
               <BrandLogo variant="auth" />
             </div>
             <div className="mt-0.5 flex flex-col items-center">
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+              <p className="text-label font-bold text-slate-500 dark:text-slate-400  ">
                 Create Account
               </p>
             </div>
@@ -156,7 +156,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-1.5 mt-1">
             {/* Full Name */}
             <div className="space-y-0.5">
-              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Full Name</label>
+              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400   mb-0.5">Full Name</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                   <User className="h-4 w-4" />
@@ -173,7 +173,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
 
             {/* Email Address */}
             <div className="space-y-0.5">
-              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Email Address</label>
+              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400   mb-0.5">Email Address</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                   <Mail className="h-4 w-4" />
@@ -191,7 +191,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
             <div className="grid grid-cols-2 gap-2">
                 {/* Role */}
                 <div className="space-y-0.5">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Role</label>
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400   mb-0.5">Role</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors z-10">
                     <Briefcase className="h-4 w-4" />
@@ -210,7 +210,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
 
                 {/* Department */}
                 <div className="space-y-0.5">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Department</label>
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400   mb-0.5">Department</label>
                 <div className="relative group">
                     <ProjectSelect 
                       value={selectedDepartment}
@@ -231,7 +231,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
             {/* Dynamic Designation for Employee */}
             {selectedRole === 'employee' && (
               <div className="space-y-0.5">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Designation / Specialization</label>
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400   mb-0.5">Designation / Specialization</label>
                 <Controller
                   name="designation"
                   control={control}
@@ -254,7 +254,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
             )}
 
             <div className="space-y-0.5">
-              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Phone</label>
+              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400   mb-0.5">Phone</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                   <Phone className="h-4 w-4" />
@@ -271,7 +271,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {/* Password */}
                 <div className="space-y-0.5">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Password</label>
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400   mb-0.5">Password</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                     <KeyRound className="h-4 w-4" />
@@ -299,7 +299,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
 
                 {/* Confirm Password */}
                 <div className="space-y-0.5">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Confirm Password</label>
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400   mb-0.5">Confirm Password</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                     <KeyRound className="h-4 w-4" />
@@ -335,7 +335,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                   {...register("termsAccepted")}
                   className="w-3.5 h-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-900"
                 />
-                <label htmlFor="terms" className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                <label htmlFor="terms" className="text-label font-medium text-slate-600 dark:text-slate-400">
                   I accept the <span onClick={() => setShowTerms(true)} className="text-orange-600 hover:underline cursor-pointer">Terms & Conditions</span>
                 </label>
               </div>
@@ -364,7 +364,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
               <button 
                 type="button" 
                 onClick={() => onNavigateToLogin()}
-                className="text-[13px] font-extrabold text-orange-600 hover:text-orange-700 hover:underline transition-all ml-1"
+                className="text-[13px] font-bold text-orange-600 hover:text-orange-700 hover:underline transition-all ml-1"
               >
                 Login
               </button>

@@ -55,7 +55,7 @@ export function LeaveCalendar({ leaves, selectedDate, onSelectDate }: LeaveCalen
     <TooltipProvider delayDuration={100}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div className="flex flex-col">
-          <h3 className="text-xl font-black text-slate-900 dark:text-white">Employee's Leave Calendar</h3>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white">Employee's Leave Calendar</h3>
           <span className="text-slate-900 dark:text-slate-100 font-semibold text-lg mt-1">
             {format(calendarMonth, 'MMMM yyyy')}
           </span>
@@ -164,10 +164,10 @@ export function LeaveCalendar({ leaves, selectedDate, onSelectDate }: LeaveCalen
                       </p>
                       <div className="space-y-1.5">
                         {leavesOnDate.map((leave, idx) => (
-                          <div key={idx} className="flex items-start justify-between gap-4 text-xs">
+                          <div key={idx} className="flex items-start justify-between gap-4 text-label">
                             <span className="font-semibold truncate max-w-[120px]">{leave.employee}</span>
                             <span className={cn(
-                              "text-[9px] uppercase px-1 py-0.5 rounded font-black shrink-0",
+                              "text-[9px]  px-1 py-0.5 rounded font-bold shrink-0",
                               leave.status === 'Approved'
                                 ? "bg-emerald-500/20 text-emerald-500"
                                 : "bg-amber-500/20 text-amber-500"

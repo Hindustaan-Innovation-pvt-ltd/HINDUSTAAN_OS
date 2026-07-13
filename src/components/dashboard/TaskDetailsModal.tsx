@@ -144,10 +144,10 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                   type="text" 
                   value={editedTask.project_tag}
                   onChange={(e) => handleUpdateField('project_tag', e.target.value)}
-                  className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-transparent border-b border-dashed border-slate-300 dark:border-slate-600 focus:border-orange-500 focus:outline-none transition-colors pb-0.5"
+                  className="text-label font-bold text-slate-500 dark:text-slate-400   bg-transparent border-b border-dashed border-slate-300 dark:border-slate-600 focus:border-orange-500 focus:outline-none transition-colors pb-0.5"
                 />
               ) : (
-                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{editedTask.project_tag}</span>
+                <span className="text-label font-bold text-slate-500 dark:text-slate-400  ">{editedTask.project_tag}</span>
               )}
             </div>
             
@@ -156,11 +156,11 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                 type="text" 
                 value={editedTask.title}
                 onChange={(e) => handleUpdateField('title', e.target.value)}
-                className="text-2xl font-extrabold text-slate-900 dark:text-white bg-transparent outline-none focus:ring-2 focus:ring-orange-500/20 rounded-lg px-2 -ml-2 py-1 transition-all"
+                className="text-2xl font-bold text-slate-900 dark:text-white bg-transparent outline-none focus:ring-2 focus:ring-orange-500/20 rounded-lg px-2 -ml-2 py-1 transition-all"
                 placeholder="Task Title..."
               />
             ) : (
-              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white py-1">{editedTask.title}</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white py-1">{editedTask.title}</h2>
             )}
           </div>
         </DialogHeader>
@@ -174,7 +174,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
             
             {/* Priority */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
+              <label className="text-label font-bold text-slate-400 dark:text-slate-500   flex items-center">
                 <Clock className="h-3.5 w-3.5 mr-1.5" /> Priority Level
               </label>
               {isManager ? (
@@ -205,11 +205,11 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
             {/* Assignee */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
+              <label className="text-label font-bold text-slate-400 dark:text-slate-500   flex items-center">
                 <User className="h-3.5 w-3.5 mr-1.5" /> Assigned Owner
               </label>
               <div className="flex items-center space-x-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-500/20 text-xs font-bold text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-500/20 text-label font-bold text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20">
                   {getInitials(editedTask.assignee_name)}
                 </div>
                 {isManager ? (
@@ -237,7 +237,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
             {/* Due Date */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
+              <label className="text-label font-bold text-slate-400 dark:text-slate-500   flex items-center">
                 <Calendar className="h-3.5 w-3.5 mr-1.5" /> Target Deadline
               </label>
               {isManager ? (
@@ -256,7 +256,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
             {/* Status */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
+              <label className="text-label font-bold text-slate-400 dark:text-slate-500   flex items-center">
                 <Activity className="h-3.5 w-3.5 mr-1.5" /> Current Status
               </label>
               {isManager ? (
@@ -285,7 +285,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Detailed Context</label>
+            <label className="block text-label font-bold text-slate-400 dark:text-slate-500   mb-2">Detailed Context</label>
             {isManager ? (
               <textarea 
                 value={editedTask.description}
@@ -304,7 +304,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
           {!isManager && (currentUser.id === editedTask.assignee_id || currentUser.name === editedTask.assignee_name || (currentUser.name.toLowerCase().includes('tanvy') && editedTask.assignee_name.toLowerCase().includes('tanvy'))) && (
             <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-xl p-4 mt-2">
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Quick Action</span>
+                <span className="text-label font-bold text-slate-400 dark:text-slate-500  ">Quick Action</span>
                 <span className="text-sm font-bold text-slate-700 dark:text-slate-300 mt-0.5">Update task status automatically</span>
               </div>
               
@@ -353,7 +353,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                   
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center space-x-2">
-                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{comment.author_name}</span>
+                      <span className="text-label font-bold text-slate-900 dark:text-slate-100">{comment.author_name}</span>
                       <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">{comment.timestamp}</span>
                     </div>
                     {comment.author_name === currentUser.name && editingCommentId !== comment.id && (
@@ -362,7 +362,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                           setEditingCommentId(comment.id);
                           setEditingText(comment.text);
                         }}
-                        className="text-[10px] font-bold text-slate-400 hover:text-orange-500 transition-colors uppercase tracking-wider cursor-pointer"
+                        className="text-[10px] font-bold text-slate-400 hover:text-orange-500 transition-colors   cursor-pointer"
                       >
                         Edit
                       </button>
@@ -384,7 +384,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                             setEditingCommentId(null);
                             setEditingText('');
                           }}
-                          className="h-8 rounded-lg text-xs font-bold"
+                          className="h-8 rounded-lg text-label font-bold"
                         >
                           Cancel
                         </Button>
@@ -392,7 +392,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                           size="sm"
                           onClick={() => handleSaveEditComment(comment.id)}
                           disabled={!editingText.trim()}
-                          className="h-8 rounded-lg text-xs font-bold"
+                          className="h-8 rounded-lg text-label font-bold"
                         >
                           Save
                         </Button>
@@ -409,7 +409,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
             {/* Comment Input */}
             <form onSubmit={submitComment} className="flex gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-label font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                 {getInitials(currentUser.name || 'User')}
               </div>
               <div className="flex-1 flex bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/10 transition-all p-1 overflow-hidden shadow-sm">

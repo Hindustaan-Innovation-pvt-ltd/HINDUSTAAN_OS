@@ -194,19 +194,19 @@ export default function TeamMembers() {
               <form onSubmit={handleInviteSubmit} className="space-y-6 pt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500">Manager</label>
+                    <label className="text-label font-bold text-slate-500">Manager</label>
                     <Input required defaultValue={currentUser?.role === 'manager' ? currentUser.name : "Aakash Gupta"} className="rounded-xl" />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Last Name</label>
+                    <label className="text-label font-bold text-slate-700 dark:text-slate-300  ">Last Name</label>
                     <Input required placeholder="E.g. Gupta" className="rounded-xl" />
                   </div>
                   <div className="space-y-1.5 col-span-2">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Personal Email</label>
+                    <label className="text-label font-bold text-slate-700 dark:text-slate-300  ">Personal Email</label>
                     <Input required type="email" placeholder="aakash@example.com" className="rounded-xl" />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Department</label>
+                    <label className="text-label font-bold text-slate-700 dark:text-slate-300  ">Department</label>
                     <Select defaultValue="engineering">
                       <SelectTrigger className="rounded-xl">
                         <SelectValue />
@@ -218,7 +218,7 @@ export default function TeamMembers() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Role</label>
+                    <label className="text-label font-bold text-slate-700 dark:text-slate-300  ">Role</label>
                     <Input required placeholder="Frontend Intern" className="rounded-xl" />
                   </div>
                 </div>
@@ -237,25 +237,25 @@ export default function TeamMembers() {
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
           <CardContent className="p-5 flex flex-col gap-1">
             <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Total Interns</span>
-            <span className="text-3xl font-black text-slate-900 dark:text-white">{totalInterns}</span>
+            <span className="text-3xl font-bold text-slate-900 dark:text-white">{totalInterns}</span>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
           <CardContent className="p-5 flex flex-col gap-1">
             <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Online</span>
-            <span className="text-3xl font-black text-emerald-600 dark:text-emerald-500">{onlineCount}</span>
+            <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-500">{onlineCount}</span>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
           <CardContent className="p-5 flex flex-col gap-1">
             <span className="text-sm font-bold text-slate-500 dark:text-slate-400">On Leave</span>
-            <span className="text-3xl font-black text-amber-600 dark:text-amber-500">{leaveCount}</span>
+            <span className="text-3xl font-bold text-amber-600 dark:text-amber-500">{leaveCount}</span>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
           <CardContent className="p-5 flex flex-col gap-1">
             <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Pending Invitations</span>
-            <span className="text-3xl font-black text-blue-600 dark:text-blue-500">5</span>
+            <span className="text-3xl font-bold text-blue-600 dark:text-blue-500">5</span>
           </CardContent>
         </Card>
       </div>
@@ -374,7 +374,7 @@ export default function TeamMembers() {
                     <CardTitle className="text-base font-bold text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
                       {intern.name}
                     </CardTitle>
-                    <CardDescription className="text-xs font-semibold text-slate-500 line-clamp-1 mt-0.5">
+                    <CardDescription className="text-label font-semibold text-slate-500 line-clamp-1 mt-0.5">
                       {intern.role}
                     </CardDescription>
                   </div>
@@ -413,14 +413,14 @@ export default function TeamMembers() {
               
               <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3">
                 <div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Score</p>
-                  <p className="text-sm font-black text-slate-900 dark:text-white flex items-center">
+                  <p className="text-[10px] font-bold text-slate-500   mb-1">Score</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center">
                     <Trophy className="h-3 w-3 text-orange-500 mr-1" /> {intern.score}%
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Logged</p>
-                  <p className="text-sm font-black text-slate-900 dark:text-white flex items-center">
+                  <p className="text-[10px] font-bold text-slate-500   mb-1">Logged</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center">
                     <Clock className="h-3 w-3 text-blue-500 mr-1" /> {intern.hoursLogged} hrs
                   </p>
                 </div>
@@ -428,13 +428,13 @@ export default function TeamMembers() {
 
               <div className="grid grid-cols-2 gap-3 mb-2 flex-1">
                 <div className="space-y-1.5 flex-1">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Project</p>
+                  <p className="text-[10px] font-bold text-slate-500  ">Project</p>
                   <p className="text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md" title={intern.project}>
                     {intern.project}
                   </p>
                 </div>
                 <div className="space-y-1.5 flex-1">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Current Task</p>
+                  <p className="text-[10px] font-bold text-slate-500  ">Current Task</p>
                   <p className="text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md" title={intern.currentTask}>
                     {intern.currentTask}
                   </p>
@@ -462,7 +462,7 @@ export default function TeamMembers() {
               <div className="h-32 bg-gradient-to-br from-orange-500 to-rose-600 relative rounded-tl-3xl shrink-0">
                 <div className="absolute -bottom-10 left-6">
                   <Avatar className="h-24 w-24 border-4 border-white dark:border-slate-950 shadow-md">
-                    <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-3xl font-black text-slate-900 dark:text-white">
+                    <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-3xl font-bold text-slate-900 dark:text-white">
                       {selectedIntern.name.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
@@ -472,11 +472,11 @@ export default function TeamMembers() {
               <div className="pt-14 px-6 pb-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
                 <div className="flex justify-between items-start">
                   <div>
-                    <SheetTitle className="text-2xl font-black text-slate-900 dark:text-white">
+                    <SheetTitle className="text-2xl font-bold text-slate-900 dark:text-white">
                       {selectedIntern.name}
                     </SheetTitle>
                     <p className="text-sm font-bold text-slate-500 mt-1">{selectedIntern.role}</p>
-                    <Badge variant="outline" className="mt-3 rounded text-xs font-bold bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/80 dark:text-slate-300 dark:border-slate-700">
+                    <Badge variant="outline" className="mt-3 rounded text-label font-bold bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/80 dark:text-slate-300 dark:border-slate-700">
                       {selectedIntern.id}
                     </Badge>
                   </div>
@@ -507,7 +507,7 @@ export default function TeamMembers() {
                   <TabsContent value="overview" className="m-0 p-6 space-y-8">
                     {/* Contact Info */}
                     <div className="space-y-4">
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Contact & Info</h4>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white  ">Contact & Info</h4>
                       <div className="grid grid-cols-1 gap-4">
                         <div className="flex items-center gap-3 text-sm font-medium text-slate-600 dark:text-slate-400">
                           <Mail className="h-4 w-4 text-slate-400 shrink-0" /> {selectedIntern.email}
@@ -525,25 +525,25 @@ export default function TeamMembers() {
 
                     {/* Internship Details */}
                     <div className="space-y-4">
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Internship Details</h4>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white  ">Internship Details</h4>
                       <div className="grid grid-cols-2 gap-y-4 gap-x-8">
                         <div>
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Department</p>
+                          <p className="text-label font-bold text-slate-500   mb-1">Department</p>
                           <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedIntern.department}</p>
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Project</p>
+                          <p className="text-label font-bold text-slate-500   mb-1">Project</p>
                           <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedIntern.project}</p>
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Manager</p>
+                          <p className="text-label font-bold text-slate-500   mb-1">Manager</p>
                           <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center">
                             <Avatar className="h-5 w-5 mr-2 inline-block"><AvatarFallback className="text-[8px] bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold">AG</AvatarFallback></Avatar>
                             {selectedIntern.manager}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Duration</p>
+                          <p className="text-label font-bold text-slate-500   mb-1">Duration</p>
                           <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedIntern.joiningDate} - {selectedIntern.expectedEndDate}</p>
                         </div>
                       </div>
@@ -556,17 +556,17 @@ export default function TeamMembers() {
                       <div className="relative pl-6 py-2 before:absolute before:left-2 before:top-4 before:bottom-[-24px] before:w-px before:bg-slate-200 dark:before:bg-slate-800">
                         <div className="absolute left-[3px] top-4 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950" />
                         <p className="text-sm font-bold text-slate-900 dark:text-white">Task Completed: Dashboard Analytics UI</p>
-                        <p className="text-xs font-semibold text-slate-500 mt-1">Today, 2:30 PM</p>
+                        <p className="text-label font-semibold text-slate-500 mt-1">Today, 2:30 PM</p>
                       </div>
                       <div className="relative pl-6 py-2 before:absolute before:left-2 before:top-4 before:bottom-[-24px] before:w-px before:bg-slate-200 dark:before:bg-slate-800">
                         <div className="absolute left-[3px] top-4 h-2.5 w-2.5 rounded-full bg-blue-500 ring-4 ring-white dark:ring-slate-950" />
                         <p className="text-sm font-bold text-slate-900 dark:text-white">Daily Standup Submitted</p>
-                        <p className="text-xs font-semibold text-slate-500 mt-1">Today, 9:15 AM</p>
+                        <p className="text-label font-semibold text-slate-500 mt-1">Today, 9:15 AM</p>
                       </div>
                       <div className="relative pl-6 py-2">
                         <div className="absolute left-[3px] top-4 h-2.5 w-2.5 rounded-full bg-orange-500 ring-4 ring-white dark:ring-slate-950" />
                         <p className="text-sm font-bold text-slate-900 dark:text-white">Hours Logged: 6.5 hours</p>
-                        <p className="text-xs font-semibold text-slate-500 mt-1">Yesterday</p>
+                        <p className="text-label font-semibold text-slate-500 mt-1">Yesterday</p>
                       </div>
                     </div>
                   </TabsContent>
@@ -574,12 +574,12 @@ export default function TeamMembers() {
                   <TabsContent value="performance" className="m-0 p-6 space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
-                        <span className="text-3xl font-black text-orange-600 dark:text-orange-500 mb-1">{selectedIntern.score}%</span>
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Contribution</span>
+                        <span className="text-3xl font-bold text-orange-600 dark:text-orange-500 mb-1">{selectedIntern.score}%</span>
+                        <span className="text-label font-bold text-slate-500  ">Contribution</span>
                       </div>
                       <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
-                        <span className="text-3xl font-black text-emerald-600 dark:text-emerald-500 mb-1">{selectedIntern.attendance}%</span>
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Attendance</span>
+                        <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-500 mb-1">{selectedIntern.attendance}%</span>
+                        <span className="text-label font-bold text-slate-500  ">Attendance</span>
                       </div>
                     </div>
                     
@@ -611,11 +611,11 @@ export default function TeamMembers() {
           </DialogHeader>
           <form onSubmit={handleReassignSubmit} className="space-y-4 pt-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Team Member</label>
+              <label className="text-label font-bold text-slate-700 dark:text-slate-300  ">Team Member</label>
               <Input disabled value={reassignIntern?.name || ''} className="rounded-xl bg-slate-50 dark:bg-slate-900 dark:text-white" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">New Project</label>
+              <label className="text-label font-bold text-slate-700 dark:text-slate-300  ">New Project</label>
               <Select required value={newProject} onValueChange={setNewProject}>
                 <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800">
                   <SelectValue placeholder="Select a new project..." />
@@ -631,7 +631,7 @@ export default function TeamMembers() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Message to Employee</label>
+              <label className="text-label font-bold text-slate-700 dark:text-slate-300  ">Message to Employee</label>
               <Textarea 
                 required 
                 value={reassignMessage} 
@@ -659,11 +659,11 @@ export default function TeamMembers() {
           </DialogHeader>
           <form onSubmit={handleWhatsAppSubmit} className="space-y-4 pt-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">To</label>
+              <label className="text-label font-bold text-slate-700 dark:text-slate-300  ">To</label>
               <Input disabled value={whatsappIntern?.name || ''} className="rounded-xl bg-slate-50 dark:bg-slate-900 dark:text-white" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Message</label>
+              <label className="text-label font-bold text-slate-700 dark:text-slate-300  ">Message</label>
               <Textarea 
                 required 
                 value={whatsappMessage} 

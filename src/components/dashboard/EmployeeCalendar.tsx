@@ -109,7 +109,7 @@ export function EmployeeCalendar() {
                           <p className="font-bold mb-1.5 border-b border-slate-700 dark:border-slate-200 pb-1">{format(day.date, 'EEEE, MMM d')}</p>
                           <div className="space-y-1.5">
                             {tasks.map((task, idx) => (
-                              <div key={idx} className="flex items-start gap-2 text-xs">
+                              <div key={idx} className="flex items-start gap-2 text-label">
                                 <div className={cn("h-2 w-2 rounded-full mt-[3px] shrink-0", getDotColor(task.state))} />
                                 <span className="leading-tight truncate">{task.title}</span>
                               </div>
@@ -126,20 +126,20 @@ export function EmployeeCalendar() {
         </div>
         
         {/* Legend */}
-        <div className="w-full flex items-center justify-center gap-4 mt-auto pt-6 pb-2 text-[10px] font-bold text-slate-500 uppercase">
+        <div className="w-full flex items-center justify-center gap-4 mt-auto pt-6 pb-2 text-[10px] font-bold text-slate-500 ">
           <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-emerald-500" />Completed</div>
           <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-orange-500" />In Progress</div>
           <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-rose-500" />Overdue</div>
         </div>
         
         <div className="w-full pt-4 mt-2 border-t border-slate-100 dark:border-slate-800 shrink-0">
-          <div className="flex justify-between text-xs font-bold text-slate-700 dark:text-slate-300 mb-2.5">
+          <div className="flex justify-between text-label font-bold text-slate-700 dark:text-slate-300 mb-2.5">
             <span>Internship Progress</span>
             <span className="text-orange-600 dark:text-orange-400">Week 2 of 12</span>
           </div>
           <div className="flex items-center gap-3">
             <Progress value={18} className="h-2 flex-1 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 rounded-full" />
-            <span className="text-xs font-black text-slate-900 dark:text-white">18%</span>
+            <span className="text-label font-bold text-slate-900 dark:text-white">18%</span>
           </div>
         </div>
       </CardContent>

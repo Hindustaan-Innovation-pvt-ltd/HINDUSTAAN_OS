@@ -115,7 +115,7 @@ export default function TrainingCalendarWidget() {
 
       <div className="grid grid-cols-7 gap-1 mb-2">
         {dayNames.map((day, i) => (
-          <div key={i} className="text-center text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">{day}</div>
+          <div key={i} className="text-center text-label font-bold text-slate-500 dark:text-slate-400 mb-1">{day}</div>
         ))}
       </div>
 
@@ -148,7 +148,7 @@ export default function TrainingCalendarWidget() {
         })}
       </div>
 
-      <div className="flex flex-wrap gap-y-2 items-center space-x-4 text-xs font-semibold text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
+      <div className="flex flex-wrap gap-y-2 items-center space-x-4 text-label font-semibold text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
         <div className="flex items-center">
           <div className="w-2 h-2 rounded-full bg-slate-900 dark:bg-white mr-1.5" />
           Current day
