@@ -12,7 +12,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { ProjectDatePicker } from '@/components/ui/project-date-picker';
 import { ProjectSelect } from '@/components/ui/project-select';
 import { useTheme } from '@/context/ThemeContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useNotifications } from '@/context/NotificationContext';
 import { getCurrentUser } from '@/lib/auth';
 
