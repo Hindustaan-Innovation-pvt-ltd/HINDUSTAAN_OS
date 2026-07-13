@@ -1,10 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, UserCheck, Activity, BellRing, ShieldCheck, Server, Key, Plus, ExternalLink } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { GLOBAL_TEAM_MEMBERS, GLOBAL_ACTIVITY_FEED, GLOBAL_NOTIFICATIONS } from '@/data/mockData';
 
 export default function AdminDashboard() {
+  const [teamMembers, setTeamMembers] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_users');
+    return saved ? JSON.parse(saved) : GLOBAL_TEAM_MEMBERS;
+  });
+
+  const [activities, setActivities] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_activity_feed');
+    return saved ? JSON.parse(saved) : GLOBAL_ACTIVITY_FEED;
+  });
+
+  const [notifications, setNotifications] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_notifications');
+    return saved ? JSON.parse(saved) : GLOBAL_NOTIFICATIONS;
+  });
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hindustaan_users' && e.newValue) setTeamMembers(JSON.parse(e.newValue));
+      if (e.key === 'hindustaan_activity_feed' && e.newValue) setActivities(JSON.parse(e.newValue));
+      if (e.key === 'hindustaan_notifications' && e.newValue) setNotifications(JSON.parse(e.newValue));
+    };
+    
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'hindustaan_users') setTeamMembers(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_TEAM_MEMBERS);
+      if (e.detail.key === 'hindustaan_activity_feed') setActivities(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_ACTIVITY_FEED);
+      if (e.detail.key === 'hindustaan_notifications') setNotifications(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_NOTIFICATIONS);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    };
+  }, []);
+
+  const totalEmployees = teamMembers.length;
+  const totalManagers = teamMembers.filter((u: any) => u.role?.toLowerCase().includes('lead') || u.role?.toLowerCase().includes('manager')).length;
+  const activeUsers = teamMembers.filter((u: any) => u.status === 'online' || u.status === 'busy').length;
+  const pendingNotifications = notifications.filter((n: any) => n.unread).length;
+
   return (
     <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -31,7 +74,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Total Employees</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">124</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{totalEmployees}</h3>
               </div>
             </CardContent>
           </Card>
@@ -43,7 +86,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Total Managers</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">12</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{totalManagers}</h3>
               </div>
             </CardContent>
           </Card>
@@ -55,7 +98,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Active Users Today</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">98</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{activeUsers}</h3>
               </div>
             </CardContent>
           </Card>
@@ -67,7 +110,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Pending Notifications</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">5</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{pendingNotifications}</h3>
               </div>
             </CardContent>
           </Card>
@@ -96,26 +139,21 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { name: 'Tanvy Pandey', email: 'tanvy@hindustaan.in', role: 'Employee', status: 'Active', login: '2 mins ago' },
-                      { name: 'Aakash Gupta', email: 'aakash@hindustaan.in', role: 'Manager', status: 'Active', login: '1 hour ago' },
-                      { name: 'Rahul Sharma', email: 'rahul@hindustaan.in', role: 'Employee', status: 'Inactive', login: '2 days ago' },
-                      { name: 'Amanda Smith', email: 'amanda@hindustaan.in', role: 'Employee', status: 'Active', login: '4 hours ago' }
-                    ].map((u, i) => (
+                    {teamMembers.slice(0, 4).map((u: any, i: number) => (
                       <tr key={i} className="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                         <td className="px-6 py-4">
                           <div className="font-bold text-slate-900 dark:text-white">{u.name}</div>
-                          <div className="text-xs text-slate-500">{u.email}</div>
+                          <div className="text-xs text-slate-500">{u.name.toLowerCase().replace(' ', '.')}@hindustaan.in</div>
                         </td>
                         <td className="px-6 py-4">
                           <Badge variant="outline" className="font-bold border-slate-200 dark:border-slate-700">{u.role}</Badge>
                         </td>
                         <td className="px-6 py-4">
-                          <Badge className={u.status === 'Active' ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 'bg-slate-500/10 text-slate-500 hover:bg-slate-500/20'}>
-                            {u.status}
+                          <Badge className={u.status === 'online' || u.status === 'busy' ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 'bg-slate-500/10 text-slate-500 hover:bg-slate-500/20'}>
+                            {u.status === 'online' || u.status === 'busy' ? 'Active' : 'Inactive'}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 text-slate-500">{u.login}</td>
+                        <td className="px-6 py-4 text-slate-500">{u.status === 'online' ? 'Just now' : '2 hours ago'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -130,21 +168,33 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-6">
-                  {[
-                    { action: 'Security Policy updated', time: '10 mins ago', icon: ShieldCheck, color: 'text-[#5B7CFF]', bg: 'bg-[#5B7CFF]/10' },
-                    { action: 'New Manager role assigned to Aakash Gupta', time: '2 hours ago', icon: UserCheck, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                    { action: 'API Key regenerated for Webhook App', time: '5 hours ago', icon: Key, color: 'text-orange-500', bg: 'bg-orange-500/10' }
-                  ].map((activity, i) => (
-                    <div key={i} className="flex gap-4">
-                      <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${activity.bg}`}>
-                        <activity.icon className={`h-5 w-5 ${activity.color}`} />
+                  {activities.slice(0, 3).map((activity: any, i: number) => {
+                    let Icon = Activity;
+                    let color = 'text-[#5B7CFF]';
+                    let bg = 'bg-[#5B7CFF]/10';
+
+                    if (activity.type === 'project' || activity.type === 'assign') {
+                      Icon = ShieldCheck;
+                      color = 'text-emerald-500';
+                      bg = 'bg-emerald-500/10';
+                    } else if (activity.type === 'task' || activity.type === 'log') {
+                      Icon = Key;
+                      color = 'text-orange-500';
+                      bg = 'bg-orange-500/10';
+                    }
+
+                    return (
+                      <div key={i} className="flex gap-4">
+                        <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${bg}`}>
+                          <Icon className={`h-5 w-5 ${color}`} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">{activity.user} {activity.action} {activity.target}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">{activity.action}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
