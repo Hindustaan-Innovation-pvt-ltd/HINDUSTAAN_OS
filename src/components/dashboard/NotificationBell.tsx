@@ -163,7 +163,9 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
     window.dispatchEvent(new Event(isManager ? 'notifications-updated' : 'employee-notifications-updated'));
   };
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  const currentUserName = user?.user_metadata?.name || user?.name || "Tanvy Pandey";
+  const visibleNotifications = isManager ? notifications : notifications.filter(n => !n.metadata?.employeeName || n.metadata.employeeName === currentUserName);
+  const unreadCount = visibleNotifications.filter(n => n.unread).length;
 
   const markAllAsRead = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -210,7 +212,7 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
   };
 
   // Group notifications
-  const grouped = notifications.reduce((acc, curr) => {
+  const grouped = visibleNotifications.reduce((acc, curr) => {
     const groupName = curr.group || 'Today';
     if (!acc[groupName]) acc[groupName] = [];
     acc[groupName].push(curr);
