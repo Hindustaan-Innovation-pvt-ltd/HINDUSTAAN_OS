@@ -348,7 +348,6 @@ Reason:
     localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
     window.dispatchEvent(new Event('employee-notifications-updated'));
     window.dispatchEvent(new Event('notifications-updated'));
-    window.dispatchEvent(new Event('leave-data-updated'));
   };
 
   const handleReject = async (id: number) => {
@@ -391,7 +390,6 @@ Reason:
     localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
     window.dispatchEvent(new Event('employee-notifications-updated'));
     window.dispatchEvent(new Event('notifications-updated'));
-    window.dispatchEvent(new Event('leave-data-updated'));
   };
 
   const openCommentModal = (id: number) => {
