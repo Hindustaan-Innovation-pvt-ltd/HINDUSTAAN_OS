@@ -9,6 +9,7 @@ import {
   Send 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ProjectSelect } from '@/components/ui/project-select';
 
 export default function TimeAndStandup({ session }: { session?: any }) {
   const role = session?.user?.user_metadata?.role || 'intern';

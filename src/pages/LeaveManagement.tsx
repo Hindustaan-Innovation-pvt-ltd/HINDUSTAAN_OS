@@ -229,7 +229,7 @@ export default function LeaveManagement({ session }: { session: any }) {
   // Future Backend Flow:
   // Employee Applies Leave -> Manager Approves -> POST /api/leaves/:id/approve -> Backend sends email to HR -> Calendar updates automatically
 
-  const handleApprove = (id: number) => {
+  const handleApprove = async (id: number) => {
     const leaveObj = leaveData.find((l: any) => l.id === id);
     if (!leaveObj) return;
 
@@ -271,7 +271,7 @@ export default function LeaveManagement({ session }: { session: any }) {
     window.dispatchEvent(new Event('leave-data-updated'));
   };
 
-  const handleReject = (id: number) => {
+  const handleReject = async (id: number) => {
     const leaveObj = leaveData.find((l: any) => l.id === id);
     if (!leaveObj) return;
 
