@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Check, Trash2 } from 'lucide-react';
+import { Bell, Check, Trash2, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useUser } from '@/context/UserContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -126,6 +127,8 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
   const defaultNotifications = isManager ? DEFAULT_MANAGER_NOTIFICATIONS : DEFAULT_EMPLOYEE_NOTIFICATIONS;
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [activeCommentId, setActiveCommentId] = useState<number | null>(null);
+  const [commentText, setCommentText] = useState('');
 
   // Load and synchronize state
   const loadNotifications = () => {
@@ -193,19 +196,8 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
       if (!requestId) return;
 
       if (actionType === 'comment_leave') {
-        const comment = window.prompt("Enter your comment for this leave request:");
-        if (comment) {
-           const existing = JSON.parse(localStorage.getItem('hindustaan_leave_comments') || '[]');
-           existing.push({
-             id: Date.now(),
-             leaveId: requestId,
-             text: comment,
-             author: user?.name || "Manager",
-             timestamp: new Date().toISOString()
-           });
-           localStorage.setItem('hindustaan_leave_comments', JSON.stringify(existing));
-           toast.success("Comment added successfully");
-        }
+        setActiveCommentId(notification.id);
+        setCommentText('');
         return;
       }
 
@@ -232,6 +224,36 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
     }
 
     window.dispatchEvent(new CustomEvent("notification-action", { detail: { actionType, notification } }));
+  };
+
+  const submitCommentLeave = (e: React.MouseEvent | React.KeyboardEvent, notification: NotificationItem) => {
+    e.stopPropagation();
+    if (!commentText.trim()) return;
+    const requestId = notification.metadata?.requestId;
+    if (!requestId) return;
+
+    const existing = JSON.parse(localStorage.getItem('hindustaan_leave_comments') || '[]');
+    existing.push({
+      id: Date.now(),
+      leaveId: requestId,
+      text: commentText,
+      author: user?.name || "Manager",
+      timestamp: new Date().toISOString()
+    });
+    localStorage.setItem('hindustaan_leave_comments', JSON.stringify(existing));
+    
+    // Mark as read and clear comment actions
+    const updatedNotifs = notifications.map(n => {
+      if (n.id === notification.id) {
+        return { ...n, unread: false, actions: [] };
+      }
+      return n;
+    });
+    saveNotifications(updatedNotifs);
+
+    toast.success("Comment added successfully");
+    setActiveCommentId(null);
+    setCommentText('');
   };
 
   const handleNotificationClick = (notification: NotificationItem) => {
@@ -365,19 +387,36 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
                             {notification.message}
                           </p>
                           {notification.actions && notification.actions.length > 0 && (
-                            <div className="flex gap-2 mt-2">
-                              {notification.actions.map(action => (
-                                <Button 
-                                  key={action.label}
-                                  size="sm" 
-                                  variant={action.primary ? "default" : "outline"}
-                                  className={cn("h-6 text-[10px] px-2 py-0", action.primary ? "bg-orange-600 hover:bg-orange-700" : "border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300")}
-                                  onClick={(e) => handleActionClick(e, notification, action.actionType)}
-                                >
-                                  {action.label}
-                                </Button>
-                              ))}
-                            </div>
+                            activeCommentId === notification.id ? (
+                              <div className="flex items-center gap-1.5 mt-2" onClick={e => e.stopPropagation()}>
+                                <Input 
+                                  value={commentText}
+                                  onChange={(e) => setCommentText(e.target.value)}
+                                  placeholder="Type your comment..."
+                                  className="h-6 text-[10px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 px-2 py-0 focus-visible:ring-1 focus-visible:ring-orange-500"
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') { e.preventDefault(); submitCommentLeave(e, notification); }
+                                  }}
+                                />
+                                <Button size="sm" onClick={(e) => submitCommentLeave(e, notification)} className="h-6 px-2 bg-orange-600 hover:bg-orange-700 text-[10px] font-bold text-white shrink-0">Send</Button>
+                                <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setActiveCommentId(null); setCommentText(''); }} className="h-6 px-1.5 text-slate-500 hover:text-slate-700 shrink-0"><X className="h-3 w-3" /></Button>
+                              </div>
+                            ) : (
+                              <div className="flex gap-2 mt-2">
+                                {notification.actions.map(action => (
+                                  <Button 
+                                    key={action.label}
+                                    size="sm" 
+                                    variant={action.primary ? "default" : "outline"}
+                                    className={cn("h-6 text-[10px] px-2 py-0", action.primary ? "bg-orange-600 hover:bg-orange-700 text-white" : "border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300")}
+                                    onClick={(e) => handleActionClick(e, notification, action.actionType)}
+                                  >
+                                    {action.label}
+                                  </Button>
+                                ))}
+                              </div>
+                            )
                           )}
                         </div>
                       </div>
