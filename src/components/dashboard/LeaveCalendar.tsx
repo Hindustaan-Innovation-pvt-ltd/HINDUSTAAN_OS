@@ -134,9 +134,9 @@ export function LeaveCalendar({ leaves, selectedDate, onSelectDate }: LeaveCalen
 
               let statusClass = "";
               if (hasApproved) {
-                statusClass = "bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-lg";
+                statusClass = "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-lg";
               } else if (hasPending) {
-                statusClass = "bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-lg";
+                statusClass = "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-lg";
               }
 
               const isSelected = selectedDate && isSameDay(date, selectedDate);
@@ -169,8 +169,8 @@ export function LeaveCalendar({ leaves, selectedDate, onSelectDate }: LeaveCalen
                             <span className={cn(
                               "text-[9px] uppercase px-1 py-0.5 rounded font-black shrink-0",
                               leave.status === 'Approved'
-                                ? "bg-orange-500/20 text-orange-400"
-                                : "bg-purple-500/20 text-purple-400"
+                                ? "bg-emerald-500/20 text-emerald-500"
+                                : "bg-amber-500/20 text-amber-500"
                             )}>
                               {leave.status}
                             </span>

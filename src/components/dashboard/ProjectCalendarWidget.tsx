@@ -53,12 +53,33 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
-import { ProjectDatePicker } from '@/components/ui/project-date-picker';
-import { ProjectTimeSelect } from '@/components/ui/project-time-select';
 import { useNotifications } from '@/context/NotificationContext';
+import { PremiumTimePicker } from '@/components/ui/premium-time-picker';
+import { ProjectDatePicker } from '@/components/ui/project-date-picker';
 
 // Data Structures
 type EventType = 'deadline' | 'completed' | 'milestone' | 'leave' | 'meeting';
+
+const formatTimeForDisplay = (timeStr: string) => {
+  if (!timeStr) return '';
+  if (timeStr.includes('AM') || timeStr.includes('PM')) return timeStr;
+  const [h, m] = timeStr.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return timeStr;
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hours12 = h % 12 || 12;
+  return `${hours12.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`;
+};
+
+const to24HourFormat = (timeStr: string) => {
+  if (!timeStr) return '09:00';
+  if (!timeStr.includes('AM') && !timeStr.includes('PM')) return timeStr;
+  const [time, modifier] = timeStr.split(' ');
+  if (!time || !modifier) return '09:00';
+  let [hours, minutes] = time.split(':');
+  if (hours === '12') hours = '00';
+  if (modifier === 'PM') hours = String(parseInt(hours, 10) + 12);
+  return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+};
 
 interface ProjectEvent {
   id: string;
@@ -149,11 +170,12 @@ export function ProjectCalendarWidget() {
   const [eventToView, setEventToView] = useState<ProjectEvent | null>(null);
   const [eventToEdit, setEventToEdit] = useState<ProjectEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<ProjectEvent | null>(null);
+  const [scheduleTime, setScheduleTime] = useState('09:00 AM');
+  const [editTime, setEditTime] = useState('09:00 AM');
+  const [scheduleDate, setScheduleDate] = useState<Date>(new Date());
+  const [editDate, setEditDate] = useState<Date>(new Date());
   
   const { addNotification } = useNotifications();
-
-  const [scheduleDate, setScheduleDate] = useState<Date | undefined>(undefined);
-  const [scheduleTime, setScheduleTime] = useState<string>("09:00 AM");
 
   const pushNotification = (title: string, message: string, type: any) => {
     addNotification({
@@ -210,7 +232,7 @@ export function ProjectCalendarWidget() {
       date: new Date(year, month - 1, day),
       type: type,
       title: title,
-      time: timeStr,
+      time: formatTimeForDisplay(timeStr),
       assignees: [{ name: 'Current User', initials: 'CU' }]
     };
 
@@ -276,10 +298,12 @@ export function ProjectCalendarWidget() {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>Start Date</Label>
-              <ProjectDatePicker 
-                value={startDate} 
-                onChange={(d) => {
-                  if (d) {
+              <Input 
+                type="date" 
+                defaultValue={format(startDate, 'yyyy-MM-dd')} 
+                onChange={(e) => {
+                  const d = new Date(e.target.value);
+                  if (!isNaN(d.getTime())) {
                     setStartDate(d);
                     localStorage.setItem('hindustaan_project_start_date', d.toISOString());
                   }
@@ -288,10 +312,12 @@ export function ProjectCalendarWidget() {
             </div>
             <div className="grid gap-2">
               <Label>End Date</Label>
-              <ProjectDatePicker 
-                value={endDate}
-                onChange={(d) => {
-                  if (d) {
+              <Input 
+                type="date" 
+                defaultValue={format(endDate, 'yyyy-MM-dd')}
+                onChange={(e) => {
+                  const d = new Date(e.target.value);
+                  if (!isNaN(d.getTime())) {
                     setEndDate(d);
                     localStorage.setItem('hindustaan_project_end_date', d.toISOString());
                   }
@@ -473,7 +499,7 @@ export function ProjectCalendarWidget() {
                       {evt.time && (
                         <>
                           <span className="text-[10px] text-slate-300 dark:text-slate-700">•</span>
-                          <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 px-1.5 py-0.5 rounded leading-none">{evt.time}</span>
+                          <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 px-1.5 py-0.5 rounded leading-none">{formatTimeForDisplay(evt.time)}</span>
                         </>
                       )}
                     </div>
@@ -625,43 +651,56 @@ export function ProjectCalendarWidget() {
       </Sheet>
 
       <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
-              {scheduleType === 'event' ? <CalendarIcon className="mr-2 h-5 w-5 text-orange-500" /> : <Video className="mr-2 h-5 w-5 text-orange-500" />}
-              Schedule {scheduleType === 'event' ? 'New Event' : 'Team Meeting'}
-            </DialogTitle>
-            <DialogDescription className="text-slate-500 font-medium">
-              Add a new {scheduleType} to the project calendar. It will be visible to all assignees.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleScheduleSubmit} className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Title</Label>
-              <Input id="title" name="title" placeholder={scheduleType === 'event' ? "e.g. Q3 Roadmap Review" : "e.g. Weekly Standup Sync"} required className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500" />
+        <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden border-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] bg-white dark:bg-slate-950 rounded-3xl">
+          <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 px-6 py-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              {scheduleType === 'event' ? <CalendarIcon className="w-32 h-32 transform rotate-12 translate-x-4 -translate-y-4 text-white" /> : <Video className="w-32 h-32 transform rotate-12 translate-x-4 -translate-y-4 text-white" />}
+            </div>
+            <DialogHeader className="relative z-10 text-left">
+              <DialogTitle className="text-2xl font-black text-white flex items-center gap-3">
+                <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-md border border-white/20 shadow-inner">
+                  {scheduleType === 'event' ? <CalendarIcon className="h-6 w-6 text-white" /> : <Video className="h-6 w-6 text-white" />}
+                </div>
+                Schedule {scheduleType === 'event' ? 'New Event' : 'Team Meeting'}
+              </DialogTitle>
+              <DialogDescription className="text-white/80 font-medium text-sm mt-3 leading-relaxed">
+                Add a new {scheduleType} to the project calendar. It will be visible to all assignees.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          
+          <form onSubmit={handleScheduleSubmit} className="p-6 space-y-6">
+            <div className="space-y-2.5">
+              <Label htmlFor="title" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Title</Label>
+              <Input id="title" name="title" placeholder={scheduleType === 'event' ? "e.g. Q3 Roadmap Review" : "e.g. Weekly Standup Sync"} required className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm text-base font-semibold" />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2 relative">
-                <Label htmlFor="date" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</Label>
-                <ProjectDatePicker name="date" value={scheduleDate} onChange={setScheduleDate} />
+            <div className="grid grid-cols-2 gap-5">
+              <div className="space-y-2.5 relative">
+                <Label htmlFor="date" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</Label>
+                <ProjectDatePicker name="date" value={scheduleDate} onChange={(d) => d && setScheduleDate(d)} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-4 font-semibold" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="time" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Time</Label>
-                <ProjectTimeSelect name="time" value={scheduleTime} onChange={setScheduleTime} />
+              <div className="space-y-2.5">
+                <Label htmlFor="time" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Time</Label>
+                <PremiumTimePicker name="time" value={scheduleTime} onChange={setScheduleTime} />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Type</Label>
-              <Input name="type" list="event-types" defaultValue={scheduleType === 'event' ? 'milestone' : 'sync'} className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500" placeholder="e.g. Milestone, Launch..." />
+            <div className="space-y-2.5">
+              <Label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Type</Label>
+              <div className="relative group">
+                <Input name="type" list="event-types" defaultValue={scheduleType === 'event' ? 'milestone' : 'sync'} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-12 font-semibold" placeholder="e.g. Milestone, Launch..." />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 pointer-events-none group-hover:scale-110 transition-transform">
+                  <Flag className="h-4 w-4 text-orange-500" />
+                </div>
+              </div>
             </div>
             
-            <DialogFooter className="pt-4 sm:justify-end">
-              <Button type="button" variant="outline" onClick={() => setIsScheduleOpen(false)} className="rounded-xl font-bold">
+            <DialogFooter className="pt-2 sm:justify-end gap-3">
+              <Button type="button" variant="ghost" onClick={() => setIsScheduleOpen(false)} className="rounded-xl font-bold h-12 px-6 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
                 Cancel
               </Button>
-              <Button type="submit" className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold">
+              <Button type="submit" className="rounded-xl h-12 px-8 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black shadow-[0_8px_20px_-8px_rgba(249,115,22,0.6)] hover:shadow-[0_12px_25px_-8px_rgba(249,115,22,0.8)] transition-all duration-300 hover:-translate-y-0.5 border-0">
                 Schedule {scheduleType === 'event' ? 'Event' : 'Meeting'}
               </Button>
             </DialogFooter>
@@ -775,15 +814,24 @@ export function ProjectCalendarWidget() {
       </Dialog>
 
       <Dialog open={!!eventToEdit} onOpenChange={(open) => !open && setEventToEdit(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
-              Edit Event
-            </DialogTitle>
-            <DialogDescription className="text-slate-500 font-medium">
-              Update event details. Please provide a reason for these changes to notify the team.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden border-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] bg-white dark:bg-slate-950 rounded-3xl">
+          <div className="bg-gradient-to-br from-indigo-500 via-indigo-600 to-blue-600 px-6 py-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              <CalendarIcon className="w-32 h-32 transform rotate-12 translate-x-4 -translate-y-4 text-white" />
+            </div>
+            <DialogHeader className="relative z-10 text-left">
+              <DialogTitle className="text-2xl font-black text-white flex items-center gap-3">
+                <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-md border border-white/20 shadow-inner">
+                  <Settings className="h-6 w-6 text-white" />
+                </div>
+                Edit Event Details
+              </DialogTitle>
+              <DialogDescription className="text-white/80 font-medium text-sm mt-3 leading-relaxed">
+                Update event details. Please provide a reason for these changes to notify the team.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          
           <form onSubmit={(e) => {
             e.preventDefault();
             const formData = new FormData(e.currentTarget);
@@ -798,7 +846,7 @@ export function ProjectCalendarWidget() {
             
             setEvents(events.map(ev => {
               if (ev.id === eventToEdit?.id) {
-                return { ...ev, title, time: timeStr, type, date: new Date(year, month - 1, day) };
+                return { ...ev, title, time: formatTimeForDisplay(timeStr), type, date: new Date(year, month - 1, day) };
               }
               return ev;
             }));
@@ -806,42 +854,45 @@ export function ProjectCalendarWidget() {
             pushNotification('Event Edited', `"${title}" updated. Reason: ${reason}`, 'warning');
             toast.success('Event Updated', { description: `Reason: ${reason}. Employees notified.` });
             setEventToEdit(null);
-          }}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-title" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Title</Label>
-                <Input id="edit-title" name="title" defaultValue={eventToEdit?.title} required className="rounded-xl" />
+          }} className="p-6 space-y-6">
+            <div className="space-y-2.5">
+              <Label htmlFor="edit-title" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Title</Label>
+              <Input id="edit-title" name="title" defaultValue={eventToEdit?.title} required className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm text-base font-semibold" />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-5">
+              <div className="space-y-2.5 relative">
+                <Label htmlFor="edit-date" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</Label>
+                <ProjectDatePicker name="date" value={editDate} onChange={(d) => d && setEditDate(d)} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-4 font-semibold" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-date" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</Label>
-                  <ProjectDatePicker name="date" value={eventToEdit?.date} onChange={(date) => {
-                    if (date && eventToEdit) {
-                      setEventToEdit({ ...eventToEdit, date });
-                    }
-                  }} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-time" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Time</Label>
-                  <ProjectTimeSelect name="time" value={eventToEdit?.time} onChange={(time) => {
-                    if (eventToEdit) {
-                      setEventToEdit({ ...eventToEdit, time });
-                    }
-                  }} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Type</Label>
-                <Input name="type" list="event-types" defaultValue={eventToEdit?.type || 'milestone'} className="rounded-xl" placeholder="e.g. Deadline, Client Sync..." />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-reason" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-orange-600">Reason for Edit (Required)</Label>
-                <Textarea id="edit-reason" name="reason" required placeholder="e.g. Rescheduled due to client request..." className="rounded-xl border-orange-200 dark:border-orange-500/30 focus-visible:ring-orange-500" />
+              <div className="space-y-2.5">
+                <Label htmlFor="edit-time" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Time</Label>
+                <PremiumTimePicker name="time" value={editTime} onChange={setEditTime} />
               </div>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setEventToEdit(null)} className="rounded-xl font-bold">Cancel</Button>
-              <Button type="submit" className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold">Save Changes</Button>
+
+            <div className="space-y-2.5">
+              <Label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Type</Label>
+              <div className="relative group">
+                <Input name="type" list="event-types" defaultValue={eventToEdit?.type || 'milestone'} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-12 font-semibold" placeholder="e.g. Deadline, Client Sync..." />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 pointer-events-none group-hover:scale-110 transition-transform">
+                  <Flag className="h-4 w-4 text-indigo-500" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2.5">
+              <Label htmlFor="edit-reason" className="text-[11px] font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Reason for Edit (Required)</Label>
+              <Textarea id="edit-reason" name="reason" required placeholder="e.g. Rescheduled due to client request..." className="rounded-2xl bg-slate-50 dark:bg-slate-900/50 border-indigo-200 dark:border-indigo-500/30 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm min-h-[90px] pt-4 font-medium" />
+            </div>
+
+            <DialogFooter className="pt-2 sm:justify-end gap-3">
+              <Button type="button" variant="ghost" onClick={() => setEventToEdit(null)} className="rounded-xl font-bold h-12 px-6 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
+                Cancel
+              </Button>
+              <Button type="submit" className="rounded-xl h-12 px-8 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-black shadow-[0_8px_20px_-8px_rgba(99,102,241,0.6)] hover:shadow-[0_12px_25px_-8px_rgba(99,102,241,0.8)] transition-all duration-300 hover:-translate-y-0.5 border-0">
+                Save Changes
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

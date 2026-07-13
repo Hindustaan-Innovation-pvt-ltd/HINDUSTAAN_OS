@@ -42,16 +42,17 @@ export function ProjectDatePicker({
           {value ? format(value, "PPP") : placeholder}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 rounded-2xl border border-slate-200 dark:border-purple-500/20 shadow-2xl backdrop-blur-md bg-white/90 dark:bg-slate-950/90" align="start">
+      <PopoverContent side="bottom" sideOffset={4} className="w-auto p-0 rounded-2xl border border-slate-200 dark:border-purple-500/20 shadow-2xl backdrop-blur-md bg-white/90 dark:bg-slate-950/90" align="start">
         <Calendar
           mode="single"
           selected={value}
           onSelect={onChange}
           classNames={{
-            selected: "bg-gradient-to-r from-violet-500 to-blue-500 text-white hover:bg-gradient-to-r hover:from-violet-500 hover:to-blue-500 hover:text-white focus:bg-gradient-to-r focus:from-violet-500 focus:to-blue-500 focus:text-white",
-            today: "ring-2 ring-violet-400 bg-transparent text-slate-900 dark:text-white",
-            day: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg transition-colors",
-
+            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-600 dark:hover:text-orange-400 hover:scale-105 transition-all duration-200 relative cursor-pointer outline-none",
+            today: "bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-900/10 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-500/30 shadow-sm",
+            selected: "bg-gradient-to-br from-orange-500 to-rose-500 text-white hover:from-orange-600 hover:to-rose-600 hover:text-white focus:from-orange-600 focus:to-rose-600 focus:text-white font-bold shadow-md shadow-orange-500/30 hover:scale-105 transition-all",
+            weekday: "text-slate-400 dark:text-slate-500 rounded-md w-9 font-bold text-[0.75rem] uppercase tracking-wider",
+            month_caption: "flex justify-center pt-1 relative items-center text-slate-900 dark:text-white",
           }}
         />
       </PopoverContent>
