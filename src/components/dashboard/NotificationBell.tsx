@@ -163,7 +163,9 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
     window.dispatchEvent(new Event(isManager ? 'notifications-updated' : 'employee-notifications-updated'));
   };
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  const currentUserName = user?.user_metadata?.name || user?.name || "Tanvy Pandey";
+  const visibleNotifications = isManager ? notifications : notifications.filter(n => !n.metadata?.employeeName || n.metadata.employeeName === currentUserName);
+  const unreadCount = visibleNotifications.filter(n => n.unread).length;
 
   const markAllAsRead = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -210,7 +212,7 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
   };
 
   // Group notifications
-  const grouped = notifications.reduce((acc, curr) => {
+  const grouped = visibleNotifications.reduce((acc, curr) => {
     const groupName = curr.group || 'Today';
     if (!acc[groupName]) acc[groupName] = [];
     acc[groupName].push(curr);
@@ -260,7 +262,7 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
         </div>
 
         <ScrollArea className="max-h-[350px] overflow-y-auto pr-1">
-          {notifications.length === 0 ? (
+          {visibleNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-slate-500">
               <Bell className="h-8 w-8 mb-2 opacity-30" />
               <p className="text-xs font-semibold">No notifications</p>
