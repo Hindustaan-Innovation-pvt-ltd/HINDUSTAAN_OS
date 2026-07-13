@@ -12,7 +12,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { ProjectDatePicker } from '@/components/ui/project-date-picker';
 import { ProjectSelect } from '@/components/ui/project-select';
 import { useTheme } from '@/context/ThemeContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useNotifications } from '@/context/NotificationContext';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -127,6 +127,20 @@ const MOCK_HISTORY = [
   }
 ];
 
+export const parseStandupCommand = (command: string) => {
+  if (!command.trim().startsWith('/standup')) {
+    return { isValid: false, yesterday: '', today: '', blockers: '' };
+  }
+  const body = command.trim().replace(/^\/standup\s*/, '');
+  const parts = body.split('|').map(p => p.trim());
+  return {
+    yesterday: parts[0] || '',
+    today: parts[1] || '',
+    blockers: parts[2] || '',
+    isValid: parts.length === 3
+  };
+};
+
 export default function DailyStandups({ session }: { session?: any }) {
   const { addNotification } = useNotifications();
   const currentUser = getCurrentUser();
@@ -233,7 +247,9 @@ export default function DailyStandups({ session }: { session?: any }) {
   
   const [empExpanded, setEmpExpanded] = useState(false);
   const [mgrExpanded, setMgrExpanded] = useState(false);
+  const [quickCommand, setQuickCommand] = useState('');
 
+  const activeSpeechFieldRef = React.useRef<'yesterday' | 'today' | 'blockers' | 'notes' | null>(null);
   const [activeSpeechField, setActiveSpeechField] = useState<'yesterday' | 'today' | 'blockers' | 'notes' | null>(null);
   const recognitionRef = React.useRef<any>(null);
 
@@ -453,6 +469,46 @@ export default function DailyStandups({ session }: { session?: any }) {
     toast.success('Standup Update Submitted!');
     setIsModalOpen(false);
     setFormData({ yesterday: '', today: '', blockers: '', notes: '' });
+  };
+
+  const handleDirectCommandSubmit = (parsed: any) => {
+    if (!parsed.yesterday || !parsed.today) {
+      toast.warning('Empty sections detected. Continuing anyway.');
+    }
+    
+    const initials = currentUserName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+    const newStandup = {
+      id: `s-${Date.now()}`,
+      user: currentUserName,
+      initials,
+      role: role === 'manager' ? 'Product Manager' : 'Developer',
+      status: 'Submitted',
+      yesterday: parsed.yesterday,
+      today: parsed.today,
+      blockers: parsed.blockers || 'None.',
+      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      originalCommand: quickCommand
+    };
+
+    setStandups([newStandup, ...standups.filter((s) => s.user !== currentUserName)]);
+
+    const historyEntry = {
+      ...newStandup,
+      dateGroup: 'Today'
+    };
+    setHistory(prev => [historyEntry, ...prev]);
+    pushEmployeeStandupNotification('Standup Submitted', `Your daily standup was submitted via command at ${newStandup.time}.`);
+
+    addNotification({
+      type: 'success',
+      category: 'Team',
+      icon: '📝',
+      title: 'Standup Submitted',
+      message: `${currentUserName} submitted their daily standup via command.`,
+      group: 'Today',
+    });
+    toast.success('Standup Update Submitted via Command!');
+    setQuickCommand('');
   };
 
   const handleExtensionSubmit = () => {
@@ -973,7 +1029,7 @@ export default function DailyStandups({ session }: { session?: any }) {
         </div>
       </div>
 
-      {/* Stats & History Row */}
+      {/* Stats Row */}
       <div className="flex flex-row justify-between items-center w-full mb-8 gap-4">
         <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm w-fit">
           <div className="px-4 py-2 flex items-center gap-2">
@@ -987,12 +1043,25 @@ export default function DailyStandups({ session }: { session?: any }) {
           <div className="px-4 py-2 flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-amber-500" />
             <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pending</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{role === 'manager' ? 'Missing Standups' : 'Pending'}</p>
               <p className="text-lg font-black text-slate-900 dark:text-white leading-none">{pendingCount}</p>
             </div>
           </div>
+          {role === 'manager' && (
+            <>
+              <div className="w-px h-8 bg-slate-200 dark:bg-slate-800" />
+              <div className="px-4 py-2 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-rose-500" />
+                <div>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Blocked Employees</p>
+                  <p className="text-lg font-black text-slate-900 dark:text-white leading-none">
+                    {displayStandups.filter(s => s.blockers && s.blockers !== 'None.' && s.blockers.trim() !== '').length}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
-
       </div>
 
       {/* Standup Grid */}
@@ -1031,16 +1100,25 @@ export default function DailyStandups({ session }: { session?: any }) {
               {standup.status === 'Submitted' ? (
                 <>
                   <div>
-                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Yesterday</h4>
+                    <h4 className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                      <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 border-0 text-[9px] px-1.5 py-0">Done</Badge>
+                      Yesterday
+                    </h4>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{standup.yesterday}</p>
                   </div>
                   <div>
-                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Today</h4>
+                    <h4 className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                      <Badge className="bg-blue-500 text-white hover:bg-blue-600 border-0 text-[9px] px-1.5 py-0">Doing</Badge>
+                      Today
+                    </h4>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{standup.today}</p>
                   </div>
                   {standup.blockers && standup.blockers !== 'None.' && (
                     <div className="bg-rose-50 dark:bg-rose-950/30 p-3 rounded-xl border border-rose-100 dark:border-rose-900/50 mt-auto">
-                      <h4 className="text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-1">Blockers</h4>
+                      <h4 className="flex items-center gap-2 text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-2">
+                        <Badge className="bg-rose-500 text-white hover:bg-rose-600 border-0 text-[9px] px-1.5 py-0">Blocked</Badge>
+                        Blockers
+                      </h4>
                       <p className="text-sm font-medium text-rose-700 dark:text-rose-400">{standup.blockers}</p>
                     </div>
                   )}
@@ -1471,8 +1549,44 @@ export default function DailyStandups({ session }: { session?: any }) {
               What did you work on, and what's next?
             </p>
           </DialogHeader>
-          <div className="p-6 space-y-6">
-            <div className="space-y-2">
+            <div className="p-6 space-y-6">
+              {/* WhatsApp Quick Paste */}
+              <div className="space-y-2 pb-4 border-b border-slate-100 dark:border-slate-800">
+                <label className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-500 flex items-center">
+                  <span className="mr-1.5 text-sm">⚡</span> Paste WhatsApp Command
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="/standup done | doing | blocked"
+                    value={quickCommand}
+                    onChange={(e) => setQuickCommand(e.target.value)}
+                    className="flex-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 rounded-xl px-3 text-sm font-mono text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-slate-400"
+                  />
+                  <Button 
+                    type="button"
+                    onClick={() => {
+                      const parsed = parseStandupCommand(quickCommand);
+                      if (parsed.isValid || quickCommand.includes('/standup')) {
+                        setFormData({
+                          yesterday: parsed.yesterday,
+                          today: parsed.today,
+                          blockers: parsed.blockers,
+                          notes: ''
+                        });
+                        toast.success("Command parsed! Fields auto-filled.");
+                      } else {
+                        toast.error("Invalid command format.");
+                      }
+                    }}
+                    className="h-10 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 font-bold"
+                  >
+                    Parse
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
                 <Button 
