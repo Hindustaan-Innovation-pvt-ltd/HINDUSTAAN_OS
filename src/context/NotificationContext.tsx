@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { toast } from 'sonner';
 
 export type NotificationType = 'task' | 'success' | 'alert' | 'warning' | 'info' | 'user' | 'request' | 'danger' | 'file' | 'meeting' | 'message';
 
@@ -16,6 +17,7 @@ export interface NotificationItem {
   title: string;
   message: string;
   time: string;
+  timestamp?: number;
   unread: boolean;
   group: string;
   priority?: string;
@@ -39,6 +41,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     title: 'New Task Assigned',
     message: 'Rahul assigned Authentication Module to Tanvy.',
     time: '2 minutes ago',
+    timestamp: Date.now() - 2 * 60 * 1000,
     unread: true,
     group: 'Today',
     actions: [
@@ -54,6 +57,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     title: 'Task Completed',
     message: 'Tanvy completed Dashboard UI.',
     time: '10 minutes ago',
+    timestamp: Date.now() - 10 * 60 * 1000,
     unread: true,
     group: 'Today',
   },
@@ -66,6 +70,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     message: 'Backend API deadline is tomorrow.',
     priority: 'High',
     time: '1 hour ago',
+    timestamp: Date.now() - 60 * 60 * 1000,
     unread: true,
     group: 'Today',
   },
@@ -77,6 +82,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     title: 'Standup Missing',
     message: 'Priya and Aman haven\'t submitted today\'s standup.',
     time: '2 hours ago',
+    timestamp: Date.now() - 2 * 60 * 60 * 1000,
     unread: false,
     group: 'Today',
   },
@@ -88,6 +94,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     title: 'Work Log Submitted',
     message: 'Rahul logged 7.5 hours today.',
     time: '5 hours ago',
+    timestamp: Date.now() - 5 * 60 * 60 * 1000,
     unread: false,
     group: 'Today',
   },
@@ -97,8 +104,9 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     category: 'Team',
     icon: '👤',
     title: 'New Team Member',
-    message: 'Neha Sharma joined the Frontend Team.',
-    time: 'Yesterday',
+    message: 'Sarah Jenning joined the project.',
+    time: '1 day ago',
+    timestamp: Date.now() - 24 * 60 * 60 * 1000,
     unread: false,
     group: 'Yesterday',
   },
@@ -108,8 +116,9 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     category: 'Team',
     icon: '📅',
     title: 'Leave Request',
-    message: 'Aman requested leave for 12 July.',
-    time: 'Yesterday',
+    message: 'Client feedback document attached.',
+    time: '1 day ago',
+    timestamp: Date.now() - 24 * 60 * 60 * 1000,
     unread: false,
     group: 'Yesterday',
     actions: [
@@ -125,6 +134,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     title: 'Milestone Completed',
     message: 'Sprint 2 milestone completed.',
     time: '2 days ago',
+    timestamp: Date.now() - 2 * 24 * 60 * 60 * 1000,
     unread: false,
     group: 'Earlier',
   },
@@ -136,6 +146,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     title: 'Project Risk',
     message: 'Crime Prediction System is behind schedule.',
     time: '2 days ago',
+    timestamp: Date.now() - 2 * 24 * 60 * 60 * 1000,
     unread: false,
     group: 'Earlier',
   }
@@ -153,11 +164,61 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('hindustaan_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
+  // Listen for external writes to localStorage (cross-tab sync)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hindustaan_notifications' && e.newValue) {
+        try {
+          const newNotifs = JSON.parse(e.newValue);
+          setNotifications(prev => {
+            const newNotif = newNotifs[0];
+            if (newNotif && (!prev.length || newNotif.id !== prev[0].id)) {
+              toast.info(newNotif.title, {
+                description: newNotif.message,
+                icon: newNotif.icon,
+                duration: 8000,
+              });
+            }
+            return newNotifs;
+          });
+        } catch (e) { console.error(e); }
+      }
+    };
+    
+    const handleExternalUpdate = () => {
+      const saved = localStorage.getItem('hindustaan_notifications');
+      if (saved && saved !== 'null') {
+        try {
+          const newNotifs = JSON.parse(saved);
+          setNotifications(prev => {
+            const newNotif = newNotifs[0];
+            if (newNotif && (!prev.length || newNotif.id !== prev[0].id)) {
+              toast.info(newNotif.title, {
+                description: newNotif.message,
+                icon: newNotif.icon,
+                duration: 8000,
+              });
+            }
+            return newNotifs;
+          });
+        } catch (e) { console.error(e); }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('notifications-updated', handleExternalUpdate);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('notifications-updated', handleExternalUpdate);
+    };
+  }, []);
+
   const addNotification = (notif: Omit<NotificationItem, 'id' | 'time' | 'unread'>) => {
     const newNotification: NotificationItem = {
       ...notif,
       id: Date.now(),
       time: 'Just now',
+      timestamp: Date.now(),
       unread: true,
     };
     setNotifications(prev => [newNotification, ...prev]);

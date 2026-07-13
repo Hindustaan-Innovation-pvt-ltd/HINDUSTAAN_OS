@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, Video, CheckCircle2, AlertCircle, MessageSquare, Clock, Calendar, CheckSquare, Edit3, Sparkles, TrendingUp, AlertTriangle, Flame, Percent, Search, Trash2, MessageCircle } from 'lucide-react';
+import { Mic, Video, CheckCircle2, AlertCircle, MessageSquare, Clock, Calendar, CheckSquare, Edit3, Sparkles, TrendingUp, AlertTriangle, Flame, Percent, Search, Trash2, MessageCircle, Users, Briefcase, Send, Check, ChevronDown, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -129,7 +130,7 @@ export default function DailyStandups({ session }: { session?: any }) {
   const role = session?.user?.user_metadata?.role || currentUser?.role || 'employee';
   const email = session?.user?.email || currentUser?.email || 'user@hindustaan.in';
   
-  const currentUserName = currentUser?.name || 'Tanvy';
+  const currentUserName = session?.user?.user_metadata?.name || currentUser?.name || 'Tanvy';
 
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
@@ -145,6 +146,49 @@ export default function DailyStandups({ session }: { session?: any }) {
     return (saved && saved !== 'null') ? JSON.parse(saved) : MOCK_HISTORY;
   });
 
+  const [standupSettings, setStandupSettings] = useState(() => {
+    const saved = localStorage.getItem('projectos-standup-settings');
+    return saved ? JSON.parse(saved) : {
+      reminderEnabled: true,
+      reminderTime: '08:00',
+      deadline: '11:00',
+      yesterdayWork: true,
+      todaysPlan: true,
+      blockers: true,
+      additionalNotes: false,
+      emailReminder: true,
+      browserNotification: true
+    };
+  });
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'projectos-standup-settings' && e.newValue) {
+        setStandupSettings(JSON.parse(e.newValue));
+      }
+    };
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'projectos-standup-settings') {
+        setStandupSettings(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : e.detail.value);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    };
+  }, []);
+
+  const isDeadlinePassed = () => {
+    if (!standupSettings.deadline) return false;
+    const now = new Date();
+    const [hours, minutes] = standupSettings.deadline.split(':');
+    const deadlineDate = new Date();
+    deadlineDate.setHours(parseInt(hours, 10) || 11, parseInt(minutes, 10) || 0, 0, 0);
+    return now > deadlineDate;
+  };
+
   const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [extensionDays, setExtensionDays] = useState(1);
@@ -159,7 +203,7 @@ export default function DailyStandups({ session }: { session?: any }) {
   }, [history]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ yesterday: '', today: '', blockers: '' });
+  const [formData, setFormData] = useState({ yesterday: '', today: '', blockers: '', notes: '' });
   const [sentReminders, setSentReminders] = useState<Set<string>>(new Set());
   const [viewingStandup, setViewingStandup] = useState<any | null>(null);
   
@@ -168,8 +212,93 @@ export default function DailyStandups({ session }: { session?: any }) {
   const [editingReply, setEditingReply] = useState<{standupId: string, replyId: string, text: string} | null>(null);
 
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
+  const [isSchedulingMeeting, setIsSchedulingMeeting] = useState(false);
+  const [meetingTitle, setMeetingTitle] = useState('Quick Sync Meeting');
   const [meetingLink, setMeetingLink] = useState('https://meet.google.com/new');
   const [meetingMessage, setMeetingMessage] = useState('Hi team, please join the daily standup meeting now!');
+  const [selectedMeetingParticipants, setSelectedMeetingParticipants] = useState<string[]>([]);
+  
+  const EMPLOYEES = [
+    { id: 'u2', name: 'Rahul Sharma', role: 'Backend Developer' },
+    { id: 'u3', name: 'Priya Patel', role: 'Technical Writer' },
+    { id: 'u4', name: 'Tanvy Pandey', role: 'Intern Developer' },
+  ];
+  const MANAGERS = [
+    { id: 'u1', name: 'Amanda Smith', role: 'Frontend Lead' },
+    { id: 'u5', name: 'Rohan Gupta', role: 'Project Manager' },
+  ];
+  
+  const [empExpanded, setEmpExpanded] = useState(false);
+  const [mgrExpanded, setMgrExpanded] = useState(false);
+
+  const [activeSpeechField, setActiveSpeechField] = useState<'yesterday' | 'today' | 'blockers' | 'notes' | null>(null);
+  const recognitionRef = React.useRef<any>(null);
+
+  const startListeningForField = (field: 'yesterday' | 'today' | 'blockers' | 'notes') => {
+    // If already listening for this field, stop it (toggle off)
+    if (activeSpeechField === field && recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+      setActiveSpeechField(null);
+      return;
+    }
+
+    // If listening for a different field, stop that first
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error('Voice commands are not supported in this browser. Please use Google Chrome.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setActiveSpeechField(field);
+      toast.info(`Listening for "${field}"... Speak now`, { duration: 2500 });
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error', event.error);
+      setActiveSpeechField(null);
+      recognitionRef.current = null;
+      if (event.error !== 'aborted') {
+        toast.error(`Voice error: ${event.error}`);
+      }
+    };
+
+    recognition.onend = () => {
+      setActiveSpeechField(null);
+      recognitionRef.current = null;
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      if (transcript) {
+        setFormData(prev => ({
+          ...prev,
+          [field]: prev[field] ? prev[field] + ' ' + transcript : transcript
+        }));
+        toast.success(`Dictated: "${transcript}"`);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
+  const handleOpenVoiceStandup = () => {
+    // Just open the modal — user taps mic icon inside to start listening
+    setIsModalOpen(true);
+  };
 
   const handleSendReply = () => {
     if (!replyText.trim() || !replyStandupId) return;
@@ -192,6 +321,28 @@ export default function DailyStandups({ session }: { session?: any }) {
       message: `${currentUserName} replied to a standup.`,
       group: 'Today',
     });
+
+    // If manager is replying, also notify the employee in their notification panel
+    if (role === 'manager') {
+      const savedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
+      let empNotifs: any[] = [];
+      if (savedEmpNotifs && savedEmpNotifs !== 'null') {
+        try { empNotifs = JSON.parse(savedEmpNotifs); } catch (e) { console.error(e); }
+      }
+      const replyNotif = {
+        id: Date.now(),
+        category: 'Standups',
+        icon: '💬',
+        title: 'Manager Replied to Your Standup',
+        message: `${currentUserName} replied: "${replyText.trim().slice(0, 80)}${replyText.trim().length > 80 ? '...' : ''}"`  ,
+        time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+        unread: true,
+        group: 'Today',
+        priority: 'Important'
+      };
+      localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([replyNotif, ...empNotifs]));
+      window.dispatchEvent(new Event('employee-notifications-updated'));
+    }
 
     toast.success('Reply sent successfully!');
     setReplyStandupId(null);
@@ -235,6 +386,29 @@ export default function DailyStandups({ session }: { session?: any }) {
     toast.success('Reply deleted');
   };
 
+  // Helper: push a notification into the employee's notification panel
+  const pushEmployeeStandupNotification = (title: string, message: string) => {
+    if (role === 'manager') return; // only for employees
+    const savedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
+    let empNotifs: any[] = [];
+    if (savedEmpNotifs && savedEmpNotifs !== 'null') {
+      try { empNotifs = JSON.parse(savedEmpNotifs); } catch (e) { console.error(e); }
+    }
+    const newNotif = {
+      id: Date.now(),
+      category: 'Standups',
+      icon: '📝',
+      title,
+      message,
+      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      unread: true,
+      group: 'Today',
+      priority: 'Success'
+    };
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newNotif, ...empNotifs]));
+    window.dispatchEvent(new Event('employee-notifications-updated'));
+  };
+
   const handleUpdateSubmit = () => {
     if (!formData.yesterday || !formData.today) {
       toast.error('Please fill in your updates for yesterday and today.');
@@ -254,6 +428,17 @@ export default function DailyStandups({ session }: { session?: any }) {
     };
 
     setStandups([newStandup, ...standups.filter((s) => s.user !== currentUserName)]);
+
+    // Also add to the top of standup history
+    const historyEntry = {
+      ...newStandup,
+      dateGroup: 'Today'
+    };
+    setHistory(prev => [historyEntry, ...prev]);
+
+    // Add to employee's own notification panel
+    pushEmployeeStandupNotification('Standup Updated', `Your daily standup update was submitted successfully at ${newStandup.time}.`);
+
     addNotification({
       type: 'success',
       category: 'Team',
@@ -264,7 +449,7 @@ export default function DailyStandups({ session }: { session?: any }) {
     });
     toast.success('Standup Update Submitted!');
     setIsModalOpen(false);
-    setFormData({ yesterday: '', today: '', blockers: '' });
+    setFormData({ yesterday: '', today: '', blockers: '', notes: '' });
   };
 
   const handleExtensionSubmit = () => {
@@ -316,8 +501,30 @@ export default function DailyStandups({ session }: { session?: any }) {
       ]
     };
 
+    // 1. Save to manager notifications (with Approve/Reject action buttons)
     const updatedNotifications = [newReqNotification, ...currentNotifications];
     localStorage.setItem('hindustaan_notifications', JSON.stringify(updatedNotifications));
+    window.dispatchEvent(new Event('notifications-updated'));
+
+    // 2. Also save a "Pending" status notification to employee notifications panel
+    const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
+    let empNotifications: any[] = [];
+    if (savedEmpNotifications && savedEmpNotifications !== 'null') {
+      try { empNotifications = JSON.parse(savedEmpNotifications); } catch (e) { console.error(e); }
+    }
+    const empPendingNotification = {
+      id: Date.now() + 1,
+      category: 'Tasks',
+      icon: '⏳',
+      title: 'Extension Request Sent',
+      message: `Your ${extensionDays}-day extension request for "${selectedTask.title}" has been submitted and is pending manager approval.`,
+      time: 'Just now',
+      unread: true,
+      group: 'Today',
+      priority: 'Important'
+    };
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([empPendingNotification, ...empNotifications]));
+    window.dispatchEvent(new Event('employee-notifications-updated'));
 
     toast.success('Extension Request Submitted!', {
       description: `Requested ${extensionDays} days for "${selectedTask.title}".`
@@ -344,6 +551,12 @@ export default function DailyStandups({ session }: { session?: any }) {
   const savedTasks = localStorage.getItem('hindustaan_tasks_list');
   const allTasks = (savedTasks && savedTasks !== 'null') ? JSON.parse(savedTasks) : [];
   const allTasksArray = Array.isArray(allTasks) ? allTasks : [];
+
+  // Load approved deadline extensions to show both original and extended dates
+  const savedApprovedExtensions = localStorage.getItem('hindustaan_approved_extensions');
+  const approvedExtensions: any[] = (savedApprovedExtensions && savedApprovedExtensions !== 'null')
+    ? (() => { try { return JSON.parse(savedApprovedExtensions); } catch { return []; } })()
+    : [];
   
   const firstName = (currentUserName || '').split(' ')[0].toLowerCase();
   const myTasks = allTasksArray.filter((t: any) =>
@@ -359,6 +572,18 @@ export default function DailyStandups({ session }: { session?: any }) {
   const sprintProgress = myTasks.length > 0 
     ? Math.round((tasksCompletedCount / myTasks.length) * 100)
     : 0;
+
+  const topPriorityTask = React.useMemo(() => {
+    const active = myTasks.filter((t: any) => t && t.status !== 'Done');
+    if (active.length === 0) return null;
+    const weights: Record<string, number> = { 'High': 3, 'Normal': 2, 'Low': 1 };
+    return active.sort((a: any, b: any) => {
+      const wA = weights[a.priority] || 0;
+      const wB = weights[b.priority] || 0;
+      if (wA !== wB) return wB - wA;
+      return new Date(a.due_date || 0).getTime() - new Date(b.due_date || 0).getTime();
+    })[0];
+  }, [myTasks]);
 
   const savedLogs = localStorage.getItem('work_logs_list');
   const allLogs = (savedLogs && savedLogs !== 'null') ? JSON.parse(savedLogs) : [];
@@ -390,10 +615,11 @@ export default function DailyStandups({ session }: { session?: any }) {
 
   const [showHistory, setShowHistory] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
+  const [historyDateFilter, setHistoryDateFilter] = useState('');
 
   // Filter standups to show only logged in employee (recent 2-3) if role is not manager
   const displayStandups = role !== 'manager'
-    ? standups.filter(s => s && s.user && s.user.toLowerCase().includes(firstName)).slice(0, 3)
+    ? history.filter(s => s && s.user && s.user.toLowerCase().includes(firstName)).slice(0, 3)
     : standups;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -403,7 +629,7 @@ export default function DailyStandups({ session }: { session?: any }) {
     const newStandup = {
       id: `s-${Date.now()}`,
       user: currentUserName,
-      initials: (currentUserName || 'E').split(' ').map(n=>n[0]).join(''),
+      initials: (currentUserName || 'E').split(' ').map((n: string) => n[0]).join(''),
       role: role === 'manager' ? 'Product Manager' : 'Developer',
       status: 'Submitted',
       yesterday: formData.yesterday,
@@ -413,7 +639,7 @@ export default function DailyStandups({ session }: { session?: any }) {
     };
     
     // Add the new standup to the top of active standups list (slides older ones right)
-    setStandups(prev => [newStandup, ...prev]);
+    setStandups(prev => [newStandup, ...prev.filter(s => s.user !== currentUserName)]);
 
     // Also add to the top of standup history
     const historyEntry = {
@@ -421,6 +647,9 @@ export default function DailyStandups({ session }: { session?: any }) {
       dateGroup: 'Today'
     };
     setHistory(prev => [historyEntry, ...prev]);
+
+    // Add to employee's own notification panel
+    pushEmployeeStandupNotification('Standup Submitted', `Your daily standup was submitted successfully at ${newStandup.time}.`);
     
     addNotification({
       type: 'success',
@@ -432,7 +661,7 @@ export default function DailyStandups({ session }: { session?: any }) {
     });
 
     setIsModalOpen(false);
-    setFormData({ yesterday: '', today: '', blockers: '' });
+    setFormData({ yesterday: '', today: '', blockers: '', notes: '' });
   };
 
   const submittedCount = displayStandups.filter(s => s.status === 'Submitted').length;
@@ -448,11 +677,37 @@ export default function DailyStandups({ session }: { session?: any }) {
     setSentReminders(prev => new Set(prev).add(standup.id));
   };
 
+  const getEntryDateString = (h: any) => {
+    if (h.id && h.id.startsWith('s-')) {
+      const timestamp = parseInt(h.id.slice(2), 10);
+      if (!isNaN(timestamp)) {
+        return new Date(timestamp).toISOString().split('T')[0];
+      }
+    }
+    
+    const today = new Date();
+    if (h.dateGroup === 'Today') {
+      return today.toISOString().split('T')[0];
+    } else if (h.dateGroup === 'Yesterday') {
+      today.setDate(today.getDate() - 1);
+      return today.toISOString().split('T')[0];
+    } else if (h.dateGroup === '2 Days Ago') {
+      today.setDate(today.getDate() - 2);
+      return today.toISOString().split('T')[0];
+    }
+    return '';
+  };
+
   // Filter history to show only logged in employee standups if role is not manager
   const filteredHistory = history.filter(h => {
     if (!h || !h.user) return false;
     if (role !== 'manager') {
-      return h.user.toLowerCase().includes(firstName);
+      const matchesUser = h.user.toLowerCase().includes(firstName);
+      if (!matchesUser) return false;
+      if (historyDateFilter) {
+        return getEntryDateString(h) === historyDateFilter;
+      }
+      return true;
     }
     return h.user.toLowerCase().includes(historySearch.toLowerCase());
   });
@@ -491,17 +746,39 @@ export default function DailyStandups({ session }: { session?: any }) {
         </div>
 
         {/* Search & Filter */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center">
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search history by name..."
-              value={historySearch}
-              onChange={(e) => setHistorySearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none text-slate-900 dark:text-white placeholder:text-slate-400"
-            />
-          </div>
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
+          {role !== 'manager' ? (
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <span className="text-xs font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider">Search by Date:</span>
+              <input
+                type="date"
+                value={historyDateFilter}
+                onChange={(e) => setHistoryDateFilter(e.target.value)}
+                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none text-[#0F172A] dark:text-white focus:ring-2 focus:ring-orange-500/50 [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:cursor-pointer dark:[&::-webkit-calendar-picker-indicator]:invert dark:[&::-webkit-calendar-picker-indicator]:opacity-80 dark:[&::-webkit-calendar-picker-indicator]:hover:opacity-100"
+              />
+              {historyDateFilter && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setHistoryDateFilter('')}
+                  className="h-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search history by name..."
+                value={historySearch}
+                onChange={(e) => setHistorySearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none text-slate-900 dark:text-white placeholder:text-slate-400"
+              />
+            </div>
+          )}
           <Badge className="bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-400 border border-orange-100 dark:border-orange-900/50 font-bold px-3 py-1 text-xs">
             {filteredHistory.length} Total Submissions
           </Badge>
@@ -648,7 +925,7 @@ export default function DailyStandups({ session }: { session?: any }) {
   }
 
   return (
-    <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-8">
+    <div className="flex flex-col min-h-full w-full p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
@@ -661,13 +938,23 @@ export default function DailyStandups({ session }: { session?: any }) {
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
+          {role !== 'manager' && (
+            <Button 
+              onClick={handleOpenVoiceStandup} 
+              className="h-10 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold shadow-md shadow-indigo-500/20 border-0 transition-all"
+            >
+              <Mic className="h-4 w-4 mr-2" /> Submit Update
+            </Button>
+          )}
 
-          <Button 
-            onClick={() => setIsMeetingModalOpen(true)} 
-            className="h-10 rounded-xl bg-gradient-to-r from-orange-600 to-rose-600 hover:from-orange-700 hover:to-rose-700 text-white font-bold shadow-md shadow-orange-500/20 border-0 transition-all"
-          >
-            <Video className="h-4 w-4 mr-2" /> Start Meeting
-          </Button>
+          {role === 'manager' && (
+            <Button 
+              onClick={() => setIsMeetingModalOpen(true)} 
+              className="h-10 rounded-xl bg-gradient-to-r from-orange-600 to-rose-600 hover:from-orange-700 hover:to-rose-700 text-white font-bold shadow-md shadow-orange-500/20 border-0 transition-all"
+            >
+              <Video className="h-4 w-4 mr-2" /> Start Meeting
+            </Button>
+          )}
 
           <Button 
             variant="outline" 
@@ -795,13 +1082,12 @@ export default function DailyStandups({ session }: { session?: any }) {
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{reply.user}</span>
                         <div className="flex items-center gap-2">
-                          {(reply.user === currentUserName || role === 'manager') && (
+                          {/* Employees can't edit any replies — only manager can edit/delete their own */}
+                          {role === 'manager' && reply.user === currentUserName && (
                             <div className="flex items-center gap-1.5 transition-opacity">
-                              {reply.user === currentUserName && (
-                                <button onClick={(e) => { e.stopPropagation(); setEditingReply({ standupId: standup.id, replyId: reply.id, text: reply.text }); }} className="text-slate-400 hover:text-orange-600 transition-colors" title="Edit Reply">
-                                  <Edit3 className="h-3.5 w-3.5" />
-                                </button>
-                              )}
+                              <button onClick={(e) => { e.stopPropagation(); setEditingReply({ standupId: standup.id, replyId: reply.id, text: reply.text }); }} className="text-slate-400 hover:text-orange-600 transition-colors" title="Edit Reply">
+                                <Edit3 className="h-3.5 w-3.5" />
+                              </button>
                               <button onClick={(e) => { e.stopPropagation(); handleDeleteReply(standup.id, reply.id); }} className="text-slate-400 hover:text-rose-600 transition-colors" title="Delete Reply">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -821,11 +1107,27 @@ export default function DailyStandups({ session }: { session?: any }) {
             {standup.status === 'Submitted' && (
               <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50 flex items-center justify-between transition-opacity">
                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{standup.time}</span>
-                {role === 'manager' && (
-                  <Button onClick={(e) => { e.stopPropagation(); setReplyStandupId(standup.id); }} variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-500 hover:text-orange-600">
-                    <MessageSquare className="h-3 w-3 mr-1.5" /> Reply
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {role === 'manager' && (
+                    <Button onClick={(e) => { e.stopPropagation(); setReplyStandupId(standup.id); }} variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-500 hover:text-orange-600">
+                      <MessageSquare className="h-3 w-3 mr-1.5" /> Reply
+                    </Button>
+                  )}
+                  {role !== 'manager' && standup.user === currentUserName && !isDeadlinePassed() && (
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFormData({ yesterday: standup.yesterday, today: standup.today, blockers: standup.blockers, notes: '' });
+                        setIsModalOpen(true);
+                      }}
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 text-xs font-bold text-slate-500 hover:text-indigo-600"
+                    >
+                      <Edit3 className="h-3 w-3 mr-1.5" /> Edit
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -887,7 +1189,8 @@ export default function DailyStandups({ session }: { session?: any }) {
             {/* Left side (8 cols): Upcoming Deadlines + Weekly Standup Activity */}
             <div className="lg:col-span-8 space-y-8">
               
-              {/* Upcoming Deadlines */}
+              {/* Upcoming Deadlines (shown only for manager - employee sees it on their Dashboard) */}
+              {role === 'manager' && (
               <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm">
                 <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
                   <div>
@@ -897,15 +1200,6 @@ export default function DailyStandups({ session }: { session?: any }) {
                     </CardTitle>
                     <CardDescription>Track key milestones and scheduled due dates.</CardDescription>
                   </div>
-                  {role !== 'manager' && (
-                    <Button 
-                      onClick={() => setIsExtensionModalOpen(true)} 
-                      size="sm"
-                      className="h-8 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm border border-indigo-600 hover:border-indigo-700 text-xs transition-all duration-200"
-                    >
-                      Request Extension
-                    </Button>
-                  )}
                 </CardHeader>
                 <CardContent className="pt-4">
                   <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -917,6 +1211,10 @@ export default function DailyStandups({ session }: { session?: any }) {
                         } else if (task.isToday) {
                           colorClass = "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 px-2 py-0.5 rounded";
                         }
+
+                        // Check if this task has an approved extension
+                        const approvedExt = approvedExtensions.find((ex: any) => String(ex.taskId) === String(task.id));
+
                         return (
                           <div key={task.id} className="py-3 flex items-center justify-between first:pt-0 last:pb-0">
                             <div className="flex flex-col">
@@ -924,9 +1222,27 @@ export default function DailyStandups({ session }: { session?: any }) {
                               <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-0.5">{task.project_tag}</span>
                             </div>
                             <div className="flex items-center gap-4">
-                              <span className={cn("text-xs font-bold font-mono", colorClass)}>
-                                {task.due_date}
-                              </span>
+                              {approvedExt ? (
+                                // Show both original and extended deadline
+                                <div className="flex flex-col items-end gap-0.5">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] text-slate-400 font-semibold">Original:</span>
+                                    <span className="text-xs font-bold font-mono text-slate-500 dark:text-slate-400 line-through">
+                                      {approvedExt.originalDueDate}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Extended:</span>
+                                    <span className={cn("text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400")}>
+                                      {approvedExt.extendedDueDate}
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className={cn("text-xs font-bold font-mono", colorClass)}>
+                                  {task.due_date}
+                                </span>
+                              )}
                               <Badge className={cn(
                                 "text-[10px] font-black border-0 uppercase tracking-wider",
                                 task.priority === 'High' ? "bg-rose-100 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400" :
@@ -945,9 +1261,10 @@ export default function DailyStandups({ session }: { session?: any }) {
                   </div>
                 </CardContent>
               </Card>
+              )}
 
               {/* Weekly Standup Activity */}
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm h-[320px] flex flex-col">
                 <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
                   <CardTitle className="text-base flex items-center">
                     <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
@@ -955,8 +1272,8 @@ export default function DailyStandups({ session }: { session?: any }) {
                   </CardTitle>
                   <CardDescription>Standups submitted over the last 7 days.</CardDescription>
                 </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="h-[200px] w-full">
+                <CardContent className="pt-6 flex-1 min-h-0">
+                  <div className="h-full w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={[
                         { day: 'Mon', submitted: 1 },
@@ -975,6 +1292,40 @@ export default function DailyStandups({ session }: { session?: any }) {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Current Top Priority Task */}
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm">
+                <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <CardTitle className="text-base flex items-center">
+                    <Target className="h-5 w-5 text-indigo-600 dark:text-indigo-400 mr-2" />
+                    Current Top Priority
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-5">
+                  {topPriorityTask ? (
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-white text-lg mb-1">{topPriorityTask.title}</h4>
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50 font-black uppercase text-[10px]">
+                            {topPriorityTask.priority} Priority
+                          </Badge>
+                          <span className="text-xs font-semibold text-slate-500 flex items-center">
+                            <Clock className="h-3 w-3 mr-1" /> Due: {topPriorityTask.due_date}
+                          </span>
+                        </div>
+                      </div>
+                      <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 font-bold px-3 py-1.5 cursor-default">
+                        {topPriorityTask.status}
+                      </Badge>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center py-4 text-sm font-medium text-slate-400">
+                      No active tasks right now. You're all caught up!
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1018,19 +1369,19 @@ export default function DailyStandups({ session }: { session?: any }) {
               </Card>
 
               {/* Quick Notes */}
-              <Card className="rounded-2xl border-amber-200 dark:border-amber-800/60 shadow-sm bg-amber-50/40 dark:bg-amber-950/15 overflow-hidden">
+              <Card className="rounded-2xl border-amber-200 dark:border-amber-800/60 shadow-sm bg-amber-50/40 dark:bg-amber-950/15 overflow-hidden h-[320px] flex flex-col">
                 <CardHeader className="pb-3 border-b border-amber-100 dark:border-amber-900/30">
                   <CardTitle className="text-base flex items-center text-amber-900 dark:text-amber-300">
                     <Edit3 className="h-5 w-5 text-amber-600 dark:text-amber-400 mr-2" />
                     Quick Notes
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-4">
+                <CardContent className="pt-4 flex-1 min-h-0">
                   <textarea
                     value={note}
                     onChange={handleNoteChange}
                     placeholder="Write a sticky note for today's goals or ideas..."
-                    className="w-full h-32 bg-transparent border-none outline-none resize-none text-sm text-slate-800 dark:text-slate-300 placeholder:text-amber-600/40 dark:placeholder:text-amber-400/30 leading-relaxed font-medium"
+                    className="w-full h-full bg-transparent border-none outline-none resize-none text-sm text-slate-800 dark:text-slate-300 placeholder:text-amber-600/40 dark:placeholder:text-amber-400/30 leading-relaxed font-medium"
                   />
                 </CardContent>
               </Card>
@@ -1101,8 +1452,13 @@ export default function DailyStandups({ session }: { session?: any }) {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[500px] p-0 border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] overflow-hidden rounded-2xl shadow-2xl">
           <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50">
-            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center justify-between">
               Daily Standup
+              {isDeadlinePassed() && (
+                <Badge variant="outline" className="border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:bg-rose-900/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ml-auto">
+                  Standup deadline passed
+                </Badge>
+              )}
             </DialogTitle>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               What did you work on, and what's next?
@@ -1110,7 +1466,21 @@ export default function DailyStandups({ session }: { session?: any }) {
           </DialogHeader>
           <div className="p-6 space-y-6">
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
+                <Button 
+                  type="button"
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => startListeningForField('yesterday')}
+                  className={cn(
+                    "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
+                    activeSpeechField === 'yesterday' && "text-red-500 animate-pulse hover:text-red-600"
+                  )}
+                >
+                  <Mic className="h-3.5 w-3.5" />
+                </Button>
+              </div>
               <textarea 
                 value={formData.yesterday}
                 onChange={(e) => setFormData({...formData, yesterday: e.target.value})}
@@ -1119,7 +1489,21 @@ export default function DailyStandups({ session }: { session?: any }) {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What will you do today?</label>
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What will you do today?</label>
+                <Button 
+                  type="button"
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => startListeningForField('today')}
+                  className={cn(
+                    "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
+                    activeSpeechField === 'today' && "text-red-500 animate-pulse hover:text-red-600"
+                  )}
+                >
+                  <Mic className="h-3.5 w-3.5" />
+                </Button>
+              </div>
               <textarea 
                 value={formData.today}
                 onChange={(e) => setFormData({...formData, today: e.target.value})}
@@ -1128,11 +1512,48 @@ export default function DailyStandups({ session }: { session?: any }) {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Any blockers? (Optional)</label>
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Any blockers? (Optional)</label>
+                <Button 
+                  type="button"
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => startListeningForField('blockers')}
+                  className={cn(
+                    "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
+                    activeSpeechField === 'blockers' && "text-red-500 animate-pulse hover:text-red-600"
+                  )}
+                >
+                  <Mic className="h-3.5 w-3.5" />
+                </Button>
+              </div>
               <textarea 
                 value={formData.blockers}
                 onChange={(e) => setFormData({...formData, blockers: e.target.value})}
                 placeholder="e.g. Waiting for backend team to fix the auth endpoint..."
+                className="w-full h-16 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Additional Notes (Optional)</label>
+                <Button 
+                  type="button"
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => startListeningForField('notes')}
+                  className={cn(
+                    "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
+                    activeSpeechField === 'notes' && "text-red-500 animate-pulse hover:text-red-600"
+                  )}
+                >
+                  <Mic className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <textarea 
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                placeholder="Any extra info..."
                 className="w-full h-16 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
             </div>
@@ -1291,51 +1712,369 @@ export default function DailyStandups({ session }: { session?: any }) {
 
       {/* Start & Share Meeting Dialog */}
       <Dialog open={isMeetingModalOpen} onOpenChange={setIsMeetingModalOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
-              <Video className="mr-2 h-5 w-5 text-orange-500" />
-              Start & Share Meeting
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Meeting Link</label>
-              <input 
-                value={meetingLink}
-                onChange={(e) => setMeetingLink(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-orange-500"
-              />
+        <DialogContent className="sm:max-w-[480px] rounded-3xl bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80 p-0 overflow-hidden flex flex-col shadow-2xl">
+          <div className="relative px-8 py-6 border-b border-slate-100 dark:border-slate-800/60 bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
+            <div className="absolute top-0 right-0 p-4 opacity-10 blur-xl pointer-events-none">
+              <div className="h-24 w-24 rounded-full bg-orange-500"></div>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Message to Team</label>
+            <DialogTitle className="relative text-2xl font-black text-slate-900 dark:text-white flex items-center tracking-tight">
+              <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 text-white flex items-center justify-center mr-4 shadow-lg shadow-orange-500/20">
+                <Video className="h-5 w-5" />
+              </div>
+              Schedule Quick Sync
+            </DialogTitle>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 font-medium">Instantly share a meeting link across the workspace.</p>
+          </div>
+          
+          <div className="px-8 py-6 space-y-6 overflow-y-auto max-h-[60vh] bg-white dark:bg-slate-950 relative z-10">
+            
+            {/* Participant Selection */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
+                <CheckSquare className="h-3.5 w-3.5 mr-1.5" /> Target Audience
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Employees Group */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button 
+                      type="button"
+                      className={cn(
+                        "flex items-center justify-between w-full border rounded-3xl p-4 transition-all duration-300 group outline-none focus:ring-2", 
+                        selectedMeetingParticipants.includes('all_emp') || EMPLOYEES.some(e => selectedMeetingParticipants.includes(e.id))
+                          ? "border-indigo-400 shadow-md bg-gradient-to-r from-indigo-50/50 to-white dark:from-indigo-500/10 dark:to-slate-900 ring-2 ring-indigo-500/10" 
+                          : "border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm"
+                      )}
+                    >
+                      <div className="flex items-center">
+                        <div className={cn(
+                          "flex items-center justify-center h-12 w-12 rounded-2xl mr-4 transition-colors",
+                          selectedMeetingParticipants.includes('all_emp') || EMPLOYEES.some(e => selectedMeetingParticipants.includes(e.id))
+                            ? "bg-indigo-500 text-white shadow-md shadow-indigo-500/20"
+                            : "bg-orange-100 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 group-hover:bg-orange-200 dark:group-hover:bg-orange-500/20"
+                        )}>
+                          <Users className="h-6 w-6" />
+                        </div>
+                        <div className="flex flex-col items-start text-left">
+                          <span className="text-[15px] font-black text-slate-900 dark:text-white leading-tight">Employees</span>
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">
+                            {selectedMeetingParticipants.includes('all_emp') 
+                              ? "All Selected" 
+                              : EMPLOYEES.filter(e => selectedMeetingParticipants.includes(e.id)).length > 0 
+                                ? `${EMPLOYEES.filter(e => selectedMeetingParticipants.includes(e.id)).length} Selected` 
+                                : "Select participants"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-50 dark:bg-slate-800 group-hover:bg-slate-100 dark:group-hover:bg-slate-700 transition-colors">
+                        <ChevronDown className="h-4 w-4 text-slate-400 group-data-[state=open]:rotate-180 transition-transform duration-200" />
+                      </div>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[calc(100vw-4rem)] sm:w-64 p-2 rounded-2xl border-slate-100 dark:border-slate-800 shadow-xl" align="start">
+                    <DropdownMenuCheckboxItem
+                      className="rounded-xl py-3 cursor-pointer font-black text-[13px] mb-1 focus:bg-indigo-50 dark:focus:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
+                      checked={selectedMeetingParticipants.includes('all_emp')}
+                      onCheckedChange={(checked) => {
+                        if (checked) setSelectedMeetingParticipants(prev => [...prev, 'all_emp', ...EMPLOYEES.map(e => e.id)]);
+                        else setSelectedMeetingParticipants(prev => prev.filter(id => id !== 'all_emp' && !EMPLOYEES.map(e => e.id).includes(id)));
+                      }}
+                    >
+                      Select All Employees
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                    {EMPLOYEES.map(member => (
+                      <DropdownMenuCheckboxItem
+                        key={member.id}
+                        className="rounded-xl py-2.5 cursor-pointer font-bold text-sm focus:bg-indigo-50 dark:focus:bg-indigo-900/30 focus:text-indigo-700 dark:focus:text-indigo-300 transition-colors"
+                        checked={selectedMeetingParticipants.includes(member.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) setSelectedMeetingParticipants(prev => [...prev, member.id]);
+                          else setSelectedMeetingParticipants(prev => prev.filter(id => id !== member.id && id !== 'all_emp'));
+                        }}
+                      >
+                        <div className="flex items-center ml-2">
+                          <Avatar className="h-6 w-6 mr-2 border border-slate-200 dark:border-slate-700">
+                            <AvatarFallback className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{member.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <span>{member.name}</span>
+                            <span className="text-[9px] font-medium text-slate-400 dark:text-slate-500 leading-none">{member.role}</span>
+                          </div>
+                        </div>
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Managers Group */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button 
+                      type="button"
+                      className={cn(
+                        "flex items-center justify-between w-full border rounded-3xl p-4 transition-all duration-300 group outline-none focus:ring-2", 
+                        selectedMeetingParticipants.includes('all_mgr') || MANAGERS.some(m => selectedMeetingParticipants.includes(m.id))
+                          ? "border-slate-400 shadow-md bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-900 ring-2 ring-slate-400/20" 
+                          : "border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm"
+                      )}
+                    >
+                      <div className="flex items-center">
+                        <div className={cn(
+                          "flex items-center justify-center h-12 w-12 rounded-2xl mr-4 transition-colors",
+                          selectedMeetingParticipants.includes('all_mgr') || MANAGERS.some(m => selectedMeetingParticipants.includes(m.id))
+                            ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-md shadow-slate-500/20"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 group-hover:bg-slate-200 dark:group-hover:bg-slate-700"
+                        )}>
+                          <Briefcase className="h-6 w-6" />
+                        </div>
+                        <div className="flex flex-col items-start text-left">
+                          <span className="text-[15px] font-black text-slate-900 dark:text-white leading-tight">Managers</span>
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">
+                            {selectedMeetingParticipants.includes('all_mgr') 
+                              ? "All Selected" 
+                              : MANAGERS.filter(m => selectedMeetingParticipants.includes(m.id)).length > 0 
+                                ? `${MANAGERS.filter(m => selectedMeetingParticipants.includes(m.id)).length} Selected` 
+                                : "Select participants"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-50 dark:bg-slate-800 group-hover:bg-slate-100 dark:group-hover:bg-slate-700 transition-colors">
+                        <ChevronDown className="h-4 w-4 text-slate-400 group-data-[state=open]:rotate-180 transition-transform duration-200" />
+                      </div>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[calc(100vw-4rem)] sm:w-64 p-2 rounded-2xl border-slate-100 dark:border-slate-800 shadow-xl" align="start">
+                    <DropdownMenuCheckboxItem
+                      className="rounded-xl py-3 cursor-pointer font-black text-[13px] mb-1 focus:bg-slate-100 dark:focus:bg-slate-800 focus:text-slate-900 dark:focus:text-slate-100"
+                      checked={selectedMeetingParticipants.includes('all_mgr')}
+                      onCheckedChange={(checked) => {
+                        if (checked) setSelectedMeetingParticipants(prev => [...prev, 'all_mgr', ...MANAGERS.map(m => m.id)]);
+                        else setSelectedMeetingParticipants(prev => prev.filter(id => id !== 'all_mgr' && !MANAGERS.map(m => m.id).includes(id)));
+                      }}
+                    >
+                      Select All Managers
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                    {MANAGERS.map(member => (
+                      <DropdownMenuCheckboxItem
+                        key={member.id}
+                        className="rounded-xl py-2.5 cursor-pointer font-bold text-sm focus:bg-slate-100 dark:focus:bg-slate-800 focus:text-slate-900 dark:focus:text-slate-100 transition-colors"
+                        checked={selectedMeetingParticipants.includes(member.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) setSelectedMeetingParticipants(prev => [...prev, member.id]);
+                          else setSelectedMeetingParticipants(prev => prev.filter(id => id !== member.id && id !== 'all_mgr'));
+                        }}
+                      >
+                        <div className="flex items-center ml-2">
+                          <Avatar className="h-6 w-6 mr-2 border border-slate-200 dark:border-slate-700">
+                            <AvatarFallback className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{member.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <span>{member.name}</span>
+                            <span className="text-[9px] font-medium text-slate-400 dark:text-slate-500 leading-none">{member.role}</span>
+                          </div>
+                        </div>
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+              </div>
+            </div>
+
+            {/* Meeting Title */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
+                <Edit3 className="h-3.5 w-3.5 mr-1.5" /> Meeting Title
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                  <Edit3 className="h-4 w-4" />
+                </div>
+                <input 
+                  value={meetingTitle}
+                  onChange={(e) => setMeetingTitle(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all placeholder:text-slate-400"
+                  placeholder="e.g., Q3 Planning Sync"
+                />
+              </div>
+            </div>
+
+            {/* Meeting Link */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
+                <Search className="h-3.5 w-3.5 mr-1.5" /> Meeting Link
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                  <Video className="h-4 w-4" />
+                </div>
+                <input 
+                  value={meetingLink}
+                  onChange={(e) => setMeetingLink(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all placeholder:text-slate-400"
+                  placeholder="e.g., https://meet.google.com/xyz"
+                />
+              </div>
+            </div>
+
+            {/* Message */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
+                <MessageCircle className="h-3.5 w-3.5 mr-1.5" /> Announcement Message
+              </label>
               <textarea 
                 value={meetingMessage}
                 onChange={(e) => setMeetingMessage(e.target.value)}
-                className="w-full h-24 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-orange-500 resize-none"
+                className="w-full h-24 bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 resize-none transition-all placeholder:text-slate-400 leading-relaxed"
+                placeholder="Type your message here..."
               />
             </div>
-            <div className="flex flex-col gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <Button 
-                onClick={() => {
-                  window.open(meetingLink, '_blank');
-                }}
+            
+            {/* Open Meeting Room Button */}
+            <div className="pt-2">
+              <Button
                 variant="outline"
-                className="w-full rounded-xl font-bold border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-900/50 dark:text-orange-500 dark:hover:bg-orange-500/10"
+                onClick={() => window.open(meetingLink, '_blank')}
+                className="w-full h-12 rounded-2xl border-2 border-indigo-100 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-500/40 transition-all flex items-center justify-center text-[15px]"
               >
-                <Video className="h-4 w-4 mr-2" /> 1. Open Meeting Room
-              </Button>
-              <Button 
-                onClick={() => {
-                  const text = encodeURIComponent(`${meetingMessage}\n\nJoin Link: ${meetingLink}`);
-                  window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
-                  setIsMeetingModalOpen(false);
-                }}
-                className="w-full rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white font-bold transition-colors"
-              >
-                <WhatsappIcon className="h-4 w-4 mr-2" /> 2. Share via WhatsApp
+                <Video className="w-5 h-5 mr-2.5" />
+                1. Open Meeting Room
               </Button>
             </div>
+
+          </div>
+
+          {/* Action Bar */}
+          <div className="px-8 py-5 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900 flex gap-3 items-center justify-end relative z-10">
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsMeetingModalOpen(false)} 
+              className="px-6 rounded-2xl font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedMeetingParticipants.length === 0) {
+                  toast.error("Please select a target audience.");
+                  return;
+                }
+                
+                setIsSchedulingMeeting(true);
+                
+                // Simulate backend WhatsApp API delay
+                setTimeout(() => {
+                  // Add Notification to Dashboard Alerts (Manager side alert)
+                  const storedAlerts = localStorage.getItem('hindustaan_alerts');
+                  const alerts = storedAlerts ? JSON.parse(storedAlerts) : [];
+                  const newAlert = {
+                    id: `n${Date.now()}`,
+                    text: `New Meeting: ${meetingMessage.substring(0, 30)}...`,
+                    unread: true
+                  };
+                  localStorage.setItem('hindustaan_alerts', JSON.stringify([newAlert, ...alerts]));
+                  window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_alerts', value: JSON.stringify([newAlert, ...alerts]) } }));
+
+                  // Add Notification to Employee Notification Center
+                  const storedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
+                  const empNotifs = storedEmpNotifs ? JSON.parse(storedEmpNotifs) : [];
+                  const newEmpNotif = {
+                    id: Date.now(),
+                    category: 'Standups',
+                    icon: '🗓️',
+                    title: 'New Meeting Scheduled',
+                    message: `${meetingMessage} - Link: ${meetingLink}`,
+                    time: 'Just now',
+                    unread: true,
+                    group: 'Today',
+                    priority: 'Important',
+                    actions: [{ label: 'Join Meeting', primary: true }]
+                  };
+                  localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotif, ...empNotifs]));
+                  window.dispatchEvent(new CustomEvent('employee-notifications-updated'));
+
+                  // Add to Activity Feed
+                  const storedFeed = localStorage.getItem('hindustaan_activity_feed');
+                  const feed = storedFeed ? JSON.parse(storedFeed) : [];
+                  const newActivity = {
+                    id: `a${Date.now()}`,
+                    user: currentUser?.name || 'Manager',
+                    action: 'scheduled a',
+                    target: 'Quick Meeting',
+                    time: 'Just now',
+                    timestamp: Date.now(),
+                    type: 'meeting'
+                  };
+                  localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newActivity, ...feed]));
+                  window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_activity_feed', value: JSON.stringify([newActivity, ...feed]) } }));
+
+                  // Add to Upcoming Events (ProjectCalendarWidget)
+                  const storedEvents = localStorage.getItem('hindustaan_calendar_events');
+                  let calendarEvents = [];
+                  try {
+                    calendarEvents = storedEvents ? JSON.parse(storedEvents) : [];
+                  } catch (e) {}
+                  
+                  const newCalendarEvent = {
+                    id: `evt_${Date.now()}`,
+                    date: new Date().toISOString(),
+                    type: 'meeting',
+                    title: meetingTitle || 'Quick Sync Meeting',
+                    description: `${meetingMessage}\nLink: ${meetingLink}`,
+                    time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                    assignees: selectedMeetingParticipants.map(id => {
+                      if (id === 'all_emp') return { name: 'All Employees', initials: 'AE' };
+                      if (id === 'all_mgr') return { name: 'All Managers', initials: 'AM' };
+                      const member = [...EMPLOYEES, ...MANAGERS].find(m => m.id === id);
+                      return { name: member?.name || 'Group', initials: (member?.name || 'G').substring(0,2).toUpperCase() };
+                    }).filter((v, i, a) => a.findIndex(t => (t.name === v.name)) === i) // deduplicate
+                  };
+                  
+                  const newCalendarEventsArray = [...calendarEvents, newCalendarEvent];
+                  localStorage.setItem('hindustaan_calendar_events', JSON.stringify(newCalendarEventsArray));
+                  window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: JSON.stringify(newCalendarEventsArray) } }));
+
+                  // DISPATCH TO NOTIFICATION CONTEXT (This syncs across tabs now!)
+                  addNotification({
+                    title: 'New Meeting Scheduled',
+                    message: `${meetingMessage} - Link: ${meetingLink}`,
+                    type: 'meeting',
+                    icon: '🗓️',
+                    category: 'Messages',
+                    group: 'Today'
+                  });
+                  
+                  setIsSchedulingMeeting(false);
+                  
+                  toast.success('WhatsApp API: Invitations Dispatched', {
+                    description: `Meeting links securely delivered to ${selectedMeetingParticipants.length} participants via WhatsApp.`,
+                    duration: 5000
+                  });
+                  
+                  setIsMeetingModalOpen(false);
+                  setSelectedMeetingParticipants([]);
+                  setMeetingTitle('Quick Sync Meeting');
+                  setMeetingLink('https://meet.google.com/new');
+                  setMeetingMessage('Hi team, please join the daily standup meeting now!');
+                }, 1500); // Simulate network latency
+              }}
+              disabled={isSchedulingMeeting}
+              className="px-8 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-black transition-all shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            >
+              {isSchedulingMeeting ? (
+                <>
+                  <div className="h-4 w-4 mr-2.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  Sending via WhatsApp...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2.5" /> Send via WhatsApp & Notify
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

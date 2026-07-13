@@ -24,13 +24,13 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
-  LifeBuoy
+  LifeBuoy,
+  CalendarRange
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
 import { GlobalSearch } from '../dashboard/GlobalSearch';
-import { NotificationCenter } from '../dashboard/NotificationCenter';
-import { EmployeeNotificationCenter } from '../dashboard/EmployeeNotificationCenter';
+import { NotificationBell } from '../dashboard/NotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +51,7 @@ const employeeNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
   { name: 'My Tasks', icon: CheckSquare },
   { name: 'Work Logs', icon: Clock },
+  { name: 'Leave Management', icon: CalendarRange },
   { name: 'Daily Standup', icon: Mic },
   { name: 'My Projects', icon: FolderKanban },
   { name: 'Milestones', icon: Flag },
@@ -65,6 +66,7 @@ const managerNavigation = [
   { name: 'Gantt Timeline', icon: CalendarDays },
   { name: 'Progress Tracker', icon: BarChart2 },
   { name: 'Work Logs', icon: Clock },
+  { name: 'Leave Management', icon: CalendarRange },
   { name: 'Daily Standups', icon: Mic },
   { name: 'Contribution Scores', icon: Trophy },
   { name: 'Team Members', icon: Users },
@@ -411,7 +413,7 @@ export default function DashboardShell({
                 {isDark ? <Sun className="h-5 w-5 sm:h-6 sm:w-6" /> : <Moon className="h-5 w-5 sm:h-6 sm:w-6" />}
               </button>
 
-              {role === 'manager' ? <NotificationCenter /> : <EmployeeNotificationCenter />}
+              <NotificationBell onNavigate={onNavigate} />
             </div>
           </div>
 

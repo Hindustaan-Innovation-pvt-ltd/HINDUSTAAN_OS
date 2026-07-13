@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayCircle, CheckCircle2, ChevronLeft, ChevronRight, FolderKanban } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayCircle, CheckCircle2, ChevronLeft, ChevronRight, FolderKanban, AlertTriangle } from 'lucide-react';
+import { cn, logActivity } from '@/lib/utils';
 import TaskDetailsModal from '../components/dashboard/TaskDetailsModal';
 import CreateTaskModal from '../components/dashboard/CreateTaskModal';
 import { INITIAL_TASKS } from '@/data/mockData';
 
 // --- Types & Mock Data ---
 
-type Priority = 'High' | 'Normal' | 'Low';
+type Priority = 'High' | 'Medium' | 'Normal' | 'Low';
 type Status = 'To Do' | 'In Progress' | 'In Review' | 'Done';
 interface Task {
   id: string;
@@ -25,15 +25,26 @@ const COLUMNS: Status[] = ['To Do', 'In Progress', 'In Review', 'Done'];
 
 // --- Helper Components ---
 
-const PriorityBadge = ({ priority }: { priority: Priority }) => {
-  const styles = {
+const PriorityBadge = ({ priority, isEmployeeDashboard }: { priority: Priority; isEmployeeDashboard: boolean }) => {
+  const originalStyles = {
     High: 'bg-rose-100 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/20',
     Normal: 'bg-amber-100 text-amber-700 dark:text-amber-300 border-amber-200',
     Low: 'bg-emerald-100 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/20',
   };
 
+  const fixedStyles = {
+    High: 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300 border-rose-200 dark:border-rose-500/20',
+    Medium: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300 border-blue-200 dark:border-blue-500/20',
+    Normal: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300 border-amber-200 dark:border-amber-500/20',
+    Low: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/20',
+  };
+
+  const styleClass = isEmployeeDashboard
+    ? (fixedStyles[priority] || 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700')
+    : (originalStyles[priority as keyof typeof originalStyles] || '');
+
   return (
-    <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-semibold border", styles[priority])}>
+    <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-semibold border", styleClass)}>
       {priority}
     </span>
   );
@@ -216,9 +227,15 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
     const taskId = e.dataTransfer.getData('taskId');
     if (!taskId) return;
     
-    setTasks(prev => prev.map(task => 
-      task.id === taskId ? { ...task, status } : task
-    ));
+    setTasks(prev => {
+      const task = prev.find(t => t.id === taskId);
+      if (task && task.status !== status) {
+        logActivity(currentUserName, `moved task to ${status}`, task.title, 'task');
+      }
+      return prev.map(task => 
+        task.id === taskId ? { ...task, status } : task
+      );
+    });
     setDraggedTaskId(null);
   };
 
@@ -288,7 +305,10 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
         {isOverflowing && (
           <button
             onClick={() => scroll('left')}
-            className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all opacity-0 group-hover/board:opacity-100 cursor-pointer"
+            className={cn(
+              "absolute -left-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all cursor-pointer",
+              currentUser.role === 'intern' ? "opacity-100" : "opacity-0 group-hover/board:opacity-100"
+            )}
             title="Scroll Left"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -299,7 +319,10 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
         {isOverflowing && (
           <button
             onClick={() => scroll('right')}
-            className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all opacity-0 group-hover/board:opacity-100 cursor-pointer"
+            className={cn(
+              "absolute -right-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all cursor-pointer",
+              currentUser.role === 'intern' ? "opacity-100" : "opacity-0 group-hover/board:opacity-100"
+            )}
             title="Scroll Right"
           >
             <ChevronRight className="h-5 w-5" />
@@ -309,7 +332,8 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
         <div 
           ref={scrollContainerRef}
           className={cn(
-            "flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory h-fit w-full scrollbar-hide",
+            "flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory h-fit w-full",
+            currentUser.role === 'intern' ? "hide-scrollbar pb-1" : "scrollbar-hide",
             isSidebarMinimized && "lg:grid lg:grid-cols-4 lg:overflow-x-visible lg:pb-0"
           )}
         >
@@ -321,6 +345,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
               key={columnStatus} 
               className={cn(
                 "flex flex-col w-full snap-start",
+                currentUser.role === 'intern' && "h-fit",
                 isSidebarMinimized 
                   ? "min-w-[250px] lg:min-w-0 max-w-[380px] lg:max-w-none flex-1" 
                   : "min-w-[320px] max-w-[320px] shrink-0"
@@ -342,11 +367,12 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
               </div>
 
               {/* Column Track */}
-              <div className="flex-1 flex flex-col gap-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-2xl p-3 border border-slate-200 dark:border-slate-700/60 min-h-[150px]">
+              <div className={cn("flex flex-col gap-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-2xl p-3 border border-slate-200 dark:border-slate-700/60 min-h-[150px] h-fit")}>
                 {columnTasks.length === 0 ? (
                   <EmptyColumnPlaceholder status={columnStatus} role={currentUser.role} />
                 ) : (
                   columnTasks.map(task => {
+                    const isPastDue = task.due_date && new Date(task.due_date).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
                     return (
                       <div
                         key={task.id}
@@ -355,9 +381,10 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                         onDragStart={currentUser.role === 'manager' ? (e) => handleDragStart(e, task.id) : undefined}
                         onDragEnd={currentUser.role === 'manager' ? handleDragEnd : undefined}
                         className={cn(
-                          "group relative bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-md dark:shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer",
+                          "group bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-md dark:shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer",
                           currentUser.role === 'manager' && "active:cursor-grabbing",
-                          draggedTaskId === task.id ? "opacity-50 border-dashed border-orange-400 shadow-none" : "opacity-100"
+                          draggedTaskId === task.id ? "absolute opacity-0 pointer-events-none" : "relative opacity-100",
+                          isPastDue && "border-rose-300 dark:border-rose-900/50"
                         )}
                       >
                         {/* Top Row: Priority & Project */}
@@ -368,7 +395,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                               {task.project_tag}
                             </span>
                           </div>
-                          <PriorityBadge priority={task.priority} />
+                          <PriorityBadge priority={task.priority} isEmployeeDashboard={currentUser.role === 'intern'} />
                         </div>
 
                         {/* Title & Description */}
@@ -381,9 +408,13 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
 
                         {/* Bottom Row: Date & Assignee */}
                         <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 mt-auto">
-                          <div className="flex items-center space-x-1.5 text-slate-400 dark:text-slate-500">
-                            <Calendar className="h-3.5 w-3.5" />
-                            <span className="text-xs font-semibold">Deadline: {task.due_date}</span>
+                          <div className={cn("flex items-center space-x-1.5", 
+                            task.due_date && new Date(task.due_date).setHours(0,0,0,0) < new Date().setHours(0,0,0,0) 
+                              ? "text-rose-600 dark:text-rose-500" 
+                              : "text-slate-400 dark:text-slate-500"
+                          )}>
+                            {task.due_date && new Date(task.due_date).setHours(0,0,0,0) < new Date().setHours(0,0,0,0) ? <AlertTriangle className="h-3.5 w-3.5" /> : <Calendar className="h-3.5 w-3.5" />}
+                            <span className="text-xs font-semibold">Deadline: {task.due_date} {task.due_date && new Date(task.due_date).setHours(0,0,0,0) < new Date().setHours(0,0,0,0) && <span className="ml-1 text-[9px] uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 px-1 py-0.5 rounded">Past</span>}</span>
                           </div>
                           
                           <div 
@@ -416,6 +447,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreateTask={handleCreateTask}
+        currentUser={currentUser}
       />
     </div>
   );

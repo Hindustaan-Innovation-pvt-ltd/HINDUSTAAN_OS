@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Component } from 'react';
 
-class ManagerErrorBoundary extends Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
+class ManagerErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
   constructor(props: any) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -21,28 +21,9 @@ class ManagerErrorBoundary extends Component<{children: React.ReactNode}, {hasEr
   }
 }
 
-import { 
-  FolderKanban, 
-  CheckSquare, 
-  Clock, 
-  Users, 
-  AlertTriangle,
-  TrendingUp,
-  Plus,
-  ArrowRight,
-  Activity,
-  CheckCircle2,
-  CalendarClock,
-  ChevronDown,
-  Megaphone,
-  BellRing,
-  MoreVertical,
-  ChevronRight,
-  Timer,
-  X
-} from 'lucide-react';
+import { FileText, MoreVertical, Flag, Clock, Users, CalendarIcon, Briefcase, Plus, PlayCircle, Loader2, ArrowRight, LayoutGrid, Zap, TrendingUp, CheckCircle2, Megaphone, Timer, AlertTriangle, ShieldAlert, BellRing, Target, Fingerprint, Activity, UserPlus, FileEdit, HelpCircle, UserX, X, FolderKanban, CheckSquare, CalendarClock, ChevronRight, ChevronDown } from 'lucide-react';
+import { cn, getRelativeTime } from '@/lib/utils';
 import ProjectDetails from '../projects/ProjectDetails';
-import { cn } from '@/lib/utils';
 import { getCurrentUser } from '@/lib/auth';
 import { useUser } from '@/context/UserContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -78,11 +59,11 @@ const ONLINE_TEAM_MEMBERS_MANAGER = [
 ];
 
 const ACTIVITY_FEED_MOCK = [
-  { id: 'a1', user: 'Rahul Sharma', action: 'completed task', target: 'API Route Setup', time: '10m ago', type: 'task' },
-  { id: 'a2', user: 'Amanda Smith', action: 'submitted work log', target: '8.5 hours', time: '1h ago', type: 'log' },
-  { id: 'a3', user: 'System', action: 'created project', target: 'Dashboard UI Revamp', time: '2h ago', type: 'project' },
-  { id: 'a4', user: 'Priya Patel', action: 'submitted standup', target: 'Daily Sync', time: '3h ago', type: 'standup' },
-  { id: 'a5', user: 'Rohan Gupta', action: 'assigned task to', target: 'Aiden Chen', time: '4h ago', type: 'assign' },
+  { id: 'a1', user: 'Rahul Sharma', action: 'completed task', target: 'API Route Setup', time: '10m ago', timestamp: Date.now() - 10 * 60 * 1000, type: 'task' },
+  { id: 'a2', user: 'Amanda Smith', action: 'submitted work log', target: '8.5 hours', time: '1h ago', timestamp: Date.now() - 60 * 60 * 1000, type: 'log' },
+  { id: 'a3', user: 'System', action: 'created project', target: 'Dashboard UI Revamp', time: '2h ago', timestamp: Date.now() - 2 * 60 * 60 * 1000, type: 'project' },
+  { id: 'a4', user: 'Priya Patel', action: 'submitted standup', target: 'Daily Sync', time: '3h ago', timestamp: Date.now() - 3 * 60 * 60 * 1000, type: 'standup' },
+  { id: 'a5', user: 'Rohan Gupta', action: 'assigned task to', target: 'Aiden Chen', time: '4h ago', timestamp: Date.now() - 4 * 60 * 60 * 1000, type: 'assign' },
 ];
 
 const NOTIFICATIONS = [
@@ -140,8 +121,28 @@ function ManagerDashboardInner() {
   const [messageUser, setMessageUser] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
   const [isMessageSent, setIsMessageSent] = useState(false);
-  const [blockers, setBlockers] = useState(INITIAL_BLOCKERS);
-  const [activityFeed, setActivityFeed] = useState<any[]>(ACTIVITY_FEED_MOCK);
+  const [blockers, setBlockers] = useState(() => {
+    const saved = localStorage.getItem('hindustaan_blockers');
+    return saved ? JSON.parse(saved) : INITIAL_BLOCKERS;
+  });
+
+  const [alerts, setAlerts] = useState(() => {
+    const saved = localStorage.getItem('hindustaan_notifications');
+    if (saved && saved !== 'null') {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return [];
+      }
+    }
+    return NOTIFICATIONS;
+  });
+
+  const [activityFeed, setActivityFeed] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_activity_feed');
+    return saved ? JSON.parse(saved) : ACTIVITY_FEED_MOCK;
+  });
+
   const [tasks, setTasks] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_tasks_list');
     try {
@@ -156,23 +157,45 @@ function ManagerDashboardInner() {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'hindustaan_tasks_list' && e.newValue) {
         setTasks(JSON.parse(e.newValue));
+      } else if (e.key === 'hindustaan_activity_feed' && e.newValue) {
+        setActivityFeed(JSON.parse(e.newValue));
+      } else if (e.key === 'hindustaan_blockers' && e.newValue) {
+        setBlockers(JSON.parse(e.newValue));
+      } else if (e.key === 'hindustaan_notifications' && e.newValue) {
+        setAlerts(JSON.parse(e.newValue));
       }
     };
+
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'hindustaan_tasks_list') {
+        setTasks(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : INITIAL_TASKS);
+      } else if (e.detail.key === 'hindustaan_activity_feed') {
+        setActivityFeed(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : ACTIVITY_FEED_MOCK);
+      } else if (e.detail.key === 'hindustaan_blockers') {
+        setBlockers(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : INITIAL_BLOCKERS);
+      } else if (e.detail.key === 'hindustaan_notifications') {
+        setAlerts(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : NOTIFICATIONS);
+      }
+    };
+
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    };
   }, []);
 
-  const totalTasksCount = (tasks || []).length;
   const dueTodayTasksCount = (tasks || []).filter(t => t?.due_date?.toLowerCase().includes('today') || t?.due_date?.toLowerCase().includes('12') || t?.due_date?.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase())).length;
 
   const [activeSessions, setActiveSessions] = useState<{ [key: string]: { time: number; isOnline: boolean } }>({});
 
   useEffect(() => {
     const teamMembers = [
-      { id: 'u-1', defaultOffset: 2 * 3600 + 15 * 60 + 30 }, // Amanda Smith
-      { id: 'u-2', defaultOffset: 3600 + 45 * 60 + 12 },    // Rahul Sharma
-      { id: 'u-3', defaultOffset: 45 * 60 + 5 },            // Priya Patel
-      { id: 'u-4', defaultOffset: 3 * 3600 + 10 * 60 + 40 } // Tanvy Pandey
+      { id: 'u-1', defaultOffset: 2 * 3600 + 15 * 60 + 30 },
+      { id: 'u-2', defaultOffset: 3600 + 45 * 60 + 12 },
+      { id: 'u-3', defaultOffset: 45 * 60 + 5 },
+      { id: 'u-4', defaultOffset: 3 * 3600 + 10 * 60 + 40 }
     ];
 
     const updateSessions = () => {
@@ -183,23 +206,11 @@ function ManagerDashboardInner() {
           const startTime = parseInt(loginTimeStr, 10);
           sessions[member.id] = { time: Math.floor((Date.now() - startTime) / 1000), isOnline: true };
         } else {
-          // Default mock status so the workspace looks alive
-          sessions[member.id] = { time: member.defaultOffset, isOnline: true };
+          // Changed to actually reflect offline status if real data doesn't exist
+          sessions[member.id] = { time: 0, isOnline: false };
         }
       });
       setActiveSessions(sessions);
-      
-      const storedActivity = localStorage.getItem('hindustaan_activity_feed');
-      try {
-        if (storedActivity) {
-          const parsed = JSON.parse(storedActivity);
-          setActivityFeed(Array.isArray(parsed) ? parsed : ACTIVITY_FEED_MOCK);
-        } else {
-          localStorage.setItem('hindustaan_activity_feed', JSON.stringify(ACTIVITY_FEED_MOCK));
-        }
-      } catch (e) {
-        setActivityFeed(ACTIVITY_FEED_MOCK);
-      }
     };
 
     updateSessions();
@@ -224,22 +235,22 @@ function ManagerDashboardInner() {
   const mappedProjects: any[] = allMappedProjects.slice(0, 5);
 
   const dynamicDeadlines = React.useMemo(() => {
-    let tasksList: any[] = [];
-    (projects || []).forEach(p => {
-      if (!p) return;
-      (p.tasks || []).forEach((t: any) => {
-        if (t && t.status !== 'Done') {
-          tasksList.push({
-            id: t.id + p.id,
-            task: t.title,
-            priority: 'High',
-            assignee: t.assignee || 'Unassigned'
-          });
-        }
-      });
-    });
-    return tasksList.slice(0, 4);
-  }, [projects]);
+    return (tasks || [])
+      .filter(t => t && t.status !== 'Done')
+      .filter(t => t.due_date?.toLowerCase().includes('today') || t.due_date?.toLowerCase().includes('12') || t.due_date?.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase()))
+      .sort((a, b) => {
+        if (a.priority === 'High' && b.priority !== 'High') return -1;
+        if (b.priority === 'High' && a.priority !== 'High') return 1;
+        return 0;
+      })
+      .slice(0, 4)
+      .map(t => ({
+        id: t.id,
+        task: t.title,
+        priority: t.priority || 'High',
+        assignee: t.assignee_name || t.assignee || 'Unassigned'
+      }));
+  }, [tasks]);
 
   const formatTime = (totalSeconds: number) => {
     const h = Math.floor(totalSeconds / 3600);
@@ -358,7 +369,7 @@ function ManagerDashboardInner() {
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           onClick={() => setIsActiveInternsModalOpen(true)}
           className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md cursor-pointer hover:border-blue-500/30 active:scale-98"
         >
@@ -489,61 +500,61 @@ function ManagerDashboardInner() {
                     No active blockers at the moment.
                   </div>
                 ) : (
-                  blockers.map((blocker) => {
+                  blockers.map((blocker: any) => {
                     const isResolved = (blocker as any).resolved;
                     return (
-                    <div key={blocker.id} className={cn("flex flex-col gap-2 p-3.5 rounded-xl border relative transition-all duration-300", isResolved ? "bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-900/50" : cn(blocker.borderColor, blocker.bgColor))}>
-                      {isResolved && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] dark:opacity-[0.02]">
-                          <CheckCircle2 className="w-24 h-24 text-emerald-600" />
+                      <div key={blocker.id} className={cn("flex flex-col gap-2 p-3.5 rounded-xl border relative transition-all duration-300", isResolved ? "bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-900/50" : cn(blocker.borderColor, blocker.bgColor))}>
+                        {isResolved && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] dark:opacity-[0.02]">
+                            <CheckCircle2 className="w-24 h-24 text-emerald-600" />
+                          </div>
+                        )}
+                        <div className={cn("flex items-center justify-between", isResolved && "opacity-75")}>
+                          <div className="flex items-center gap-2">
+                            <Avatar className={cn("h-6 w-6", isResolved && "opacity-60 grayscale")}>
+                              <AvatarFallback className={cn("text-[10px] font-bold", isResolved ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : blocker.avatarColor)}>{blocker.initials}</AvatarFallback>
+                            </Avatar>
+                            <span className={cn("font-bold text-sm", isResolved ? "text-slate-500 dark:text-slate-400 line-through decoration-slate-300 dark:decoration-slate-600" : "text-slate-900 dark:text-white")}>{blocker.user}</span>
+                          </div>
+                          <Badge variant="outline" className={cn("text-[10px]", isResolved ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" : blocker.priorityColor)}>
+                            {isResolved ? "Resolved" : blocker.priority}
+                          </Badge>
                         </div>
-                      )}
-                      <div className={cn("flex items-center justify-between", isResolved && "opacity-75")}>
-                        <div className="flex items-center gap-2">
-                          <Avatar className={cn("h-6 w-6", isResolved && "opacity-60 grayscale")}>
-                            <AvatarFallback className={cn("text-[10px] font-bold", isResolved ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : blocker.avatarColor)}>{blocker.initials}</AvatarFallback>
-                          </Avatar>
-                          <span className={cn("font-bold text-sm", isResolved ? "text-slate-500 dark:text-slate-400 line-through decoration-slate-300 dark:decoration-slate-600" : "text-slate-900 dark:text-white")}>{blocker.user}</span>
-                        </div>
-                        <Badge variant="outline" className={cn("text-[10px]", isResolved ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" : blocker.priorityColor)}>
-                          {isResolved ? "Resolved" : blocker.priority}
-                        </Badge>
+                        <p className={cn("text-sm font-medium ml-8", isResolved ? "text-slate-400 dark:text-slate-500" : "text-slate-600 dark:text-slate-400")}>
+                          {blocker.message}
+                        </p>
+
+                        {!isResolved && (
+                          <div className="flex items-center gap-3 ml-8 mt-1 relative z-10">
+                            <Button
+                              onClick={() => {
+                                setBlockers((prev: any[]) => prev.map((b: any) => b.id === blocker.id ? { ...b, resolved: true } : b));
+                                import('sonner').then(m => m.toast.success('Blocker Resolved', { description: `Resolved for ${blocker.user}. The employee has been notified directly.` }));
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className={cn("h-7 text-xs px-2 font-bold cursor-pointer", blocker.textColor, blocker.hoverTextColor, blocker.hoverBgColor)}
+                            >
+                              Resolve
+                            </Button>
+                            <Button
+                              onClick={() => setMessageUser(blocker.user)}
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold cursor-pointer"
+                            >
+                              Message
+                            </Button>
+                          </div>
+                        )}
+                        {(blocker as any).managerMessage && (
+                          <div className={cn("ml-8 mt-2 p-3 rounded-xl border shadow-sm relative overflow-hidden", isResolved ? "bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100/50 dark:border-emerald-800/30 opacity-75" : "bg-white/60 dark:bg-slate-900/50 border-slate-100 dark:border-slate-700/50")}>
+                            <div className={cn("absolute left-0 top-0 bottom-0 w-1", isResolved ? "bg-emerald-500/30" : "bg-orange-500/50")}></div>
+                            <p className={cn("text-[10px] font-bold uppercase tracking-wider mb-1", isResolved ? "text-emerald-600/70 dark:text-emerald-400/70" : "text-slate-500 dark:text-slate-400")}>Your Reply</p>
+                            <p className={cn("text-sm italic font-medium", isResolved ? "text-emerald-700 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200")}>"{(blocker as any).managerMessage}"</p>
+                          </div>
+                        )}
                       </div>
-                      <p className={cn("text-sm font-medium ml-8", isResolved ? "text-slate-400 dark:text-slate-500" : "text-slate-600 dark:text-slate-400")}>
-                        {blocker.message}
-                      </p>
-                      
-                      {!isResolved && (
-                        <div className="flex items-center gap-3 ml-8 mt-1 relative z-10">
-                          <Button 
-                            onClick={() => {
-                              setBlockers(prev => prev.map(b => b.id === blocker.id ? { ...b, resolved: true } : b));
-                              import('sonner').then(m => m.toast.success('Blocker Resolved', { description: `Resolved for ${blocker.user}. The employee has been notified directly.` }));
-                            }}
-                            variant="ghost" 
-                            size="sm" 
-                            className={cn("h-7 text-xs px-2 font-bold cursor-pointer", blocker.textColor, blocker.hoverTextColor, blocker.hoverBgColor)}
-                          >
-                            Resolve
-                          </Button>
-                          <Button 
-                            onClick={() => setMessageUser(blocker.user)}
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-7 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold cursor-pointer"
-                          >
-                            Message
-                          </Button>
-                        </div>
-                      )}
-                      {(blocker as any).managerMessage && (
-                        <div className={cn("ml-8 mt-2 p-3 rounded-xl border shadow-sm relative overflow-hidden", isResolved ? "bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100/50 dark:border-emerald-800/30 opacity-75" : "bg-white/60 dark:bg-slate-900/50 border-slate-100 dark:border-slate-700/50")}>
-                          <div className={cn("absolute left-0 top-0 bottom-0 w-1", isResolved ? "bg-emerald-500/30" : "bg-orange-500/50")}></div>
-                          <p className={cn("text-[10px] font-bold uppercase tracking-wider mb-1", isResolved ? "text-emerald-600/70 dark:text-emerald-400/70" : "text-slate-500 dark:text-slate-400")}>Your Reply</p>
-                          <p className={cn("text-sm italic font-medium", isResolved ? "text-emerald-700 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200")}>"{(blocker as any).managerMessage}"</p>
-                        </div>
-                      )}
-                    </div>
                     )
                   })
                 )}
@@ -586,7 +597,9 @@ function ManagerDashboardInner() {
                             </p>
                           </div>
                         </div>
-                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 whitespace-nowrap pt-1">{activity.time}</span>
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 whitespace-nowrap pt-1">
+                          {getRelativeTime(activity.timestamp || activity.time, true)}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -601,7 +614,7 @@ function ManagerDashboardInner() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <span>Today's Deadlines</span>
-                  <Badge variant="secondary" className="bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 shrink-0">3 Due</Badge>
+                  <Badge variant="secondary" className="bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 shrink-0">{dueTodayTasksCount} Due</Badge>
                 </CardTitle>
               </div>
             </CardHeader>
@@ -652,38 +665,39 @@ function ManagerDashboardInner() {
                   const isOnline = sessionInfo?.isOnline;
                   const sessionTime = sessionInfo?.time || 0;
                   return (
-                  <div key={member.id} className={cn("p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors", !isOnline && "opacity-75")}>
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <Avatar className={cn("h-8 w-8 rounded-full border-2 border-white dark:border-slate-950", !isOnline && "grayscale opacity-80")}>
-                          <AvatarFallback className={cn("text-xs font-bold", member.color)}>
-                            {member.initials}
-                          </AvatarFallback>
-                        </Avatar>
-                        {isOnline ? (
-                          <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-950 animate-pulse" />
-                        ) : (
-                          <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600 border-2 border-white dark:border-slate-950" />
-                        )}
+                    <div key={member.id} className={cn("p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors", !isOnline && "opacity-75")}>
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <Avatar className={cn("h-8 w-8 rounded-full border-2 border-white dark:border-slate-950", !isOnline && "grayscale opacity-80")}>
+                            <AvatarFallback className={cn("text-xs font-bold", member.color)}>
+                              {member.initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          {isOnline ? (
+                            <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-950 animate-pulse" />
+                          ) : (
+                            <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600 border-2 border-white dark:border-slate-950" />
+                          )}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
+                          <span className="text-[10px] text-slate-500 font-semibold">{member.role}</span>
+                        </div>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
-                        <span className="text-[10px] text-slate-500 font-semibold">{member.role}</span>
-                      </div>
+                      {isOnline ? (
+                        <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold animate-pulse">
+                          <Timer className="h-3.5 w-3.5 text-emerald-500" />
+                          <span>{formatTime(sessionTime)}</span>
+                        </div>
+                      ) : (
+                        <div className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold">
+                          <Timer className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" />
+                          <span className="uppercase tracking-wider text-[10px]">Offline</span>
+                        </div>
+                      )}
                     </div>
-                    {isOnline ? (
-                      <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold animate-pulse">
-                        <Timer className="h-3.5 w-3.5 text-emerald-500" />
-                        <span>{formatTime(sessionTime)}</span>
-                      </div>
-                    ) : (
-                      <div className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold">
-                        <Timer className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" />
-                        <span className="uppercase tracking-wider text-[10px]">Offline</span>
-                      </div>
-                    )}
-                  </div>
-                )})}
+                  )
+                })}
               </div>
             </CardContent>
           </Card>
@@ -699,9 +713,9 @@ function ManagerDashboardInner() {
             <CardContent className="p-0 flex-1 overflow-hidden">
               <ScrollArea className="h-full max-h-[250px]">
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {NOTIFICATIONS.map((notif) => (
-                    <div 
-                      key={notif.id} 
+                  {alerts.map((notif: any) => (
+                    <div
+                      key={notif.id}
                       onClick={() => { import('sonner').then(m => m.toast.success(`Opening system: ${notif.text}`)) }}
                       className={cn("p-4 flex gap-3 items-start transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/40 cursor-pointer", notif.unread ? 'bg-slate-50/50 dark:bg-slate-900/20' : '')}
                     >
@@ -714,7 +728,7 @@ function ManagerDashboardInner() {
                       </div>
                       <div className="flex flex-col">
                         <p className={cn("text-sm font-medium leading-snug", notif.unread ? "text-slate-900 dark:text-white font-bold" : "text-slate-600 dark:text-slate-400")}>
-                          {notif.text}
+                          {notif.message || notif.text}
                         </p>
                         <span className="text-[10px] text-orange-500 font-bold mt-1 uppercase tracking-wider">Tap to open system</span>
                       </div>
@@ -731,7 +745,7 @@ function ManagerDashboardInner() {
       {/* Active Interns Modal */}
       {isActiveInternsModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
+          <div
             className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => setIsActiveInternsModalOpen(false)}
           />
@@ -741,45 +755,46 @@ function ManagerDashboardInner() {
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Interns</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Names and online status of active interns</p>
               </div>
-              <button 
+              <button
                 onClick={() => setIsActiveInternsModalOpen(false)}
                 className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
+
             <div className="p-6 max-h-[300px] overflow-y-auto space-y-4">
               {ONLINE_TEAM_MEMBERS_MANAGER.map((member) => {
                 const isOnline = activeSessions[member.id]?.isOnline;
                 return (
-                <div key={member.id} className={cn("flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all", !isOnline && "opacity-75 grayscale")}>
-                  <div className="flex items-center gap-3">
-                    <Avatar className={cn("h-9 w-9 border-2 border-white dark:border-slate-900", member.color)}>
-                      <AvatarFallback className="font-bold text-xs">{member.initials}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
-                      <span className="text-xs text-slate-500 font-medium">{member.role}</span>
+                  <div key={member.id} className={cn("flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all", !isOnline && "opacity-75 grayscale")}>
+                    <div className="flex items-center gap-3">
+                      <Avatar className={cn("h-9 w-9 border-2 border-white dark:border-slate-900", member.color)}>
+                        <AvatarFallback className="font-bold text-xs">{member.initials}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
+                        <span className="text-xs text-slate-500 font-medium">{member.role}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {isOnline ? (
+                        <>
+                          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Online</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600" />
+                          <span className="text-xs font-bold text-slate-500">Offline</span>
+                        </>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    {isOnline ? (
-                      <>
-                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Online</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600" />
-                        <span className="text-xs font-bold text-slate-500">Offline</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )})}
+                )
+              })}
             </div>
-            
+
             <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">
               <Button onClick={() => setIsActiveInternsModalOpen(false)} className="rounded-xl bg-slate-900 dark:bg-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-white font-bold px-4 py-2 cursor-pointer">
                 Close
@@ -938,8 +953,8 @@ function ManagerDashboardInner() {
 
       <AssignTaskDialog open={isAssignTaskOpen} onOpenChange={setIsAssignTaskOpen} />
 
-      <Dialog 
-        open={!!messageUser} 
+      <Dialog
+        open={!!messageUser}
         onOpenChange={(open) => {
           if (!open) {
             setMessageUser(null);
@@ -971,11 +986,11 @@ function ManagerDashboardInner() {
               <div className="p-6 pt-4 space-y-4">
                 <div className="space-y-2">
                   <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Your Message</Label>
-                  <Textarea 
+                  <Textarea
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
-                    placeholder={`Hey ${messageUser?.split(' ')[0]}, how can I help unblock you with this?`} 
-                    className="min-h-[120px] rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500 text-slate-900 dark:text-white resize-none text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500" 
+                    placeholder={`Hey ${messageUser?.split(' ')[0]}, how can I help unblock you with this?`}
+                    className="min-h-[120px] rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500 text-slate-900 dark:text-white resize-none text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
               </div>
@@ -983,13 +998,13 @@ function ManagerDashboardInner() {
                 <Button type="button" variant="ghost" onClick={() => setMessageUser(null)} className="rounded-xl font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300">
                   Cancel
                 </Button>
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   disabled={!messageText.trim()}
                   onClick={() => {
-                    setBlockers(prev => prev.map(b => b.user === messageUser ? { ...b, managerMessage: messageText } : b));
+                    setBlockers((prev: any[]) => prev.map((b: any) => b.user === messageUser ? { ...b, managerMessage: messageText } : b));
                     setIsMessageSent(true);
-                  }} 
+                  }}
                   className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold cursor-pointer transition-all shadow-md hover:shadow-lg disabled:opacity-50"
                 >
                   <Megaphone className="h-4 w-4 mr-2" />
@@ -1010,8 +1025,8 @@ function ManagerDashboardInner() {
                 <span className="absolute -top-2.5 left-4 bg-white dark:bg-slate-900 px-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">What you said</span>
                 <p className="text-sm font-medium text-slate-700 dark:text-slate-300 italic whitespace-pre-wrap">{messageText}</p>
               </div>
-              <Button 
-                onClick={() => setMessageUser(null)} 
+              <Button
+                onClick={() => setMessageUser(null)}
                 className="w-full rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold mt-4 cursor-pointer hover:scale-[1.02] transition-transform"
               >
                 Done
@@ -1080,7 +1095,7 @@ function ManagerDashboardInner() {
           <div className="py-4">
             <ScrollArea className="max-h-[400px] pr-4">
               <div className="space-y-4">
-                {blockers.map((blocker) => {
+                {blockers.map((blocker: any) => {
                   const isResolved = (blocker as any).resolved;
                   return (
                     <div key={blocker.id} className={cn("flex flex-col gap-2 p-3.5 rounded-xl border relative transition-all duration-300", isResolved ? "bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-900/50" : cn(blocker.borderColor, blocker.bgColor))}>
