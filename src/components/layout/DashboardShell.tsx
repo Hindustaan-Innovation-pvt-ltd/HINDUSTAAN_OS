@@ -142,9 +142,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
         <div className={cn("flex shrink-0 items-center border-b border-slate-100 dark:border-[#5B7CFF]/20 py-4 relative", collapsed ? "justify-center px-0 h-[90px] flex-col gap-2" : "justify-between px-4 min-h-[90px]")}>
           <div className="flex items-center group cursor-pointer transition-all duration-300 hover:scale-[1.03]" onClick={() => onNavigate('Dashboard')}>
             {collapsed ? (
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[#5B7CFF] to-[#A855F7] flex items-center justify-center text-white font-bold text-sm shadow-[0_0_15px_rgba(91,124,255,0.4)]">
-                P
-              </div>
+              <BrandLogo variant="minimized" />
             ) : (
               <BrandLogo variant="sidebar" />
             )}
