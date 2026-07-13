@@ -163,8 +163,8 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
     window.dispatchEvent(new Event(isManager ? 'notifications-updated' : 'employee-notifications-updated'));
   };
 
-  const currentUserName = user?.user_metadata?.name || user?.name || "Tanvy Pandey";
-  const visibleNotifications = isManager ? notifications : notifications.filter(n => !n.metadata?.employeeName || n.metadata.employeeName === currentUserName);
+  const currentUserName = user?.name || "Tanvy Pandey";
+  const visibleNotifications = isManager ? notifications : notifications.filter(n => !n.metadata?.employee || n.metadata.employee === currentUserName);
   const unreadCount = visibleNotifications.filter(n => n.unread).length;
 
   const markAllAsRead = (e: React.MouseEvent) => {

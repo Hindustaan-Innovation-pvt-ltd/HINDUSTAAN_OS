@@ -22,7 +22,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', class
       */}
       <div className={cn(
         "relative flex items-center justify-center overflow-hidden rounded-xl",
-        isAuth ? "h-36 w-36" : "h-10 w-10"
+        isAuth ? "h-20 w-20" : "h-10 w-10"
       )}>
         <img 
           src="/new-brand-logo.png" 
@@ -38,11 +38,11 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', class
       
       <h1 className={cn(
         "tracking-tight text-slate-900 dark:text-white",
-        isAuth ? "text-3xl md:text-4xl font-extrabold mt-3 flex flex-col items-center" : "text-lg ml-2 flex items-center font-bold"
+        isAuth ? "text-2xl md:text-3xl font-extrabold mt-2 flex flex-row items-center justify-center gap-2" : "text-lg ml-2 flex items-center font-bold"
       )}>
         {isAuth ? (
           <>
-            Project <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-extrabold block">OS</span>
+            Project <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-extrabold">OS</span>
           </>
         ) : (
           <>

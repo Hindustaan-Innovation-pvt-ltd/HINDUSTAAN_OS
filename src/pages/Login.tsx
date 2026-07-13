@@ -246,7 +246,7 @@ export default function Login({
   };
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-500 font-sans">
+    <div className="relative flex min-h-screen lg:h-screen lg:overflow-hidden w-full items-center justify-center bg-slate-50 dark:bg-slate-950 transition-colors duration-500 font-sans">
       
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:32px_32px]"></div>
       
@@ -261,7 +261,7 @@ export default function Login({
         {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
       </button>
 
-      <div className="relative z-10 flex w-full min-h-screen">
+      <div className="relative z-10 flex w-full min-h-screen lg:h-full lg:min-h-0">
         
         {/* Left Section - Branding (Hidden on Mobile) */}
         <div className="hidden lg:flex flex-col justify-center w-[45%] xl:w-[50%] p-12 xl:p-24 border-r border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-sm z-10">
@@ -293,23 +293,23 @@ export default function Login({
         </div>
 
         {/* Right Section - Login Form */}
-        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 w-full lg:w-[55%] xl:w-[50%] z-10">
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 w-full lg:w-[55%] xl:w-[50%] z-10 lg:h-full lg:overflow-y-auto py-8">
           <div className="w-full max-w-md">
-            <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500">
+            <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-5 sm:p-6 shadow-2xl backdrop-blur-xl transition-all duration-500">
               
-              <div className="flex flex-col items-center text-center mb-4">
+              <div className="flex flex-col items-center text-center mb-2.5">
                 <div className="hover:scale-[1.03] transition-all duration-300">
                   <BrandLogo variant="auth" />
                 </div>
-                <div className="mt-2 flex flex-col items-center">
+                <div className="mt-1 flex flex-col items-center">
                   <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                     Internal Workspace Portal
                   </p>
                 </div>
               </div>
 
-          <form className="space-y-4" onSubmit={isOTPMode ? handleOTPRequest : handlePasswordLogin}>
-            <div className="space-y-3">
+          <form className="space-y-3" onSubmit={isOTPMode ? handleOTPRequest : handlePasswordLogin}>
+            <div className="space-y-2">
               
               <div>
                 <label htmlFor="name" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
@@ -328,7 +328,7 @@ export default function Login({
                     maxLength={50}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
                     placeholder="Enter your full name"
                   />
                 </div>
@@ -350,7 +350,7 @@ export default function Login({
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
                     placeholder="name@hindustaan.in"
                   />
                 </div>
@@ -373,7 +373,7 @@ export default function Login({
                       required={!isOTPMode}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pointer-events-auto block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
+                      className="pointer-events-auto block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
                       placeholder="••••••••"
                     />
                     <button
@@ -426,12 +426,12 @@ export default function Login({
               </button>
             </div>
 
-            <div className="flex items-center justify-center space-x-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full">
+            <div className="flex items-center justify-center space-x-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl w-full">
               <button
                 type="button"
                 onClick={() => setMockRole('manager')}
                 className={cn(
-                  "flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all",
+                  "flex-1 py-1 text-[11px] font-bold rounded-lg transition-all",
                   mockRole === 'manager' 
                     ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm" 
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
@@ -443,7 +443,7 @@ export default function Login({
                 type="button"
                 onClick={() => setMockRole('employee')}
                 className={cn(
-                  "flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all",
+                  "flex-1 py-1 text-[11px] font-bold rounded-lg transition-all",
                   mockRole === 'employee' 
                     ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm" 
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
@@ -457,7 +457,7 @@ export default function Login({
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative flex w-full justify-center items-center space-x-2 rounded-xl bg-gradient-to-r from-orange-500 to-green-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-green-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:opacity-70 disabled:hover:scale-100 transition-all duration-200 ease-out"
+                className="group relative flex w-full justify-center items-center space-x-2 rounded-xl bg-gradient-to-r from-orange-500 to-green-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-green-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:opacity-70 disabled:hover:scale-100 transition-all duration-200 ease-out"
               >
                 {loading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -470,7 +470,7 @@ export default function Login({
               </button>
             </div>
             
-            <div className="text-center pt-3 pb-1">
+            <div className="text-center pt-2 pb-0.5">
               <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Don't have an account? </span>
               <button 
                 type="button" 
