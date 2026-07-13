@@ -575,7 +575,11 @@ Reason:
                         key={`emp-history-${req.id}`}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-[18px] p-5 flex flex-col justify-between max-h-[240px] shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-400/50 hover:shadow-blue-500/10 dark:hover:border-purple-500/50 dark:hover:shadow-purple-500/20"
+                        onClick={() => {
+                          setSelectedRequest(req);
+                          setIsRequestDialogOpen(true);
+                        }}
+                        className="cursor-pointer bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-[18px] p-5 flex flex-col justify-between max-h-[240px] shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-400/50 hover:shadow-blue-500/10 dark:hover:border-purple-500/50 dark:hover:shadow-purple-500/20"
                       >
                         <div>
                           <div className="flex justify-between items-start mb-4">
@@ -970,7 +974,11 @@ Reason:
                               key={`processed-${req.id}`}
                               initial={{ opacity: 0, scale: 0.95 }}
                               animate={{ opacity: 1, scale: 1 }}
-                              className="bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-[18px] p-5 flex flex-col justify-between max-h-[220px] shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-400/50 hover:shadow-blue-500/10 dark:hover:border-purple-500/50 dark:hover:shadow-purple-500/20"
+                              onClick={() => {
+                                setSelectedRequest(req);
+                                setIsRequestDialogOpen(true);
+                              }}
+                              className="cursor-pointer bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-[18px] p-5 flex flex-col justify-between max-h-[220px] shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-400/50 hover:shadow-blue-500/10 dark:hover:border-purple-500/50 dark:hover:shadow-purple-500/20"
                             >
                               <div>
                                 <div className="flex justify-between items-start mb-3">
@@ -1001,7 +1009,10 @@ Reason:
                                   <p className="text-[10px] text-slate-500 font-bold">{req.status} by Manager</p>
                                   <p className="text-[10px] text-slate-400">{req.appliedOn}</p>
                                 </div>
-                                <Button variant="ghost" size="sm" className="h-7 text-[11px] font-bold text-blue-600 dark:text-blue-400" onClick={() => openCommentModal(req.id)}>
+                                <Button variant="ghost" size="sm" className="h-7 text-[11px] font-bold text-blue-600 dark:text-blue-400" onClick={(e) => {
+                                  e.stopPropagation();
+                                  openCommentModal(req.id);
+                                }}>
                                   {lastComment ? 'Edit Comment' : 'Add Comment'}
                                 </Button>
                               </div>
