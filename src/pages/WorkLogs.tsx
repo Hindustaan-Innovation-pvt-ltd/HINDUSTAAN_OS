@@ -5,6 +5,8 @@ import {
   FolderKanban, Users, Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { ProjectDatePicker } from '@/components/ui/project-date-picker';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -476,13 +478,16 @@ export default function WorkLogs({ session }: { session?: any }) {
         </TabsList>
 
         {currentUser.role === 'manager' && activeTab === 'specific' && (
-          <div className="mb-6 flex items-center gap-3">
-            <label className="text-sm font-bold text-[#64748B] dark:text-slate-400">Select Date:</label>
-            <input 
-              type="date" 
-              value={selectedSpecificDate}
-              onChange={(e) => setSelectedSpecificDate(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-[#0F172A] dark:text-white outline-none focus:border-[#6366F1]"
+          <div className="mb-6 flex flex-col md:flex-row md:items-center gap-3 max-w-sm">
+            <label className="text-sm font-bold text-[#64748B] dark:text-slate-400 whitespace-nowrap">Select Date:</label>
+            <ProjectDatePicker
+              value={selectedSpecificDate ? (() => {
+                const d = new Date(selectedSpecificDate);
+                return isNaN(d.getTime()) ? undefined : d;
+              })() : undefined}
+              onChange={(date) => {
+                if (date) setSelectedSpecificDate(format(date, 'yyyy-MM-dd'));
+              }}
             />
           </div>
         )}

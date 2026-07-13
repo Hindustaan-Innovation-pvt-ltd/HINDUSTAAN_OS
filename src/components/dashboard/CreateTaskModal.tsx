@@ -1,92 +1,64 @@
 import React, { useState } from 'react';
-import { X, Calendar, User, Tag, Clock, Target, AlertCircle } from 'lucide-react';
+import { X, User, Tag, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Task, Priority } from './TaskDetailsModal';
-import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
+import { format } from 'date-fns';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateTask: (task: Task) => void;
-  currentUser?: { id: string; role: 'manager' | 'intern'; name: string };
 }
 
-export default function CreateTaskModal({ isOpen, onClose, onCreateTask, currentUser }: CreateTaskModalProps) {
+import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
+
+export default function CreateTaskModal({ isOpen, onClose, onCreateTask }: CreateTaskModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [projectTag, setProjectTag] = useState('');
-  const [priority, setPriority] = useState<Priority | ''>('');
-  
-  // Interns can only assign to themselves. Default to their ID if intern.
-  const [assigneeId, setAssigneeId] = useState(currentUser?.role === 'intern' ? currentUser.id : '');
-  
-  const [startDate, setStartDate] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [milestone, setMilestone] = useState('');
+  const [priority, setPriority] = useState<Priority>('Normal');
+  const [assigneeId, setAssigneeId] = useState('');
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
 
   if (!isOpen) return null;
 
-  const isPastDue = dueDate && new Date(dueDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
-  
-  const availableMembers = currentUser?.role === 'intern' 
-    ? GLOBAL_TEAM_MEMBERS.filter(m => m.id === currentUser.id)
-    : GLOBAL_TEAM_MEMBERS;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!priority) return; // Enforce priority (HTML required should catch this too)
     
-    // Deduplication logic
-    const savedTasks = localStorage.getItem('hindustaan_tasks_list');
-    const existingTasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
-    
-    const now = Date.now();
-    const duplicate = existingTasks.find(t => 
-      t.title.trim().toLowerCase() === title.trim().toLowerCase() &&
-      t.project_tag === (projectTag || 'General') &&
-      t.created_at &&
-      (now - new Date(t.created_at).getTime()) < 60000
-    );
-
-    if (duplicate) {
-      alert(`Duplicate task detected! Returning existing task ID: ${duplicate.id}`);
-      onClose();
-      return;
-    }
-    
+    // Assignee name lookup
     const assignee = GLOBAL_TEAM_MEMBERS.find(u => u.id === assigneeId);
     
     const newTask: Task = {
       id: `t-${Date.now()}`,
-      title: title.trim(),
-      description: description.trim(),
+      title,
+      description,
       project_tag: projectTag || 'General',
       assignee_name: assignee ? assignee.name : 'Unassigned',
       assignee_id: assigneeId || 'unassigned',
       priority,
-      start_date: startDate || undefined,
-      due_date: dueDate || new Date().toISOString().split('T')[0],
-      milestone: milestone || undefined,
-      created_at: new Date().toISOString(),
+      due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : new Date().toISOString().split('T')[0],
       status: 'To Do'
     };
 
     onCreateTask(newTask);
     
+    // Reset form
     setTitle('');
     setDescription('');
     setProjectTag('');
-    setPriority('');
-    setAssigneeId(currentUser?.role === 'intern' ? currentUser.id : '');
-    setStartDate('');
-    setDueDate('');
-    setMilestone('');
+    setPriority('Normal');
+    setAssigneeId('');
+    setDueDate(undefined);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/60 overflow-hidden animate-in zoom-in-95 duration-200">
+        
+        {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
           <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Create New Task</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:text-slate-500 transition-colors">
@@ -94,8 +66,10 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
           </button>
         </div>
 
+        {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
           
+          {/* Task Title */}
           <div>
             <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Task Name <span className="text-rose-500">*</span></label>
             <input 
@@ -109,6 +83,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Project Tag */}
             <div>
               <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
                 <Tag className="h-3.5 w-3.5 mr-1.5" /> Project Domain
@@ -122,93 +97,55 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
               />
             </div>
             
+            {/* Priority */}
             <div>
               <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
-                <Clock className="h-3.5 w-3.5 mr-1.5" /> Priority Level <span className="text-rose-500">*</span>
+                <Clock className="h-3.5 w-3.5 mr-1.5" /> Priority Level
               </label>
-              <select 
-                required
-                value={priority}
-                onChange={e => setPriority(e.target.value as Priority)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
-              >
-                <option className="bg-white dark:bg-slate-800" value="" disabled>Select Priority...</option>
-                <option className="bg-white dark:bg-slate-800" value="High">High</option>
-                <option className="bg-white dark:bg-slate-800" value="Medium">Medium</option>
-                <option className="bg-white dark:bg-slate-800" value="Normal">Normal</option>
-                <option className="bg-white dark:bg-slate-800" value="Low">Low</option>
-              </select>
+              <Select value={priority} onValueChange={(val) => setPriority(val as Priority)}>
+                <SelectTrigger className="w-full h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold shadow-sm hover:bg-purple-50 hover:border-purple-300 dark:hover:bg-purple-950/20 dark:hover:border-purple-700 transition-colors">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Normal">Normal</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
+            {/* Assignee */}
             <div>
               <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
-                <User className="h-3.5 w-3.5 mr-1.5" /> Assign To {currentUser?.role === 'manager' && "(Optional)"}
+                <User className="h-3.5 w-3.5 mr-1.5" /> Assign To <span className="text-rose-500">*</span>
               </label>
-              <select 
-                required={currentUser?.role === 'intern'}
-                value={assigneeId}
-                onChange={e => setAssigneeId(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
-              >
-                {currentUser?.role === 'manager' && (
-                  <option className="bg-white dark:bg-slate-800" value="">Unassigned</option>
-                )}
-                {availableMembers.map(member => (
-                  <option className="bg-white dark:bg-slate-800" key={member.id} value={member.id}>{member.name}</option>
-                ))}
-              </select>
+              <Select value={assigneeId} onValueChange={setAssigneeId} required>
+                <SelectTrigger className="w-full h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold shadow-sm hover:bg-purple-50 hover:border-purple-300 dark:hover:bg-purple-950/20 dark:hover:border-purple-700 transition-colors">
+                  <SelectValue placeholder="Select Assignee..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {GLOBAL_TEAM_MEMBERS.map(member => (
+                    <SelectItem key={member.id} value={member.id}>{member.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
+            {/* Due Date */}
             <div>
               <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
-                <Target className="h-3.5 w-3.5 mr-1.5" /> Milestone (Optional)
+                Due Date <span className="text-rose-500">*</span>
               </label>
-              <input 
-                type="text"
-                value={milestone}
-                onChange={e => setMilestone(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                placeholder="e.g. Beta Release"
-              />
-            </div>
-            
-            <div>
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
-                <Calendar className="h-3.5 w-3.5 mr-1.5" /> Start Date
-              </label>
-              <input 
-                type="date"
-                value={startDate}
-                onChange={e => setStartDate(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-              />
-            </div>
-
-            <div className="relative">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
-                <Calendar className="h-3.5 w-3.5 mr-1.5" /> Due Date <span className="text-rose-500">*</span>
-              </label>
-              <input 
-                required
-                type="date"
+              <DatePicker
                 value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
-                className={cn(
-                  "w-full bg-white dark:bg-slate-900 border text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-colors",
-                  isPastDue 
-                    ? "border-amber-300 text-amber-700 dark:border-amber-700/50 dark:text-amber-500 focus:ring-amber-500/20 bg-amber-50/30 dark:bg-amber-900/10" 
-                    : "border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-orange-500/20"
-                )}
+                onChange={setDueDate}
+                placeholder="Select due date"
               />
-              {isPastDue && (
-                <div className="absolute -bottom-5 left-0 flex items-center text-[10px] font-bold text-amber-600 dark:text-amber-500">
-                  <AlertCircle className="h-3 w-3 mr-1" />
-                  Warning: Backfilling past due date
-                </div>
-              )}
             </div>
           </div>
 
+          {/* Description */}
           <div>
             <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Detailed Context</label>
             <textarea 
@@ -219,6 +156,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
             />
           </div>
 
+          {/* Footer Actions */}
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end space-x-3">
             <button 
               type="button" 

@@ -53,6 +53,8 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
+import { ProjectDatePicker } from '@/components/ui/project-date-picker';
+import { ProjectTimeSelect } from '@/components/ui/project-time-select';
 import { useNotifications } from '@/context/NotificationContext';
 
 // Data Structures
@@ -149,6 +151,9 @@ export function ProjectCalendarWidget() {
   const [eventToDelete, setEventToDelete] = useState<ProjectEvent | null>(null);
   
   const { addNotification } = useNotifications();
+
+  const [scheduleDate, setScheduleDate] = useState<Date | undefined>(undefined);
+  const [scheduleTime, setScheduleTime] = useState<string>("09:00 AM");
 
   const pushNotification = (title: string, message: string, type: any) => {
     addNotification({
@@ -271,12 +276,10 @@ export function ProjectCalendarWidget() {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>Start Date</Label>
-              <Input 
-                type="date" 
-                defaultValue={format(startDate, 'yyyy-MM-dd')} 
-                onChange={(e) => {
-                  const d = new Date(e.target.value);
-                  if (!isNaN(d.getTime())) {
+              <ProjectDatePicker 
+                value={startDate} 
+                onChange={(d) => {
+                  if (d) {
                     setStartDate(d);
                     localStorage.setItem('hindustaan_project_start_date', d.toISOString());
                   }
@@ -285,12 +288,10 @@ export function ProjectCalendarWidget() {
             </div>
             <div className="grid gap-2">
               <Label>End Date</Label>
-              <Input 
-                type="date" 
-                defaultValue={format(endDate, 'yyyy-MM-dd')}
-                onChange={(e) => {
-                  const d = new Date(e.target.value);
-                  if (!isNaN(d.getTime())) {
+              <ProjectDatePicker 
+                value={endDate}
+                onChange={(d) => {
+                  if (d) {
                     setEndDate(d);
                     localStorage.setItem('hindustaan_project_end_date', d.toISOString());
                   }
@@ -643,32 +644,11 @@ export function ProjectCalendarWidget() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2 relative">
                 <Label htmlFor="date" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</Label>
-                <div className="relative">
-                  <Input id="date" name="date" type="date" required className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500 pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
-                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-                </div>
+                <ProjectDatePicker name="date" value={scheduleDate} onChange={setScheduleDate} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="time" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Time</Label>
-                <Select name="time" defaultValue="09:00 AM">
-                  <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500">
-                    <SelectValue placeholder="Select time" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800 max-h-[200px]">
-                    {Array.from({ length: 48 }).map((_, i) => {
-                      const hour24 = Math.floor(i / 2);
-                      const minute = i % 2 === 0 ? '00' : '30';
-                      const ampm = hour24 >= 12 ? 'PM' : 'AM';
-                      const hour12 = hour24 % 12 || 12;
-                      const timeStr = `${hour12.toString().padStart(2, '0')}:${minute} ${ampm}`;
-                      return (
-                        <SelectItem key={timeStr} value={timeStr}>
-                          {timeStr}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                <ProjectTimeSelect name="time" value={scheduleTime} onChange={setScheduleTime} />
               </div>
             </div>
 
@@ -835,26 +815,19 @@ export function ProjectCalendarWidget() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-date" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</Label>
-                  <div className="relative">
-                    <Input id="edit-date" name="date" type="date" defaultValue={eventToEdit ? format(eventToEdit.date, 'yyyy-MM-dd') : ''} required className="rounded-xl pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
-                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-                  </div>
+                  <ProjectDatePicker name="date" value={eventToEdit?.date} onChange={(date) => {
+                    if (date && eventToEdit) {
+                      setEventToEdit({ ...eventToEdit, date });
+                    }
+                  }} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-time" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Time</Label>
-                  <Select name="time" defaultValue={eventToEdit?.time || "09:00 AM"}>
-                    <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                    <SelectContent className="rounded-xl max-h-[200px]">
-                      {Array.from({ length: 48 }).map((_, i) => {
-                        const hour24 = Math.floor(i / 2);
-                        const minute = i % 2 === 0 ? '00' : '30';
-                        const ampm = hour24 >= 12 ? 'PM' : 'AM';
-                        const hour12 = hour24 % 12 || 12;
-                        const timeStr = `${hour12.toString().padStart(2, '0')}:${minute} ${ampm}`;
-                        return <SelectItem key={timeStr} value={timeStr}>{timeStr}</SelectItem>;
-                      })}
-                    </SelectContent>
-                  </Select>
+                  <ProjectTimeSelect name="time" value={eventToEdit?.time} onChange={(time) => {
+                    if (eventToEdit) {
+                      setEventToEdit({ ...eventToEdit, time });
+                    }
+                  }} />
                 </div>
               </div>
               <div className="space-y-2">

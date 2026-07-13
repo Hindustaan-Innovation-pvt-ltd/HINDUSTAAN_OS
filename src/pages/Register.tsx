@@ -10,6 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ProjectSelect } from '@/components/ui/project-select';
 
 const registerSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(50),
@@ -45,6 +46,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
   });
 
   const selectedRole = watch('role');
+  const selectedDepartment = watch('department');
   const [loading, setLoading] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [showTerms, setShowTerms] = useState(false);
@@ -191,16 +193,18 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                 <div className="space-y-1">
                 <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Role</label>
                 <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors z-10">
                     <Briefcase className="h-4 w-4" />
                     </div>
-                    <select
-                    {...register("role")}
-                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200 appearance-none"
-                    >
-                        <option value="employee">Employee</option>
-                        <option value="manager">Manager</option>
-                    </select>
+                    <ProjectSelect 
+                      value={selectedRole}
+                      onChange={(val) => setValue('role', val as 'employee' | 'manager')}
+                      className="pl-11 border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white"
+                      options={[
+                        { value: 'employee', label: 'Employee' },
+                        { value: 'manager', label: 'Manager' }
+                      ]}
+                    />
                 </div>
                 </div>
 
@@ -208,16 +212,18 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                 <div className="space-y-1">
                 <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Department</label>
                 <div className="relative group">
-                    <select
-                    {...register("department")}
-                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 px-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200 appearance-none"
-                    >
-                        <option value="Engineering">Engineering</option>
-                        <option value="HR">HR</option>
-                        <option value="Marketing">Marketing</option>
-                        <option value="Sales">Sales</option>
-                        <option value="Operations">Operations</option>
-                    </select>
+                    <ProjectSelect 
+                      value={selectedDepartment}
+                      onChange={(val) => setValue('department', val as any)}
+                      className="border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white"
+                      options={[
+                        { value: 'Engineering', label: 'Engineering' },
+                        { value: 'HR', label: 'HR' },
+                        { value: 'Marketing', label: 'Marketing' },
+                        { value: 'Sales', label: 'Sales' },
+                        { value: 'Operations', label: 'Operations' }
+                      ]}
+                    />
                 </div>
                 </div>
             </div>
