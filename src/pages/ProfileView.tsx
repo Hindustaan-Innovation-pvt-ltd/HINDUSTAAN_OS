@@ -8,8 +8,9 @@ import { getProfileData, type ProfileData } from '@/lib/profile';
 import { 
   User, Mail, Phone, Shield, Briefcase, Calendar, MapPin, 
   Globe, Building, Clock, Edit, CheckCircle2,
-  AlertCircle, ShieldCheck
+  AlertCircle, ShieldCheck, Activity, Users, FileText, Lock, LayoutDashboard, Link, ArrowUpRight, LogOut, Settings
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ProfileView({ session, onNavigate }: { session?: any, onNavigate: (view: string) => void }) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -25,11 +26,308 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
   if (!profile) {
     return (
       <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
-        <p>Loading Profile...</p>
+        <p className="animate-pulse">Loading Profile...</p>
       </div>
     );
   }
 
+  const isAdmin = session?.user?.user_metadata?.role === 'admin';
+
+  if (isAdmin) {
+    return (
+      <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1400px] mx-auto space-y-6 animate-in fade-in duration-500">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+              <User className="h-8 w-8 text-indigo-500" />
+              Admin Profile
+            </h2>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
+              Manage your personal administrative identity and workspace access credentials.
+            </p>
+          </div>
+        </div>
+
+        {/* Main Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* Left Column */}
+          <div className="lg:col-span-4 space-y-6">
+            
+            {/* 1. Profile Header */}
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
+              
+              <CardContent className="p-6 pt-8 flex flex-col items-center text-center relative">
+                <button
+                  onClick={() => onNavigate('Edit Profile')}
+                  className="absolute top-4 right-4 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-slate-600 dark:text-slate-300 transition-all shadow-sm flex items-center justify-center"
+                  title="Edit Profile"
+                >
+                  <Edit className="h-4 w-4" />
+                </button>
+
+                <div className="relative">
+                  <Avatar className="h-28 w-28 border-4 border-slate-50 dark:border-slate-900 shadow-md">
+                    {profile.avatar && <AvatarImage src={profile.avatar} />}
+                    <AvatarFallback className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-3xl font-black">
+                      {profile.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute bottom-0 right-0 h-5 w-5 bg-emerald-500 border-4 border-white dark:border-slate-950 rounded-full" title="Online"></div>
+                </div>
+
+                <div className="flex items-center gap-2 mt-4">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">{profile.name}</h3>
+                  <ShieldCheck className="h-5 w-5 text-indigo-500" />
+                </div>
+                
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap justify-center">
+                  <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/20 dark:text-indigo-400 border-0 font-bold uppercase tracking-wider text-[10px]">Super Admin</Badge>
+                  <span className="text-sm font-semibold text-slate-500 capitalize">{profile.department}</span>
+                </div>
+
+                <div className="w-full border-t border-slate-100 dark:border-slate-800/80 mt-6 pt-4 text-left space-y-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">Employee ID</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">{profile.employeeId}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">Join Date</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">{profile.joiningDate}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 4. Admin Access Summary */}
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
+              <CardHeader className="p-5 pb-0">
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-indigo-500" />
+                  Access Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-5 pt-4 space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {['User Management', 'Workspace Management', 'Notifications', 'Roles & Permissions', 'Organization Monitoring'].map(perm => (
+                    <Badge key={perm} variant="outline" className="border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 font-semibold px-2 py-1 flex items-center gap-1.5">
+                      <CheckCircle2 className="h-3 w-3" />
+                      {perm}
+                    </Badge>
+                  ))}
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full font-bold justify-between text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 border-indigo-200 dark:border-indigo-900"
+                  onClick={() => onNavigate('Roles & Permissions')}
+                >
+                  View Role Permissions
+                  <ArrowUpRight className="h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* 7. Account Actions */}
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
+              <CardHeader className="p-5 pb-0">
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Account Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="p-5 pt-4 flex flex-col gap-2">
+                <Button variant="secondary" className="w-full justify-start font-bold" onClick={() => onNavigate('Edit Profile')}>
+                  <Edit className="mr-2 h-4 w-4" /> Edit Profile
+                </Button>
+                <Button variant="outline" className="w-full justify-start font-bold" onClick={() => toast.success('Password change email sent')}>
+                  <ShieldCheck className="mr-2 h-4 w-4 text-emerald-500" /> Change Password
+                </Button>
+                <Button variant="outline" className="w-full justify-start font-bold" onClick={() => toast.success('Data export started')}>
+                  <FileText className="mr-2 h-4 w-4 text-blue-500" /> Download My Data
+                </Button>
+                <Button variant="outline" className="w-full justify-start font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20" onClick={() => toast.success('Logged out of all other sessions')}>
+                  <LogOut className="mr-2 h-4 w-4" /> Logout Other Sessions
+                </Button>
+              </CardContent>
+            </Card>
+
+          </div>
+
+          {/* Right Column */}
+          <div className="lg:col-span-8 space-y-6">
+            
+            {/* 5. Workspace Statistics */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+                <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Total Employees</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">124</p>
+              </div>
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+                <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Total Managers</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">12</p>
+              </div>
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+                <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Total Projects</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">45</p>
+              </div>
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+                <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Active Users Today</p>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse" />
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">89</p>
+                </div>
+              </div>
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+                <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Workspace Productivity</p>
+                <p className="text-2xl font-black text-emerald-600">92%</p>
+              </div>
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+                <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Pending Notifications</p>
+                <p className="text-2xl font-black text-amber-500">7</p>
+              </div>
+            </div>
+
+            {/* 2. Personal Information */}
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
+              <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 flex flex-row items-center justify-between">
+                <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
+                  <User className="mr-2.5 h-5 w-5 text-indigo-500" />
+                  Personal Information
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => onNavigate('Edit Profile')} className="text-xs font-bold text-indigo-600 hover:text-indigo-700 -my-2">
+                  Edit Details
+                </Button>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Full Name</span>
+                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.name}</p>
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Address</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-base font-bold text-slate-800 dark:text-slate-200 break-all">{profile.email}</p>
+                      <Badge className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/20 text-[10px] font-bold py-0 px-2 rounded-md shrink-0">Verified</Badge>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Phone Number</span>
+                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.phone || '+91 98765 43210'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gender</span>
+                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">Not Specified</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Date of Birth</span>
+                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">Jan 1, 1990</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Address</span>
+                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.officeLocation}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Emergency Contact</span>
+                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.emergencyContact || 'Not provided'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 3. Professional Information */}
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
+              <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60">
+                <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
+                  <Briefcase className="mr-2.5 h-5 w-5 text-indigo-500" />
+                  Professional Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Department</span>
+                    <p className="text-base font-bold text-slate-800 dark:text-slate-200 capitalize">{profile.department}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Designation</span>
+                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">System Administrator</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Employment Type</span>
+                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">Full Time</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Reporting Manager</span>
+                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">None (CEO)</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Workspace ID</span>
+                    <p className="text-base font-mono font-bold text-slate-800 dark:text-slate-200">WS-9842</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Joining Date</span>
+                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.joiningDate}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-4 pt-6 border-t border-slate-100 dark:border-slate-800">
+                  <div className="text-center">
+                    <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">124</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Employees Managed</p>
+                  </div>
+                  <div className="text-center border-x border-slate-100 dark:border-slate-800">
+                    <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">12</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Managers Managed</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">4 yrs</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Workspace Tenure</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 6. Recent Activity Timeline */}
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
+              <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60">
+                <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
+                  <Activity className="mr-2.5 h-5 w-5 text-indigo-500" />
+                  Recent Admin Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-6 relative before:absolute before:inset-0 before:ml-4 md:before:mx-0 md:before:ml-4 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 dark:before:via-slate-800 before:to-transparent">
+                  {[
+                    { id: 1, action: 'Created Manager Account', desc: 'Added account for "Amit Verma"', time: '2 hours ago', icon: <Users className="h-4 w-4 text-emerald-500" />, badge: 'User Action' },
+                    { id: 2, action: 'Updated Workspace Settings', desc: 'Enabled SSO login for the organization', time: 'Yesterday', icon: <Settings className="h-4 w-4 text-indigo-500" />, badge: 'Config' },
+                    { id: 3, action: 'Sent Announcement', desc: '"Q3 Performance Review Schedule"', time: '2 days ago', icon: <Mail className="h-4 w-4 text-blue-500" />, badge: 'Communication' },
+                    { id: 4, action: 'Modified Roles', desc: 'Granted elevated permissions to HR Team', time: 'Last week', icon: <ShieldCheck className="h-4 w-4 text-purple-500" />, badge: 'Access' },
+                  ].map((log) => (
+                    <div key={log.id} className="relative flex items-start gap-4">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white dark:border-slate-950 bg-slate-100 dark:bg-slate-800 shadow shrink-0 z-10">
+                        {log.icon}
+                      </div>
+                      <div className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-sm">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-bold text-sm text-slate-900 dark:text-white">{log.action}</h4>
+                          <span className="text-[10px] font-semibold text-slate-400">{log.time}</span>
+                        </div>
+                        <p className="text-xs text-slate-500 mb-2">{log.desc}</p>
+                        <Badge variant="outline" className="text-[9px] uppercase tracking-wider font-bold bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700">{log.badge}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Original UI for Managers & Employees
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1400px] mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Header */}
