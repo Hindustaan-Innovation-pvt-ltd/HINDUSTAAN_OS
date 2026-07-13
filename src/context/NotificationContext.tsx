@@ -122,8 +122,9 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     unread: false,
     group: 'Yesterday',
     actions: [
-      { label: 'Approve', primary: true },
-      { label: 'Reject', primary: false }
+      { label: 'Approve', primary: true, actionType: 'approve_leave' },
+      { label: 'Reject', primary: false, actionType: 'reject_leave' },
+      { label: 'Comment', primary: false, actionType: 'comment_leave' }
     ]
   },
   {

@@ -168,6 +168,83 @@ export function NotificationCenter() {
     });
   };
 
+  const handleApproveLeave = (notification: any) => {
+    const requestId = notification.metadata?.requestId || 1; // Default to 1 if not provided for mock
+    
+    // Update leave request status
+    const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_requests') || '[]');
+    const updatedLeaves = allLeaves.map((l: any) => {
+      if (l.id === requestId) {
+        return { ...l, status: 'Approved', hrNotified: true, processedAt: Date.now() };
+      }
+      return l;
+    });
+    localStorage.setItem('hindustaan_leave_requests', JSON.stringify(updatedLeaves));
+    window.dispatchEvent(new Event('leave-requests-updated'));
+
+    // Update notification message and clear actions
+    setNotifications(prev => prev.map(n => {
+      if (n.id === notification.id) {
+        return {
+          ...n,
+          unread: false,
+          message: `Approved: ${notification.message}`,
+          actions: undefined
+        };
+      }
+      return n;
+    }));
+
+    toast.success('Leave Request Approved');
+  };
+
+  const handleRejectLeave = (notification: any) => {
+    const requestId = notification.metadata?.requestId || 1;
+    
+    const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_requests') || '[]');
+    const updatedLeaves = allLeaves.map((l: any) => {
+      if (l.id === requestId) {
+        return { ...l, status: 'Rejected', hrNotified: true, processedAt: Date.now() };
+      }
+      return l;
+    });
+    localStorage.setItem('hindustaan_leave_requests', JSON.stringify(updatedLeaves));
+    window.dispatchEvent(new Event('leave-requests-updated'));
+
+    setNotifications(prev => prev.map(n => {
+      if (n.id === notification.id) {
+        return {
+          ...n,
+          unread: false,
+          message: `Rejected: ${notification.message}`,
+          actions: undefined
+        };
+      }
+      return n;
+    }));
+
+    toast.info('Leave Request Rejected');
+  };
+
+  const handleCommentLeave = (notification: any) => {
+    const requestId = notification.metadata?.requestId || 1;
+    
+    const comment = window.prompt("Enter your comment for this leave request:");
+    if (comment) {
+       const existing = JSON.parse(localStorage.getItem('hindustaan_leave_comments') || '[]');
+       existing.push({
+         id: Date.now(),
+         leaveId: requestId,
+         text: comment,
+         author: "Manager",
+         timestamp: new Date().toISOString()
+       });
+       localStorage.setItem('hindustaan_leave_comments', JSON.stringify(existing));
+       toast.success("Comment added successfully");
+       markAsRead(notification.id);
+    }
+  };
+
   const MOCK_TASK = {
     id: 'nt-1',
     title: 'Authentication Module',
@@ -359,6 +436,12 @@ export function NotificationCenter() {
                                         handleApproveExtension(notification);
                                       } else if (action.actionType === 'reject_extension') {
                                         handleRejectExtension(notification);
+                                      } else if (action.actionType === 'approve_leave' || (action.label === 'Approve' && notification.title === 'Leave Request')) {
+                                        handleApproveLeave(notification);
+                                      } else if (action.actionType === 'reject_leave' || (action.label === 'Reject' && notification.title === 'Leave Request')) {
+                                        handleRejectLeave(notification);
+                                      } else if (action.actionType === 'comment_leave' || (action.label === 'Comment' && notification.title === 'Leave Request')) {
+                                        handleCommentLeave(notification);
                                       } else {
                                         if (action.label === 'View Task') {
                                           setSelectedTask(MOCK_TASK);
