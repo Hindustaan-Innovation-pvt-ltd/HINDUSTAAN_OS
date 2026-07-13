@@ -321,9 +321,10 @@ export function ProjectCalendarWidget() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Start Date</Label>
+              <Label className="dark:text-slate-200 font-semibold">Start Date</Label>
               <Input 
                 type="date" 
+                className="dark:text-white dark:bg-slate-800/50 dark:border-slate-700 dark:[color-scheme:dark]"
                 defaultValue={format(startDate, 'yyyy-MM-dd')} 
                 onChange={(e) => {
                   const d = new Date(e.target.value);
@@ -335,9 +336,10 @@ export function ProjectCalendarWidget() {
               />
             </div>
             <div className="grid gap-2">
-              <Label>End Date</Label>
+              <Label className="dark:text-slate-200 font-semibold">End Date</Label>
               <Input 
                 type="date" 
+                className="dark:text-white dark:bg-slate-800/50 dark:border-slate-700 dark:[color-scheme:dark]"
                 defaultValue={format(endDate, 'yyyy-MM-dd')}
                 onChange={(e) => {
                   const d = new Date(e.target.value);
@@ -350,7 +352,7 @@ export function ProjectCalendarWidget() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => setIsSettingsOpen(false)}>Save changes</Button>
+            <Button onClick={() => setIsSettingsOpen(false)} className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-[#5B7CFF] dark:text-white dark:hover:bg-[#5B7CFF]/80 font-bold">Save changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

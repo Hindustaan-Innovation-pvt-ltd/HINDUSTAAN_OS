@@ -201,7 +201,7 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
         return;
       }
 
-      const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_requests') || '[]');
+      const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_data') || '[]');
       let employeeNotifReq: any = null;
       const updatedLeaves = allLeaves.map((l: any) => {
         if (l.id === requestId) {
@@ -210,8 +210,8 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
         }
         return l;
       });
-      localStorage.setItem('hindustaan_leave_requests', JSON.stringify(updatedLeaves));
-      window.dispatchEvent(new Event('leave-requests-updated'));
+      localStorage.setItem('hindustaan_leave_data', JSON.stringify(updatedLeaves));
+      window.dispatchEvent(new Event('leave-data-updated'));
 
       if (employeeNotifReq) {
         const savedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
@@ -443,12 +443,13 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
                           {notification.actions && notification.actions.length > 0 && (
                             activeCommentId === notification.id ? (
                               <div className="flex items-center gap-1.5 mt-2" onClick={e => e.stopPropagation()}>
-                                <Input 
-                                  value={commentText}
-                                  onChange={(e) => setCommentText(e.target.value)}
-                                  placeholder="Type your comment..."
-                                  className="h-6 text-[10px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 px-2 py-0 focus-visible:ring-1 focus-visible:ring-orange-500"
-                                  autoFocus
+                                  <Input 
+                                    value={commentText}
+                                    onChange={(e) => setCommentText(e.target.value)}
+                                    placeholder="Type your comment..."
+                                    style={{ fontSize: '11px' }}
+                                    className="h-7 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 px-2 py-0 focus-visible:ring-1 focus-visible:ring-orange-500"
+                                    autoFocus
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') { e.preventDefault(); submitCommentLeave(e, notification); }
                                   }}
