@@ -390,12 +390,8 @@ function App() {
               'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
               'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Edit Profile', 'Team Members',
               'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
-<<<<<<< HEAD
-              'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support', 'Security Settings'
-=======
-              'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support',
+              'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support', 'Security Settings',
               'Employees', 'Managers', 'Roles & Permissions'
->>>>>>> 303a4aad6613cb10fbcb12b39aa4474ea50e0acc
             ].includes(currentView) && (
               <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
                 <p>Module "{currentView}" is under construction.</p>

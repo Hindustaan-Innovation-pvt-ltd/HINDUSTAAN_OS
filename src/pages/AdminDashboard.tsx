@@ -1,55 +1,4 @@
 import React, { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { Users, UserCheck, Activity, BellRing, ShieldCheck, Server, Key, Plus, ExternalLink } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { GLOBAL_TEAM_MEMBERS, GLOBAL_ACTIVITY_FEED, GLOBAL_NOTIFICATIONS } from '@/data/mockData';
-
-export default function AdminDashboard() {
-  const [teamMembers, setTeamMembers] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_users');
-    return saved ? JSON.parse(saved) : GLOBAL_TEAM_MEMBERS;
-  });
-
-  const [activities, setActivities] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_activity_feed');
-    return saved ? JSON.parse(saved) : GLOBAL_ACTIVITY_FEED;
-  });
-
-  const [notifications, setNotifications] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_notifications');
-    return saved ? JSON.parse(saved) : GLOBAL_NOTIFICATIONS;
-  });
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'hindustaan_users' && e.newValue) setTeamMembers(JSON.parse(e.newValue));
-      if (e.key === 'hindustaan_activity_feed' && e.newValue) setActivities(JSON.parse(e.newValue));
-      if (e.key === 'hindustaan_notifications' && e.newValue) setNotifications(JSON.parse(e.newValue));
-    };
-    
-    const handleLocalUpdate = (e: CustomEvent) => {
-      if (e.detail.key === 'hindustaan_users') setTeamMembers(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_TEAM_MEMBERS);
-      if (e.detail.key === 'hindustaan_activity_feed') setActivities(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_ACTIVITY_FEED);
-      if (e.detail.key === 'hindustaan_notifications') setNotifications(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_NOTIFICATIONS);
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    };
-  }, []);
-
-  const totalEmployees = teamMembers.length;
-  const totalManagers = teamMembers.filter((u: any) => u.role?.toLowerCase().includes('lead') || u.role?.toLowerCase().includes('manager')).length;
-  const activeUsers = teamMembers.filter((u: any) => u.status === 'online' || u.status === 'busy').length;
-  const pendingNotifications = notifications.filter((n: any) => n.unread).length;
-
-=======
 import { 
   Users, UserCheck, Activity, BellRing, ShieldCheck, Server, Key, 
   Plus, ExternalLink, Search, Edit2, ShieldAlert, Power, 
@@ -63,8 +12,9 @@ import { getRegisteredUsers, registerUser } from '@/lib/auth';
 import type { User } from '@/lib/auth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { GLOBAL_ACTIVITY_FEED, GLOBAL_NOTIFICATIONS } from '@/data/mockData';
 
-export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnlyRole?: 'employee' | 'manager' }) {
+export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'employee' | 'manager' }) {
   // User Management State
   const [usersList, setUsersList] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,7 +29,7 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
   // Form Fields for Create/Edit
   const [formName, setFormName] = useState('');
   const [formEmail, setFormEmail] = useState('');
-  const [formRole, setFormRole] = useState<'employee' | 'manager' | 'admin'>(showOnlyRole);
+  const [formRole, setFormRole] = useState<'employee' | 'manager' | 'admin'>('employee');
   const [formDept, setFormDept] = useState('Engineering');
   const [formDesig, setFormDesig] = useState('');
   const [formPhone, setFormPhone] = useState('');
@@ -87,13 +37,48 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
   const [formPassword, setFormPassword] = useState('');
   const [formId, setFormId] = useState('');
 
+  // Dashboard Overview state
+  const [activities, setActivities] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_activity_feed');
+    return saved ? JSON.parse(saved) : GLOBAL_ACTIVITY_FEED;
+  });
+
+  const [notifications, setNotifications] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_notifications');
+    return saved ? JSON.parse(saved) : GLOBAL_NOTIFICATIONS;
+  });
+
   useEffect(() => {
-    setFormRole(showOnlyRole);
+    if (showOnlyRole) {
+      setFormRole(showOnlyRole);
+    } else {
+      setFormRole('employee');
+    }
   }, [showOnlyRole]);
 
   useEffect(() => {
     // Load registered users on mount
     setUsersList(getRegisteredUsers());
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hindustaan_users' && e.newValue) setUsersList(JSON.parse(e.newValue));
+      if (e.key === 'hindustaan_activity_feed' && e.newValue) setActivities(JSON.parse(e.newValue));
+      if (e.key === 'hindustaan_notifications' && e.newValue) setNotifications(JSON.parse(e.newValue));
+    };
+    
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'hindustaan_users') setUsersList(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : getRegisteredUsers());
+      if (e.detail.key === 'hindustaan_activity_feed') setActivities(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_ACTIVITY_FEED);
+      if (e.detail.key === 'hindustaan_notifications') setNotifications(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_NOTIFICATIONS);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    };
   }, []);
 
   const refreshUsers = () => {
@@ -166,7 +151,6 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
           designation: formDesig.trim(),
           phone: formPhone.trim() || undefined,
           reportingManager: formManager,
-          // Retain password
           password: formPassword.trim() || u.password
         };
       }
@@ -211,7 +195,7 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
   const resetForm = () => {
     setFormName('');
     setFormEmail('');
-    setFormRole(showOnlyRole);
+    setFormRole(showOnlyRole || 'employee');
     setFormDept('Engineering');
     setFormDesig('');
     setFormPhone('');
@@ -221,11 +205,12 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
     setSelectedUser(null);
   };
 
-  // Filters calculation
+  // Filters & Calculations
   const activeUsersCount = usersList.filter(u => u.isActive !== false).length;
   const totalEmployeesCount = usersList.filter(u => u.role === 'employee').length;
   const totalManagersCount = usersList.filter(u => u.role === 'manager').length;
   const activeManagersList = usersList.filter(u => u.role === 'manager' && u.isActive !== false);
+  const pendingNotifications = notifications.filter((n: any) => n.unread).length;
 
   const departments = ['Engineering', 'Product', 'HR', 'Marketing', 'Sales', 'IT'];
 
@@ -250,7 +235,6 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
     return matchesSearch && matchesRole && matchesDept && matchesStatus;
   });
 
->>>>>>> 303a4aad6613cb10fbcb12b39aa4474ea50e0acc
   return (
     <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 transition-colors duration-300">
       <div className="max-w-[1600px] mx-auto space-y-6">
@@ -259,74 +243,206 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {showOnlyRole === 'manager' ? 'Managers' : 'Employees'}
+              {!showOnlyRole ? 'Admin Dashboard' : showOnlyRole === 'manager' ? 'Managers' : 'Employees'}
             </h1>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
-              {showOnlyRole === 'manager' 
-                ? 'Manage manager accounts, departments, and active statuses.' 
-                : 'Manage employee accounts, roles, and designations.'}
+              {!showOnlyRole 
+                ? 'Overview of organization roles, stats, and activities.'
+                : showOnlyRole === 'manager' 
+                  ? 'Manage manager accounts, departments, and active statuses.' 
+                  : 'Manage employee accounts, roles, and designations.'}
             </p>
           </div>
-<<<<<<< HEAD
-        </div>
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
-                <Users className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Total Employees</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{totalEmployees}</h3>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-[#5B7CFF]/10 flex items-center justify-center shrink-0">
-                <ShieldCheck className="h-6 w-6 text-[#5B7CFF]" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Total Managers</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{totalManagers}</h3>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center shrink-0">
-                <Activity className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Active Users Today</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{activeUsers}</h3>
-              </div>
-            </CardContent>
-          </Card>
-=======
           
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={() => { resetForm(); setIsCreateOpen(true); }}
-              className="bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md shadow-orange-500/10 transition-transform active:scale-95"
-            >
-              <UserPlus className="h-4 w-4 mr-2" /> Add {showOnlyRole === 'manager' ? 'Manager' : 'Employee'}
-            </Button>
-          </div>
+          {showOnlyRole && (
+            <div className="flex items-center gap-3">
+              <Button 
+                onClick={() => { resetForm(); setIsCreateOpen(true); }}
+                className="bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md shadow-orange-500/10 transition-transform active:scale-95"
+              >
+                <UserPlus className="h-4 w-4 mr-2" /> Add {showOnlyRole === 'manager' ? 'Manager' : 'Employee'}
+              </Button>
+            </div>
+          )}
         </div>
 
-        {/* User Management Directory */}
-        <div className="space-y-6 animate-in fade-in duration-300">
+        {/* Conditional Content */}
+        {!showOnlyRole ? (
+          // Admin Overview Dashboard View
+          <div className="space-y-6">
+            {/* Stats Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300">
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
+                    <Users className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Total Employees</p>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">{totalEmployeesCount}</h3>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-75">
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-[#5B7CFF]/10 flex items-center justify-center shrink-0">
+                    <ShieldCheck className="h-6 w-6 text-[#5B7CFF]" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Total Managers</p>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">{totalManagersCount}</h3>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-150">
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center shrink-0">
+                    <Activity className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Active Users Today</p>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">{activeUsersCount}</h3>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-200">
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
+                    <BellRing className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Pending Notifications</p>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">{pendingNotifications}</h3>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Split layout: Team Directory vs Recent Activities */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Active Team Members Card */}
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden lg:col-span-2">
+                <CardHeader className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+                  <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Active Team Directory</CardTitle>
+                  <p className="text-xs text-slate-550 dark:text-slate-400 mt-1">A quick glance at current active users in the registry.</p>
+                </CardHeader>
+                <CardContent className="p-0 overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/60 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                      <tr>
+                        <th className="px-6 py-4 font-bold">User / ID</th>
+                        <th className="px-6 py-4 font-bold">Designation & Department</th>
+                        <th className="px-6 py-4 font-bold">System Role</th>
+                        <th className="px-6 py-4 font-bold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {usersList.slice(0, 5).map((u, i) => {
+                        const initials = u.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                        const isActive = u.isActive !== false;
+                        return (
+                          <tr key={i} className="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/25 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className={cn(
+                                  "h-9 w-9 rounded-full flex items-center justify-center text-xs font-extrabold border shrink-0",
+                                  isActive
+                                    ? "bg-orange-50 text-orange-700 border-orange-250 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20"
+                                    : "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-800"
+                                )}>
+                                  {initials}
+                                </div>
+                                <div>
+                                  <div className="font-extrabold text-slate-900 dark:text-white leading-snug">{u.name}</div>
+                                  <div className="text-xs text-slate-450 dark:text-slate-400 leading-snug truncate max-w-[150px]">{u.email}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="font-bold text-slate-800 dark:text-slate-200">{u.designation || 'Specialist'}</div>
+                              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">{u.department || 'Unassigned'}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <Badge variant="outline" className={cn(
+                                "font-black tracking-wide rounded px-2 uppercase text-[9px]",
+                                u.role === 'admin' ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400" :
+                                u.role === 'manager' ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400" :
+                                "border-slate-250 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-350"
+                              )}>
+                                {u.role}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4">
+                              <Badge className={cn(
+                                "font-bold py-0.5 rounded text-[10px]",
+                                isActive 
+                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" 
+                                  : "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
+                              )}>
+                                {isActive ? 'Active' : 'Deactivated'}
+                              </Badge>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+
+              {/* Recent Workspace Activity */}
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm col-span-1">
+                <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+                  <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Workspace Activities</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-6">
+                    {activities.slice(0, 5).map((activity: any, i: number) => {
+                      let Icon = Activity;
+                      let color = 'text-[#5B7CFF]';
+                      let bg = 'bg-[#5B7CFF]/10';
+
+                      if (activity.type === 'project' || activity.type === 'assign') {
+                        Icon = ShieldCheck;
+                        color = 'text-emerald-500';
+                        bg = 'bg-emerald-500/10';
+                      } else if (activity.type === 'task' || activity.type === 'log') {
+                        Icon = Key;
+                        color = 'text-orange-500';
+                        bg = 'bg-orange-500/10';
+                      }
+
+                      return (
+                        <div key={i} className="flex gap-4">
+                          <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${bg}`}>
+                            <Icon className={`h-5 w-5 ${color}`} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                              {activity.user} {activity.action} <span className="font-extrabold text-orange-600 dark:text-orange-400">{activity.target}</span>
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        ) : (
+          // CRUD Registry View
+          <div className="space-y-6 animate-in fade-in duration-300">
             {/* Filters and Search Toolbar */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm p-4">
               <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4">
                 {/* Search Bar */}
                 <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-450 pointer-events-none" />
                   <input
                     type="text"
                     placeholder={showOnlyRole === 'manager' 
@@ -367,7 +483,6 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                       <option value="Inactive">Deactivated</option>
                     </select>
                   </div>
->>>>>>> 303a4aad6613cb10fbcb12b39aa4474ea50e0acc
 
                   {(searchQuery || deptFilter !== 'All' || statusFilter !== 'All') && (
                     <Button 
@@ -380,21 +495,11 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                   )}
                 </div>
               </div>
-<<<<<<< HEAD
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Pending Notifications</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{pendingNotifications}</h3>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-=======
             </Card>
->>>>>>> 303a4aad6613cb10fbcb12b39aa4474ea50e0acc
 
             {/* Directory Board */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden">
-              <CardHeader className="p-4 sm:p-6 border-b border-slate-105 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/30 flex flex-row items-center justify-between">
+              <CardHeader className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30 flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">
                     {showOnlyRole === 'manager' ? 'Manager Directory' : 'Employee Directory'}
@@ -418,31 +523,12 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                     </tr>
                   </thead>
                   <tbody>
-<<<<<<< HEAD
-                    {teamMembers.slice(0, 4).map((u: any, i: number) => (
-                      <tr key={i} className="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-900 dark:text-white">{u.name}</div>
-                          <div className="text-xs text-slate-500">{u.name.toLowerCase().replace(' ', '.')}@hindustaan.in</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Badge variant="outline" className="font-bold border-slate-200 dark:border-slate-700">{u.role}</Badge>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Badge className={u.status === 'online' || u.status === 'busy' ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 'bg-slate-500/10 text-slate-500 hover:bg-slate-500/20'}>
-                            {u.status === 'online' || u.status === 'busy' ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 text-slate-500">{u.status === 'online' ? 'Just now' : '2 hours ago'}</td>
-=======
                     {filteredUsers.map((u, i) => {
                       const isActive = u.isActive !== false;
                       const initials = u.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
                       return (
                         <tr key={i} className="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/25 transition-colors">
-                          
-                          {/* User Column */}
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className={cn(
@@ -460,16 +546,12 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                               </div>
                             </div>
                           </td>
-
-                          {/* Designation & Department */}
                           <td className="px-6 py-4">
                             <div className="font-bold text-slate-800 dark:text-slate-200">{u.designation || 'Specialist'}</div>
                             <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5 flex items-center">
                               <Briefcase className="h-3 w-3 mr-1 text-slate-400" /> {u.department || 'Unassigned'}
                             </div>
                           </td>
-
-                          {/* Reporting Manager */}
                           <td className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">
                             {u.reportingManager && u.reportingManager !== 'None' ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20">
@@ -479,13 +561,9 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                               <span className="text-xs text-slate-400 font-medium">None</span>
                             )}
                           </td>
-
-                          {/* Phone */}
                           <td className="px-6 py-4 font-medium text-slate-500 dark:text-slate-400">
                             {u.phone ? u.phone : <span className="text-xs italic text-slate-400">No phone</span>}
                           </td>
-
-                          {/* System Role */}
                           <td className="px-6 py-4">
                             <Badge variant="outline" className={cn(
                               "font-black tracking-wide rounded px-2.5 py-0.5 uppercase text-[10px]",
@@ -496,8 +574,6 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                               {u.role}
                             </Badge>
                           </td>
-
-                          {/* Active Status */}
                           <td className="px-6 py-4">
                             <Badge className={cn(
                               "font-bold py-0.5 rounded",
@@ -508,8 +584,6 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                               {isActive ? 'Active' : 'Deactivated'}
                             </Badge>
                           </td>
-
-                          {/* Actions */}
                           <td className="px-6 py-4 text-right">
                             <div className="flex items-center justify-end gap-2.5">
                               <Button 
@@ -517,7 +591,7 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                                 variant="outline" 
                                 size="icon" 
                                 className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-800/80"
-                                title="Edit employee details"
+                                title="Edit details"
                               >
                                 <Edit2 className="h-3.5 w-3.5" />
                               </Button>
@@ -531,71 +605,28 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                                     ? "text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-550/10 hover:border-rose-200"
                                     : "text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-550/10 hover:border-emerald-200"
                                 )}
-                                title={isActive ? 'Deactivate employee account' : 'Activate employee account'}
+                                title={isActive ? 'Deactivate account' : 'Activate account'}
                               >
                                 <Power className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                           </td>
-
                         </tr>
                       );
                     })}
                     {filteredUsers.length === 0 && (
                       <tr>
                         <td colSpan={7} className="px-6 py-12 text-center text-slate-450 italic font-medium">
-                          No matching employees found in registry directory.
+                          No matching registries found.
                         </td>
->>>>>>> 303a4aad6613cb10fbcb12b39aa4474ea50e0acc
                       </tr>
                     )}
                   </tbody>
                 </table>
               </CardContent>
             </Card>
-<<<<<<< HEAD
-
-            {/* Recent Workspace Activity */}
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm">
-              <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60">
-                <CardTitle className="text-lg font-bold">Recent Workspace Activity</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-6">
-                  {activities.slice(0, 3).map((activity: any, i: number) => {
-                    let Icon = Activity;
-                    let color = 'text-[#5B7CFF]';
-                    let bg = 'bg-[#5B7CFF]/10';
-
-                    if (activity.type === 'project' || activity.type === 'assign') {
-                      Icon = ShieldCheck;
-                      color = 'text-emerald-500';
-                      bg = 'bg-emerald-500/10';
-                    } else if (activity.type === 'task' || activity.type === 'log') {
-                      Icon = Key;
-                      color = 'text-orange-500';
-                      bg = 'bg-orange-500/10';
-                    }
-
-                    return (
-                      <div key={i} className="flex gap-4">
-                        <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${bg}`}>
-                          <Icon className={`h-5 w-5 ${color}`} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-900 dark:text-white">{activity.user} {activity.action} {activity.target}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-=======
->>>>>>> 303a4aad6613cb10fbcb12b39aa4474ea50e0acc
           </div>
-
+        )}
       </div>
 
       {/* CREATE MODAL */}
@@ -686,7 +717,7 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                   <select
                     value={formManager}
                     onChange={(e) => setFormManager(e.target.value)}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer"
+                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/55 cursor-pointer"
                   >
                     <option value="None">None</option>
                     {activeManagersList.map(m => (
@@ -823,7 +854,7 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                   <select
                     value={formManager}
                     onChange={(e) => setFormManager(e.target.value)}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer"
+                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/55 cursor-pointer"
                   >
                     <option value="None">None</option>
                     {activeManagersList.filter(m => m.email.toLowerCase() !== formEmail.toLowerCase()).map(m => (
