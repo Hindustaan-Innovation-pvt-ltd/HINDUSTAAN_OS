@@ -168,6 +168,11 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
   const [searchQuery, setSearchQuery] = useState('');
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
+  // Mouse Drag to Scroll State
+  const [isDraggingBoard, setIsDraggingBoard] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeftPos, setScrollLeftPos] = useState(0);
+
   // Scroll Ref for Kanban Columns
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isOverflowing, setIsOverflowing] = useState(false);
@@ -208,7 +213,32 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
     return true;
   });
 
-  // --- Drag & Drop Handlers ---
+  // --- Drag to Scroll Handlers ---
+
+  const handleBoardMouseDown = (e: React.MouseEvent) => {
+    if (!scrollContainerRef.current) return;
+    setIsDraggingBoard(true);
+    setStartX(e.pageX - scrollContainerRef.current.offsetLeft);
+    setScrollLeftPos(scrollContainerRef.current.scrollLeft);
+  };
+
+  const handleBoardMouseLeave = () => {
+    setIsDraggingBoard(false);
+  };
+
+  const handleBoardMouseUp = () => {
+    setIsDraggingBoard(false);
+  };
+
+  const handleBoardMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingBoard || !scrollContainerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startX) * 2; // Scroll speed multiplier
+    scrollContainerRef.current.scrollLeft = scrollLeftPos - walk;
+  };
+
+  // --- Drag & Drop Handlers (Native HTML5) ---
   
   const handleDragStart = (e: React.DragEvent, id: string) => {
     e.dataTransfer.setData('taskId', id);
@@ -370,10 +400,15 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
 
         <div 
           ref={scrollContainerRef}
+          onMouseDown={handleBoardMouseDown}
+          onMouseLeave={handleBoardMouseLeave}
+          onMouseUp={handleBoardMouseUp}
+          onMouseMove={handleBoardMouseMove}
           className={cn(
             "flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory h-fit w-full",
             currentUser.role === 'intern' ? "hide-scrollbar pb-1" : "scrollbar-hide",
-            isSidebarMinimized && "lg:grid lg:grid-cols-4 lg:overflow-x-visible lg:pb-0"
+            isSidebarMinimized && "lg:grid lg:grid-cols-4 lg:overflow-x-visible lg:pb-0",
+            isDraggingBoard ? "cursor-grabbing snap-none select-none" : "cursor-grab"
           )}
         >
           {COLUMNS.map(columnStatus => {
