@@ -294,7 +294,7 @@ export function EmployeeNotificationCenter() {
             <div className="flex items-center gap-3">
               <button 
                 onClick={markAllAsRead}
-                className="text-label font-bold text-slate-500 hover:text-orange-600 dark:text-slate-400 dark:hover:text-orange-400 transition-colors flex items-center gap-1"
+                className="text-xs font-bold text-slate-500 hover:text-orange-600 dark:text-slate-400 dark:hover:text-orange-400 transition-colors flex items-center gap-1"
               >
                 <Check className="h-3 w-3" />
                 Mark all read
@@ -333,7 +333,7 @@ export function EmployeeNotificationCenter() {
                 return (
                   <div key={groupName} className="space-y-1">
                     <div className="px-3 py-1.5 flex items-center sticky top-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur z-10">
-                      <span className="text-label font-bold text-slate-400 dark:text-slate-500  ">{groupName}</span>
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{groupName}</span>
                     </div>
                     {groupItems.map((notification: any) => (
                       <div 
@@ -368,7 +368,7 @@ export function EmployeeNotificationCenter() {
                               <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap shrink-0">{getRelativeTime(notification.id > 1000000 ? notification.id : notification.time)}</span>
                             </div>
                             <p className={cn(
-                              "text-label font-medium leading-relaxed",
+                              "text-xs font-medium leading-relaxed",
                               notification.unread ? "text-slate-600 dark:text-slate-300" : "text-slate-500 dark:text-slate-400"
                             )}>
                               {notification.message}
@@ -382,7 +382,7 @@ export function EmployeeNotificationCenter() {
                                     variant={action.primary ? "default" : "outline"}
                                     size="sm"
                                     className={cn(
-                                      "h-7 text-label font-bold rounded-lg px-3",
+                                      "h-7 text-xs font-bold rounded-lg px-3",
                                       action.primary ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200" : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
                                     )}
                                     onClick={(e) => { 

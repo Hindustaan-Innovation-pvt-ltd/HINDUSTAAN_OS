@@ -159,7 +159,7 @@ export default function Projects({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold  text-slate-900 dark:text-white">Project Timeline</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Project Timeline</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">High-level Gantt chart outlining task execution over the current week.</p>
         </div>
         {role === 'manager' && (
@@ -222,7 +222,7 @@ export default function Projects({ session }: { session?: any }) {
                     </div>
                     <div className="flex items-center space-x-2" onClick={e => e.stopPropagation()}>
                       <Badge variant="secondary" className={cn(
-                        "font-bold   text-[10px] px-3 py-1 rounded-full",
+                        "font-black tracking-wider uppercase text-[10px] px-3 py-1 rounded-full",
                         project.status === 'Completed' && "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400",
                         project.status === 'In Progress' && "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400",
                         project.status === 'On Hold' && "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400",
@@ -284,7 +284,7 @@ export default function Projects({ session }: { session?: any }) {
 
                   {/* Title & Lead */}
                   <div className="mb-6 relative z-10">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{project.name}</h3>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-3 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{project.name}</h3>
                     <div className="flex items-center">
                       <div className="flex -space-x-2 mr-3">
                         {GLOBAL_TEAM_MEMBERS.slice(0, 3).map((member, i) => (
@@ -293,7 +293,7 @@ export default function Projects({ session }: { session?: any }) {
                           </div>
                         ))}
                       </div>
-                      <span className="text-label font-semibold text-slate-500 dark:text-slate-400">
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         Lead: <span className="text-slate-700 dark:text-slate-300">{project.manager}</span>
                       </span>
                     </div>
@@ -302,14 +302,14 @@ export default function Projects({ session }: { session?: any }) {
                   {/* Split View: Budget & Deadline */}
                   <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-100 dark:border-slate-800/60 mb-6 relative z-10">
                     <div>
-                      <div className="flex items-center text-[10px] font-bold   text-slate-400 mb-1">
+                      <div className="flex items-center text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
                         <TrendingUp className="h-3 w-3 mr-1" /> Budget
                       </div>
                       <p className="font-bold text-slate-900 dark:text-white">{project.budget}</p>
                     </div>
                     <div className="pl-4 border-l border-slate-100 dark:border-slate-800/60">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center text-[10px] font-bold   text-slate-400 mb-1">
+                        <div className="flex items-center text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
                           <AlertTriangle className={cn("h-3 w-3 mr-1", isPastDue ? "text-red-500" : "")} /> Deadline
                         </div>
                       </div>
@@ -318,7 +318,7 @@ export default function Projects({ session }: { session?: any }) {
                           {isNaN(new Date(project.deadline).getTime()) ? project.deadline : format(new Date(project.deadline), 'MMM d')}
                         </p>
                         {isPastDue && (
-                          <span className="bg-red-100 text-red-600 text-[9px] font-bold  px-1.5 py-0.5 rounded">Past Due</span>
+                          <span className="bg-red-100 text-red-600 text-[9px] font-black uppercase px-1.5 py-0.5 rounded">Past Due</span>
                         )}
                       </div>
                     </div>
@@ -326,7 +326,7 @@ export default function Projects({ session }: { session?: any }) {
 
                   {/* Progress Bar */}
                   <div className="mt-auto relative z-10">
-                    <div className="flex items-center justify-between text-[10px] font-bold   text-slate-500 mb-2">
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">
                       <span>{completedTasks} / {totalTasks} TASKS</span>
                       <span className="text-slate-900 dark:text-white">{progress}%</span>
                     </div>
@@ -358,7 +358,7 @@ export default function Projects({ session }: { session?: any }) {
           </div>
           <Popover>
             <PopoverTrigger asChild>
-              <button className="flex items-center text-label font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+              <button className="flex items-center text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                 <CalendarDays className="h-4 w-4 mr-1.5 text-slate-400" />
                 {format(startOfCurrentWeek, 'MMM d')} - {format(addDays(startOfCurrentWeek, 6), 'MMM d')}
               </button>
@@ -385,9 +385,9 @@ export default function Projects({ session }: { session?: any }) {
               {/* Day Columns */}
               <div className="flex-1 grid grid-cols-7 gap-2">
                 {weekDays.map(day => (
-                  <div key={day.toISOString()} className="text-center pb-4 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 dark:text-slate-500  ">
+                  <div key={day.toISOString()} className="text-center pb-4 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                     <div className="mb-1">{format(day, 'EEE')}</div>
-                    <div className={cn("text-label", isSameDay(day, new Date()) && "text-orange-500 dark:text-orange-400")}>{format(day, 'd')}</div>
+                    <div className={cn("text-xs", isSameDay(day, new Date()) && "text-orange-500 dark:text-orange-400")}>{format(day, 'd')}</div>
                   </div>
                 ))}
               </div>
@@ -414,13 +414,13 @@ export default function Projects({ session }: { session?: any }) {
                       <div className={cn("h-6 w-6 rounded-md flex items-center justify-center shadow-sm", project.iconColor)}>
                          <FolderKanban className="h-3 w-3" />
                       </div>
-                      <p className="text-label font-bold   text-slate-900 dark:text-slate-100">{project.name}</p>
+                      <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">{project.name}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <Badge variant="outline" className={cn("text-[10px] font-bold bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-slate-800 dark:text-slate-200", project.headerBorder)}>
                         {project.tasks?.length || 0} Tasks
                       </Badge>
-                      <span className="text-[10px] font-bold text-slate-500   hidden sm:inline-block">Lead: {project.manager}</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline-block">Lead: {project.manager}</span>
                     </div>
                   </div>
                   
@@ -432,7 +432,7 @@ export default function Projects({ session }: { session?: any }) {
                          <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">Execution Finished</p>
                       </div>
                       <div className="flex-1">
-                        <div className="h-8 rounded-lg shadow-sm flex items-center justify-between px-4 text-label font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 w-full col-span-full">
+                        <div className="h-8 rounded-lg shadow-sm flex items-center justify-between px-4 text-xs font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 w-full col-span-full">
                            <div className="flex items-center">
                              <CheckSquare className="h-4 w-4 mr-2" />
                              Project Execution Finished
@@ -465,7 +465,7 @@ export default function Projects({ session }: { session?: any }) {
                           <Popover>
                             <PopoverTrigger asChild>
                               <div 
-                                className="h-8 rounded-lg shadow-sm flex items-center px-3 text-label font-bold text-white whitespace-nowrap overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md cursor-pointer"
+                                className="h-8 rounded-lg shadow-sm flex items-center px-3 text-xs font-bold text-white whitespace-nowrap overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md cursor-pointer"
                                 style={{ 
                                   gridColumn: `${task.start + 1} / span ${task.duration}`,
                                   backgroundColor: project.strokeColor || '#f97316'
@@ -478,16 +478,16 @@ export default function Projects({ session }: { session?: any }) {
                               <div className="space-y-3">
                                 <div>
                                   <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{task.name}</h4>
-                                  <p className="text-[10px] font-semibold text-slate-500   mt-1">Assigned to: {task.assignee}</p>
+                                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mt-1">Assigned to: {task.assignee}</p>
                                 </div>
                                 <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
                                   <div className="flex flex-col">
                                     <span className="text-[10px] font-bold text-slate-400">Duration</span>
-                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{task.duration} Days</span>
+                                    <span className="text-sm font-black text-slate-700 dark:text-slate-300">{task.duration} Days</span>
                                   </div>
                                   <div className="flex flex-col text-right">
                                     <span className="text-[10px] font-bold text-slate-400">Est. Hours</span>
-                                    <span className="text-sm font-bold text-orange-600 dark:text-orange-500">{task.duration * 8}h</span>
+                                    <span className="text-sm font-black text-orange-600 dark:text-orange-500">{task.duration * 8}h</span>
                                   </div>
                                 </div>
                               </div>
@@ -518,7 +518,7 @@ export default function Projects({ session }: { session?: any }) {
           <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">{editingProjectId ? 'Edit Project' : 'Create New Project'}</h3>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">{editingProjectId ? 'Edit Project' : 'Create New Project'}</h3>
                 <p className="text-sm font-semibold text-slate-500 mt-1">{editingProjectId ? 'Update project details and execution parameters.' : 'Setup project details for the team.'}</p>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors">
@@ -528,7 +528,7 @@ export default function Projects({ session }: { session?: any }) {
 
             <div className="p-6 space-y-5">
               <div className="space-y-2">
-                <label className="text-label font-bold   text-slate-500 dark:text-slate-400">Project Name *</label>
+                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Project Name *</label>
                 <input
                   type="text"
                   placeholder="e.g. Q4 Marketing Campaign"
@@ -540,7 +540,7 @@ export default function Projects({ session }: { session?: any }) {
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-label font-bold   text-slate-500 dark:text-slate-400">Project Lead</label>
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Project Lead</label>
                   <ProjectSelect 
                     value={newProject.manager}
                     onChange={(val) => setNewProject({ ...newProject, manager: val })}
@@ -551,7 +551,7 @@ export default function Projects({ session }: { session?: any }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-label font-bold   text-slate-500 dark:text-slate-400">Priority</label>
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Priority</label>
                   <ProjectSelect 
                     value={newProject.priority}
                     onChange={(val) => setNewProject({ ...newProject, priority: val })}
@@ -566,7 +566,7 @@ export default function Projects({ session }: { session?: any }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-label font-bold   text-slate-500 dark:text-slate-400">Deadline</label>
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Deadline</label>
                   <ProjectDatePicker
                     value={newProject.deadline ? (() => {
                       const d = new Date(newProject.deadline);
@@ -580,7 +580,7 @@ export default function Projects({ session }: { session?: any }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-label font-bold   text-slate-500 dark:text-slate-400">Estimated Budget</label>
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Estimated Budget</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">₹</span>
                     <input
@@ -597,9 +597,9 @@ export default function Projects({ session }: { session?: any }) {
               {/* Tasks & Assignees Section */}
               <div className="space-y-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
                 <div className="flex items-center justify-between">
-                  <label className="text-label font-bold   text-slate-500 dark:text-slate-400">Tasks & Assignees</label>
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Tasks & Assignees</label>
                   <button 
-                    className="text-label font-bold text-orange-600 hover:text-orange-700 dark:text-orange-500 flex items-center"
+                    className="text-xs font-bold text-orange-600 hover:text-orange-700 dark:text-orange-500 flex items-center"
                     onClick={() => setNewProject({...newProject, tasks: [...newProject.tasks, { id: Date.now().toString(), title: '', assignee: 'Unassigned', status: 'To Do' }]})}
                   >
                     <Plus className="h-3 w-3 mr-1" /> Add Task
@@ -644,7 +644,7 @@ export default function Projects({ session }: { session?: any }) {
                   </div>
                 ))}
                 {newProject.tasks.length === 0 && (
-                  <p className="text-label text-slate-500 italic">No tasks added yet. Click "+ Add Task" to start assigning work.</p>
+                  <p className="text-xs text-slate-500 italic">No tasks added yet. Click "+ Add Task" to start assigning work.</p>
                 )}
               </div>
             </div>

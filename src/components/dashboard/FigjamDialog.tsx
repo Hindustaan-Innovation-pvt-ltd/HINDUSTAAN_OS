@@ -32,7 +32,7 @@ export function FigjamDialog({ open, onOpenChange }: { open: boolean, onOpenChan
               <DialogTitle className="text-base font-bold text-slate-900 dark:text-white leading-none">
                 Sprint 3 Brainstorming
               </DialogTitle>
-              <p className="text-label font-semibold text-slate-500 mt-1">Edited 2 mins ago by Amanda</p>
+              <p className="text-xs font-semibold text-slate-500 mt-1">Edited 2 mins ago by Amanda</p>
             </div>
           </div>
           
@@ -70,7 +70,7 @@ export function FigjamDialog({ open, onOpenChange }: { open: boolean, onOpenChan
                 <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mt-2">Need to support SSO via Google and Github by Friday.</p>
                 <div className="mt-4 flex items-center gap-2">
                   <div className="h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-700" />
-                  <span className="text-label font-bold text-slate-500">Amanda</span>
+                  <span className="text-xs font-bold text-slate-500">Amanda</span>
                 </div>
               </div>
               
@@ -91,7 +91,7 @@ export function FigjamDialog({ open, onOpenChange }: { open: boolean, onOpenChan
                       <div className="h-5 w-5 rounded bg-current opacity-70" style={{ maskImage: 'linear-gradient(to bottom, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)' }} />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="font-bold text-label">{tool}</TooltipContent>
+                  <TooltipContent side="top" className="font-bold text-xs">{tool}</TooltipContent>
                 </Tooltip>
               ))}
             </TooltipProvider>

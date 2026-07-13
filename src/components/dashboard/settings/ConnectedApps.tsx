@@ -35,7 +35,7 @@ export function ConnectedApps() {
               </div>
               <div>
                 <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">WhatsApp Business</CardTitle>
-                <CardDescription className="text-label font-semibold mt-0.5">Team communication & broadcasts.</CardDescription>
+                <CardDescription className="text-xs font-semibold mt-0.5">Team communication & broadcasts.</CardDescription>
               </div>
             </div>
             <Badge variant="outline" className={waConnected ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}>
@@ -48,24 +48,24 @@ export function ConnectedApps() {
               <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
                 <div className="flex flex-col">
                   <span className="text-sm font-bold text-slate-900 dark:text-white">Connection Status</span>
-                  <span className="text-label font-medium text-slate-500 dark:text-slate-400">Manage API webhook</span>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Manage API webhook</span>
                 </div>
                 <Switch checked={waConnected} onCheckedChange={setWaConnected} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
-                  <span className="text-label font-semibold text-slate-500">Recent Broadcasts</span>
-                  <span className="text-lg font-bold text-slate-900 dark:text-white">124</span>
+                  <span className="text-xs font-semibold text-slate-500">Recent Broadcasts</span>
+                  <span className="text-lg font-black text-slate-900 dark:text-white">124</span>
                 </div>
                 <div className="flex flex-col gap-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
-                  <span className="text-label font-semibold text-slate-500">Delivery Status</span>
-                  <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">99.8%</span>
+                  <span className="text-xs font-semibold text-slate-500">Delivery Status</span>
+                  <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">99.8%</span>
                 </div>
               </div>
               
               <div className="pt-2">
-                <span className="text-label font-semibold text-slate-500 block mb-2">Supported Files</span>
+                <span className="text-xs font-semibold text-slate-500 block mb-2">Supported Files</span>
                 <div className="flex flex-wrap gap-2">
                   {['PDF', 'DOCX', 'Images', 'Videos', 'Excel', 'PowerPoint', 'ZIP'].map(file => (
                     <Badge key={file} variant="secondary" className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
@@ -102,7 +102,7 @@ export function ConnectedApps() {
               </div>
               <div>
                 <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">FigJam Workspace</CardTitle>
-                <CardDescription className="text-label font-semibold mt-0.5">Collaborative whiteboard & diagrams.</CardDescription>
+                <CardDescription className="text-xs font-semibold mt-0.5">Collaborative whiteboard & diagrams.</CardDescription>
               </div>
             </div>
             <Badge variant="outline" className={fjConnected ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}>
@@ -115,15 +115,15 @@ export function ConnectedApps() {
               <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
                 <div className="flex flex-col">
                   <span className="text-sm font-bold text-slate-900 dark:text-white">Connection Status</span>
-                  <span className="text-label font-medium text-slate-500 dark:text-slate-400">Figma API token access</span>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Figma API token access</span>
                 </div>
                 <Switch checked={fjConnected} onCheckedChange={setFjConnected} />
               </div>
 
               <div className="grid grid-cols-1 gap-3">
                 <div className="flex flex-col gap-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
-                  <span className="text-label font-semibold text-slate-500">Current Workspace</span>
-                  <span className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-500">Current Workspace</span>
+                  <span className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-[#A259FF]" />
                     Hindustaan OS Design Team
                   </span>
@@ -131,7 +131,7 @@ export function ConnectedApps() {
               </div>
               
               <div className="pt-2">
-                <span className="text-label font-semibold text-slate-500 block mb-2">Recent Boards</span>
+                <span className="text-xs font-semibold text-slate-500 block mb-2">Recent Boards</span>
                 <div className="flex flex-col gap-2">
                   {['Sprint Retrospective', 'Architecture Planning', 'User Flow Mapping'].map(board => (
                     <div key={board} className="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer border border-transparent hover:border-slate-100 dark:hover:border-slate-800">

@@ -120,9 +120,9 @@ export default function ProgressTracker({ session }: { session?: any }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold  text-slate-900 dark:text-white">Progress Tracker</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Progress Tracker</h2>
             {isAborted && (
-              <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-200 border-transparent dark:bg-red-900/40 dark:text-red-400 font-bold   text-[10px]">
+              <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-200 border-transparent dark:bg-red-900/40 dark:text-red-400 font-bold uppercase tracking-wider text-[10px]">
                 Aborted
               </Badge>
             )}
@@ -151,8 +151,8 @@ export default function ProgressTracker({ session }: { session?: any }) {
               <stat.icon className={cn("h-6 w-6", stat.color)} />
             </div>
             <div>
-              <p className="text-label font-bold text-slate-500 dark:text-slate-400  ">{stat.label}</p>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</h3>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{stat.label}</p>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white">{stat.value}</h3>
             </div>
           </div>
         ))}
@@ -169,7 +169,7 @@ export default function ProgressTracker({ session }: { session?: any }) {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">Daily Productivity Velocity</h3>
-                <p className="text-label font-semibold text-slate-500 dark:text-slate-400 mt-1">Tasks resolved by the team over the last 7 days.</p>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tasks resolved by the team over the last 7 days.</p>
               </div>
             </div>
             
@@ -251,10 +251,10 @@ export default function ProgressTracker({ session }: { session?: any }) {
                       <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                       <div>
                         <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{t.title}</p>
-                        <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5  ">Assigned to: {t.assignee || 'Unassigned'}</p>
+                        <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-wider">Assigned to: {t.assignee || 'Unassigned'}</p>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 bg-white dark:bg-slate-950 shadow-sm font-bold text-[10px] ">
+                    <Badge variant="outline" className="text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 bg-white dark:bg-slate-950 shadow-sm font-bold text-[10px] uppercase">
                       Needs Attention
                     </Badge>
                   </div>

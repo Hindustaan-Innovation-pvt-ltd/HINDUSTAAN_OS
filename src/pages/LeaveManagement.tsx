@@ -469,7 +469,7 @@ Reason:
   return (
     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 pb-20 w-full p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-black bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
           Leave Management
         </h1>
         <p className="text-slate-500 dark:text-slate-400 font-medium">
@@ -485,8 +485,8 @@ Reason:
                 <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-label font-bold text-amber-700/70 dark:text-amber-400/70   truncate">Pending Requests</p>
-                <p className="text-2xl font-bold text-amber-900 dark:text-amber-100">{pendingRequestsCount}</p>
+                <p className="text-xs font-bold text-amber-700/70 dark:text-amber-400/70 uppercase tracking-wider truncate">Pending Requests</p>
+                <p className="text-2xl font-black text-amber-900 dark:text-amber-100">{pendingRequestsCount}</p>
               </div>
             </CardContent>
           </Card>
@@ -496,8 +496,8 @@ Reason:
                 <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-label font-bold text-emerald-700/70 dark:text-emerald-400/70   truncate">Approved This Month</p>
-                <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{approvedThisMonthCount}</p>
+                <p className="text-xs font-bold text-emerald-700/70 dark:text-emerald-400/70 uppercase tracking-wider truncate">Approved This Month</p>
+                <p className="text-2xl font-black text-emerald-900 dark:text-emerald-100">{approvedThisMonthCount}</p>
               </div>
             </CardContent>
           </Card>
@@ -507,8 +507,8 @@ Reason:
                 <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-label font-bold text-purple-700/70 dark:text-purple-400/70   truncate">On Leave Today</p>
-                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{todayLeavesCount}</p>
+                <p className="text-xs font-bold text-purple-700/70 dark:text-purple-400/70 uppercase tracking-wider truncate">On Leave Today</p>
+                <p className="text-2xl font-black text-purple-900 dark:text-purple-100">{todayLeavesCount}</p>
               </div>
             </CardContent>
           </Card>
@@ -518,8 +518,8 @@ Reason:
                 <CalendarDays className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-label font-bold text-blue-700/70 dark:text-blue-400/70   truncate">Upcoming Leaves</p>
-                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{upcomingLeavesCount}</p>
+                <p className="text-xs font-bold text-blue-700/70 dark:text-blue-400/70 uppercase tracking-wider truncate">Upcoming Leaves</p>
+                <p className="text-2xl font-black text-blue-900 dark:text-blue-100">{upcomingLeavesCount}</p>
               </div>
             </CardContent>
           </Card>
@@ -584,8 +584,8 @@ Reason:
                         <div>
                           <div className="flex justify-between items-start mb-4">
                             <div>
-                              <h4 className="font-bold text-slate-900 dark:text-white text-base">{req.type}</h4>
-                              <p className="text-label font-bold text-slate-500 dark:text-slate-400 mt-0.5">{req.start} <span className="mx-1">→</span> {req.end}</p>
+                              <h4 className="font-black text-slate-900 dark:text-white text-base">{req.type}</h4>
+                              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">{req.start} <span className="mx-1">→</span> {req.end}</p>
                               <p className="text-[10px] text-slate-400 mt-0.5">{req.days} Day{req.days > 1 ? 's' : ''}</p>
                             </div>
                             {req.status === 'Pending' && <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-0">PENDING ⏳</Badge>}
@@ -595,13 +595,13 @@ Reason:
                           
                           {lastComment ? (
                             <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800/50 line-clamp-3">
-                              <p className="text-[11px] font-bold text-slate-400  mb-1">Manager Feedback</p>
-                              <p className="text-label text-slate-700 dark:text-slate-300 italic">"{lastComment.comment}"</p>
+                              <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Manager Feedback</p>
+                              <p className="text-xs text-slate-700 dark:text-slate-300 italic">"{lastComment.comment}"</p>
                             </div>
                           ) : (
                             <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800/50">
-                              <p className="text-[11px] font-bold text-slate-400  mb-1">Reason Submitted</p>
-                              <p className="text-label text-slate-400 dark:text-slate-500 italic line-clamp-2">"{req.reason}"</p>
+                              <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Reason Submitted</p>
+                              <p className="text-xs text-slate-400 dark:text-slate-500 italic line-clamp-2">"{req.reason}"</p>
                             </div>
                           )}
                         </div>
@@ -633,8 +633,8 @@ Reason:
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-3xl font-bold text-slate-950 dark:text-white mb-1">24.0</h4>
-                    <p className="text-label text-slate-500 dark:text-slate-400">Days allocated for FY 2026</p>
+                    <h4 className="text-3xl font-black text-slate-950 dark:text-white mb-1">24.0</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Days allocated for FY 2026</p>
                   </div>
                 </Card>
 
@@ -646,8 +646,8 @@ Reason:
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-3xl font-bold text-slate-950 dark:text-white mb-1">5.0</h4>
-                    <p className="text-label text-slate-500 dark:text-slate-400">Days used in current cycle</p>
+                    <h4 className="text-3xl font-black text-slate-950 dark:text-white mb-1">5.0</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Days used in current cycle</p>
                   </div>
                 </Card>
 
@@ -659,8 +659,8 @@ Reason:
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-3xl font-bold text-slate-950 dark:text-white mb-1">19.0</h4>
-                    <p className="text-label text-slate-500 dark:text-slate-400">Days available to apply</p>
+                    <h4 className="text-3xl font-black text-slate-950 dark:text-white mb-1">19.0</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Days available to apply</p>
                   </div>
                 </Card>
 
@@ -672,8 +672,8 @@ Reason:
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-3xl font-bold text-slate-950 dark:text-white mb-1">3.0</h4>
-                    <p className="text-label text-slate-500 dark:text-slate-400">Days awaiting manager approval</p>
+                    <h4 className="text-3xl font-black text-slate-950 dark:text-white mb-1">3.0</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Days awaiting manager approval</p>
                   </div>
                 </Card>
               </div>
@@ -684,7 +684,7 @@ Reason:
                 {/* Leave Types Progress Bars */}
                 <div className="xl:col-span-2 space-y-6">
                   <Card className="rounded-3xl border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-950/40 backdrop-blur-2xl shadow-xl p-6 sm:p-8">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Leave Categories</h3>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6">Leave Categories</h3>
                     <div className="space-y-6">
                       
                       {/* Casual Leave */}
@@ -694,7 +694,7 @@ Reason:
                             <span className="font-bold text-slate-800 dark:text-slate-200">Casual Leave (CL)</span>
                             <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 text-[10px] font-bold border border-orange-200 dark:border-orange-900/50">8.0 Left</Badge>
                           </div>
-                          <span className="font-bold text-slate-500 dark:text-slate-400">4.0 / 12.0 Days Used</span>
+                          <span className="font-extrabold text-slate-500 dark:text-slate-400">4.0 / 12.0 Days Used</span>
                         </div>
                         <div className="h-3 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-800/50">
                           <div className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full" style={{ width: '33.33%' }} />
@@ -709,7 +709,7 @@ Reason:
                             <span className="font-bold text-slate-800 dark:text-slate-200">Sick Leave (SL)</span>
                             <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 text-[10px] font-bold border border-emerald-200 dark:border-emerald-900/50">5.0 Left</Badge>
                           </div>
-                          <span className="font-bold text-slate-500 dark:text-slate-400">1.0 / 6.0 Days Used</span>
+                          <span className="font-extrabold text-slate-500 dark:text-slate-400">1.0 / 6.0 Days Used</span>
                         </div>
                         <div className="h-3 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-800/50">
                           <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style={{ width: '16.66%' }} />
@@ -724,7 +724,7 @@ Reason:
                             <span className="font-bold text-slate-800 dark:text-slate-200">Privilege Leave (PL)</span>
                             <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 text-[10px] font-bold border border-blue-200 dark:border-blue-900/50">6.0 Left</Badge>
                           </div>
-                          <span className="font-bold text-slate-500 dark:text-slate-400">0.0 / 6.0 Days Used</span>
+                          <span className="font-extrabold text-slate-500 dark:text-slate-400">0.0 / 6.0 Days Used</span>
                         </div>
                         <div className="h-3 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-800/50">
                           <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style={{ width: '0%' }} />
@@ -739,7 +739,7 @@ Reason:
                             <span className="font-bold text-slate-800 dark:text-slate-200">Emergency / Special Leave</span>
                             <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 text-[10px] font-bold border border-purple-200 dark:border-purple-900/50">No Limit</Badge>
                           </div>
-                          <span className="font-bold text-slate-500 dark:text-slate-400">0.0 Days Used</span>
+                          <span className="font-extrabold text-slate-500 dark:text-slate-400">0.0 Days Used</span>
                         </div>
                         <div className="h-3 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-800/50">
                           <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" style={{ width: '0%' }} />
@@ -756,39 +756,39 @@ Reason:
                   
                   {/* Leave Log / Ledger */}
                   <Card className="rounded-3xl border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-950/40 backdrop-blur-2xl shadow-xl p-6">
-                    <h4 className="font-bold text-slate-900 dark:text-white text-md mb-4">Activity Log</h4>
+                    <h4 className="font-black text-slate-900 dark:text-white text-md mb-4">Activity Log</h4>
                     <div className="space-y-4">
                       
                       <div className="flex items-start gap-3 border-l-2 border-orange-500 pl-3 py-1">
                         <div className="flex-1">
-                          <span className="block text-label font-bold text-slate-700 dark:text-slate-300">Casual Leave Applied</span>
+                          <span className="block text-xs font-bold text-slate-700 dark:text-slate-300">Casual Leave Applied</span>
                           <span className="block text-[10px] text-slate-400">Jul 11, 2026 (Tanvy Pandey)</span>
                         </div>
-                        <span className="text-label font-bold text-amber-600 dark:text-amber-400">-3.0 Days</span>
+                        <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400">-3.0 Days</span>
                       </div>
 
                       <div className="flex items-start gap-3 border-l-2 border-emerald-500 pl-3 py-1">
                         <div className="flex-1">
-                          <span className="block text-label font-bold text-slate-700 dark:text-slate-300">Sick Leave Approved</span>
+                          <span className="block text-xs font-bold text-slate-700 dark:text-slate-300">Sick Leave Approved</span>
                           <span className="block text-[10px] text-slate-400">Jul 10, 2026 (Tanvy Pandey)</span>
                         </div>
-                        <span className="text-label font-bold text-emerald-600 dark:text-emerald-400">-1.0 Day</span>
+                        <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">-1.0 Day</span>
                       </div>
 
                       <div className="flex items-start gap-3 border-l-2 border-blue-500 pl-3 py-1">
                         <div className="flex-1">
-                          <span className="block text-label font-bold text-slate-700 dark:text-slate-300">Quarterly Grant Credit</span>
+                          <span className="block text-xs font-bold text-slate-700 dark:text-slate-300">Quarterly Grant Credit</span>
                           <span className="block text-[10px] text-slate-400">Jul 01, 2026</span>
                         </div>
-                        <span className="text-label font-bold text-blue-600 dark:text-blue-400">+6.0 Days</span>
+                        <span className="text-xs font-extrabold text-blue-600 dark:text-blue-400">+6.0 Days</span>
                       </div>
 
                       <div className="flex items-start gap-3 border-l-2 border-slate-300 pl-3 py-1">
                         <div className="flex-1">
-                          <span className="block text-label font-bold text-slate-700 dark:text-slate-300">Yearly Grant Credited</span>
+                          <span className="block text-xs font-bold text-slate-700 dark:text-slate-300">Yearly Grant Credited</span>
                           <span className="block text-[10px] text-slate-400">Jan 01, 2026</span>
                         </div>
-                        <span className="text-label font-bold text-slate-500 dark:text-slate-400">+18.0 Days</span>
+                        <span className="text-xs font-extrabold text-slate-500 dark:text-slate-400">+18.0 Days</span>
                       </div>
 
                     </div>
@@ -800,7 +800,7 @@ Reason:
                       <Info className="w-5 h-5" />
                       <h4 className="font-bold text-sm">Leave Policy Guidelines</h4>
                     </div>
-                    <ul className="space-y-2 text-label font-medium text-slate-600 dark:text-slate-400 list-disc list-inside">
+                    <ul className="space-y-2 text-xs font-medium text-slate-600 dark:text-slate-400 list-disc list-inside">
                       <li>Leaves must be applied at least 3 days in advance.</li>
                       <li>Unused SL expires on Dec 31, 2026.</li>
                       <li>PL can carry forward up to maximum of 45 days.</li>
@@ -825,7 +825,7 @@ Reason:
                         <div className="mx-auto w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-inner">
                           <CheckCircle2 className="h-10 w-10" />
                         </div>
-                        <h3 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">All Caught Up!</h3>
+                        <h3 className="text-2xl font-black mb-2 text-slate-900 dark:text-white">All Caught Up!</h3>
                         <p className="text-slate-500 font-medium">There are no pending leave requests to approve.</p>
                       </motion.div>
                     ) : (
@@ -856,7 +856,7 @@ Reason:
                               <div className="flex-1 space-y-4">
                                 <div>
                                   <div className="flex flex-wrap items-center gap-3 mb-1">
-                                    <h4 className="font-bold text-xl text-slate-900 dark:text-white">{req.employee}</h4>
+                                    <h4 className="font-black text-xl text-slate-900 dark:text-white">{req.employee}</h4>
                                     <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">{req.department}</Badge>
                                     {req.hrNotified && (
                                       <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-800">
@@ -864,12 +864,12 @@ Reason:
                                       </Badge>
                                     )}
                                   </div>
-                                  <p className="text-label font-bold text-slate-400  ">Applied on {req.appliedOn}</p>
+                                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Applied on {req.appliedOn}</p>
                                 </div>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                   <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-4 flex flex-col gap-1 border border-slate-100 dark:border-slate-800 shadow-sm">
-                                    <span className="text-[10px] font-bold   text-slate-500">Leave Details</span>
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Leave Details</span>
                                     <div className="flex items-center gap-2 mt-1">
                                       <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200">{req.type}</Badge>
                                       <span className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center">
@@ -881,7 +881,7 @@ Reason:
                                   </div>
                                   
                                   <div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-2xl p-4 flex flex-col gap-1 border border-amber-100/50 dark:border-amber-900/30 shadow-sm">
-                                    <span className="text-[10px] font-bold   text-amber-600/70 dark:text-amber-500/70">Reason</span>
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-600/70 dark:text-amber-500/70">Reason</span>
                                     <p className="text-sm font-medium text-amber-900 dark:text-amber-200 mt-1 leading-snug italic">
                                       "{req.reason}"
                                     </p>
@@ -917,7 +917,7 @@ Reason:
                                 <div className="absolute inset-0 flex items-center">
                                   <span className="w-full border-t border-slate-200 dark:border-slate-800" />
                                 </div>
-                                <div className="relative flex justify-center text-label ">
+                                <div className="relative flex justify-center text-xs uppercase">
                                   <span className="bg-slate-50 dark:bg-[#0B1120] px-2 text-slate-500 font-bold">Or</span>
                                 </div>
                               </div>
@@ -983,8 +983,8 @@ Reason:
                               <div>
                                 <div className="flex justify-between items-start mb-3">
                                   <div>
-                                    <h4 className="font-bold text-slate-900 dark:text-white text-base">{req.employee}</h4>
-                                    <p className="text-label font-bold text-slate-500 dark:text-slate-400 mt-0.5">{req.type} • {req.start}</p>
+                                    <h4 className="font-black text-slate-900 dark:text-white text-base">{req.employee}</h4>
+                                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">{req.type} • {req.start}</p>
                                   </div>
                                   <Badge className={req.status === 'Approved' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'}>
                                     {req.status === 'Approved' ? 'APPROVED ✅' : 'REJECTED ❌'}
@@ -993,13 +993,13 @@ Reason:
                                 
                                 {lastComment ? (
                                   <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800/50 line-clamp-2">
-                                    <p className="text-[11px] font-bold text-slate-400  mb-1">Manager Comment</p>
-                                    <p className="text-label text-slate-700 dark:text-slate-300 italic">"{lastComment.comment}"</p>
+                                    <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Manager Comment</p>
+                                    <p className="text-xs text-slate-700 dark:text-slate-300 italic">"{lastComment.comment}"</p>
                                   </div>
                                 ) : (
                                   <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800/50">
-                                    <p className="text-[11px] font-bold text-slate-400  mb-1">Manager Comment</p>
-                                    <p className="text-label text-slate-400 dark:text-slate-500 italic">No comments provided.</p>
+                                    <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Manager Comment</p>
+                                    <p className="text-xs text-slate-400 dark:text-slate-500 italic">No comments provided.</p>
                                   </div>
                                 )}
                               </div>
@@ -1043,12 +1043,12 @@ Reason:
                 {/* Day Details Section */}
                 <div className="w-full xl:w-1/3 flex flex-col pt-2 sm:pt-14">
                   <div className="bg-slate-50 dark:bg-slate-900/80 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex-1">
-                    <h3 className="text-2xl font-bold mb-1 text-slate-900 dark:text-white">
+                    <h3 className="text-2xl font-black mb-1 text-slate-900 dark:text-white">
                       {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : 'Select a date'}
                     </h3>
                     
                     <div className="mt-8">
-                      <p className="text-label font-bold text-slate-500   mb-4 border-b border-slate-200 dark:border-slate-800 pb-2">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 border-b border-slate-200 dark:border-slate-800 pb-2">
                         Employees on Leave
                       </p>
                       
@@ -1062,12 +1062,12 @@ Reason:
                               <div className="min-w-0 flex-1">
                                 <h4 className="font-bold text-slate-900 dark:text-white leading-tight truncate">{leave.employee}</h4>
                                 <div className="flex flex-wrap items-center gap-2 mt-1">
-                                  <span className="text-[10px] font-bold text-slate-500  shrink-0">Type:</span>
+                                  <span className="text-[10px] font-bold text-slate-500 uppercase shrink-0">Type:</span>
                                   <Badge variant="secondary" className="bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 hover:bg-rose-100 text-[10px] font-bold py-0 h-4 border border-rose-200 dark:border-rose-800 shrink-0">
                                     {leave.type}
                                   </Badge>
                                   <Badge className={cn(
-                                    "text-[9px]  px-1.5 py-0.5 rounded font-bold border shrink-0",
+                                    "text-[9px] uppercase px-1.5 py-0.5 rounded font-black border shrink-0",
                                     leave.status === 'Approved'
                                       ? "bg-orange-500/20 text-orange-400 border-orange-500/30"
                                       : "bg-purple-500/20 text-purple-400 border-purple-500/30"

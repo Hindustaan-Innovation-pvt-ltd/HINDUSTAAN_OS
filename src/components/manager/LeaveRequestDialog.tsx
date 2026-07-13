@@ -95,7 +95,7 @@ export default function LeaveRequestDialog({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] rounded-3xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-2">
-          <DialogTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">Leave Request Details</DialogTitle>
+          <DialogTitle className="text-xl font-black text-slate-900 dark:text-slate-100">Leave Request Details</DialogTitle>
           <DialogDescription className="text-slate-500 dark:text-slate-500 dark:text-slate-400">
             Review and take action on the submitted leave application.
           </DialogDescription>
@@ -111,12 +111,12 @@ export default function LeaveRequestDialog({
             </Avatar>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <h4 className="font-bold text-xl text-slate-900 dark:text-slate-900 dark:text-white">{request.employee}</h4>
+                <h4 className="font-black text-xl text-slate-900 dark:text-slate-900 dark:text-white">{request.employee}</h4>
                 <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-0 font-bold">
                   {request.department}
                 </Badge>
               </div>
-              <p className="text-label font-bold text-slate-500 dark:text-slate-400  ">
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 APPLIED ON {request.appliedOn}
               </p>
             </div>
@@ -126,7 +126,7 @@ export default function LeaveRequestDialog({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Leave Details Sub-card */}
             <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 flex flex-col gap-1 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <span className="text-[10px] font-bold   text-slate-500 dark:text-slate-400">Leave Details</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Leave Details</span>
               <div className="flex items-center gap-2 mt-1">
                 <Badge className="bg-blue-900/30 text-blue-400 border-0 hover:bg-blue-900/40">
                   {request.type}
@@ -143,7 +143,7 @@ export default function LeaveRequestDialog({
 
             {/* Reason Sub-card */}
             <div className="bg-amber-50 dark:bg-amber-950/10 rounded-2xl p-4 flex flex-col gap-1 border border-amber-200 dark:border-amber-900/20 shadow-sm">
-              <span className="text-[10px] font-bold   text-amber-600 dark:text-amber-500/70">Reason</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-500/70">Reason</span>
               <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mt-1 leading-snug italic">
                 "{request.reason}"
               </p>
@@ -151,7 +151,7 @@ export default function LeaveRequestDialog({
           </div>
           {/* Activity Timeline Sub-card */}
           <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm col-span-1 md:col-span-2 mt-2">
-            <h4 className="text-[10px] font-bold   text-slate-400 mb-4 flex items-center">
+            <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-4 flex items-center">
               <Activity className="h-3.5 w-3.5 mr-1.5" /> Activity Timeline
             </h4>
             <div className="space-y-4 relative before:absolute before:inset-0 before:ml-[5px] before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 dark:before:via-slate-700 before:to-transparent">
@@ -175,7 +175,7 @@ export default function LeaveRequestDialog({
                       <span className="font-bold text-slate-900 dark:text-white">{comment.managerName}</span> commented.
                     </p>
                     <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg p-3 mt-2 border border-slate-200 dark:border-slate-700/50">
-                      <p className="text-label text-slate-400 italic">"{comment.comment}"</p>
+                      <p className="text-xs text-slate-400 italic">"{comment.comment}"</p>
                     </div>
                     <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1">
                       {new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}

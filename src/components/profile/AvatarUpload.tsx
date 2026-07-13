@@ -138,7 +138,7 @@ export function AvatarUpload({ avatar, name, role, onAvatarChange, email }: Avat
           <div className="relative group cursor-pointer hover:opacity-90 transition-all focus:outline-none">
             <Avatar className="h-24 w-24 border-4 border-slate-50 dark:border-slate-900 shadow-md">
               {avatar && <AvatarImage src={avatar} alt={name} />}
-              <AvatarFallback className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-3xl font-bold">
+              <AvatarFallback className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-3xl font-black">
                 {initials}
               </AvatarFallback>
             </Avatar>

@@ -35,7 +35,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white  flex items-center">
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
             <User className="mr-3 h-8 w-8 text-orange-500" />
             My Profile
           </h2>
@@ -69,7 +69,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
               {/* Avatar */}
               <Avatar className="h-28 w-28 border-4 border-slate-50 dark:border-slate-900 shadow-md">
                 {profile.avatar && <AvatarImage src={profile.avatar} />}
-                <AvatarFallback className="bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 text-3xl font-bold">
+                <AvatarFallback className="bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 text-3xl font-black">
                   {profile.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                 </AvatarFallback>
               </Avatar>
@@ -79,7 +79,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
               <p className="text-sm font-semibold text-slate-500 mt-1">{profile.role}</p>
 
               <div className="w-full border-t border-slate-100 dark:border-slate-800/80 mt-6 pt-4 text-left space-y-3">
-                <p className="text-label font-bold text-slate-400  ">About Me</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">About Me</p>
                 <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
                   {profile.aboutMe || 'No description provided.'}
                 </p>
@@ -90,18 +90,18 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
           {/* Skills Card */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
             <CardHeader className="p-5 pb-0">
-              <CardTitle className="text-sm font-bold text-slate-900 dark:text-white  ">Skills</CardTitle>
+              <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Skills</CardTitle>
             </CardHeader>
             <CardContent className="p-5 pt-3">
               <div className="flex flex-wrap gap-2">
                 {profile.skills && profile.skills.length > 0 ? (
                   profile.skills.map((skill, idx) => (
-                    <Badge key={idx} className="bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400 border border-orange-200/30 dark:border-orange-500/10 font-bold rounded-lg px-2.5 py-1 text-label">
+                    <Badge key={idx} className="bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400 border border-orange-200/30 dark:border-orange-500/10 font-bold rounded-lg px-2.5 py-1 text-xs">
                       {skill}
                     </Badge>
                   ))
                 ) : (
-                  <span className="text-label text-slate-400 font-medium">No skills added yet.</span>
+                  <span className="text-xs text-slate-400 font-medium">No skills added yet.</span>
                 )}
               </div>
             </CardContent>
@@ -110,7 +110,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
           {/* Social Links Card */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
             <CardHeader className="p-5 pb-0">
-              <CardTitle className="text-sm font-bold text-slate-900 dark:text-white  ">Social Links</CardTitle>
+              <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Social Links</CardTitle>
             </CardHeader>
             <CardContent className="p-5 pt-4 space-y-3">
               {profile.github && (
@@ -153,26 +153,26 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1">
-                  <span className="text-label font-bold text-slate-400  ">Full Name</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Full Name</span>
                   <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.name}</p>
                 </div>
                 <div className="space-y-1 min-w-0">
-                  <span className="text-label font-bold text-slate-400  ">Email Address</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Address</span>
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-base font-bold text-slate-800 dark:text-slate-200 break-all">{profile.email}</p>
                     <Badge className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/20 text-[10px] font-bold py-0 px-2 rounded-md shrink-0">Verified</Badge>
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-label font-bold text-slate-400  ">Phone Number</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Phone Number</span>
                   <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.phone}</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-label font-bold text-slate-400  ">Department</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Department</span>
                   <p className="text-base font-bold text-slate-800 dark:text-slate-200 capitalize">{profile.department}</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-label font-bold text-slate-400  ">Role</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Role</span>
                   <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.role}</p>
                 </div>
               </div>
@@ -191,26 +191,26 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {session?.user?.user_metadata?.role !== 'manager' && (
                   <div className="space-y-1">
-                    <span className="text-label font-bold text-slate-400  ">Reporting Manager</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Reporting Manager</span>
                     <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.manager}</p>
                   </div>
                 )}
                 <div className="space-y-1">
-                  <span className="text-label font-bold text-slate-400  ">Employment Type</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Employment Type</span>
                   <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.employmentType}</p>
                 </div>
                 {session?.user?.user_metadata?.role !== 'manager' && (
                   <div className="space-y-1">
-                    <span className="text-label font-bold text-slate-400  ">Team</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Team</span>
                     <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.team}</p>
                   </div>
                 )}
                 <div className="space-y-1">
-                  <span className="text-label font-bold text-slate-400  ">Joining Date</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Joining Date</span>
                   <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.joiningDate}</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-label font-bold text-slate-400  ">Work Mode</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Work Mode</span>
                   <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.workMode}</p>
                 </div>
               </div>
@@ -220,7 +220,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
           {/* Account Information */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm bg-slate-50/50 dark:bg-slate-900/20">
             <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 bg-transparent">
-              <CardTitle className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center  ">
+              <CardTitle className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center uppercase tracking-wider">
                 <Clock className="mr-2 h-4 w-4 text-orange-500" />
                 Account Details
               </CardTitle>
@@ -228,15 +228,15 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
             <CardContent className="p-6">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div className="space-y-1">
-                  <span className="text-label font-bold text-slate-400  ">Account Created</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Account Created</span>
                   <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{profile.accountCreated}</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-label font-bold text-slate-400  ">Last Login</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Last Login</span>
                   <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{profile.lastLogin}</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-label font-bold text-slate-400  ">Email Verification Status</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Verification Status</span>
                   <p className="text-sm font-bold text-emerald-600 flex items-center">
                     <CheckCircle2 className="h-4 w-4 mr-1 text-emerald-500" /> Verified
                   </p>

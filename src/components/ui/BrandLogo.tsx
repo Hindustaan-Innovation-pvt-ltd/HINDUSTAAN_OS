@@ -37,16 +37,16 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', class
       </div>
       
       <h1 className={cn(
-        " text-slate-900 dark:text-white",
-        isAuth ? "text-2xl md:text-3xl font-bold mt-2 flex flex-row items-center justify-center gap-2" : "text-lg ml-2 flex items-center font-bold"
+        "tracking-tight text-slate-900 dark:text-white",
+        isAuth ? "text-2xl md:text-3xl font-extrabold mt-2 flex flex-row items-center justify-center gap-2" : "text-lg ml-2 flex items-center font-bold"
       )}>
         {isAuth ? (
           <>
-            Project <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-bold">OS</span>
+            Project <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-extrabold">OS</span>
           </>
         ) : (
           <>
-            Project <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-bold ml-1.5">OS</span>
+            Project <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-extrabold ml-1.5">OS</span>
           </>
         )}
       </h1>

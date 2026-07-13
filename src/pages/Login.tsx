@@ -273,7 +273,7 @@ export default function Login({
         {/* Left Section - Branding (Hidden on Mobile) */}
         <div className="hidden lg:flex flex-col justify-center w-[45%] xl:w-[50%] p-12 xl:p-24 border-r border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-sm z-10">
           <div className="max-w-xl">
-            <h1 className="text-4xl xl:text-5xl font-bold  text-slate-900 dark:text-white mb-6 whitespace-nowrap">
+            <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 whitespace-nowrap">
               Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-green-600">Project OS</span>
             </h1>
             
@@ -319,7 +319,7 @@ export default function Login({
             <div className="space-y-2">
               
               <div>
-                <label htmlFor="name" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400   mb-1">
+                <label htmlFor="name" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
                   Full Name
                 </label>
                 <div className="relative">
@@ -342,7 +342,7 @@ export default function Login({
               </div>
 
               <div>
-                <label htmlFor="email-address" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400   mb-1">
+                <label htmlFor="email-address" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
                   Email Address
                 </label>
                 <div className="relative">
@@ -365,7 +365,7 @@ export default function Login({
 
               {!isOTPMode && (
                 <div className="transition-all duration-300 ease-in-out animate-in fade-in zoom-in-95">
-                  <label htmlFor="password" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400   mb-1">
+                  <label htmlFor="password" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
                     Password
                   </label>
                   <div className="relative z-10">
@@ -407,7 +407,7 @@ export default function Login({
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="w-3.5 h-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-900"
               />
-              <label htmlFor="rememberMe" className="text-label font-medium text-slate-600 dark:text-slate-400">
+              <label htmlFor="rememberMe" className="text-xs font-medium text-slate-600 dark:text-slate-400">
                 Remember Me
               </label>
             </div>
@@ -417,7 +417,7 @@ export default function Login({
                 <button
                   type="button"
                   onClick={() => toast.success('Password reset link sent to your email.')}
-                  className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors  "
+                  className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors uppercase tracking-wider"
                 >
                   Forgot Password?
                 </button>
@@ -427,7 +427,7 @@ export default function Login({
               <button
                 type="button"
                 onClick={() => setIsOTPMode(!isOTPMode)}
-                className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors  "
+                className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors uppercase tracking-wider"
               >
                 {isOTPMode ? 'Use Password' : 'Magic Link'}
               </button>
@@ -485,7 +485,7 @@ export default function Login({
                 <button 
                   type="button" 
                   onClick={onNavigateToRegister}
-                  className="text-[13px] font-bold text-orange-600 hover:text-orange-700 hover:underline transition-all ml-1"
+                  className="text-[13px] font-extrabold text-orange-600 hover:text-orange-700 hover:underline transition-all ml-1"
                 >
                   Create Account
                 </button>
@@ -527,7 +527,7 @@ export default function Login({
             
             <div className="flex w-full flex-col items-center gap-2">
               <Progress value={(countdown / 300) * 100} className="h-2 w-full" />
-              <span className="text-label text-slate-500 dark:text-slate-400 font-medium">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                 {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')} remaining
               </span>
             </div>

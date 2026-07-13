@@ -740,7 +740,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               >
                 &larr; Back
               </Button>
-              <h2 className="text-2xl font-bold  text-slate-900 dark:text-white">Standup History</h2>
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Standup History</h2>
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 pl-10">
               Overview of all past async standups submitted by the team.
@@ -752,7 +752,7 @@ export default function DailyStandups({ session }: { session?: any }) {
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
           {role !== 'manager' ? (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto max-w-xs">
-              <span className="text-label font-bold text-[#64748B] dark:text-slate-400   whitespace-nowrap">Search by Date:</span>
+              <span className="text-xs font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">Search by Date:</span>
               <ProjectDatePicker
                 value={historyDateFilter ? (() => {
                   const d = new Date(historyDateFilter);
@@ -786,7 +786,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               />
             </div>
           )}
-          <Badge className="bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-400 border border-orange-100 dark:border-orange-900/50 font-bold px-3 py-1 text-label">
+          <Badge className="bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-400 border border-orange-100 dark:border-orange-900/50 font-bold px-3 py-1 text-xs">
             {filteredHistory.length} Total Submissions
           </Badge>
         </div>
@@ -795,7 +795,7 @@ export default function DailyStandups({ session }: { session?: any }) {
         <div className="space-y-6">
           {Object.entries(groupedHistory).map(([dateGroup, items]: [string, any]) => (
             <div key={dateGroup} className="space-y-4">
-              <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400  ">{dateGroup}</h3>
+              <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{dateGroup}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {items.map((standup: any) => (
                   <div 
@@ -813,18 +813,18 @@ export default function DailyStandups({ session }: { session?: any }) {
                           <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{standup.role}</p>
                         </div>
                       </div>
-                      <Badge variant="outline" className="border-0 font-bold   text-[9px] px-2 py-0.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
+                      <Badge variant="outline" className="border-0 font-bold tracking-wider uppercase text-[9px] px-2 py-0.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
                         Submitted
                       </Badge>
                     </div>
 
                     <div className="p-5 flex-1 flex flex-col gap-4">
                       <div>
-                        <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400   mb-1">Yesterday</h4>
+                        <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Yesterday</h4>
                         <p className="text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-2">{standup.yesterday}</p>
                       </div>
                       <div>
-                        <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400   mb-1">Today</h4>
+                        <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Today</h4>
                         <p className="text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-2">{standup.today}</p>
                       </div>
                     </div>
@@ -860,29 +860,29 @@ export default function DailyStandups({ session }: { session?: any }) {
                     <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
                       {viewingStandup.user}
                     </DialogTitle>
-                    <p className="text-label text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       {viewingStandup.role} · {viewingStandup.time}
                     </p>
                   </div>
-                  <Badge variant="outline" className="ml-auto bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-0 font-bold text-label ">
+                  <Badge variant="outline" className="ml-auto bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-0 font-bold text-xs uppercase">
                     Submitted
                   </Badge>
                 </DialogHeader>
                 <div className="p-6 space-y-5">
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-bold   text-slate-500 dark:text-slate-400">Yesterday</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Yesterday</span>
                     <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-medium bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800/40">
                       {viewingStandup.yesterday}
                     </p>
                   </div>
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-bold   text-slate-500 dark:text-slate-400">Today</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Today</span>
                     <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-medium bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800/40">
                       {viewingStandup.today}
                     </p>
                   </div>
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-bold   text-slate-500 dark:text-slate-400">Blockers</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Blockers</span>
                     <p className={cn(
                       "text-sm leading-relaxed font-medium p-3 rounded-xl border",
                       viewingStandup.blockers && viewingStandup.blockers !== 'None.'
@@ -895,7 +895,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                   
                   {viewingStandup.replies && viewingStandup.replies.length > 0 && (
                     <div className="space-y-3 pt-2">
-                      <span className="text-[10px] font-bold   text-slate-500 dark:text-slate-400">Replies</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Replies</span>
                       <div className="space-y-3">
                         {viewingStandup.replies.map((reply: any) => (
                           <div key={reply.id} className="flex gap-3">
@@ -906,10 +906,10 @@ export default function DailyStandups({ session }: { session?: any }) {
                             </Avatar>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2">
-                                <span className="text-label font-bold text-slate-900 dark:text-white truncate">{reply.user}</span>
+                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{reply.user}</span>
                                 <span className="text-[10px] font-semibold text-slate-400 shrink-0">{reply.time}</span>
                               </div>
-                              <p className="text-label text-slate-600 dark:text-slate-300 mt-0.5 break-words">{reply.text}</p>
+                              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 break-words">{reply.text}</p>
                             </div>
                           </div>
                         ))}
@@ -936,7 +936,7 @@ export default function DailyStandups({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-2xl font-bold  text-slate-900 dark:text-white">Daily Standups</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Daily Standups</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {role !== 'manager' 
               ? 'Review your logged daily standup report for today.' 
@@ -979,16 +979,16 @@ export default function DailyStandups({ session }: { session?: any }) {
           <div className="px-4 py-2 flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-emerald-500" />
             <div>
-              <p className="text-[10px] font-bold text-slate-500  ">Submitted</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-white leading-none">{submittedCount}</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Submitted</p>
+              <p className="text-lg font-black text-slate-900 dark:text-white leading-none">{submittedCount}</p>
             </div>
           </div>
           <div className="w-px h-8 bg-slate-200 dark:bg-slate-800" />
           <div className="px-4 py-2 flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-amber-500" />
             <div>
-              <p className="text-[10px] font-bold text-slate-500  ">Pending</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-white leading-none">{pendingCount}</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pending</p>
+              <p className="text-lg font-black text-slate-900 dark:text-white leading-none">{pendingCount}</p>
             </div>
           </div>
         </div>
@@ -1019,7 +1019,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                 </div>
               </div>
               <Badge variant="outline" className={cn(
-                "border-0 font-bold   text-[9px] px-2 py-0.5",
+                "border-0 font-bold tracking-wider uppercase text-[9px] px-2 py-0.5",
                 standup.status === 'Submitted' ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400" : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
               )}>
                 {standup.status}
@@ -1031,22 +1031,22 @@ export default function DailyStandups({ session }: { session?: any }) {
               {standup.status === 'Submitted' ? (
                 <>
                   <div>
-                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400   mb-1">Yesterday</h4>
+                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Yesterday</h4>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{standup.yesterday}</p>
                   </div>
                   <div>
-                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400   mb-1">Today</h4>
+                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Today</h4>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{standup.today}</p>
                   </div>
                   {standup.blockers && standup.blockers !== 'None.' && (
                     <div className="bg-rose-50 dark:bg-rose-950/30 p-3 rounded-xl border border-rose-100 dark:border-rose-900/50 mt-auto">
-                      <h4 className="text-[10px] font-bold text-rose-500   mb-1">Blockers</h4>
+                      <h4 className="text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-1">Blockers</h4>
                       <p className="text-sm font-medium text-rose-700 dark:text-rose-400">{standup.blockers}</p>
                     </div>
                   )}
                   {standup.blockers === 'None.' && (
                     <div className="mt-auto">
-                      <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400   mb-1">Blockers</h4>
+                      <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Blockers</h4>
                       <p className="text-sm font-medium text-slate-500 dark:text-slate-400">None.</p>
                     </div>
                   )}
@@ -1087,7 +1087,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-label font-bold text-slate-900 dark:text-white truncate">{reply.user}</span>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{reply.user}</span>
                         <div className="flex items-center gap-2">
                           {/* Employees can't edit any replies — only manager can edit/delete their own */}
                           {role === 'manager' && reply.user === currentUserName && (
@@ -1103,7 +1103,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                           <span className="text-[10px] font-semibold text-slate-400 shrink-0">{reply.time}</span>
                         </div>
                       </div>
-                      <p className="text-label text-slate-600 dark:text-slate-300 mt-0.5 break-words">{reply.text}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 break-words">{reply.text}</p>
                     </div>
                   </div>
                 ))}
@@ -1116,7 +1116,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{standup.time}</span>
                 <div className="flex gap-2">
                   {role === 'manager' && (
-                    <Button onClick={(e) => { e.stopPropagation(); setReplyStandupId(standup.id); }} variant="ghost" size="sm" className="h-7 text-label font-bold text-slate-500 hover:text-orange-600">
+                    <Button onClick={(e) => { e.stopPropagation(); setReplyStandupId(standup.id); }} variant="ghost" size="sm" className="h-7 text-xs font-bold text-slate-500 hover:text-orange-600">
                       <MessageSquare className="h-3 w-3 mr-1.5" /> Reply
                     </Button>
                   )}
@@ -1129,7 +1129,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                       }}
                       variant="ghost" 
                       size="sm" 
-                      className="h-7 text-label font-bold text-slate-500 hover:text-indigo-600"
+                      className="h-7 text-xs font-bold text-slate-500 hover:text-indigo-600"
                     >
                       <Edit3 className="h-3 w-3 mr-1.5" /> Edit
                     </Button>
@@ -1144,13 +1144,13 @@ export default function DailyStandups({ session }: { session?: any }) {
       {role !== 'manager' && (
         <div className="mt-12 space-y-8 animate-in fade-in duration-700">
           <div className="border-t border-slate-200 dark:border-slate-800 pt-8">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Today's Progress</h3>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6">Today's Progress</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {/* Card 1: Tasks Completed */}
               <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
                 <div>
-                  <p className="text-label font-bold text-slate-500   mb-1">Tasks Completed</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{tasksCompletedCount}</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tasks Completed</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white">{tasksCompletedCount}</p>
                 </div>
                 <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 rounded-xl">
                   <CheckSquare className="h-6 w-6" />
@@ -1160,8 +1160,8 @@ export default function DailyStandups({ session }: { session?: any }) {
               {/* Card 2: Tasks Pending */}
               <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
                 <div>
-                  <p className="text-label font-bold text-slate-500   mb-1">Tasks Pending</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{tasksPendingCount}</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tasks Pending</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white">{tasksPendingCount}</p>
                 </div>
                 <div className="p-3 bg-amber-50 dark:bg-amber-500/10 text-amber-600 rounded-xl">
                   <AlertCircle className="h-6 w-6" />
@@ -1171,8 +1171,8 @@ export default function DailyStandups({ session }: { session?: any }) {
               {/* Card 3: Hours Logged Today */}
               <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
                 <div>
-                  <p className="text-label font-bold text-slate-500   mb-1">Hours Logged Today</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{hoursLoggedToday.toFixed(1)}h</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Hours Logged Today</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white">{hoursLoggedToday.toFixed(1)}h</p>
                 </div>
                 <div className="p-3 bg-blue-50 dark:bg-blue-500/10 text-blue-600 rounded-xl">
                   <Clock className="h-6 w-6" />
@@ -1182,8 +1182,8 @@ export default function DailyStandups({ session }: { session?: any }) {
               {/* Card 4: Current Sprint Progress */}
               <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
                 <div>
-                  <p className="text-label font-bold text-slate-500   mb-1">Sprint Progress</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{sprintProgress}%</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Sprint Progress</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white">{sprintProgress}%</p>
                 </div>
                 <div className="p-3 bg-purple-50 dark:bg-purple-500/10 text-purple-600 rounded-xl">
                   <Percent className="h-6 w-6" />
@@ -1226,7 +1226,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                           <div key={task.id} className="py-3 flex items-center justify-between first:pt-0 last:pb-0">
                             <div className="flex flex-col">
                               <span className="text-sm font-bold text-slate-900 dark:text-white">{task.title}</span>
-                              <span className="text-[10px] text-slate-400   font-bold mt-0.5">{task.project_tag}</span>
+                              <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-0.5">{task.project_tag}</span>
                             </div>
                             <div className="flex items-center gap-4">
                               {approvedExt ? (
@@ -1234,24 +1234,24 @@ export default function DailyStandups({ session }: { session?: any }) {
                                 <div className="flex flex-col items-end gap-0.5">
                                   <div className="flex items-center gap-1.5">
                                     <span className="text-[10px] text-slate-400 font-semibold">Original:</span>
-                                    <span className="text-label font-bold font-mono text-slate-500 dark:text-slate-400 line-through">
+                                    <span className="text-xs font-bold font-mono text-slate-500 dark:text-slate-400 line-through">
                                       {approvedExt.originalDueDate}
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-1.5">
                                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Extended:</span>
-                                    <span className={cn("text-label font-bold font-mono text-emerald-600 dark:text-emerald-400")}>
+                                    <span className={cn("text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400")}>
                                       {approvedExt.extendedDueDate}
                                     </span>
                                   </div>
                                 </div>
                               ) : (
-                                <span className={cn("text-label font-bold font-mono", colorClass)}>
+                                <span className={cn("text-xs font-bold font-mono", colorClass)}>
                                   {task.due_date}
                                 </span>
                               )}
                               <Badge className={cn(
-                                "text-[10px] font-bold border-0  ",
+                                "text-[10px] font-black border-0 uppercase tracking-wider",
                                 task.priority === 'High' ? "bg-rose-100 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400" :
                                 task.priority === 'Normal' ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400" :
                                 "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
@@ -1316,10 +1316,10 @@ export default function DailyStandups({ session }: { session?: any }) {
                       <div>
                         <h4 className="font-bold text-slate-900 dark:text-white text-lg mb-1">{topPriorityTask.title}</h4>
                         <div className="flex items-center gap-3">
-                          <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50 font-bold  text-[10px]">
+                          <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50 font-black uppercase text-[10px]">
                             {topPriorityTask.priority} Priority
                           </Badge>
-                          <span className="text-label font-semibold text-slate-500 flex items-center">
+                          <span className="text-xs font-semibold text-slate-500 flex items-center">
                             <Clock className="h-3 w-3 mr-1" /> Due: {topPriorityTask.due_date}
                           </span>
                         </div>
@@ -1351,26 +1351,26 @@ export default function DailyStandups({ session }: { session?: any }) {
                 </CardHeader>
                 <CardContent className="pt-4 space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-label font-bold text-slate-500 dark:text-slate-400  ">Average Hours Worked</span>
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">6.4 hrs/day</span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Average Hours Worked</span>
+                    <span className="text-sm font-black text-slate-900 dark:text-white">6.4 hrs/day</span>
                   </div>
                   <div className="h-[1px] bg-slate-100 dark:bg-slate-800" />
                   <div className="flex justify-between items-center">
-                    <span className="text-label font-bold text-slate-500 dark:text-slate-400  ">Standup Streak</span>
-                    <span className="text-sm font-bold text-orange-600 flex items-center gap-1">
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Standup Streak</span>
+                    <span className="text-sm font-black text-orange-600 flex items-center gap-1">
                       <Flame className="h-4 w-4 fill-orange-500 text-orange-500" />
                       5 Days
                     </span>
                   </div>
                   <div className="h-[1px] bg-slate-100 dark:bg-slate-800" />
                   <div className="flex justify-between items-center">
-                    <span className="text-label font-bold text-slate-500 dark:text-slate-400  ">Completion Rate</span>
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">{sprintProgress}%</span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Completion Rate</span>
+                    <span className="text-sm font-black text-slate-900 dark:text-white">{sprintProgress}%</span>
                   </div>
                   <div className="h-[1px] bg-slate-100 dark:bg-slate-800" />
                   <div className="flex justify-between items-center">
-                    <span className="text-label font-bold text-slate-500 dark:text-slate-400  ">Tasks Finished This Week</span>
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">{tasksCompletedCount}</span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tasks Finished This Week</span>
+                    <span className="text-sm font-black text-slate-900 dark:text-white">{tasksCompletedCount}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -1412,29 +1412,29 @@ export default function DailyStandups({ session }: { session?: any }) {
                   <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
                     {viewingStandup.user}
                   </DialogTitle>
-                  <p className="text-label text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {viewingStandup.role} · {viewingStandup.time}
                   </p>
                 </div>
-                <Badge variant="outline" className="ml-auto bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-0 font-bold text-label ">
+                <Badge variant="outline" className="ml-auto bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-0 font-bold text-xs uppercase">
                   {viewingStandup.status}
                 </Badge>
               </DialogHeader>
               <div className="p-6 space-y-5">
                 <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold   text-slate-500 dark:text-slate-400">Yesterday</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Yesterday</span>
                   <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-medium bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800/40">
                     {viewingStandup.yesterday}
                   </p>
                 </div>
                 <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold   text-slate-500 dark:text-slate-400">Today</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Today</span>
                   <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-medium bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800/40">
                     {viewingStandup.today}
                   </p>
                 </div>
                 <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold   text-slate-500 dark:text-slate-400">Blockers</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Blockers</span>
                   <p className={cn(
                     "text-sm leading-relaxed font-medium p-3 rounded-xl border",
                     viewingStandup.blockers && viewingStandup.blockers !== 'None.'
@@ -1462,7 +1462,7 @@ export default function DailyStandups({ session }: { session?: any }) {
             <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center justify-between">
               Daily Standup
               {isDeadlinePassed() && (
-                <Badge variant="outline" className="border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:bg-rose-900/20 px-2 py-0.5 text-[10px] font-bold   ml-auto">
+                <Badge variant="outline" className="border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:bg-rose-900/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ml-auto">
                   Standup deadline passed
                 </Badge>
               )}
@@ -1474,7 +1474,7 @@ export default function DailyStandups({ session }: { session?: any }) {
           <div className="p-6 space-y-6">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold   text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
                 <Button 
                   type="button"
                   variant="ghost" 
@@ -1497,7 +1497,7 @@ export default function DailyStandups({ session }: { session?: any }) {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold   text-slate-500 dark:text-slate-400">What will you do today?</label>
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What will you do today?</label>
                 <Button 
                   type="button"
                   variant="ghost" 
@@ -1520,7 +1520,7 @@ export default function DailyStandups({ session }: { session?: any }) {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold   text-slate-500 dark:text-slate-400">Any blockers? (Optional)</label>
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Any blockers? (Optional)</label>
                 <Button 
                   type="button"
                   variant="ghost" 
@@ -1543,7 +1543,7 @@ export default function DailyStandups({ session }: { session?: any }) {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold   text-slate-500 dark:text-slate-400">Additional Notes (Optional)</label>
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Additional Notes (Optional)</label>
                 <Button 
                   type="button"
                   variant="ghost" 
@@ -1584,7 +1584,7 @@ export default function DailyStandups({ session }: { session?: any }) {
           </DialogHeader>
           <div className="p-6 space-y-4">
             <div className="space-y-2">
-              <label className="text-[11px] font-bold   text-slate-500 dark:text-slate-400">Select Task / Milestone</label>
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Select Task / Milestone</label>
               {upcomingDeadlines.length > 0 ? (
                 <div className="relative">
                   <ProjectSelect
@@ -1598,14 +1598,14 @@ export default function DailyStandups({ session }: { session?: any }) {
                   />
                 </div>
               ) : (
-                <div className="p-3 text-center text-label text-rose-500 font-bold bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-100 dark:border-rose-900/30">
+                <div className="p-3 text-center text-xs text-rose-500 font-bold bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-100 dark:border-rose-900/30">
                   No pending deadlines found to extend.
                 </div>
               )}
             </div>
             
             <div className="space-y-2">
-              <label className="text-[11px] font-bold   text-slate-500 dark:text-slate-400">Days Extension Required</label>
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Days Extension Required</label>
               <input 
                 type="number" 
                 min="1" 
@@ -1617,7 +1617,7 @@ export default function DailyStandups({ session }: { session?: any }) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[11px] font-bold   text-slate-500 dark:text-slate-400">Reason for Extension</label>
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Reason for Extension</label>
               <textarea 
                 value={extensionReason}
                 onChange={(e) => setExtensionReason(e.target.value)}
@@ -1655,7 +1655,7 @@ export default function DailyStandups({ session }: { session?: any }) {
       <Dialog open={!!replyStandupId} onOpenChange={(open) => !open && setReplyStandupId(null)}>
         <DialogContent className="sm:max-w-[425px] border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 rounded-2xl shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-orange-500" />
               Reply to Update
             </DialogTitle>
@@ -1693,7 +1693,7 @@ export default function DailyStandups({ session }: { session?: any }) {
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div className="space-y-1.5">
-              <label className="text-label font-bold text-slate-700 dark:text-slate-300  ">Your Message</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Your Message</label>
               <textarea 
                 value={editingReply?.text || ''}
                 onChange={(e) => setEditingReply(prev => prev ? { ...prev, text: e.target.value } : null)}
@@ -1721,7 +1721,7 @@ export default function DailyStandups({ session }: { session?: any }) {
             <div className="absolute top-0 right-0 p-4 opacity-10 blur-xl pointer-events-none">
               <div className="h-24 w-24 rounded-full bg-orange-500"></div>
             </div>
-            <DialogTitle className="relative text-2xl font-bold text-slate-900 dark:text-white flex items-center ">
+            <DialogTitle className="relative text-2xl font-black text-slate-900 dark:text-white flex items-center tracking-tight">
               <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 text-white flex items-center justify-center mr-4 shadow-lg shadow-orange-500/20">
                 <Video className="h-5 w-5" />
               </div>
@@ -1734,7 +1734,7 @@ export default function DailyStandups({ session }: { session?: any }) {
             
             {/* Participant Selection */}
             <div className="space-y-3">
-              <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500   flex items-center">
+              <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
                 <CheckSquare className="h-3.5 w-3.5 mr-1.5" /> Target Audience
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1761,7 +1761,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                           <Users className="h-6 w-6" />
                         </div>
                         <div className="flex flex-col items-start text-left">
-                          <span className="text-[15px] font-bold text-slate-900 dark:text-white leading-tight">Employees</span>
+                          <span className="text-[15px] font-black text-slate-900 dark:text-white leading-tight">Employees</span>
                           <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">
                             {selectedMeetingParticipants.includes('all_emp') 
                               ? "All Selected" 
@@ -1778,7 +1778,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-[calc(100vw-4rem)] sm:w-64 p-2 rounded-2xl border-slate-100 dark:border-slate-800 shadow-xl" align="start">
                     <DropdownMenuCheckboxItem
-                      className="rounded-xl py-3 cursor-pointer font-bold text-[13px] mb-1 focus:bg-indigo-50 dark:focus:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
+                      className="rounded-xl py-3 cursor-pointer font-black text-[13px] mb-1 focus:bg-indigo-50 dark:focus:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
                       checked={selectedMeetingParticipants.includes('all_emp')}
                       onCheckedChange={(checked) => {
                         if (checked) setSelectedMeetingParticipants(prev => [...prev, 'all_emp', ...EMPLOYEES.map(e => e.id)]);
@@ -1834,7 +1834,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                           <Briefcase className="h-6 w-6" />
                         </div>
                         <div className="flex flex-col items-start text-left">
-                          <span className="text-[15px] font-bold text-slate-900 dark:text-white leading-tight">Managers</span>
+                          <span className="text-[15px] font-black text-slate-900 dark:text-white leading-tight">Managers</span>
                           <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">
                             {selectedMeetingParticipants.includes('all_mgr') 
                               ? "All Selected" 
@@ -1851,7 +1851,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-[calc(100vw-4rem)] sm:w-64 p-2 rounded-2xl border-slate-100 dark:border-slate-800 shadow-xl" align="start">
                     <DropdownMenuCheckboxItem
-                      className="rounded-xl py-3 cursor-pointer font-bold text-[13px] mb-1 focus:bg-slate-100 dark:focus:bg-slate-800 focus:text-slate-900 dark:focus:text-slate-100"
+                      className="rounded-xl py-3 cursor-pointer font-black text-[13px] mb-1 focus:bg-slate-100 dark:focus:bg-slate-800 focus:text-slate-900 dark:focus:text-slate-100"
                       checked={selectedMeetingParticipants.includes('all_mgr')}
                       onCheckedChange={(checked) => {
                         if (checked) setSelectedMeetingParticipants(prev => [...prev, 'all_mgr', ...MANAGERS.map(m => m.id)]);
@@ -1890,7 +1890,7 @@ export default function DailyStandups({ session }: { session?: any }) {
 
             {/* Meeting Title */}
             <div className="space-y-3">
-              <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500   flex items-center">
+              <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
                 <Edit3 className="h-3.5 w-3.5 mr-1.5" /> Meeting Title
               </label>
               <div className="relative group">
@@ -1908,7 +1908,7 @@ export default function DailyStandups({ session }: { session?: any }) {
 
             {/* Meeting Link */}
             <div className="space-y-3">
-              <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500   flex items-center">
+              <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
                 <Search className="h-3.5 w-3.5 mr-1.5" /> Meeting Link
               </label>
               <div className="relative group">
@@ -1926,7 +1926,7 @@ export default function DailyStandups({ session }: { session?: any }) {
 
             {/* Message */}
             <div className="space-y-3">
-              <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500   flex items-center">
+              <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
                 <MessageCircle className="h-3.5 w-3.5 mr-1.5" /> Announcement Message
               </label>
               <textarea 
@@ -2066,7 +2066,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                 }, 1500); // Simulate network latency
               }}
               disabled={isSchedulingMeeting}
-              className="px-8 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold transition-all shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              className="px-8 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-black transition-all shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               {isSchedulingMeeting ? (
                 <>

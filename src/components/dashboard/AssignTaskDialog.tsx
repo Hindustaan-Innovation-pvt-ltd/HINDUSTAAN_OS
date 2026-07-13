@@ -288,7 +288,7 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
                                     </Avatar>
                                     <div className="flex flex-col">
                                       <span>{intern.name}</span>
-                                      <span className="text-label text-slate-500">{intern.role}</span>
+                                      <span className="text-xs text-slate-500">{intern.role}</span>
                                     </div>
                                   </CommandItem>
                                 ))}

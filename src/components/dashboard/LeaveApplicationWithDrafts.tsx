@@ -314,7 +314,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
                         <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                       </div>
                       <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{selectedFile.name}</p>
-                      <p className="text-label font-semibold text-slate-500 mt-1">
+                      <p className="text-xs font-semibold text-slate-500 mt-1">
                         {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                       <Button
@@ -332,7 +332,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
                         <UploadCloud className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                       </div>
                       <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Click to upload or drag and drop</p>
-                      <p className="text-label font-semibold text-slate-500 mt-1">SVG, PNG, JPG, PDF (max. 5MB)</p>
+                      <p className="text-xs font-semibold text-slate-500 mt-1">SVG, PNG, JPG, PDF (max. 5MB)</p>
                     </>
                   )}
                 </div>
@@ -368,7 +368,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
             <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             Saved Drafts
           </CardTitle>
-          <CardDescription className="text-slate-500 dark:text-slate-400 text-label">
+          <CardDescription className="text-slate-500 dark:text-slate-400 text-xs">
             Manage your unsubmitted leave requests.
           </CardDescription>
         </CardHeader>
@@ -380,7 +380,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
                 className="p-3 my-1 rounded-xl bg-white/80 dark:bg-slate-950/50 border border-transparent flex flex-col gap-2 hover:border-purple-500/40 dark:hover:border-purple-400/40 hover:shadow-md hover:shadow-purple-500/5 dark:hover:shadow-purple-500/10 transition-all duration-300"
               >
                 <div className="flex items-center justify-between">
-                  <Badge variant="outline" className="text-[10px] font-bold   bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/25">
+                  <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/25">
                     {draft.leaveType}
                   </Badge>
                   <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
@@ -390,7 +390,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
                   </span>
                 </div>
 
-                <p className="text-label text-slate-600 dark:text-slate-300 line-clamp-2 italic">
+                <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 italic">
                   {draft.reason || "No reason specified."}
                 </p>
 
@@ -435,7 +435,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
             ))
           ) : (
             <div className="text-center py-12 px-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-950/20">
-              <p className="text-label font-semibold text-slate-400 dark:text-slate-500">No saved drafts found.</p>
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">No saved drafts found.</p>
             </div>
           )}
         </CardContent>

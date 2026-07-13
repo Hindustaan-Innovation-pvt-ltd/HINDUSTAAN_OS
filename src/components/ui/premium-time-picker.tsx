@@ -61,7 +61,7 @@ export function PremiumTimePicker({ value, onChange, className, name }: PremiumT
         <div className="flex gap-2">
           {/* Hours Column */}
           <div className="flex flex-col items-center">
-            <span className="text-[10px] font-bold text-slate-400   mb-2">Hour</span>
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">Hour</span>
             <ScrollArea className="h-[160px] w-[60px] rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
               <div className="p-1 flex flex-col gap-1">
                 {hours.map((h) => (
@@ -84,7 +84,7 @@ export function PremiumTimePicker({ value, onChange, className, name }: PremiumT
 
           {/* Minutes Column */}
           <div className="flex flex-col items-center">
-            <span className="text-[10px] font-bold text-slate-400   mb-2">Minute</span>
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">Minute</span>
             <ScrollArea className="h-[160px] w-[60px] rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
               <div className="p-1 flex flex-col gap-1">
                 {minutes.map((m) => (
@@ -107,7 +107,7 @@ export function PremiumTimePicker({ value, onChange, className, name }: PremiumT
 
           {/* AM/PM Column */}
           <div className="flex flex-col items-center">
-            <span className="text-[10px] font-bold text-slate-400   mb-2">AM/PM</span>
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">AM/PM</span>
             <div className="flex flex-col gap-2 p-1 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 h-full w-[60px] justify-center">
               <button
                 onClick={() => setPeriod('AM')}

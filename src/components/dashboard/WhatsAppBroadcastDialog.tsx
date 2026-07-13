@@ -180,7 +180,7 @@ export function WhatsAppBroadcastDialog({ open, onOpenChange }: { open: boolean,
                       </div>
                       <div className="flex flex-col overflow-hidden">
                         <span className="text-sm font-bold text-slate-900 dark:text-white truncate">{selectedFile.name}</span>
-                        <span className="text-label font-semibold text-slate-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</span>
+                        <span className="text-xs font-semibold text-slate-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</span>
                       </div>
                     </div>
                     <Button 

@@ -112,8 +112,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     const total = standup + log + task;
     return (
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-xl space-y-2 text-left">
-        <p className="font-bold text-slate-800 dark:text-slate-100 text-sm border-b border-slate-100 dark:border-slate-800 pb-1">{label}</p>
-        <div className="space-y-1 text-label font-bold">
+        <p className="font-black text-slate-800 dark:text-slate-100 text-sm border-b border-slate-100 dark:border-slate-800 pb-1">{label}</p>
+        <div className="space-y-1 text-xs font-bold">
           <div className="flex items-center justify-between gap-4 text-orange-600">
             <span>Task Performance:</span>
             <span>{task} / 40</span>
@@ -126,7 +126,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <span>Standup Completion:</span>
             <span>{standup} / 25</span>
           </div>
-          <div className="flex items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800 pt-1.5 text-sm font-bold text-slate-900 dark:text-white">
+          <div className="flex items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800 pt-1.5 text-sm font-extrabold text-slate-900 dark:text-white">
             <span>Total Score:</span>
             <span>{total}</span>
           </div>
@@ -332,7 +332,7 @@ export default function ContributionScores({ session }: { session?: any }) {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white  flex items-center">
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
               <Trophy className="mr-3 h-8 w-8 text-orange-500" />
               My Performance
             </h2>
@@ -362,7 +362,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                 <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Overall Performance</span>
               </div>
               <div className="flex items-end gap-3 mt-4">
-                <span className="text-5xl font-bold text-slate-900 dark:text-white">{myData.score}%</span>
+                <span className="text-5xl font-black text-slate-900 dark:text-white">{myData.score}%</span>
                 <span className={cn("flex items-center text-sm font-bold mb-1", trendNum >= 0 ? "text-emerald-600" : "text-rose-600")}>
                   {trendNum >= 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
                   {trendNum >= 0 ? '+' : ''}{myData.trend}%
@@ -381,8 +381,8 @@ export default function ContributionScores({ session }: { session?: any }) {
             <Card key={i} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-label font-bold text-slate-500   mb-1">{kpi.title}</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{kpi.val}</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{kpi.title}</p>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">{kpi.val}</p>
                 </div>
                 <div className="h-12 w-12 shrink-0 relative flex items-center justify-center">
                   <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
@@ -453,7 +453,7 @@ export default function ContributionScores({ session }: { session?: any }) {
               </CardHeader>
               <CardContent className="p-0 overflow-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="text-label text-slate-500   bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-10">
+                  <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-10">
                     <tr>
                       <th className="px-5 py-3">Date</th>
                       <th className="px-5 py-3">Task</th>
@@ -468,12 +468,12 @@ export default function ContributionScores({ session }: { session?: any }) {
                         <td className="px-5 py-3 font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">{log.date}</td>
                         <td className="px-5 py-3 font-medium text-slate-800 dark:text-slate-200">{log.task}</td>
                         <td className="px-5 py-3">
-                          <span className="inline-block text-label font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-full whitespace-nowrap">{log.project}</span>
+                          <span className="inline-block text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-full whitespace-nowrap">{log.project}</span>
                         </td>
-                        <td className="px-5 py-3 text-right font-bold text-orange-600">{log.hours?.toFixed(1)}h</td>
+                        <td className="px-5 py-3 text-right font-black text-orange-600">{log.hours?.toFixed(1)}h</td>
                         <td className="px-5 py-3 text-right">
                           <Badge variant="outline" className={cn(
-                            "border-0 font-bold text-label",
+                            "border-0 font-bold text-xs",
                             log.status === 'Approved' ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400" :
                             log.status === 'Pending'  ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400" :
                                                         "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400"
@@ -497,7 +497,7 @@ export default function ContributionScores({ session }: { session?: any }) {
             {/* Radial score */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
               <CardHeader className="p-5 pb-0">
-                <CardTitle className="text-sm font-bold text-slate-900 dark:text-white  ">Contribution Score</CardTitle>
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Contribution Score</CardTitle>
               </CardHeader>
               <CardContent className="p-5 flex flex-col items-center">
                 <div className="h-[160px] w-[160px] relative">
@@ -507,8 +507,8 @@ export default function ContributionScores({ session }: { session?: any }) {
                     </RadialBarChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-4xl font-bold text-slate-900 dark:text-white">{myData.score}</span>
-                    <span className="text-label font-bold text-slate-500">/ 100</span>
+                    <span className="text-4xl font-black text-slate-900 dark:text-white">{myData.score}</span>
+                    <span className="text-xs font-bold text-slate-500">/ 100</span>
                   </div>
                 </div>
                 <Badge className={cn(
@@ -524,7 +524,7 @@ export default function ContributionScores({ session }: { session?: any }) {
             {/* Score Breakdown bars */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
               <CardHeader className="p-5 pb-2">
-                <CardTitle className="text-sm font-bold text-slate-900 dark:text-white  ">Score Breakdown</CardTitle>
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Score Breakdown</CardTitle>
               </CardHeader>
               <CardContent className="p-5 space-y-4">
                 {[
@@ -534,8 +534,8 @@ export default function ContributionScores({ session }: { session?: any }) {
                 ].map(item => (
                   <div key={item.label}>
                     <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-label font-bold text-slate-600 dark:text-slate-400">{item.label}</span>
-                      <span className="text-label font-bold text-slate-900 dark:text-white">{item.score} / {item.max}</span>
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{item.label}</span>
+                      <span className="text-xs font-black text-slate-900 dark:text-white">{item.score} / {item.max}</span>
                     </div>
                     <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div
@@ -555,7 +555,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                   <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white">How is this calculated?</h4>
                 </div>
-                <div className="text-label space-y-2 text-slate-600 dark:text-slate-400 pl-8 leading-relaxed">
+                <div className="text-xs space-y-2 text-slate-600 dark:text-slate-400 pl-8 leading-relaxed">
                   <p>
                     Your overall score (max 100%) is the sum of three weighted categories:
                   </p>
@@ -591,7 +591,7 @@ export default function ContributionScores({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white  flex items-center">
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
             <Trophy className="mr-3 h-8 w-8 text-orange-500" />
             Contribution Analytics
           </h2>
@@ -624,7 +624,7 @@ export default function ContributionScores({ session }: { session?: any }) {
               <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Team Average</span>
             </div>
             <div className="flex items-end gap-3 mt-4">
-              <span className="text-5xl font-bold text-slate-900 dark:text-white">86%</span>
+              <span className="text-5xl font-black text-slate-900 dark:text-white">86%</span>
               <span className="flex items-center text-sm font-bold text-emerald-600 mb-1">
                 <TrendingUp className="h-4 w-4 mr-1" /> +4%
               </span>
@@ -641,8 +641,8 @@ export default function ContributionScores({ session }: { session?: any }) {
           <Card key={i} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
             <CardContent className="p-4 lg:p-5 flex flex-col items-center justify-center text-center gap-2 lg:gap-3">
               <div className="w-full flex flex-col items-center">
-                <p className="text-[9px] lg:text-[10px] 2xl:text-[11px] font-bold text-slate-500   mb-1 whitespace-nowrap overflow-visible">{kpi.title}</p>
-                <p className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white leading-none">{kpi.val}</p>
+                <p className="text-[9px] lg:text-[10px] 2xl:text-[11px] font-bold text-slate-500 uppercase tracking-tight mb-1 whitespace-nowrap overflow-visible">{kpi.title}</p>
+                <p className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white leading-none">{kpi.val}</p>
               </div>
               <div className="h-10 w-10 lg:h-12 lg:w-12 shrink-0 relative flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
@@ -658,15 +658,15 @@ export default function ContributionScores({ session }: { session?: any }) {
 
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
           <CardContent className="p-4 lg:p-5 flex flex-col items-center justify-center text-center gap-2">
-            <p className="text-[9px] lg:text-[10px] 2xl:text-[11px] font-bold text-slate-500   whitespace-nowrap">Highest Score</p>
+            <p className="text-[9px] lg:text-[10px] 2xl:text-[11px] font-bold text-slate-500 uppercase tracking-tight whitespace-nowrap">Highest Score</p>
             <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-900 shadow-sm shrink-0">
-              <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-label lg:text-sm">
+              <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-xs lg:text-sm">
                 {highestScorer.name.split(' ').map(n => n[0]).join('')}
               </AvatarFallback>
             </Avatar>
             <div className="w-full flex flex-col items-center">
-              <p className="text-label lg:text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis max-w-full px-1">{highestScorer.name}</p>
-              <p className="text-base lg:text-lg font-bold text-emerald-600 leading-none mt-1">{highestScorer.score}%</p>
+              <p className="text-xs lg:text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis max-w-full px-1">{highestScorer.name}</p>
+              <p className="text-base lg:text-lg font-black text-emerald-600 leading-none mt-1">{highestScorer.score}%</p>
             </div>
           </CardContent>
         </Card>
@@ -702,7 +702,7 @@ export default function ContributionScores({ session }: { session?: any }) {
               onMouseMove={handleMouseMove}
             >
               <table className="w-full whitespace-nowrap text-sm text-left relative">
-                <thead className="text-label text-slate-500   bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-20">
+                <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-20">
                   <tr>
                     <th className="px-6 py-4 rounded-tl-xl">Rank</th>
                     <th className="px-6 py-4">Intern</th>
@@ -720,19 +720,19 @@ export default function ContributionScores({ session }: { session?: any }) {
                       className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group cursor-pointer"
                       onClick={() => setAnalyticsIntern(intern)}
                     >
-                      <td className="px-6 py-4 font-bold text-slate-400 dark:text-slate-600">
+                      <td className="px-6 py-4 font-black text-slate-400 dark:text-slate-600">
                         #{idx + 1}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-label">
+                            <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs">
                               {intern.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="font-bold text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors">{intern.name}</p>
-                            <p className="text-label font-medium text-slate-500">{intern.project}</p>
+                            <p className="text-xs font-medium text-slate-500">{intern.project}</p>
                           </div>
                         </div>
                       </td>
@@ -741,7 +741,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 dark:text-white">{intern.score}%</span>
+                          <span className="font-black text-slate-900 dark:text-white">{intern.score}%</span>
                           <div className="w-16 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                             <div
                               className="h-full rounded-full bg-orange-500"
@@ -752,7 +752,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                       </td>
                       <td className="px-6 py-4">
                         <span className={cn(
-                          "flex items-center text-label font-bold",
+                          "flex items-center text-xs font-bold",
                           parseFloat(intern.trend) > 0 ? "text-emerald-600" : "text-rose-600"
                         )}>
                           {parseFloat(intern.trend) > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
@@ -799,7 +799,7 @@ export default function ContributionScores({ session }: { session?: any }) {
           {/* Score Distribution Donut */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
             <CardHeader className="p-5 pb-0">
-              <CardTitle className="text-sm font-bold text-slate-900 dark:text-white  ">Score Distribution</CardTitle>
+              <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Score Distribution</CardTitle>
             </CardHeader>
             <CardContent className="p-5">
               <div className="h-[200px] w-full">
@@ -827,7 +827,7 @@ export default function ContributionScores({ session }: { session?: any }) {
               </div>
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {distData.map(d => (
-                  <div key={d.name} className="flex items-center text-label font-bold text-slate-600 dark:text-slate-300">
+                  <div key={d.name} className="flex items-center text-xs font-bold text-slate-600 dark:text-slate-300">
                     <div className="h-2 w-2 rounded-full mr-2" style={{ backgroundColor: d.fill }} />
                     {d.name} ({d.value})
                   </div>
@@ -839,7 +839,7 @@ export default function ContributionScores({ session }: { session?: any }) {
           {/* Department Comparison */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
             <CardHeader className="p-5 pb-0">
-              <CardTitle className="text-sm font-bold text-slate-900 dark:text-white  ">Avg Score by Dept</CardTitle>
+              <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Avg Score by Dept</CardTitle>
             </CardHeader>
             <CardContent className="p-5">
               <div className="h-[180px] w-full">
@@ -869,14 +869,14 @@ export default function ContributionScores({ session }: { session?: any }) {
                 <div key={intern.id} className="flex items-center justify-between bg-white dark:bg-slate-900 p-3 rounded-xl border border-rose-100 dark:border-rose-900/30">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-rose-100 text-rose-700 text-label font-bold">{intern.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                      <AvatarFallback className="bg-rose-100 text-rose-700 text-xs font-bold">{intern.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="text-sm font-bold text-slate-900 dark:text-white">{intern.name}</p>
-                      <p className="text-label font-medium text-slate-500">Score: <span className="font-bold text-rose-600">{intern.score}%</span></p>
+                      <p className="text-xs font-medium text-slate-500">Score: <span className="font-bold text-rose-600">{intern.score}%</span></p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" className="h-8 text-label font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30">Review</Button>
+                  <Button variant="ghost" size="sm" className="h-8 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30">Review</Button>
                 </div>
               ))}
             </CardContent>
@@ -892,7 +892,7 @@ export default function ContributionScores({ session }: { session?: any }) {
           {analyticsIntern && (
             <div className="flex flex-col min-h-full">
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-10 shadow-sm flex items-center justify-between">
-                <SheetTitle className="text-xl sm:text-2xl font-bold flex items-center gap-4">
+                <SheetTitle className="text-xl sm:text-2xl font-black flex items-center gap-4">
                   <Avatar className="h-14 w-14 border-2 border-white dark:border-slate-800 shadow-sm">
                     <AvatarFallback className="bg-orange-100 text-orange-600 text-lg">
                       {analyticsIntern.name.split(' ').map((n: string) => n[0]).join('')}
@@ -910,7 +910,7 @@ export default function ContributionScores({ session }: { session?: any }) {
               
               <div className="p-6 space-y-6 flex-1">
                 <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
-                  <p className="text-sm font-bold text-slate-500   mb-6">Final Contribution Score</p>
+                  <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Final Contribution Score</p>
                   <div className="h-48 w-48 relative">
                     <ResponsiveContainer width="100%" height="100%">
                       <RadialBarChart innerRadius="80%" outerRadius="100%" data={[{ value: analyticsIntern.score, fill: COLORS.orange }]} startAngle={90} endAngle={-270}>
@@ -918,25 +918,25 @@ export default function ContributionScores({ session }: { session?: any }) {
                       </RadialBarChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-5xl font-bold text-slate-900 dark:text-white">{analyticsIntern.score}</span>
+                      <span className="text-5xl font-black text-slate-900 dark:text-white">{analyticsIntern.score}</span>
                       <span className="text-sm font-bold text-slate-500 mt-1">/ 100</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white  ">Formula Breakdown</h4>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Formula Breakdown</h4>
                   <div className="grid grid-cols-1 gap-4">
                     <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
                       <div className="flex items-center gap-4">
                         <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"><Target className="h-6 w-6" /></div>
                         <div>
                           <p className="text-base font-bold text-slate-900 dark:text-white">Task Performance</p>
-                          <p className="text-label font-semibold text-slate-500 mt-0.5">40% Weightage</p>
+                          <p className="text-xs font-semibold text-slate-500 mt-0.5">40% Weightage</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="text-2xl font-bold text-slate-900 dark:text-white">{analyticsIntern.taskScore}</span>
+                        <span className="text-2xl font-black text-slate-900 dark:text-white">{analyticsIntern.taskScore}</span>
                         <span className="text-sm font-bold text-slate-500"> / 40</span>
                       </div>
                     </div>
@@ -946,11 +946,11 @@ export default function ContributionScores({ session }: { session?: any }) {
                         <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"><Clock className="h-6 w-6" /></div>
                         <div>
                           <p className="text-base font-bold text-slate-900 dark:text-white">Work Log Consistency</p>
-                          <p className="text-label font-semibold text-slate-500 mt-0.5">35% Weightage</p>
+                          <p className="text-xs font-semibold text-slate-500 mt-0.5">35% Weightage</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="text-2xl font-bold text-slate-900 dark:text-white">{analyticsIntern.logScore}</span>
+                        <span className="text-2xl font-black text-slate-900 dark:text-white">{analyticsIntern.logScore}</span>
                         <span className="text-sm font-bold text-slate-500"> / 35</span>
                       </div>
                     </div>
@@ -960,11 +960,11 @@ export default function ContributionScores({ session }: { session?: any }) {
                         <div className="p-3 rounded-2xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400"><Mic className="h-6 w-6" /></div>
                         <div>
                           <p className="text-base font-bold text-slate-900 dark:text-white">Standup Completion</p>
-                          <p className="text-label font-semibold text-slate-500 mt-0.5">25% Weightage</p>
+                          <p className="text-xs font-semibold text-slate-500 mt-0.5">25% Weightage</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="text-2xl font-bold text-slate-900 dark:text-white">{analyticsIntern.standupScore}</span>
+                        <span className="text-2xl font-black text-slate-900 dark:text-white">{analyticsIntern.standupScore}</span>
                         <span className="text-sm font-bold text-slate-500"> / 25</span>
                       </div>
                     </div>

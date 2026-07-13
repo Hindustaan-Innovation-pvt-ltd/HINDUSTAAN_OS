@@ -83,7 +83,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto space-y-8">
         <div>
-          <h2 className="text-2xl font-bold  text-slate-900 dark:text-white">Team Submissions</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Team Submissions</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Review daily standups and time logs for all employees.</p>
         </div>
 
@@ -104,20 +104,20 @@ export default function TimeAndStandup({ session }: { session?: any }) {
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 {/* Standup */}
                 <div>
-                  <h5 className="text-sm font-bold text-slate-400 dark:text-slate-500   mb-4 flex items-center">
+                  <h5 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 flex items-center">
                     <CheckCircle2 className="h-4 w-4 mr-2" /> Daily Standup
                   </h5>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-label font-bold text-slate-500   mb-1">Yesterday</p>
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Yesterday</p>
                       <p className="text-sm font-semibold text-slate-900 dark:text-slate-200">{intern.standup.yesterday}</p>
                     </div>
                     <div>
-                      <p className="text-label font-bold text-slate-500   mb-1">Today</p>
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Today</p>
                       <p className="text-sm font-semibold text-slate-900 dark:text-slate-200">{intern.standup.today}</p>
                     </div>
                     <div>
-                      <p className="text-label font-bold text-slate-500   mb-1">Blockers</p>
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Blockers</p>
                       <p className={cn("text-sm font-semibold", intern.standup.blockers !== 'None.' ? "text-rose-600 dark:text-rose-400" : "text-slate-900 dark:text-slate-200")}>{intern.standup.blockers}</p>
                     </div>
                   </div>
@@ -125,7 +125,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
 
                 {/* Logs */}
                 <div>
-                  <h5 className="text-sm font-bold text-slate-400 dark:text-slate-500   mb-4 flex items-center">
+                  <h5 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 flex items-center">
                     <Clock className="h-4 w-4 mr-2" /> Time Logs
                   </h5>
                   <div className="space-y-3">
@@ -156,7 +156,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold  text-slate-900 dark:text-white">Daily Core Tracking</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Daily Core Tracking</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Submit your morning standup and log project hours.</p>
         </div>
       </div>
@@ -172,12 +172,12 @@ export default function TimeAndStandup({ session }: { session?: any }) {
               <h3 className="font-bold text-slate-900 dark:text-white">Daily Standup</h3>
             </div>
             {isSubmissionWindowOpen ? (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-label font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 dark:border-emerald-500/20">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 dark:border-emerald-500/20">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/100 mr-1.5 animate-pulse"></span>
                 Submission Window Open
               </span>
             ) : (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-label font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
                 <AlertCircle className="h-3 w-3 mr-1" />
                 Late Submission Flag Active
               </span>
@@ -219,7 +219,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
                   Are there any current blockers?
                 </label>
                 {hasBlockers && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700 dark:text-rose-300   animate-in fade-in zoom-in duration-300">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700 dark:text-rose-300 uppercase tracking-wider animate-in fade-in zoom-in duration-300">
                     <AlertTriangle className="h-3 w-3 mr-1" /> Manager Alert
                   </span>
                 )}
@@ -265,7 +265,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
                 <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                 <div className="ml-3">
                   <h4 className="text-sm font-bold text-amber-800">Daily Cap Warning</h4>
-                  <p className="text-label text-amber-700 dark:text-amber-300 mt-1">
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
                     This entry pushes your total tracked time today to {(cumulativeHours + (parseFloat(hoursWorked) || 0)).toFixed(1)}h, exceeding the daily 10h target threshold.
                   </p>
                 </div>
@@ -274,7 +274,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="sm:col-span-2">
-                <label className="block text-label font-bold text-slate-400 dark:text-slate-500   mb-2">
+                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
                   Assigned Task
                 </label>
                 <ProjectSelect 
@@ -290,7 +290,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
               </div>
               
               <div>
-                <label className="block text-label font-bold text-slate-400 dark:text-slate-500   mb-2">
+                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
                   Hours
                 </label>
                 <input 
@@ -308,7 +308,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
             </div>
 
             <div>
-              <label className="block text-label font-bold text-slate-400 dark:text-slate-500   mb-2">
+              <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
                 Work Note
               </label>
               <input 
@@ -337,7 +337,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
                 <Calendar className="h-4 w-4 mr-2 text-slate-400 dark:text-slate-500" />
                 Weekly Summary
               </div>
-              <div className="text-label font-semibold text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                 Total: <span className="text-slate-900 dark:text-white">{weeklyLog.reduce((a, b) => a + b.hours, 0).toFixed(1)}h</span>
               </div>
             </div>
@@ -361,7 +361,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
                       className={cn("w-full rounded-sm transition-all duration-500", colorClass)}
                       style={{ height: `${Math.max((day.hours / 12) * 100, 4)}%` }}
                     />
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-2 ">{day.day}</span>
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-2 uppercase">{day.day}</span>
                   </div>
                 );
               })}

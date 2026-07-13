@@ -88,7 +88,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/60 overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
-          <h2 className="text-xl font-bold  text-slate-900 dark:text-white">Create New Task</h2>
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Create New Task</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:text-slate-500 transition-colors">
             <X className="h-5 w-5" />
           </button>
@@ -97,7 +97,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
           
           <div>
-            <label className="block text-label font-bold text-slate-400 dark:text-slate-500   mb-2">Task Name <span className="text-rose-500">*</span></label>
+            <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Task Name <span className="text-rose-500">*</span></label>
             <input 
               required
               type="text" 
@@ -110,7 +110,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="text-label font-bold text-slate-400 dark:text-slate-500   mb-2 flex items-center">
+              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
                 <Tag className="h-3.5 w-3.5 mr-1.5" /> Project Domain
               </label>
               <input 
@@ -123,7 +123,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
             </div>
             
             <div>
-              <label className="text-label font-bold text-slate-400 dark:text-slate-500   mb-2 flex items-center">
+              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
                 <Clock className="h-3.5 w-3.5 mr-1.5" /> Priority Level <span className="text-rose-500">*</span>
               </label>
               <select 
@@ -141,7 +141,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
             </div>
 
             <div>
-              <label className="text-label font-bold text-slate-400 dark:text-slate-500   mb-2 flex items-center">
+              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
                 <User className="h-3.5 w-3.5 mr-1.5" /> Assign To {currentUser?.role === 'manager' && "(Optional)"}
               </label>
               <select 
@@ -160,7 +160,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
             </div>
 
             <div>
-              <label className="text-label font-bold text-slate-400 dark:text-slate-500   mb-2 flex items-center">
+              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
                 <Target className="h-3.5 w-3.5 mr-1.5" /> Milestone (Optional)
               </label>
               <input 
@@ -173,7 +173,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
             </div>
             
             <div>
-              <label className="text-label font-bold text-slate-400 dark:text-slate-500   mb-2 flex items-center">
+              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
                 <Calendar className="h-3.5 w-3.5 mr-1.5" /> Start Date
               </label>
               <input 
@@ -185,7 +185,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
             </div>
 
             <div className="relative">
-              <label className="text-label font-bold text-slate-400 dark:text-slate-500   mb-2 flex items-center">
+              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
                 <Calendar className="h-3.5 w-3.5 mr-1.5" /> Due Date <span className="text-rose-500">*</span>
               </label>
               <input 
@@ -210,7 +210,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
           </div>
 
           <div>
-            <label className="block text-label font-bold text-slate-400 dark:text-slate-500   mb-2">Detailed Context</label>
+            <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Detailed Context</label>
             <textarea 
               value={description}
               onChange={e => setDescription(e.target.value)}

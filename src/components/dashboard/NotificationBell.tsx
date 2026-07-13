@@ -265,7 +265,7 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
           {visibleNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-slate-500">
               <Bell className="h-8 w-8 mb-2 opacity-30" />
-              <p className="text-label font-semibold">No notifications</p>
+              <p className="text-xs font-semibold">No notifications</p>
             </div>
           ) : (
             <div className="space-y-3 py-2">
@@ -276,7 +276,7 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
                 return (
                   <div key={groupName} className="space-y-1">
                     <div className="px-3 py-1 flex items-center">
-                      <span className="text-[9px] font-bold text-slate-500  ">{groupName}</span>
+                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{groupName}</span>
                     </div>
                     {groupItems.map((notification) => (
                       <div 
@@ -290,13 +290,13 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
                         {notification.unread && (
                           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-rose-500 rounded-r-full" />
                         )}
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-label">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs">
                           {notification.icon}
                         </div>
                         <div className="flex-1 space-y-0.5 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <p className={cn(
-                              "text-label font-bold truncate text-slate-100",
+                              "text-xs font-bold truncate text-slate-100",
                               notification.unread ? "text-white" : "text-slate-300"
                             )}>
                               {notification.title}
