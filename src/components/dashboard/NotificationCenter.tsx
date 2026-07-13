@@ -171,21 +171,21 @@ export function NotificationCenter() {
     });
   };
 
-  const handleApproveLeave = (notification: any) => {
+  const handleApproveLeave = (notification: any, actionType: 'approve_leave' | 'reject_leave') => {
     const requestId = notification.metadata?.requestId || 1; // Default to 1 if not provided for mock
     
     // Update leave request status
-    const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_requests') || '[]');
+    const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_data') || '[]');
     let employeeNotifReq: any = null;
     const updatedLeaves = allLeaves.map((l: any) => {
       if (l.id === requestId) {
         employeeNotifReq = l;
-        return { ...l, status: 'Approved', hrNotified: true, processedAt: Date.now() };
+        return { ...l, status: actionType === 'approve_leave' ? 'Approved' : 'Rejected', hrNotified: true, processedAt: Date.now() };
       }
       return l;
     });
-    localStorage.setItem('hindustaan_leave_requests', JSON.stringify(updatedLeaves));
-    window.dispatchEvent(new Event('leave-requests-updated'));
+    localStorage.setItem('hindustaan_leave_data', JSON.stringify(updatedLeaves));
+    window.dispatchEvent(new Event('leave-data-updated'));
 
     if (employeeNotifReq) {
       const savedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
@@ -193,9 +193,9 @@ export function NotificationCenter() {
       const newEmpNotification = {
         id: Date.now(),
         category: 'Leave Management',
-        icon: '✅',
-        title: 'Leave Approved',
-        message: `Manager approved your leave request for ${employeeNotifReq.start}`,
+        icon: actionType === 'approve_leave' ? '✅' : '❌',
+        title: actionType === 'approve_leave' ? 'Leave Approved' : 'Leave Rejected',
+        message: `Manager ${actionType === 'approve_leave' ? 'approved' : 'rejected'} your leave request for ${employeeNotifReq.start}`,
         time: 'Just now',
         unread: true,
         group: 'Today',
@@ -216,67 +216,14 @@ export function NotificationCenter() {
         return {
           ...n,
           unread: false,
-          message: `Approved: ${notification.message}`,
+          message: `${actionType === 'approve_leave' ? 'Approved' : 'Rejected'}: ${notification.message}`,
           actions: undefined
         };
       }
       return n;
     }));
 
-    toast.success('Leave Request Approved');
-  };
-
-  const handleRejectLeave = (notification: any) => {
-    const requestId = notification.metadata?.requestId || 1;
-    
-    const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_requests') || '[]');
-    let employeeNotifReq: any = null;
-    const updatedLeaves = allLeaves.map((l: any) => {
-      if (l.id === requestId) {
-        employeeNotifReq = l;
-        return { ...l, status: 'Rejected', hrNotified: true, processedAt: Date.now() };
-      }
-      return l;
-    });
-    localStorage.setItem('hindustaan_leave_requests', JSON.stringify(updatedLeaves));
-    window.dispatchEvent(new Event('leave-requests-updated'));
-
-    if (employeeNotifReq) {
-      const savedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
-      let empNotifs = savedEmpNotifs && savedEmpNotifs !== 'null' ? JSON.parse(savedEmpNotifs) : [];
-      const newEmpNotification = {
-        id: Date.now(),
-        category: 'Leave Management',
-        icon: '❌',
-        title: 'Leave Rejected',
-        message: `Manager rejected your leave request for ${employeeNotifReq.start}`,
-        time: 'Just now',
-        unread: true,
-        group: 'Today',
-        metadata: {
-          type: 'leave_status_update',
-          date: employeeNotifReq.start,
-          employeeName: employeeNotifReq.employee,
-          requestId: employeeNotifReq.id
-        }
-      };
-      localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifs]));
-      window.dispatchEvent(new Event('employee-notifications-updated'));
-    }
-
-    setNotifications(prev => prev.map(n => {
-      if (n.id === notification.id) {
-        return {
-          ...n,
-          unread: false,
-          message: `Rejected: ${notification.message}`,
-          actions: undefined
-        };
-      }
-      return n;
-    }));
-
-    toast.info('Leave Request Rejected');
+    toast.success(`Leave Request ${actionType === 'approve_leave' ? 'Approved' : 'Rejected'}`);
   };
 
   const submitCommentLeave = (notification: any) => {
@@ -512,7 +459,8 @@ export function NotificationCenter() {
                                     value={commentText}
                                     onChange={(e) => setCommentText(e.target.value)}
                                     placeholder="Type your comment..."
-                                    className="h-8 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus-visible:ring-1 focus-visible:ring-orange-500"
+                                    style={{ fontSize: '11px' }}
+                                    className="h-8 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 px-3 py-0 focus-visible:ring-1 focus-visible:ring-orange-500"
                                     autoFocus
                                     onKeyDown={(e) => {
                                       if (e.key === 'Enter') { e.preventDefault(); submitCommentLeave(notification); }
@@ -539,9 +487,9 @@ export function NotificationCenter() {
                                         } else if (action.actionType === 'reject_extension') {
                                           handleRejectExtension(notification);
                                         } else if (action.actionType === 'approve_leave' || (action.label === 'Approve' && notification.title === 'Leave Request')) {
-                                          handleApproveLeave(notification);
+                                          handleApproveLeave(notification, 'approve_leave');
                                         } else if (action.actionType === 'reject_leave' || (action.label === 'Reject' && notification.title === 'Leave Request')) {
-                                          handleRejectLeave(notification);
+                                          handleApproveLeave(notification, 'reject_leave');
                                         } else if (action.actionType === 'comment_leave' || (action.label === 'Comment' && notification.title === 'Leave Request')) {
                                           handleCommentLeave(notification);
                                         } else {
