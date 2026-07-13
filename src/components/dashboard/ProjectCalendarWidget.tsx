@@ -54,6 +54,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
 import { useNotifications } from '@/context/NotificationContext';
+import { PremiumTimePicker } from '@/components/ui/premium-time-picker';
+import { ProjectDatePicker } from '@/components/ui/project-date-picker';
 
 // Data Structures
 type EventType = 'deadline' | 'completed' | 'milestone' | 'leave' | 'meeting';
@@ -168,6 +170,10 @@ export function ProjectCalendarWidget() {
   const [eventToView, setEventToView] = useState<ProjectEvent | null>(null);
   const [eventToEdit, setEventToEdit] = useState<ProjectEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<ProjectEvent | null>(null);
+  const [scheduleTime, setScheduleTime] = useState('09:00 AM');
+  const [editTime, setEditTime] = useState('09:00 AM');
+  const [scheduleDate, setScheduleDate] = useState<Date>(new Date());
+  const [editDate, setEditDate] = useState<Date>(new Date());
   
   const { addNotification } = useNotifications();
 
@@ -672,39 +678,11 @@ export function ProjectCalendarWidget() {
             <div className="grid grid-cols-2 gap-5">
               <div className="space-y-2.5 relative">
                 <Label htmlFor="date" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</Label>
-                <div className="relative group">
-                  <Input id="date" name="date" type="date" required className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-12 font-semibold [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 pointer-events-none group-hover:scale-110 transition-transform">
-                    <CalendarIcon className="h-4 w-4 text-orange-500" />
-                  </div>
-                </div>
+                <ProjectDatePicker name="date" value={scheduleDate} onChange={(d) => d && setScheduleDate(d)} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-4 font-semibold" />
               </div>
               <div className="space-y-2.5">
                 <Label htmlFor="time" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Time</Label>
-                <div className="relative group">
-                  <Select name="time" defaultValue="09:00 AM">
-                    <SelectTrigger className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-12 font-semibold text-left">
-                      <SelectValue placeholder="Select time" />
-                    </SelectTrigger>
-                    <SelectContent position="popper" sideOffset={4} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-xl max-h-[250px] p-1 w-[var(--radix-select-trigger-width)]">
-                      {Array.from({ length: 26 }).map((_, i) => {
-                        const hour24 = Math.floor(i / 2) + 8; // 8:00 AM to 8:30 PM
-                        const minute = i % 2 === 0 ? '00' : '30';
-                        const ampm = hour24 >= 12 ? 'PM' : 'AM';
-                        const hour12 = hour24 % 12 || 12;
-                        const timeStr = `${hour12.toString().padStart(2, '0')}:${minute} ${ampm}`;
-                        return (
-                          <SelectItem key={timeStr} value={timeStr} className="rounded-xl font-bold cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-900/20 focus:bg-orange-50 dark:focus:bg-orange-900/20 my-0.5">
-                            {timeStr}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 pointer-events-none group-hover:scale-110 transition-transform z-10">
-                    <Clock className="h-4 w-4 text-orange-500" />
-                  </div>
-                </div>
+                <PremiumTimePicker name="time" value={scheduleTime} onChange={setScheduleTime} />
               </div>
             </div>
 
@@ -885,39 +863,11 @@ export function ProjectCalendarWidget() {
             <div className="grid grid-cols-2 gap-5">
               <div className="space-y-2.5 relative">
                 <Label htmlFor="edit-date" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</Label>
-                <div className="relative group">
-                  <Input id="edit-date" name="date" type="date" defaultValue={eventToEdit ? format(eventToEdit.date, 'yyyy-MM-dd') : ''} required className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-12 font-semibold [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 pointer-events-none group-hover:scale-110 transition-transform">
-                    <CalendarIcon className="h-4 w-4 text-indigo-500" />
-                  </div>
-                </div>
+                <ProjectDatePicker name="date" value={editDate} onChange={(d) => d && setEditDate(d)} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-4 font-semibold" />
               </div>
               <div className="space-y-2.5">
                 <Label htmlFor="edit-time" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Time</Label>
-                <div className="relative group">
-                  <Select name="time" defaultValue={eventToEdit?.time || "09:00 AM"}>
-                    <SelectTrigger className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-12 font-semibold text-left">
-                      <SelectValue placeholder="Select time" />
-                    </SelectTrigger>
-                    <SelectContent position="popper" sideOffset={4} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-xl max-h-[250px] p-1 w-[var(--radix-select-trigger-width)]">
-                      {Array.from({ length: 26 }).map((_, i) => {
-                        const hour24 = Math.floor(i / 2) + 8;
-                        const minute = i % 2 === 0 ? '00' : '30';
-                        const ampm = hour24 >= 12 ? 'PM' : 'AM';
-                        const hour12 = hour24 % 12 || 12;
-                        const timeStr = `${hour12.toString().padStart(2, '0')}:${minute} ${ampm}`;
-                        return (
-                          <SelectItem key={timeStr} value={timeStr} className="rounded-xl font-bold cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 focus:bg-indigo-50 dark:focus:bg-indigo-900/20 my-0.5">
-                            {timeStr}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 pointer-events-none group-hover:scale-110 transition-transform z-10">
-                    <Clock className="h-4 w-4 text-indigo-500" />
-                  </div>
-                </div>
+                <PremiumTimePicker name="time" value={editTime} onChange={setEditTime} />
               </div>
             </div>
 
