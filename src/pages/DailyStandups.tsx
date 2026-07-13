@@ -127,6 +127,20 @@ const MOCK_HISTORY = [
   }
 ];
 
+export const parseStandupCommand = (command: string) => {
+  if (!command.trim().startsWith('/standup')) {
+    return { isValid: false, yesterday: '', today: '', blockers: '' };
+  }
+  const body = command.trim().replace(/^\/standup\s*/, '');
+  const parts = body.split('|').map(p => p.trim());
+  return {
+    yesterday: parts[0] || '',
+    today: parts[1] || '',
+    blockers: parts[2] || '',
+    isValid: parts.length === 3
+  };
+};
+
 export default function DailyStandups({ session }: { session?: any }) {
   const { addNotification } = useNotifications();
   const currentUser = getCurrentUser();
@@ -233,7 +247,9 @@ export default function DailyStandups({ session }: { session?: any }) {
   
   const [empExpanded, setEmpExpanded] = useState(false);
   const [mgrExpanded, setMgrExpanded] = useState(false);
+  const [quickCommand, setQuickCommand] = useState('');
 
+  const activeSpeechFieldRef = React.useRef<'yesterday' | 'today' | 'blockers' | 'notes' | null>(null);
   const [activeSpeechField, setActiveSpeechField] = useState<'yesterday' | 'today' | 'blockers' | 'notes' | null>(null);
   const recognitionRef = React.useRef<any>(null);
 
@@ -453,6 +469,46 @@ export default function DailyStandups({ session }: { session?: any }) {
     toast.success('Standup Update Submitted!');
     setIsModalOpen(false);
     setFormData({ yesterday: '', today: '', blockers: '', notes: '' });
+  };
+
+  const handleDirectCommandSubmit = (parsed: any) => {
+    if (!parsed.yesterday || !parsed.today) {
+      toast.warning('Empty sections detected. Continuing anyway.');
+    }
+    
+    const initials = currentUserName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+    const newStandup = {
+      id: `s-${Date.now()}`,
+      user: currentUserName,
+      initials,
+      role: role === 'manager' ? 'Product Manager' : 'Developer',
+      status: 'Submitted',
+      yesterday: parsed.yesterday,
+      today: parsed.today,
+      blockers: parsed.blockers || 'None.',
+      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      originalCommand: quickCommand
+    };
+
+    setStandups([newStandup, ...standups.filter((s) => s.user !== currentUserName)]);
+
+    const historyEntry = {
+      ...newStandup,
+      dateGroup: 'Today'
+    };
+    setHistory(prev => [historyEntry, ...prev]);
+    pushEmployeeStandupNotification('Standup Submitted', `Your daily standup was submitted via command at ${newStandup.time}.`);
+
+    addNotification({
+      type: 'success',
+      category: 'Team',
+      icon: '📝',
+      title: 'Standup Submitted',
+      message: `${currentUserName} submitted their daily standup via command.`,
+      group: 'Today',
+    });
+    toast.success('Standup Update Submitted via Command!');
+    setQuickCommand('');
   };
 
   const handleExtensionSubmit = () => {
@@ -973,7 +1029,141 @@ export default function DailyStandups({ session }: { session?: any }) {
         </div>
       </div>
 
-      {/* Stats & History Row */}
+      {/* Quick Standup Command */}
+      {role !== 'manager' && (
+        <Card className="mb-8 rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900">
+          <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                <span className="text-xl">⚡</span>
+                Quick Standup Command
+              </CardTitle>
+              <CardDescription>Submit your standup using a WhatsApp-like command.</CardDescription>
+            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 text-slate-500 hover:text-slate-700 font-bold">What is this?</Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[400px] bg-white dark:bg-slate-950">
+                <DialogHeader>
+                  <DialogTitle>Command Syntax</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <p className="text-sm text-slate-500">
+                    Use a simple pipe-delimited command format to instantly parse your standup.
+                  </p>
+                  <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 font-mono text-sm text-slate-700 dark:text-slate-300">
+                    /standup<br/>
+                    [done] | [doing] | [blocked]
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold mb-2">Example:</p>
+                    <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 font-mono text-sm text-slate-700 dark:text-slate-300">
+                      /standup<br/>
+                      Completed dashboard UI |<br/>
+                      Building notification module |<br/>
+                      Need backend endpoint
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            <div className="relative">
+              <textarea
+                value={quickCommand}
+                onChange={(e) => setQuickCommand(e.target.value)}
+                placeholder="/standup&#10;Completed Login UI | Working on Dashboard API | Waiting for backend access"
+                className="w-full h-24 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none p-3 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono resize-none"
+              />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setQuickCommand('')}
+                className="rounded-lg h-9 w-full sm:w-auto"
+              >
+                Clear
+              </Button>
+              <Button 
+                variant="secondary" 
+                onClick={() => {
+                  const parsed = parseStandupCommand(quickCommand);
+                  if (parsed.isValid || quickCommand.includes('/standup')) {
+                    setFormData({
+                      yesterday: parsed.yesterday,
+                      today: parsed.today,
+                      blockers: parsed.blockers,
+                      notes: ''
+                    });
+                    setIsModalOpen(true);
+                  } else {
+                    toast.error("Command must start with /standup and have exactly 3 sections separated by '|'");
+                  }
+                }}
+                className="rounded-lg h-9 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 w-full sm:w-auto"
+              >
+                Parse Command
+              </Button>
+              <Button 
+                onClick={() => {
+                  const parsed = parseStandupCommand(quickCommand);
+                  if (parsed.isValid) {
+                    handleDirectCommandSubmit(parsed);
+                  } else {
+                    toast.error("Command must start with /standup and have exactly 3 sections separated by '|'");
+                  }
+                }}
+                className="rounded-lg h-9 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm w-full sm:w-auto"
+              >
+                <Send className="h-3.5 w-3.5 mr-1.5" /> Submit
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent Command Submissions Table */}
+      {role !== 'manager' && history.some(h => h.originalCommand && h.user === currentUserName) && (
+        <Card className="mb-8 rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900">
+          <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+            <CardTitle className="text-base">Recent Command Submissions</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 dark:text-slate-400">
+                  <tr>
+                    <th className="px-6 py-3 font-bold">Date</th>
+                    <th className="px-6 py-3 font-bold">Original Command</th>
+                    <th className="px-6 py-3 font-bold">Parsed Status</th>
+                    <th className="px-6 py-3 font-bold">Submitted Time</th>
+                    <th className="px-6 py-3 font-bold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.filter(h => h.originalCommand && h.user === currentUserName).slice(0, 5).map((h, i) => (
+                    <tr key={i} className="bg-white border-b dark:bg-slate-900 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900 dark:text-white">{getEntryDateString(h)}</td>
+                      <td className="px-6 py-4 font-mono text-xs text-slate-600 dark:text-slate-300 max-w-xs truncate">{h.originalCommand}</td>
+                      <td className="px-6 py-4">
+                        <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0 font-bold">Success</Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-slate-500">{h.time}</td>
+                      <td className="px-6 py-4 text-right">
+                        <Button variant="ghost" size="sm" onClick={() => setViewingStandup(h)} className="h-8">View</Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Stats Row */}
       <div className="flex flex-row justify-between items-center w-full mb-8 gap-4">
         <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm w-fit">
           <div className="px-4 py-2 flex items-center gap-2">
@@ -987,12 +1177,25 @@ export default function DailyStandups({ session }: { session?: any }) {
           <div className="px-4 py-2 flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-amber-500" />
             <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pending</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{role === 'manager' ? 'Missing Standups' : 'Pending'}</p>
               <p className="text-lg font-black text-slate-900 dark:text-white leading-none">{pendingCount}</p>
             </div>
           </div>
+          {role === 'manager' && (
+            <>
+              <div className="w-px h-8 bg-slate-200 dark:bg-slate-800" />
+              <div className="px-4 py-2 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-rose-500" />
+                <div>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Blocked Employees</p>
+                  <p className="text-lg font-black text-slate-900 dark:text-white leading-none">
+                    {displayStandups.filter(s => s.blockers && s.blockers !== 'None.' && s.blockers.trim() !== '').length}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
-
       </div>
 
       {/* Standup Grid */}
@@ -1031,16 +1234,25 @@ export default function DailyStandups({ session }: { session?: any }) {
               {standup.status === 'Submitted' ? (
                 <>
                   <div>
-                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Yesterday</h4>
+                    <h4 className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                      <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 border-0 text-[9px] px-1.5 py-0">Done</Badge>
+                      Yesterday
+                    </h4>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{standup.yesterday}</p>
                   </div>
                   <div>
-                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Today</h4>
+                    <h4 className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                      <Badge className="bg-blue-500 text-white hover:bg-blue-600 border-0 text-[9px] px-1.5 py-0">Doing</Badge>
+                      Today
+                    </h4>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{standup.today}</p>
                   </div>
                   {standup.blockers && standup.blockers !== 'None.' && (
                     <div className="bg-rose-50 dark:bg-rose-950/30 p-3 rounded-xl border border-rose-100 dark:border-rose-900/50 mt-auto">
-                      <h4 className="text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-1">Blockers</h4>
+                      <h4 className="flex items-center gap-2 text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-2">
+                        <Badge className="bg-rose-500 text-white hover:bg-rose-600 border-0 text-[9px] px-1.5 py-0">Blocked</Badge>
+                        Blockers
+                      </h4>
                       <p className="text-sm font-medium text-rose-700 dark:text-rose-400">{standup.blockers}</p>
                     </div>
                   )}

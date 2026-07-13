@@ -42,9 +42,9 @@ export const initializeAuth = () => {
     },
     {
       id: 'ADM001',
-      name: 'System Admin',
+      name: 'admin',
       email: 'admin@hindustaan.in',
-      password: 'Admin@123',
+      password: 'admin@123',
       role: 'admin',
       designation: 'System Administrator',
       department: 'IT',
