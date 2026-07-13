@@ -3,8 +3,10 @@ import { ArrowLeft, CheckCircle2, Clock, Flag, LayoutGrid, Target, Users, CheckS
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { useProjects } from '@/context/ProjectContext';
 import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
+import { ProjectSelect } from '@/components/ui/project-select';
 
 export default function ProjectDetails({ project, onBack }: { project: any, onBack: () => void }) {
   const { updateProject } = useProjects();
@@ -203,34 +205,26 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Assignee</label>
-                <div className="relative">
-                  <select
-                    value={editingTask.assignee}
-                    onChange={(e) => setEditingTask({ ...editingTask, assignee: e.target.value })}
-                    className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
-                  >
-                    <option value="Unassigned">Unassigned</option>
-                    {GLOBAL_TEAM_MEMBERS.map(member => (
-                      <option key={member.id} value={member.name}>{member.name}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
-                </div>
+                <ProjectSelect
+                  value={editingTask.assignee}
+                  onChange={(val) => setEditingTask({ ...editingTask, assignee: val })}
+                  options={[
+                    { value: 'Unassigned', label: 'Unassigned' },
+                    ...GLOBAL_TEAM_MEMBERS.map(m => ({ value: m.name, label: m.name }))
+                  ]}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</label>
-                <div className="relative">
-                  <select
-                    value={editingTask.status}
-                    onChange={(e) => setEditingTask({ ...editingTask, status: e.target.value })}
-                    className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
-                  >
-                    <option value="To Do">To Do</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Done">Done</option>
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
-                </div>
+                <ProjectSelect
+                  value={editingTask.status}
+                  onChange={(val) => setEditingTask({ ...editingTask, status: val })}
+                  options={[
+                    { value: 'To Do', label: 'To Do' },
+                    { value: 'In Progress', label: 'In Progress' },
+                    { value: 'Done', label: 'Done' }
+                  ]}
+                />
               </div>
             </div>
             <div className="p-6 pt-0 flex gap-3 mt-2">

@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { ProjectDatePicker } from '@/components/ui/project-date-picker';
 
 interface Draft {
   id: string;
@@ -252,23 +253,27 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
 
               <div className="space-y-2">
                 <Label className="font-bold text-slate-700 dark:text-slate-300">Start Date</Label>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  required
-                  className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark] hover:border-purple-500/40 dark:hover:border-purple-400/40 hover:shadow-md hover:shadow-purple-500/5 dark:hover:shadow-purple-500/10 transition-all duration-300"
+                <ProjectDatePicker
+                  value={startDate ? (() => {
+                    const d = new Date(startDate);
+                    return isNaN(d.getTime()) ? undefined : d;
+                  })() : undefined}
+                  onChange={(date) => {
+                    if (date) setStartDate(format(date, 'yyyy-MM-dd'));
+                  }}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label className="font-bold text-slate-700 dark:text-slate-300">End Date</Label>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  required
-                  className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 h-12 shadow-sm font-medium text-slate-900 dark:text-slate-100 dark:[color-scheme:dark] hover:border-purple-500/40 dark:hover:border-purple-400/40 hover:shadow-md hover:shadow-purple-500/5 dark:hover:shadow-purple-500/10 transition-all duration-300"
+                <ProjectDatePicker
+                  value={endDate ? (() => {
+                    const d = new Date(endDate);
+                    return isNaN(d.getTime()) ? undefined : d;
+                  })() : undefined}
+                  onChange={(date) => {
+                    if (date) setEndDate(format(date, 'yyyy-MM-dd'));
+                  }}
                 />
               </div>
 

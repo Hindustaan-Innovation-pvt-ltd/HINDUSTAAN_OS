@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { Mic, Video, CheckCircle2, AlertCircle, MessageSquare, Clock, Calendar, CheckSquare, Edit3, Sparkles, TrendingUp, AlertTriangle, Flame, Percent, Search, Trash2, MessageCircle, Users, Briefcase, Send, Check, ChevronDown, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -8,6 +9,8 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { ProjectDatePicker } from '@/components/ui/project-date-picker';
+import { ProjectSelect } from '@/components/ui/project-select';
 import { useTheme } from '@/context/ThemeContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useNotifications } from '@/context/NotificationContext';
@@ -748,13 +751,17 @@ export default function DailyStandups({ session }: { session?: any }) {
         {/* Search & Filter */}
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
           {role !== 'manager' ? (
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <span className="text-xs font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider">Search by Date:</span>
-              <input
-                type="date"
-                value={historyDateFilter}
-                onChange={(e) => setHistoryDateFilter(e.target.value)}
-                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none text-[#0F172A] dark:text-white focus:ring-2 focus:ring-orange-500/50 [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:cursor-pointer dark:[&::-webkit-calendar-picker-indicator]:invert dark:[&::-webkit-calendar-picker-indicator]:opacity-80 dark:[&::-webkit-calendar-picker-indicator]:hover:opacity-100"
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto max-w-xs">
+              <span className="text-xs font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">Search by Date:</span>
+              <ProjectDatePicker
+                value={historyDateFilter ? (() => {
+                  const d = new Date(historyDateFilter);
+                  return isNaN(d.getTime()) ? undefined : d;
+                })() : undefined}
+                onChange={(date) => {
+                  if (date) setHistoryDateFilter(format(date, 'yyyy-MM-dd'));
+                  else setHistoryDateFilter('');
+                }}
               />
               {historyDateFilter && (
                 <Button 
@@ -1580,18 +1587,15 @@ export default function DailyStandups({ session }: { session?: any }) {
               <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Select Task / Milestone</label>
               {upcomingDeadlines.length > 0 ? (
                 <div className="relative">
-                  <select
+                  <ProjectSelect
                     value={selectedTaskId}
-                    onChange={(e) => setSelectedTaskId(e.target.value)}
-                    className="w-full h-11 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 font-medium text-sm appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled className="text-slate-400 dark:bg-slate-900">Select task...</option>
-                    {upcomingDeadlines.map((t: any) => (
-                      <option key={t.id} value={t.id} className="dark:bg-slate-900">
-                        {t.title} (Due: {new Date(t.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setSelectedTaskId}
+                    placeholder="Select task..."
+                    options={upcomingDeadlines.map((t: any) => ({
+                      value: t.id,
+                      label: `${t.title} (Due: ${new Date(t.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`
+                    }))}
+                  />
                 </div>
               ) : (
                 <div className="p-3 text-center text-xs text-rose-500 font-bold bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-100 dark:border-rose-900/30">

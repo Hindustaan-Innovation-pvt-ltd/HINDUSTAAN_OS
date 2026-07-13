@@ -106,10 +106,14 @@ export function LeaveCalendar({ leaves, selectedDate, onSelectDate }: LeaveCalen
             months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full",
             month: "space-y-4 w-full",
             nav: "hidden", // Hide navigation buttons, we use custom dropdowns
+            month_caption: "hidden", // Hide v9 month caption
+            dropdowns: "hidden", // Hide v9 dropdowns
             weekdays: "grid grid-cols-7 gap-y-3 text-center items-center justify-items-center mt-4 border-b border-slate-100 dark:border-slate-800 pb-2",
             weekday: "text-slate-500 dark:text-slate-400 font-medium text-sm text-center select-none w-9 h-9 flex items-center justify-center",
             week: "grid grid-cols-7 gap-y-3 text-center items-center justify-items-center mt-2",
             day: "h-9 w-9 p-0 flex items-center justify-center relative",
+            day_disabled: "text-slate-400 opacity-50",
+            hidden: "invisible",
           }}
           components={{
             DayButton: ({ day, modifiers, ...props }) => {
@@ -143,7 +147,7 @@ export function LeaveCalendar({ leaves, selectedDate, onSelectDate }: LeaveCalen
                     <button
                       {...props}
                       className={cn(
-                        "h-9 w-9 flex items-center justify-center text-sm font-medium rounded-lg text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-800 outline-none",
+                        "h-9 w-9 flex items-center justify-center text-sm font-medium rounded-lg text-slate-700 dark:text-slate-300 transition-colors hover:bg-purple-100 hover:text-purple-700 dark:hover:bg-purple-900/40 dark:hover:text-purple-300 outline-none",
                         statusClass,
                         isTodayDate && !hasApproved && !hasPending && "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold ring-1 ring-slate-200 dark:ring-slate-700",
                         isSelected && "ring-2 ring-purple-500 ring-offset-2 dark:ring-offset-slate-950",
@@ -154,8 +158,8 @@ export function LeaveCalendar({ leaves, selectedDate, onSelectDate }: LeaveCalen
                     </button>
                   </TooltipTrigger>
                   {leavesOnDate.length > 0 && (
-                    <TooltipContent side="top" className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium p-3 rounded-xl shadow-xl border-0 z-[100] max-w-[240px]">
-                      <p className="font-bold mb-1.5 border-b border-slate-700 dark:border-slate-200 pb-1">
+                    <TooltipContent side="top" className="bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-medium p-3 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 z-[100] max-w-[240px]">
+                      <p className="font-bold mb-1.5 border-b border-slate-100 dark:border-slate-800 pb-1">
                         {format(date, 'MMMM d, yyyy')}
                       </p>
                       <div className="space-y-1.5">

@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import { useTheme } from '@/context/ThemeContext';
 import { useProjects } from '@/context/ProjectContext';
+import { ProjectSelect } from '@/components/ui/project-select';
 
 export default function ProgressTracker({ session }: { session?: any }) {
   const { theme } = useTheme();
@@ -128,16 +129,12 @@ export default function ProgressTracker({ session }: { session?: any }) {
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Real-time metrics calculated from active project data.</p>
         </div>
-        <div>
-          <select
+        <div className="w-full sm:w-64">
+          <ProjectSelect 
             value={activeProjectId}
-            onChange={(e) => setActiveProjectId(e.target.value)}
-            className="w-full sm:w-64 h-12 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-all font-bold text-sm shadow-sm"
-          >
-            {projects.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+            onChange={setActiveProjectId}
+            options={projects.map(p => ({ value: p.id, label: p.name }))}
+          />
         </div>
       </div>
 
