@@ -111,9 +111,15 @@ function App() {
         if (path === '/' || path === '/login' || path === '/admin/login') {
           window.history.replaceState({}, '', `/${user.role}/dashboard`);
         } else if (path.startsWith('/admin') && user.role !== 'admin') {
-          window.history.replaceState({}, '', `/${user.role}/dashboard`);
+          localStorage.removeItem('hindustaan_user');
+          sessionStorage.removeItem('hindustaan_user');
+          setSession(null);
+          window.history.replaceState({}, '', `/login`);
         } else if (path.startsWith('/manager') && !['manager', 'admin'].includes(user.role)) {
-          window.history.replaceState({}, '', `/${user.role}/dashboard`);
+          localStorage.removeItem('hindustaan_user');
+          sessionStorage.removeItem('hindustaan_user');
+          setSession(null);
+          window.history.replaceState({}, '', `/login`);
         }
       } catch (e) {
         localStorage.removeItem('hindustaan_user');

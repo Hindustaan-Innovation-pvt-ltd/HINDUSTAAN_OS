@@ -479,15 +479,42 @@ export default function Login({
               </button>
             </div>
             
-            {!isAdminLogin && (
+            {!isAdminLogin ? (
+              <>
+                <div className="text-center pt-2 pb-0.5">
+                  <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Don't have an account? </span>
+                  <button 
+                    type="button" 
+                    onClick={onNavigateToRegister}
+                    className="text-[13px] font-extrabold text-orange-600 hover:text-orange-700 hover:underline transition-all ml-1"
+                  >
+                    Create Account
+                  </button>
+                </div>
+                <div className="text-center pt-1 pb-0.5">
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      window.history.pushState({}, '', '/admin/login');
+                      window.dispatchEvent(new Event('popstate'));
+                    }}
+                    className="text-[11px] font-bold text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-all underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4"
+                  >
+                    Administrator Access
+                  </button>
+                </div>
+              </>
+            ) : (
               <div className="text-center pt-2 pb-0.5">
-                <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Don't have an account? </span>
                 <button 
                   type="button" 
-                  onClick={onNavigateToRegister}
-                  className="text-[13px] font-extrabold text-orange-600 hover:text-orange-700 hover:underline transition-all ml-1"
+                  onClick={() => {
+                    window.history.pushState({}, '', '/login');
+                    window.dispatchEvent(new Event('popstate'));
+                  }}
+                  className="text-[11px] font-bold text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-all underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4"
                 >
-                  Create Account
+                  Return to Employee/Manager Login
                 </button>
               </div>
             )}
