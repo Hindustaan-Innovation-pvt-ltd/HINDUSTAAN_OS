@@ -29,12 +29,12 @@ export function ProjectSelect({
 }) {
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger className={`w-full h-11 rounded-xl border-purple-500/30 bg-slate-950 text-white ${className}`}>
+      <SelectTrigger className={`w-full h-11 rounded-xl border border-slate-200 dark:border-purple-500/30 bg-white dark:bg-slate-950 text-slate-900 dark:text-white ${className}`}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent className="rounded-2xl border border-purple-500/20 shadow-2xl backdrop-blur-md bg-slate-950 text-white">
+      <SelectContent className="rounded-2xl border border-slate-200 dark:border-purple-500/20 shadow-2xl backdrop-blur-md bg-white dark:bg-slate-950 text-slate-900 dark:text-white">
         {options.map((option) => (
-          <SelectItem key={option.value} value={option.value} className="hover:bg-slate-800 focus:bg-slate-800 cursor-pointer">
+          <SelectItem key={option.value} value={option.value} className="hover:bg-slate-100 focus:bg-slate-100 dark:hover:bg-slate-800 dark:focus:bg-slate-800 cursor-pointer">
             {option.label}
           </SelectItem>
         ))}
