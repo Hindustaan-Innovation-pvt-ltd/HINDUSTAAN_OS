@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Login from './pages/Login';
 import DashboardShell from './components/layout/DashboardShell';
 import RoleBasedRouter from './components/dashboard/RoleBasedRouter';
+import AdminDashboard from './pages/AdminDashboard';
+import RolesAndPermissions from './pages/RolesAndPermissions';
 import TaskBoard from './pages/TaskBoard';
 import TimeAndStandup from './pages/TimeAndStandup';
 import Milestones from './pages/Milestones';
@@ -348,6 +350,15 @@ function App() {
             }}
           >
             {currentView === 'Dashboard' && <RoleBasedRouter session={session} onNavigate={handleNavigate} />}
+            {currentView === 'Employees' && (
+              <AdminDashboard />
+            )}
+            {currentView === 'Managers' && (
+              <AdminDashboard />
+            )}
+            {currentView === 'Roles & Permissions' && (
+              <RolesAndPermissions />
+            )}
             {(currentView === 'Tasks' || currentView === 'My Tasks') && (
               <TaskBoard session={session} isSidebarMinimized={isSidebarMinimized} />
             )}
@@ -380,7 +391,7 @@ function App() {
               'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Edit Profile', 'Team Members',
               'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
               'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support',
-              'Workspace Settings'
+              'Workspace Settings', 'Employees', 'Managers', 'Roles & Permissions'
             ].includes(currentView) && (
               <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
                 <p>Module "{currentView}" is under construction.</p>
