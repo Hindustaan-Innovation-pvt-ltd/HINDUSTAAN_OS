@@ -130,7 +130,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
                 required
                 value={priority}
                 onChange={e => setPriority(e.target.value as Priority)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]"
               >
                 <option className="bg-white dark:bg-slate-800" value="" disabled>Select Priority...</option>
                 <option className="bg-white dark:bg-slate-800" value="High">High</option>
@@ -148,7 +148,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
                 required={currentUser?.role === 'intern'}
                 value={assigneeId}
                 onChange={e => setAssigneeId(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]"
               >
                 {currentUser?.role === 'manager' && (
                   <option className="bg-white dark:bg-slate-800" value="">Unassigned</option>
@@ -180,7 +180,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
                 type="date"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:[color-scheme:dark]"
               />
             </div>
 
@@ -194,7 +194,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
                 value={dueDate}
                 onChange={e => setDueDate(e.target.value)}
                 className={cn(
-                  "w-full bg-white dark:bg-slate-900 border text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-colors",
+                  "w-full bg-white dark:bg-slate-900 border text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-colors dark:[color-scheme:dark]",
                   isPastDue 
                     ? "border-amber-300 text-amber-700 dark:border-amber-700/50 dark:text-amber-500 focus:ring-amber-500/20 bg-amber-50/30 dark:bg-amber-900/10" 
                     : "border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-orange-500/20"

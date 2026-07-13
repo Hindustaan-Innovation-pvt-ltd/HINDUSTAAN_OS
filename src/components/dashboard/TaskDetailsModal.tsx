@@ -183,7 +183,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                     value={editedTask.priority}
                     onChange={(e) => handleUpdateField('priority', e.target.value as Priority)}
                     className={cn(
-                      "appearance-none w-full pl-3 pr-8 py-2 rounded-lg text-sm font-semibold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all",
+                      "appearance-none w-full pl-3 pr-8 py-2 rounded-lg text-sm font-semibold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all dark:[color-scheme:dark]",
                       getPriorityStyles(editedTask.priority)
                     )}
                   >
@@ -223,7 +223,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                         if (onUpdateTask) onUpdateTask(updated);
                       }
                     }}
-                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]"
                   >
                     {GLOBAL_TEAM_MEMBERS.map(member => (
                       <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={member.id} value={member.id}>{member.name}</option>
@@ -245,7 +245,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                   type="date"
                   value={editedTask.due_date ? new Date(editedTask.due_date).toISOString().split('T')[0] : ''}
                   onChange={(e) => handleUpdateField('due_date', e.target.value)} // Simplifying date format mapping for mockup
-                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:[color-scheme:dark]"
                 />
               ) : (
                 <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 inline-block">
@@ -264,7 +264,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                   <select 
                     value={editedTask.status}
                     onChange={(e) => handleStatusChange(e.target.value as Status)}
-                    className="appearance-none w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
+                    className="appearance-none w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]"
                   >
                     {STATUSES.map(s => (
                       <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={s} value={s}>{s}</option>
