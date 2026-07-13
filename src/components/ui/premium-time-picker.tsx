@@ -47,7 +47,7 @@ export function PremiumTimePicker({ value, onChange, className, name }: PremiumT
         <button 
           type="button"
           className={cn(
-            "relative w-full rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-12 pr-4 font-semibold text-left text-base group",
+            "relative w-full rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 text-slate-900 dark:text-white transition-all duration-300 shadow-sm pl-12 pr-4 font-semibold text-left text-base group",
             className
           )}
         >

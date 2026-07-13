@@ -15,7 +15,7 @@ export const GLOBAL_PROJECTS = [
     strokeColor: '#e11d48', 
     manager: 'Amanda Smith', 
     deadline: 'Dec 15', 
-    budget: '$15k',
+    budget: '₹15k',
     milestones: [
       { id: 1, title: 'Requirement Gathering', status: 'completed', date: 'Oct 01' },
       { id: 2, title: 'UI/UX Design', status: 'completed', date: 'Oct 15' },
@@ -41,7 +41,7 @@ export const GLOBAL_PROJECTS = [
     strokeColor: '#2563eb', 
     manager: 'Rahul Sharma', 
     deadline: 'Nov 30', 
-    budget: '$20k',
+    budget: '₹20k',
     milestones: [
       { id: 1, title: 'Setup React Native', status: 'completed', date: 'Oct 05' },
       { id: 2, title: 'Auth & Routing', status: 'completed', date: 'Oct 20' },
@@ -64,7 +64,7 @@ export const GLOBAL_PROJECTS = [
     strokeColor: '#d97706', 
     manager: 'Priya Patel', 
     deadline: 'Oct 20', 
-    budget: '$5k',
+    budget: '₹5k',
     milestones: [
       { id: 1, title: 'Content Drafting', status: 'completed', date: 'Sep 01' },
       { id: 2, title: 'SEO Optimization', status: 'in-progress', date: 'Oct 10' },
@@ -84,7 +84,7 @@ export const GLOBAL_PROJECTS = [
     strokeColor: '#059669', 
     manager: 'Aiden Chen', 
     deadline: 'Sep 10', 
-    budget: '$8k',
+    budget: '₹8k',
     milestones: [
       { id: 1, title: 'Color Tokens', status: 'completed', date: 'Aug 15' },
       { id: 2, title: 'Typography', status: 'completed', date: 'Aug 25' },

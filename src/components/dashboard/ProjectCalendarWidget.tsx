@@ -236,12 +236,10 @@ export function ProjectCalendarWidget() {
       assignees: [{ name: 'Current User', initials: 'CU' }]
     };
 
-    setEvents(prev => {
-      const next = [...prev, newEvent];
-      localStorage.setItem('hindustaan_calendar_events', JSON.stringify(next));
-      window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: next } }));
-      return next;
-    });
+    const nextEvents = [...events, newEvent];
+    setEvents(nextEvents);
+    localStorage.setItem('hindustaan_calendar_events', JSON.stringify(nextEvents));
+    window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: nextEvents } }));
 
     toast.success(`${scheduleType === 'event' ? 'Event' : 'Meeting'} Scheduled Successfully`, {
       description: 'Your calendar has been updated with the new item.',
@@ -672,13 +670,13 @@ export function ProjectCalendarWidget() {
           <form onSubmit={handleScheduleSubmit} className="p-6 space-y-6">
             <div className="space-y-2.5">
               <Label htmlFor="title" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Title</Label>
-              <Input id="title" name="title" placeholder={scheduleType === 'event' ? "e.g. Q3 Roadmap Review" : "e.g. Weekly Standup Sync"} required className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm text-base font-semibold" />
+              <Input id="title" name="title" placeholder={scheduleType === 'event' ? "e.g. Q3 Roadmap Review" : "e.g. Weekly Standup Sync"} required className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 text-slate-900 dark:text-white transition-all duration-300 shadow-sm text-base font-semibold" />
             </div>
             
             <div className="grid grid-cols-2 gap-5">
               <div className="space-y-2.5 relative">
                 <Label htmlFor="date" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</Label>
-                <ProjectDatePicker name="date" value={scheduleDate} onChange={(d) => d && setScheduleDate(d)} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-4 font-semibold" />
+                <ProjectDatePicker name="date" value={scheduleDate} onChange={(d) => d && setScheduleDate(d)} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 text-slate-900 dark:text-white transition-all duration-300 shadow-sm pl-4 font-semibold" />
               </div>
               <div className="space-y-2.5">
                 <Label htmlFor="time" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Time</Label>
@@ -689,7 +687,7 @@ export function ProjectCalendarWidget() {
             <div className="space-y-2.5">
               <Label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Type</Label>
               <div className="relative group">
-                <Input name="type" list="event-types" defaultValue={scheduleType === 'event' ? 'milestone' : 'sync'} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-12 font-semibold" placeholder="e.g. Milestone, Launch..." />
+                <Input name="type" list="event-types" defaultValue={scheduleType === 'event' ? 'milestone' : 'sync'} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 text-slate-900 dark:text-white transition-all duration-300 shadow-sm pl-12 font-semibold" placeholder="e.g. Milestone, Launch..." />
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 pointer-events-none group-hover:scale-110 transition-transform">
                   <Flag className="h-4 w-4 text-orange-500" />
                 </div>
@@ -718,7 +716,7 @@ export function ProjectCalendarWidget() {
                 Event History
               </DialogTitle>
               <DialogDescription className="text-slate-500 dark:text-slate-400 font-medium pt-1">
-                View all past and upcoming events, deadlines, and milestones.
+                View all past events, deadlines, and milestones from history.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -726,6 +724,7 @@ export function ProjectCalendarWidget() {
             <ScrollArea className="max-h-[50vh] pr-4">
               <div className="space-y-4">
                 {[...events]
+                  .filter(evt => isBefore(evt.date, startOfDay(today)))
                   .sort((a, b) => b.date.getTime() - a.date.getTime())
                   .map((evt) => {
                     const isPast = isBefore(evt.date, startOfDay(today));

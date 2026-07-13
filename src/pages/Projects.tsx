@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CalendarDays, LayoutTemplate, Briefcase, LayoutGrid, CheckSquare, Target, ListTodo, Plus, X, ChevronRight, MoreVertical, Edit2, Trash2, RotateCcw, FolderKanban } from 'lucide-react';
+import { CalendarDays, LayoutTemplate, Briefcase, LayoutGrid, CheckSquare, Target, ListTodo, Plus, X, ChevronRight, MoreVertical, Edit2, Trash2, RotateCcw, FolderKanban, TrendingUp, AlertTriangle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -49,7 +49,7 @@ export default function Projects({ session }: { session?: any }) {
         manager: newProject.manager,
         deadline: newProject.deadline,
         tasks: newProject.tasks,
-        budget: newProject.budget ? (newProject.budget.toString().startsWith('$') ? newProject.budget : `$${newProject.budget}`) : 'TBD'
+        budget: newProject.budget ? (newProject.budget.toString().startsWith('₹') ? newProject.budget : `₹${newProject.budget}`) : 'TBD'
       });
     } else {
       const colors = [
@@ -70,7 +70,7 @@ export default function Projects({ session }: { session?: any }) {
         strokeColor: randomColor.strokeColor,
         manager: newProject.manager || 'Unassigned',
         deadline: newProject.deadline || 'TBD',
-        budget: newProject.budget ? `$${newProject.budget}` : 'TBD'
+        budget: newProject.budget ? `₹${newProject.budget}` : 'TBD'
       };
       
       
@@ -194,135 +194,157 @@ export default function Projects({ session }: { session?: any }) {
               className={cn("pb-1", activeTab === 'Completed' ? "text-slate-900 dark:text-white border-b-2 border-orange-600 dark:border-orange-400" : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300")}
             >Completed</button>
           </div>
-        </div>
+        </div>        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {displayedProjects.map((project) => {
+              const completedTasks = project.tasks.filter((t: any) => t.status === 'Done').length;
+              const totalTasks = project.tasks.length;
+              const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+              
+              const isPastDue = new Date(project.deadline) < new Date() && project.status !== 'Completed';
 
-        <div className="w-full overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800">
-                <th className="p-4 text-xs font-black uppercase text-slate-400">Project</th>
-                <th className="p-4 text-xs font-black uppercase text-slate-400">Lead</th>
-                <th className="p-4 text-xs font-black uppercase text-slate-400">Deadline</th>
-                <th className="p-4 text-xs font-black uppercase text-slate-400">Status</th>
-                <th className="p-4 text-xs font-black uppercase text-slate-400">Progress</th>
-                <th className="p-4"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {displayedProjects.map((project) => {
-                const completedTasks = project.tasks.filter((t: any) => t.status === 'Done').length;
-                const totalTasks = project.tasks.length;
-                const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-
-                return (
-                  <tr 
-                    key={project.id} 
-                    className="group border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
-                    onClick={() => setSelectedProject(project)}
-                  >
-                    <td className="p-4">
-                      <div className="flex items-center space-x-4">
-                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-white dark:border-slate-800", project.iconColor)}>
-                          <LayoutTemplate className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{project.name}</p>
-                          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">{totalTasks} tasks • {project.budget}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{project.manager}</span>
-                    </td>
-                    <td className="p-4">
-                      <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">{project.deadline}</span>
-                    </td>
-                    <td className="p-4">
-                      <Badge variant={
-                        project.status === 'Completed' ? 'default' : 
-                        project.status === 'In Progress' ? 'secondary' : 
-                        project.status === 'Aborted' ? 'destructive' :
-                        'outline'
-                      } className={cn(
-                        "font-bold tracking-wider uppercase text-[10px]",
-                        project.status === 'Completed' && "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400",
-                        project.status === 'In Progress' && "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-500/20 dark:text-blue-400",
-                        project.status === 'On Hold' && "bg-amber-100 text-amber-700 hover:bg-amber-200 border-transparent dark:bg-amber-500/20 dark:text-amber-400",
-                        project.status === 'Not Started' && "bg-slate-100 text-slate-700 hover:bg-slate-200 border-transparent dark:bg-slate-800 dark:text-slate-400",
-                        project.status === 'Aborted' && "bg-red-100 text-red-700 hover:bg-red-200 border-transparent dark:bg-red-900/40 dark:text-red-400"
+              return (
+                <div 
+                  key={project.id}
+                  onClick={() => setSelectedProject(project)}
+                  className="relative group bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-[0_2px_10px_rgb(0,0,0,0.04)] dark:shadow-none border border-slate-100 dark:border-slate-800 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col"
+                >
+                  {/* Glowing Top Gradient blob */}
+                  <div 
+                    className="absolute -top-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-20 pointer-events-none transition-transform duration-500 group-hover:scale-150"
+                    style={{ backgroundColor: project.strokeColor }}
+                  />
+                  
+                  {/* Top Row: Icon & Status */}
+                  <div className="flex items-start justify-between mb-6 relative z-10">
+                    <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-white dark:border-slate-800", project.iconColor)}>
+                      <LayoutTemplate className="h-6 w-6" />
+                    </div>
+                    <div className="flex items-center space-x-2" onClick={e => e.stopPropagation()}>
+                      <Badge variant="secondary" className={cn(
+                        "font-black tracking-wider uppercase text-[10px] px-3 py-1 rounded-full",
+                        project.status === 'Completed' && "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400",
+                        project.status === 'In Progress' && "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400",
+                        project.status === 'On Hold' && "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400",
+                        project.status === 'Not Started' && "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400",
+                        project.status === 'Aborted' && "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
                       )}>
                         {project.status}
                       </Badge>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-2 w-24 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full rounded-full transition-all duration-1000 ease-out" 
-                            style={{ 
-                              width: `${progress}%`,
-                              backgroundColor: project.strokeColor
-                            }} 
-                          />
-                        </div>
-                        <span className="text-xs font-bold text-slate-500">{progress}%</span>
+                      
+                      {role === 'manager' && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                              <MoreVertical className="h-5 w-5" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40 rounded-xl border-slate-200 dark:border-slate-800 shadow-xl p-1 bg-white dark:bg-slate-950 z-[100]">
+                            <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingProjectId(project.id);
+                              setNewProject({
+                                name: project.name,
+                                manager: project.manager,
+                                deadline: project.deadline && project.deadline !== 'TBD' ? project.deadline : '',
+                                budget: project.budget && project.budget !== 'TBD' ? project.budget.replace('₹', '').replace('$', '') : '',
+                                priority: 'Medium',
+                                tasks: project.tasks || []
+                              });
+                              setIsModalOpen(true);
+                            }}>
+                              <Edit2 className="mr-2 h-4 w-4" /> Edit
+                            </DropdownMenuItem>
+                            {project.status === 'Aborted' ? (
+                              <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg text-emerald-600 focus:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" onClick={(e) => {
+                                e.stopPropagation();
+                                updateProject(project.id, { status: 'In Progress' });
+                              }}>
+                                <RotateCcw className="mr-2 h-4 w-4" /> Restore
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg text-amber-600 focus:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20" onClick={(e) => {
+                                e.stopPropagation();
+                                updateProject(project.id, { status: 'Aborted' });
+                              }}>
+                                <X className="mr-2 h-4 w-4" /> Abort
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg text-red-600 focus:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={(e) => {
+                              e.stopPropagation();
+                              deleteProject(project.id);
+                            }}>
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Title & Lead */}
+                  <div className="mb-6 relative z-10">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-3 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{project.name}</h3>
+                    <div className="flex items-center">
+                      <div className="flex -space-x-2 mr-3">
+                        {GLOBAL_TEAM_MEMBERS.slice(0, 3).map((member, i) => (
+                          <div key={member.id} className={cn("w-6 h-6 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-[8px] font-bold object-cover", member.color)}>
+                            {member.initials}
+                          </div>
+                        ))}
                       </div>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => setSelectedProject(project)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
-                          <ChevronRight className="h-5 w-5" />
-                        </button>
-                        {role === 'manager' && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
-                                <MoreVertical className="h-5 w-5" />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 rounded-xl border-slate-200 dark:border-slate-800 shadow-xl p-1 bg-white dark:bg-slate-950 z-[100]">
-                              <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => {
-                                setEditingProjectId(project.id);
-                                setNewProject({
-                                  name: project.name,
-                                  manager: project.manager,
-                                  deadline: project.deadline && project.deadline !== 'TBD' ? project.deadline : '',
-                                  budget: project.budget && project.budget !== 'TBD' ? project.budget.replace('$', '') : '',
-                                  priority: 'Medium',
-                                  tasks: project.tasks || []
-                                });
-                                setIsModalOpen(true);
-                              }}>
-                                <Edit2 className="mr-2 h-4 w-4" /> Edit
-                              </DropdownMenuItem>
-                              {project.status === 'Aborted' ? (
-                                <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg text-emerald-600 focus:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" onClick={() => {
-                                  updateProject(project.id, { status: 'In Progress' });
-                                }}>
-                                  <RotateCcw className="mr-2 h-4 w-4" /> Restore
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg text-amber-600 focus:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20" onClick={() => {
-                                  updateProject(project.id, { status: 'Aborted' });
-                                }}>
-                                  <X className="mr-2 h-4 w-4" /> Abort
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem className="font-bold text-sm cursor-pointer rounded-lg text-red-600 focus:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => {
-                                deleteProject(project.id);
-                              }}>
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        Lead: <span className="text-slate-700 dark:text-slate-300">{project.manager}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Split View: Budget & Deadline */}
+                  <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-100 dark:border-slate-800/60 mb-6 relative z-10">
+                    <div>
+                      <div className="flex items-center text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                        <TrendingUp className="h-3 w-3 mr-1" /> Budget
+                      </div>
+                      <p className="font-bold text-slate-900 dark:text-white">{project.budget}</p>
+                    </div>
+                    <div className="pl-4 border-l border-slate-100 dark:border-slate-800/60">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                          <AlertTriangle className={cn("h-3 w-3 mr-1", isPastDue ? "text-red-500" : "")} /> Deadline
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <p className={cn("font-bold", isPastDue ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-white")}>
+                          {isNaN(new Date(project.deadline).getTime()) ? project.deadline : format(new Date(project.deadline), 'MMM d')}
+                        </p>
+                        {isPastDue && (
+                          <span className="bg-red-100 text-red-600 text-[9px] font-black uppercase px-1.5 py-0.5 rounded">Past Due</span>
                         )}
                       </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mt-auto relative z-10">
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">
+                      <span>{completedTasks} / {totalTasks} TASKS</span>
+                      <span className="text-slate-900 dark:text-white">{progress}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full rounded-full transition-all duration-1000 ease-out" 
+                        style={{ 
+                          width: `${progress}%`,
+                          backgroundColor: project.strokeColor
+                        }} 
+                      />
+                    </div>
+                  </div>
+
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -560,7 +582,7 @@ export default function Projects({ session }: { session?: any }) {
                 <div className="space-y-2">
                   <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Estimated Budget</label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">₹</span>
                     <input
                       type="number"
                       placeholder="e.g. 15000"
