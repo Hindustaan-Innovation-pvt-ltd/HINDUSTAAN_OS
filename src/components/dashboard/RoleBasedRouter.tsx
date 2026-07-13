@@ -1,7 +1,7 @@
 import React from 'react';
 import ManagerDashboard from './ManagerDashboard';
 import InternDashboard from './InternDashboard';
-import AdminDashboard from '../pages/AdminDashboard'; // Wait, AdminDashboard is in src/pages
+import AdminDashboard from '../../pages/AdminDashboard';
 
 interface RoleBasedRouterProps {
   session: any;
