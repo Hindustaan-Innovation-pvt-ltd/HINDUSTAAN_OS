@@ -105,7 +105,6 @@ export default function LeaveRequestDialog({
           {/* Employee Info Header */}
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16 border-4 border-slate-800 shadow-md">
-              <AvatarImage src={request.avatar} alt={request.employee} />
               <AvatarFallback className="bg-slate-850 text-slate-300 font-bold text-xl">
                 {getInitials(request.employee)}
               </AvatarFallback>
