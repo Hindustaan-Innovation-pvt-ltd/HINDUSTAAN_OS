@@ -495,8 +495,7 @@ export default function Login({
                   <button 
                     type="button" 
                     onClick={() => {
-                      window.history.pushState({}, '', '/admin/login');
-                      window.dispatchEvent(new Event('popstate'));
+                      window.location.href = '/admin/login';
                     }}
                     className="text-[11px] font-bold text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-all underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4"
                   >
@@ -509,8 +508,7 @@ export default function Login({
                 <button 
                   type="button" 
                   onClick={() => {
-                    window.history.pushState({}, '', '/login');
-                    window.dispatchEvent(new Event('popstate'));
+                    window.location.href = '/login';
                   }}
                   className="text-[11px] font-bold text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-all underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4"
                 >
