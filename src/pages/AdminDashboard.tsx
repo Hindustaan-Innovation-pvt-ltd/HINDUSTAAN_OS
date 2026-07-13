@@ -1,14 +1,27 @@
-import React from 'react';
-import { Users, UserCheck, Activity, BellRing, ShieldCheck, Server, Key, Plus, ExternalLink } from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, UserCheck, Activity, BellRing, ShieldCheck, Server, Key, Plus, ExternalLink, Settings } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ onNavigate }: { onNavigate?: (view: string) => void }) {
+  const [workspaceConfig, setWorkspaceConfig] = useState(() => {
+    const saved = localStorage.getItem('workspace_auth_config');
+    return saved ? JSON.parse(saved) : {
+      ssoEnabled: true,
+      twoFactorEnforced: true,
+      publicSignups: false,
+      autoProvisioning: true,
+    };
+  });
+
   return (
     <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
-        
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -75,7 +88,7 @@ export default function AdminDashboard() {
 
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           <div className="lg:col-span-2 space-y-6">
             {/* User Account Summary */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm">
@@ -154,7 +167,17 @@ export default function AdminDashboard() {
             {/* Workspace Configuration Status */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm">
               <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60">
-                <CardTitle className="text-lg font-bold">Workspace Status</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-bold">Workspace Status</CardTitle>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 text-xs font-bold text-[#5B7CFF] bg-[#5B7CFF]/10 hover:bg-[#5B7CFF]/20"
+                    onClick={() => onNavigate && onNavigate('Workspace Settings')}
+                  >
+                    <Settings className="h-3 w-3 mr-1.5" /> Configure
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="p-6 space-y-5">
                 <div>
@@ -180,15 +203,25 @@ export default function AdminDashboard() {
                     <div className="h-full bg-emerald-500 w-[90%]" />
                   </div>
                 </div>
-                
+
                 <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/60">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-500 font-medium">SSO Configuration</span>
-                    <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">Active</Badge>
+                    <Badge className={workspaceConfig.ssoEnabled ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" : "bg-slate-500/10 text-slate-500 hover:bg-slate-500/20"}>
+                      {workspaceConfig.ssoEnabled ? "Active" : "Disabled"}
+                    </Badge>
                   </div>
                   <div className="flex items-center justify-between text-sm mt-3">
                     <span className="text-slate-500 font-medium">2FA Enforcement</span>
-                    <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">Enabled</Badge>
+                    <Badge className={workspaceConfig.twoFactorEnforced ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" : "bg-slate-500/10 text-slate-500 hover:bg-slate-500/20"}>
+                      {workspaceConfig.twoFactorEnforced ? "Enabled" : "Disabled"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mt-3">
+                    <span className="text-slate-500 font-medium">Public Signups</span>
+                    <Badge className={workspaceConfig.publicSignups ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" : "bg-slate-500/10 text-slate-500 hover:bg-slate-500/20"}>
+                      {workspaceConfig.publicSignups ? "Allowed" : "Restricted"}
+                    </Badge>
                   </div>
                 </div>
               </CardContent>
