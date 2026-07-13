@@ -140,20 +140,20 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
         {/* Right Section - Register Form */}
         <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 w-full lg:w-[55%] xl:w-[50%] z-10 py-16 lg:py-8 lg:h-full lg:overflow-y-auto">
           <div className="w-full max-w-md">
-            <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-5 sm:p-6 shadow-2xl backdrop-blur-xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-8">
+            <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-4 sm:p-5 lg:p-4.5 xl:p-5 shadow-2xl backdrop-blur-xl transition-all duration-500 hover:border-orange-500/30 dark:hover:border-purple-500/30 hover:shadow-[0_20px_50px_rgba(249,115,22,0.08)] dark:hover:shadow-[0_20px_50px_rgba(168,85,247,0.12)] animate-in fade-in slide-in-from-bottom-8">
           
-          <div className="flex flex-col items-center text-center mb-2.5">
+          <div className="flex flex-col items-center text-center mb-1.5">
             <div className="hover:scale-[1.03] transition-all duration-300">
               <BrandLogo variant="auth" />
             </div>
-            <div className="mt-1 flex flex-col items-center">
-              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            <div className="mt-0.5 flex flex-col items-center">
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                 Create Account
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-2 mt-2">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-1.5 mt-1">
             {/* Full Name */}
             <div className="space-y-0.5">
               <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Full Name</label>
@@ -164,7 +164,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                 <input
                   type="text"
                   {...register("name")}
-                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.name ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10 dark:focus:ring-orange-500/20")}
+                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.name ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 focus:border-orange-500 dark:focus:border-purple-500 focus:ring-orange-500/10 dark:focus:ring-purple-500/20")}
                   placeholder="Enter your full name"
                 />
               </div>
@@ -181,7 +181,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                 <input
                   type="email"
                   {...register("email")}
-                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10 dark:focus:ring-orange-500/20")}
+                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 focus:border-orange-500 dark:focus:border-purple-500 focus:ring-orange-500/10 dark:focus:ring-purple-500/20")}
                   placeholder="name@hindustaan.in"
                 />
               </div>
@@ -199,7 +199,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                     <ProjectSelect 
                       value={selectedRole}
                       onChange={(val) => setValue('role', val as 'employee' | 'manager')}
-                      className="pl-11 border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white"
+                      className="pl-11 border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all"
                       options={[
                         { value: 'employee', label: 'Employee' },
                         { value: 'manager', label: 'Manager' }
@@ -215,7 +215,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                     <ProjectSelect 
                       value={selectedDepartment}
                       onChange={(val) => setValue('department', val as any)}
-                      className="border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white"
+                      className="border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all"
                       options={[
                         { value: 'Engineering', label: 'Engineering' },
                         { value: 'HR', label: 'HR' },
@@ -237,7 +237,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                   control={control}
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 h-[36px] px-4 text-sm text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10">
+                      <SelectTrigger className="w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 h-[36px] px-4 text-sm text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200">
                         <SelectValue placeholder="Select designation" />
                       </SelectTrigger>
                       <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl">
@@ -262,7 +262,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                 <input
                   type="tel"
                   {...register("phone")}
-                  className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all duration-200"
+                  className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-orange-500 dark:focus:border-purple-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200"
                   placeholder="+91..."
                 />
               </div>
@@ -279,7 +279,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                      <input
                     type={showPassword ? "text" : "password"}
                     {...register("password")}
-                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
+                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 focus:border-orange-500 dark:focus:border-purple-500 focus:ring-orange-500/10 dark:focus:ring-purple-500/20")}
                     placeholder="••••••••"
                     />
                     <button
@@ -307,7 +307,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                     <input
                     type={showConfirmPassword ? "text" : "password"}
                     {...register("confirmPassword")}
-                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
+                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 focus:border-orange-500 dark:focus:border-purple-500 focus:ring-orange-500/10 dark:focus:ring-purple-500/20")}
                     placeholder="••••••••"
                     />
                     <button
@@ -346,7 +346,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative flex w-full justify-center items-center space-x-2 rounded-xl bg-gradient-to-r from-orange-500 to-green-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-green-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:opacity-70 disabled:hover:scale-100 transition-all duration-200 ease-out"
+                className="group relative flex w-full justify-center items-center space-x-2 rounded-xl bg-gradient-to-r from-orange-500 to-green-600 px-4 py-1.5 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-green-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:opacity-70 disabled:hover:scale-100 transition-all duration-200 ease-out"
               >
                 {loading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -359,7 +359,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
               </button>
             </div>
             
-            <div className="text-center pt-2 pb-0.5">
+            <div className="text-center pt-1.5 pb-0.5">
               <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Already have an account? </span>
               <button 
                 type="button" 
