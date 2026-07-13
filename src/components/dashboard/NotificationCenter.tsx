@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { 
   Bell, Check, Trash2, Settings, ExternalLink, FileText, Clock, 
-  UserPlus, Calendar, Target, AlertTriangle, Video, CheckSquare, ShieldAlert 
+  UserPlus, Calendar, Target, AlertTriangle, Video, CheckSquare, ShieldAlert, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,6 +28,8 @@ export function NotificationCenter() {
   const [activeTab, setActiveTab] = useState('All');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [activeCommentId, setActiveCommentId] = useState<number | null>(null);
+  const [commentText, setCommentText] = useState('');
 
   const handleApproveExtension = (notification: any) => {
     const { taskId, days, taskTitle, employeeName } = notification.metadata || {};
@@ -166,6 +169,88 @@ export function NotificationCenter() {
     toast.info('Extension Rejected', {
       description: `Rejection sent for "${taskTitle}".`
     });
+  };
+
+  const handleApproveLeave = (notification: any) => {
+    const requestId = notification.metadata?.requestId || 1; // Default to 1 if not provided for mock
+    
+    // Update leave request status
+    const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_requests') || '[]');
+    const updatedLeaves = allLeaves.map((l: any) => {
+      if (l.id === requestId) {
+        return { ...l, status: 'Approved', hrNotified: true, processedAt: Date.now() };
+      }
+      return l;
+    });
+    localStorage.setItem('hindustaan_leave_requests', JSON.stringify(updatedLeaves));
+    window.dispatchEvent(new Event('leave-requests-updated'));
+
+    // Update notification message and clear actions
+    setNotifications(prev => prev.map(n => {
+      if (n.id === notification.id) {
+        return {
+          ...n,
+          unread: false,
+          message: `Approved: ${notification.message}`,
+          actions: undefined
+        };
+      }
+      return n;
+    }));
+
+    toast.success('Leave Request Approved');
+  };
+
+  const handleRejectLeave = (notification: any) => {
+    const requestId = notification.metadata?.requestId || 1;
+    
+    const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_requests') || '[]');
+    const updatedLeaves = allLeaves.map((l: any) => {
+      if (l.id === requestId) {
+        return { ...l, status: 'Rejected', hrNotified: true, processedAt: Date.now() };
+      }
+      return l;
+    });
+    localStorage.setItem('hindustaan_leave_requests', JSON.stringify(updatedLeaves));
+    window.dispatchEvent(new Event('leave-requests-updated'));
+
+    setNotifications(prev => prev.map(n => {
+      if (n.id === notification.id) {
+        return {
+          ...n,
+          unread: false,
+          message: `Rejected: ${notification.message}`,
+          actions: undefined
+        };
+      }
+      return n;
+    }));
+
+    toast.info('Leave Request Rejected');
+  };
+
+  const submitCommentLeave = (notification: any) => {
+    if (!commentText.trim()) return;
+    const requestId = notification.metadata?.requestId || 1;
+    
+    const existing = JSON.parse(localStorage.getItem('hindustaan_leave_comments') || '[]');
+    existing.push({
+      id: Date.now(),
+      leaveId: requestId,
+      text: commentText,
+      author: "Manager",
+      timestamp: new Date().toISOString()
+    });
+    localStorage.setItem('hindustaan_leave_comments', JSON.stringify(existing));
+    toast.success("Comment added successfully");
+    markAsRead(notification.id);
+    setActiveCommentId(null);
+    setCommentText('');
+  };
+
+  const handleCommentLeave = (notification: any) => {
+    setActiveCommentId(notification.id);
+    setCommentText('');
   };
 
   const MOCK_TASK = {
@@ -343,36 +428,59 @@ export function NotificationCenter() {
                             )}
 
                             {notification.actions && (
-                              <div className="flex items-center gap-2 mt-3">
-                                {notification.actions.map((action: any, i: number) => (
-                                  <Button 
-                                    key={i}
-                                    variant={action.primary ? "default" : "outline"}
-                                    size="sm"
-                                    className={cn(
-                                      "h-7 text-xs font-bold rounded-lg px-3",
-                                      action.primary ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200" : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
-                                    )}
-                                    onClick={(e) => { 
-                                      e.stopPropagation(); 
-                                      if (action.actionType === 'approve_extension') {
-                                        handleApproveExtension(notification);
-                                      } else if (action.actionType === 'reject_extension') {
-                                        handleRejectExtension(notification);
-                                      } else {
-                                        if (action.label === 'View Task') {
-                                          setSelectedTask(MOCK_TASK);
-                                        } else {
-                                          toast.success(`Action "${action.label}" executed successfully!`);
-                                        }
-                                        markAsRead(notification.id); 
-                                      }
+                              activeCommentId === notification.id ? (
+                                <div className="mt-3 flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                  <Input 
+                                    value={commentText}
+                                    onChange={(e) => setCommentText(e.target.value)}
+                                    placeholder="Type your comment..."
+                                    className="h-8 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus-visible:ring-1 focus-visible:ring-orange-500"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') { e.preventDefault(); submitCommentLeave(notification); }
                                     }}
-                                  >
-                                    {action.label}
-                                  </Button>
-                                ))}
-                              </div>
+                                  />
+                                  <Button size="sm" onClick={() => submitCommentLeave(notification)} className="h-8 px-3 bg-orange-600 hover:bg-orange-700 text-xs font-bold text-white shrink-0">Send</Button>
+                                  <Button size="sm" variant="ghost" onClick={() => { setActiveCommentId(null); setCommentText(''); }} className="h-8 px-2 text-slate-500 hover:text-slate-700 shrink-0"><X className="h-4 w-4" /></Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 mt-3">
+                                  {notification.actions.map((action: any, i: number) => (
+                                    <Button 
+                                      key={i}
+                                      variant={action.primary ? "default" : "outline"}
+                                      size="sm"
+                                      className={cn(
+                                        "h-7 text-xs font-bold rounded-lg px-3",
+                                        action.primary ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200" : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
+                                      )}
+                                      onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        if (action.actionType === 'approve_extension') {
+                                          handleApproveExtension(notification);
+                                        } else if (action.actionType === 'reject_extension') {
+                                          handleRejectExtension(notification);
+                                        } else if (action.actionType === 'approve_leave' || (action.label === 'Approve' && notification.title === 'Leave Request')) {
+                                          handleApproveLeave(notification);
+                                        } else if (action.actionType === 'reject_leave' || (action.label === 'Reject' && notification.title === 'Leave Request')) {
+                                          handleRejectLeave(notification);
+                                        } else if (action.actionType === 'comment_leave' || (action.label === 'Comment' && notification.title === 'Leave Request')) {
+                                          handleCommentLeave(notification);
+                                        } else {
+                                          if (action.label === 'View Task') {
+                                            setSelectedTask(MOCK_TASK);
+                                          } else {
+                                            toast.success(`Action "${action.label}" executed successfully!`);
+                                          }
+                                          markAsRead(notification.id); 
+                                        }
+                                      }}
+                                    >
+                                      {action.label}
+                                    </Button>
+                                  ))}
+                                </div>
+                              )
                             )}
                           </div>
                         </div>

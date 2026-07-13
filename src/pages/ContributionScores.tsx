@@ -18,7 +18,7 @@ import { getCurrentUser } from '@/lib/auth';
 import {
   Trophy, TrendingUp, TrendingDown, Target, Clock, Mic,
   Download, RefreshCw, Filter, Calendar, Search, MoreVertical,
-  AlertTriangle, CheckCircle2, ChevronRight, BarChart2
+  AlertTriangle, CheckCircle2, ChevronRight, BarChart2, ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
@@ -163,6 +163,19 @@ export default function ContributionScores({ session }: { session?: any }) {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+
+  const [isTableScrolledEnd, setIsTableScrolledEnd] = useState(false);
+  const [isRightColScrolledEnd, setIsRightColScrolledEnd] = useState(false);
+
+  const handleTableScrollEvent = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    setIsTableScrolledEnd(Math.abs(scrollHeight - clientHeight - scrollTop) < 5);
+  };
+
+  const handleRightColScrollEvent = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    setIsRightColScrolledEnd(Math.abs(scrollHeight - clientHeight - scrollTop) < 5);
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollRef.current) return;
@@ -676,8 +689,8 @@ export default function ContributionScores({ session }: { session?: any }) {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
         {/* Left Column - Main Table */}
-        <div className="xl:col-span-8 flex flex-col min-w-0">
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col flex-1">
+        <div className="xl:col-span-8 flex flex-col min-w-0 h-auto xl:h-[800px] relative">
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-full">
             <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Team Performance Overview</CardTitle>
@@ -700,6 +713,7 @@ export default function ContributionScores({ session }: { session?: any }) {
               onMouseLeave={handleMouseLeave}
               onMouseUp={handleMouseUp}
               onMouseMove={handleMouseMove}
+              onScroll={handleTableScrollEvent}
             >
               <table className="w-full whitespace-nowrap text-sm text-left relative">
                 <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-20">
@@ -791,10 +805,16 @@ export default function ContributionScores({ session }: { session?: any }) {
               </table>
             </CardContent>
           </Card>
+          {!isTableScrolledEnd && (
+            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white dark:from-slate-900 pointer-events-none flex items-end justify-center pb-2 z-10 rounded-b-2xl opacity-90">
+              <ChevronDown className="h-6 w-6 text-orange-500 animate-bounce drop-shadow-md" />
+            </div>
+          )}
         </div>
 
         {/* Right Column - Charts & Top Performers */}
-        <div className="xl:col-span-4 space-y-6 xl:sticky xl:top-24 h-fit">
+        <div className="xl:col-span-4 flex flex-col h-auto xl:h-[800px] relative">
+          <div className="flex flex-col space-y-6 overflow-y-auto pr-2 hide-scrollbar pb-10" onScroll={handleRightColScrollEvent}>
 
           {/* Score Distribution Donut */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
@@ -809,10 +829,11 @@ export default function ContributionScores({ session }: { session?: any }) {
                       data={distData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
+                      innerRadius={55}
+                      outerRadius={75}
                       paddingAngle={5}
                       dataKey="value"
+                      label={({ name, value }) => `${value}`}
                     >
                       {distData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -844,10 +865,10 @@ export default function ContributionScores({ session }: { session?: any }) {
             <CardContent className="p-5">
               <div className="h-[180px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={deptData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-slate-500 dark:text-slate-400" />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-slate-500 dark:text-slate-400" domain={[60, 100]} />
+                  <BarChart data={deptData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} domain={[60, 100]} />
                     <RechartsTooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px' }} />
                     <Bar dataKey="score" fill={COLORS.orange} radius={[4, 4, 0, 0]} barSize={30} />
                   </BarChart>
@@ -881,6 +902,12 @@ export default function ContributionScores({ session }: { session?: any }) {
               ))}
             </CardContent>
           </Card>
+          </div>
+          {!isRightColScrolledEnd && (
+            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#f8fafc] dark:from-[#0f172a] pointer-events-none flex items-end justify-center pb-2 z-10 rounded-b-2xl opacity-90 pr-2">
+              <ChevronDown className="h-6 w-6 text-orange-500 animate-bounce drop-shadow-md" />
+            </div>
+          )}
         </div>
       </div>
 

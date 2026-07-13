@@ -504,8 +504,6 @@ export default function WorkLogs({ session }: { session?: any }) {
         </div>
       </div>
 
-      {filtersCard}
-
       {/* Heatmap Section */}
       <div className="relative bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-200/60 dark:border-slate-700/40 shadow-sm overflow-hidden mb-6 group">
         {/* Glassy Orbs in Background */}
@@ -634,6 +632,8 @@ export default function WorkLogs({ session }: { session?: any }) {
           </div>
         </div>
       </div>
+
+      {filtersCard}
 
       {/* Data Cards Section */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
