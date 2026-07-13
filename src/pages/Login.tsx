@@ -295,7 +295,7 @@ export default function Login({
         {/* Right Section - Login Form */}
         <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 w-full lg:w-[55%] xl:w-[50%] z-10 lg:h-full lg:overflow-y-auto py-8">
           <div className="w-full max-w-md">
-            <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-5 sm:p-6 shadow-2xl backdrop-blur-xl transition-all duration-500">
+            <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-5 sm:p-6 shadow-2xl backdrop-blur-xl transition-all duration-500 hover:border-orange-500/30 dark:hover:border-purple-500/30 hover:shadow-[0_20px_50px_rgba(249,115,22,0.08)] dark:hover:shadow-[0_20px_50px_rgba(168,85,247,0.12)]">
               
               <div className="flex flex-col items-center text-center mb-2.5">
                 <div className="hover:scale-[1.03] transition-all duration-300">
@@ -328,7 +328,7 @@ export default function Login({
                     maxLength={50}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 dark:focus:border-purple-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200"
                     placeholder="Enter your full name"
                   />
                 </div>
@@ -350,7 +350,7 @@ export default function Login({
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 dark:focus:border-purple-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
                     placeholder="name@hindustaan.in"
                   />
                 </div>
@@ -373,7 +373,7 @@ export default function Login({
                       required={!isOTPMode}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pointer-events-auto block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
+                      className="pointer-events-auto block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 dark:focus:border-purple-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200"
                       placeholder="••••••••"
                     />
                     <button
