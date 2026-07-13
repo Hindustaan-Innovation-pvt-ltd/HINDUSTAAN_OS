@@ -11,7 +11,7 @@ export default function RoleBasedRouter({ session }: RoleBasedRouterProps) {
   // Fallback to 'manager' for demonstration if metadata is not explicitly configured
   const role = session?.user?.user_metadata?.role || 'manager';
 
-  if (role === 'manager') {
+  if (role === 'manager' || role === 'admin') {
     return <ManagerDashboard />;
   }
 

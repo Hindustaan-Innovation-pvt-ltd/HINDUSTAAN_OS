@@ -334,7 +334,7 @@ export default function DashboardShell({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const activeNavigation = role === 'manager' ? managerNavigation : employeeNavigation;
+  const activeNavigation = ['manager', 'admin'].includes(role) ? managerNavigation : employeeNavigation;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-950 transition-colors duration-500">

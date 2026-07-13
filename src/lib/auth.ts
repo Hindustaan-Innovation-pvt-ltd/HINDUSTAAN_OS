@@ -16,41 +16,52 @@ const LOCAL_SESSION_KEY = 'hindustaan_user'; // Legacy compatibility
 
 // Initialize mock users if none exist
 export const initializeAuth = () => {
-  const users = localStorage.getItem(USERS_KEY);
-  if (!users) {
-    const demoUsers: User[] = [
-      {
-        id: 'MGR001',
-        name: 'Aakash Gupta',
-        email: 'manager1@hindustaan.in',
-        password: 'Manager@123',
-        role: 'manager',
-        designation: 'Product Manager',
-        department: 'Engineering',
-        dateJoined: new Date().toISOString()
-      },
-      {
-        id: 'EMP001',
-        name: 'Tanvy Pandey',
-        email: 'employee1@hindustaan.in',
-        password: 'Employee@123',
-        role: 'employee',
-        designation: 'Frontend Developer',
-        department: 'Engineering',
-        dateJoined: new Date().toISOString()
-      },
-      {
-        id: 'ADM001',
-        name: 'System Admin',
-        email: 'admin@hindustaan.in',
-        password: 'Admin@123',
-        role: 'admin',
-        designation: 'System Administrator',
-        department: 'IT',
-        dateJoined: new Date().toISOString()
-      }
-    ];
-    localStorage.setItem(USERS_KEY, JSON.stringify(demoUsers));
+  const usersStr = localStorage.getItem(USERS_KEY);
+  let users: User[] = usersStr ? JSON.parse(usersStr) : [];
+  
+  const demoUsers: User[] = [
+    {
+      id: 'MGR001',
+      name: 'Aakash Gupta',
+      email: 'manager1@hindustaan.in',
+      password: 'Manager@123',
+      role: 'manager',
+      designation: 'Product Manager',
+      department: 'Engineering',
+      dateJoined: new Date().toISOString()
+    },
+    {
+      id: 'EMP001',
+      name: 'Tanvy Pandey',
+      email: 'employee1@hindustaan.in',
+      password: 'Employee@123',
+      role: 'employee',
+      designation: 'Frontend Developer',
+      department: 'Engineering',
+      dateJoined: new Date().toISOString()
+    },
+    {
+      id: 'ADM001',
+      name: 'System Admin',
+      email: 'admin@hindustaan.in',
+      password: 'Admin@123',
+      role: 'admin',
+      designation: 'System Administrator',
+      department: 'IT',
+      dateJoined: new Date().toISOString()
+    }
+  ];
+
+  let updated = false;
+  demoUsers.forEach(demoUser => {
+    if (!users.find(u => u.email === demoUser.email)) {
+      users.push(demoUser);
+      updated = true;
+    }
+  });
+
+  if (updated || !usersStr) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
   }
 };
 
