@@ -314,7 +314,7 @@ Reason:
 
     setLeaveData((prev: any[]) => prev.map((l: any) => {
       if (l.id === id) {
-        return { ...l, status: 'Approved', hrNotified: true };
+        return { ...l, status: 'Approved', hrNotified: true, processedAt: Date.now() };
       }
       return l;
     }));
@@ -356,7 +356,7 @@ Reason:
 
     setLeaveData((prev: any[]) => prev.map((l: any) => {
       if (l.id === id) {
-        return { ...l, status: 'Rejected' };
+        return { ...l, status: 'Rejected', processedAt: Date.now() };
       }
       return l;
     }));
@@ -564,7 +564,10 @@ Reason:
                     <p className="text-slate-500 font-medium">You have not applied for any leaves yet.</p>
                   </div>
                 ) : (
-                  leaveData.filter((l: any) => l.employee === (session?.user?.user_metadata?.name || "Tanvy Pandey")).map((req: any) => {
+                  [...leaveData]
+                    .filter((l: any) => l.employee === (session?.user?.user_metadata?.name || "Tanvy Pandey"))
+                    .sort((a: any, b: any) => (b.processedAt || 0) - (a.processedAt || 0))
+                    .map((req: any) => {
                     const lastComment = leaveComments.filter(c => c.leaveId === req.id).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
                     return (
                       <motion.div
@@ -956,9 +959,12 @@ Reason:
                           <p className="text-slate-500 font-medium">No processed leaves found.</p>
                         </motion.div>
                       ) : (
-                        leaveData.filter((l: any) => l.status !== 'Pending').map((req: any) => {
-                          const lastComment = leaveComments.filter(c => c.leaveId === req.id).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-                          return (
+                        [...leaveData]
+                          .filter((l: any) => l.status !== 'Pending')
+                          .sort((a: any, b: any) => (b.processedAt || 0) - (a.processedAt || 0))
+                          .map((req: any) => {
+                            const lastComment = leaveComments.filter(c => c.leaveId === req.id).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+                            return (
                             <motion.div
                               layout
                               key={`processed-${req.id}`}
