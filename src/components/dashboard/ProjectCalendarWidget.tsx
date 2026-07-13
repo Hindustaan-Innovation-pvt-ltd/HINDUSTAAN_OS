@@ -20,6 +20,7 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import {
   Tooltip,
   TooltipContent,
@@ -170,6 +171,8 @@ export function ProjectCalendarWidget() {
   const [eventToView, setEventToView] = useState<ProjectEvent | null>(null);
   const [eventToEdit, setEventToEdit] = useState<ProjectEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<ProjectEvent | null>(null);
+  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [scheduleTime, setScheduleTime] = useState('09:00 AM');
   const [editTime, setEditTime] = useState('09:00 AM');
   const [scheduleDate, setScheduleDate] = useState<Date>(new Date());
@@ -245,6 +248,29 @@ export function ProjectCalendarWidget() {
       description: 'Your calendar has been updated with the new item.',
     });
     setIsScheduleOpen(false);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedEventIds.length === 0) return;
+    const nextEvents = events.filter(e => !selectedEventIds.includes(e.id));
+    setEvents(nextEvents);
+    localStorage.setItem('hindustaan_calendar_events', JSON.stringify(nextEvents));
+    window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: nextEvents } }));
+    toast.success(`Deleted ${selectedEventIds.length} events successfully.`);
+    setSelectedEventIds([]);
+  };
+
+  const handleSelectAll = () => {
+    if (upcomingEvents.length > 0 && selectedEventIds.length === upcomingEvents.length) {
+      setSelectedEventIds([]);
+    } else {
+      setSelectedEventIds(upcomingEvents.map(e => e.id));
+    }
+  };
+
+  const handleSelectEvent = (id: string, e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    setSelectedEventIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
   const getDayEvents = (day: Date) => {
@@ -477,12 +503,71 @@ export function ProjectCalendarWidget() {
         <div className="p-4 sm:p-6 flex flex-col h-full bg-slate-50/30 dark:bg-slate-900/10 min-w-0 w-full overflow-hidden">
           <div className="flex-1 w-full">
             <div className="flex items-center justify-between mb-5">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center"><Clock className="mr-2 h-4 w-4 text-orange-500" /> Upcoming Events</h4>
-              <Button onClick={() => setIsAllEventsOpen(true)} variant="outline" size="sm" className="h-7 px-3 text-[10px] font-bold text-slate-600 dark:text-slate-300 rounded-full bg-white dark:bg-slate-900 shadow-sm hover:text-orange-600 dark:hover:text-orange-400 transition-all cursor-pointer">View History</Button>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center">
+                  <Clock className="mr-2 h-4 w-4 text-orange-500" /> Upcoming Events
+                </h4>
+              </div>
+              <div className="flex items-center gap-3">
+                {isSelectionMode && selectedEventIds.length > 0 && (
+                  <Button onClick={handleBulkDelete} size="sm" className="h-7 px-3 text-[10px] font-bold rounded-full shadow-sm bg-rose-500 hover:bg-rose-600 text-white dark:bg-rose-600 dark:hover:bg-rose-700 border-0">Delete ({selectedEventIds.length})</Button>
+                )}
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-full shadow-sm">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Select</span>
+                  <Switch 
+                    checked={isSelectionMode} 
+                    onCheckedChange={(checked) => {
+                      setIsSelectionMode(checked);
+                      if (!checked) setSelectedEventIds([]);
+                    }}
+                    size="sm"
+                    className="data-[state=checked]:bg-orange-500 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-800 dark:border dark:border-slate-600 [&>span]:bg-white"
+                  />
+                </div>
+                {!isSelectionMode && (
+                  <Button onClick={() => setIsAllEventsOpen(true)} variant="outline" size="sm" className="h-7 px-3 text-[10px] font-bold text-slate-600 dark:text-slate-300 rounded-full bg-white dark:bg-slate-900 shadow-sm hover:text-orange-600 dark:hover:text-orange-400 transition-all cursor-pointer">View History</Button>
+                )}
+              </div>
             </div>
+            
+            {isSelectionMode && upcomingEvents.length > 0 && (
+              <div className="flex justify-start mb-3 pl-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => {
+                    if (selectedEventIds.length === upcomingEvents.length) {
+                      setSelectedEventIds([]);
+                    } else {
+                      setSelectedEventIds(upcomingEvents.map(e => e.id));
+                    }
+                  }}
+                  className="h-7 text-[10px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full px-3"
+                >
+                  {upcomingEvents.length > 0 && selectedEventIds.length === upcomingEvents.length ? 'Deselect All' : 'Select All'}
+                </Button>
+              </div>
+            )}
+            
             <div className="space-y-3.5 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
               {upcomingEvents.length > 0 ? upcomingEvents.map((evt) => (
-                <div key={evt.id} onClick={() => setEventToView(evt)} className="group relative flex items-center gap-3.5 p-3 rounded-2xl bg-white dark:bg-slate-950/80 shadow-sm border border-slate-100 dark:border-slate-800/80 hover:border-orange-200 dark:hover:border-orange-900/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 pr-8 cursor-pointer">
+                <div 
+                  key={evt.id} 
+                  onClick={(e) => isSelectionMode ? handleSelectEvent(evt.id, e) : setEventToView(evt)} 
+                  className={cn(
+                    "group relative flex items-center gap-3.5 p-3 rounded-2xl bg-white dark:bg-slate-950/80 shadow-sm border hover:shadow-md transition-all duration-300 pr-8 cursor-pointer",
+                    isSelectionMode && selectedEventIds.includes(evt.id) ? "border-orange-500 dark:border-orange-500 shadow-orange-500/10" : "border-slate-100 dark:border-slate-800/80 hover:border-orange-200 dark:hover:border-orange-900/50 hover:-translate-y-0.5"
+                  )}
+                >
+                  {isSelectionMode && (
+                    <div className="pl-1 flex items-center h-full">
+                      {selectedEventIds.includes(evt.id) ? (
+                        <CheckCircle2 className="h-5 w-5 text-orange-500" />
+                      ) : (
+                        <div className="h-5 w-5 rounded-full border-2 border-slate-300 dark:border-slate-700 group-hover:border-orange-400 transition-colors" />
+                      )}
+                    </div>
+                  )}
                   <div className="flex flex-col items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/30 dark:to-orange-900/10 shrink-0 border border-orange-100/50 dark:border-orange-500/20 shadow-inner">
                     <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase leading-none mb-0.5 tracking-wider">{format(evt.date, 'MMM')}</span>
                     <span className="text-sm font-black text-orange-700 dark:text-orange-300 leading-none">{format(evt.date, 'dd')}</span>

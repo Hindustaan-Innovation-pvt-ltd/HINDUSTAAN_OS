@@ -504,8 +504,6 @@ export default function WorkLogs({ session }: { session?: any }) {
         </div>
       </div>
 
-      {filtersCard}
-
       {/* Heatmap Section */}
       <div className="relative bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-200/60 dark:border-slate-700/40 shadow-sm overflow-hidden mb-6 group">
         {/* Glassy Orbs in Background */}
@@ -585,7 +583,7 @@ export default function WorkLogs({ session }: { session?: any }) {
                           "w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-sm ring-2 ring-white dark:ring-slate-900 group-hover/row:scale-110 transition-transform",
                           memberData?.color || "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         )}>
-                          {memberData?.initials || user.split(' ').map(n => n[0]).join('')}
+                          {memberData?.initials || user.split(' ').map((n: string) => n[0]).join('')}
                         </div>
                         <span className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover/row:text-indigo-600 dark:group-hover/row:text-indigo-400 transition-colors truncate">
                           {user}
@@ -634,6 +632,8 @@ export default function WorkLogs({ session }: { session?: any }) {
           </div>
         </div>
       </div>
+
+      {filtersCard}
 
       {/* Data Cards Section */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
