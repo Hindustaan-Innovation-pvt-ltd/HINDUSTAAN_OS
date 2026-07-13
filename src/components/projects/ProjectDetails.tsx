@@ -8,7 +8,7 @@ import { useProjects } from '@/context/ProjectContext';
 import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 import { ProjectSelect } from '@/components/ui/project-select';
 
-export default function ProjectDetails({ project, onBack }: { project: any, onBack: () => void }) {
+export default function ProjectDetails({ project, role, onBack }: { project: any, role?: string, onBack: () => void }) {
   const { updateProject } = useProjects();
   const [editingTask, setEditingTask] = useState<any>(null);
 
@@ -57,6 +57,12 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
           </p>
         </div>
       </div>
+
+      {role === 'admin' && (
+        <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/50 rounded-xl p-4 flex items-center justify-center">
+          <p className="text-xs font-bold text-[#5B7CFF]">You are viewing organization-wide data in read-only mode.</p>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -162,7 +168,11 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                 </div>
                 <div className="space-y-3 flex-1">
                   {tasks.filter((t: any) => t?.status === status).map((task: any, i: number) => (
-                    <div key={task?.id || i} className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                    <div 
+                      key={task?.id || i} 
+                      className={cn("bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm transition-shadow", role !== 'admin' ? "hover:shadow-md cursor-pointer" : "cursor-default")}
+                      onClick={() => role !== 'admin' && setEditingTask(task)}
+                    >
                       <p className="text-sm font-semibold text-slate-900 dark:text-white mb-3">{task?.title}</p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">

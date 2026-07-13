@@ -5,6 +5,7 @@ import TaskDetailsModal from '@/components/dashboard/TaskDetailsModal';
 import { ProjectSelect } from '@/components/ui/project-select';
 import { cn, logActivity } from '@/lib/utils';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import { INITIAL_TASKS } from '@/data/mockData';
 
 // --- Types & Mock Data ---
@@ -46,7 +47,7 @@ const PriorityBadge = ({ priority, isEmployeeDashboard }: { priority: Priority; 
 
 const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
-const EmptyColumnPlaceholder = ({ status, role }: { status: Status; role: 'manager' | 'intern' }) => {
+const EmptyColumnPlaceholder = ({ status, role }: { status: Status; role: 'manager' | 'intern' | 'admin' }) => {
   const isEmployee = role === 'intern';
   const placeholders = {
     'To Do': {
@@ -164,7 +165,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
 
   const currentUser = {
     id: currentUserId,
-    role: (role === 'employee' ? 'intern' : role) as 'manager' | 'intern',
+    role: (role === 'employee' ? 'intern' : role) as 'manager' | 'intern' | 'admin',
     name: currentUserName
   };
 
@@ -339,8 +340,18 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
       {/* Header & Interactive Toolbar Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">Kanban Board</h2>
+          <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            Kanban Board
+            {currentUser.role === 'admin' && (
+              <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold border-0">
+                Organization Monitoring
+              </Badge>
+            )}
+          </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Manage cohort sprint velocity and track active tasks.</p>
+          {currentUser.role === 'admin' && (
+            <p className="text-xs font-bold text-[#5B7CFF] mt-1">You are viewing organization-wide data in read-only mode.</p>
+          )}
         </div>
         
         <div className="flex flex-wrap items-center gap-3">

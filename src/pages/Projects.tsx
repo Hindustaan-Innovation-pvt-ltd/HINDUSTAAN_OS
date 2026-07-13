@@ -38,7 +38,7 @@ export default function Projects({ session }: { session?: any }) {
   
   const role = session?.user?.user_metadata?.role || 'intern';
   
-  const baseProjects = role === 'manager' ? projects : [projects[0]];
+  const baseProjects = (role === 'manager' || role === 'admin') ? projects : [projects[0]];
 
   const handleSaveProject = () => {
     if (!newProject.name) return;
@@ -150,7 +150,7 @@ export default function Projects({ session }: { session?: any }) {
 
   if (selectedProject) {
     const liveProject = projects.find((p: any) => p.id === selectedProject.id) || selectedProject;
-    return <ProjectDetails project={liveProject} onBack={() => setSelectedProject(null)} />;
+    return <ProjectDetails project={liveProject} role={role} onBack={() => setSelectedProject(null)} />;
   }
 
   return (
@@ -159,8 +159,18 @@ export default function Projects({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">Project Timeline</h2>
+          <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            Project Timeline
+            {role === 'admin' && (
+              <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold border-0">
+                Organization Monitoring
+              </Badge>
+            )}
+          </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">High-level Gantt chart outlining task execution over the current week.</p>
+          {role === 'admin' && (
+            <p className="text-xs font-bold text-[#5B7CFF] mt-1">You are viewing organization-wide data in read-only mode.</p>
+          )}
         </div>
         {role === 'manager' && (
           <button onClick={() => {

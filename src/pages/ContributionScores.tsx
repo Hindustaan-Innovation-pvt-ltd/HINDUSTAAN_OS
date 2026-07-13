@@ -144,6 +144,7 @@ export default function ContributionScores({ session }: { session?: any }) {
   const gridColor = isDarkMode ? '#334155' : '#e2e8f0'; // slate-700 for dark mode, slate-200 for light mode
 
   const role = session?.user?.user_metadata?.role || 'employee';
+  const isAdmin = role === 'admin';
   const email = session?.user?.email || 'user@hindustaan.in';
 
   const user = getCurrentUser();
@@ -612,13 +613,21 @@ export default function ContributionScores({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center">
+          <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             <Trophy className="mr-3 h-8 w-8 text-orange-500" />
             Contribution Analytics
+            {isAdmin && (
+              <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold border-0">
+                Organization Monitoring
+              </Badge>
+            )}
           </h2>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
             Monitor intern performance, identify top contributors, and track productivity trends.
           </p>
+          {isAdmin && (
+            <p className="text-xs font-bold text-[#5B7CFF] mt-1">You are viewing organization-wide data in read-only mode.</p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <Button onClick={handleExportPDF} variant="outline" className="font-bold border-slate-200 dark:border-slate-800 rounded-xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-900">
@@ -793,6 +802,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                         </Badge>
                       </td>
                       <td className="px-6 py-4 text-right">
+                        {isAdmin ? null : (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={e => e.stopPropagation()}>
@@ -806,6 +816,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                             <DropdownMenuItem className="text-rose-600 cursor-pointer" onClick={() => toast.success(`Performance flagged for ${intern.name}`)}><AlertTriangle className="mr-2 h-4 w-4" /> Flag Performance</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
+                        )}
                       </td>
                     </tr>
                   ))}

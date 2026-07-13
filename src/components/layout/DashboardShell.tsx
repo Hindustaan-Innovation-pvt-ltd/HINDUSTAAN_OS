@@ -27,7 +27,7 @@ import {
   CalendarRange,
   PanelLeftClose,
   PanelLeftOpen,
-  UserCircle, Shield, Sliders, Building, Lock, Link, BellRing, Megaphone, Mail, ShieldCheck
+  UserCircle, Shield, Sliders, Building, Lock, Link, BellRing, Megaphone, Mail, ShieldCheck, Activity
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
@@ -77,6 +77,18 @@ const managerNavigation = [
 
 const adminNavigationGroups = [
   { name: 'Dashboard', icon: LayoutDashboard },
+  {
+    name: 'Organization Overview',
+    icon: Building,
+    items: [
+      { name: 'Projects', icon: FolderKanban },
+      { name: 'Tasks', icon: CheckSquare },
+      { name: 'Team Members', icon: Users },
+      { name: 'Gantt Timeline', icon: CalendarDays },
+      { name: 'Progress Tracker', icon: BarChart2 },
+      { name: 'Contribution Scores', icon: Activity }
+    ]
+  },
   {
     name: 'User Management',
     icon: Users,
