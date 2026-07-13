@@ -24,6 +24,13 @@ export function ProjectDatePicker({
   className?: string;
   name?: string;
 }) {
+  const [month, setMonth] = React.useState<Date>(value || new Date())
+
+  React.useEffect(() => {
+    if (value) {
+      setMonth(value)
+    }
+  }, [value ? value.getTime() : null])
   return (
     <Popover>
       {name && value && (
@@ -47,6 +54,8 @@ export function ProjectDatePicker({
           mode="single"
           selected={value}
           onSelect={onChange}
+          month={month}
+          onMonthChange={setMonth}
           classNames={{
             day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-600 dark:hover:text-orange-400 hover:scale-105 transition-all duration-200 relative cursor-pointer outline-none",
             today: "bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-900/10 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-500/30 shadow-sm",

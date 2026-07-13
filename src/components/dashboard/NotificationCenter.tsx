@@ -285,11 +285,14 @@ export function NotificationCenter() {
     
     const existing = JSON.parse(localStorage.getItem('hindustaan_leave_comments') || '[]');
     existing.push({
-      id: Date.now(),
+      id: Date.now().toString(),
       leaveId: requestId,
-      text: commentText,
-      author: "Manager",
-      timestamp: new Date().toISOString()
+      managerId: 'manager-1',
+      managerName: "Manager",
+      comment: commentText,
+      edited: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
     localStorage.setItem('hindustaan_leave_comments', JSON.stringify(existing));
 
