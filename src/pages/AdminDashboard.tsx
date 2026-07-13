@@ -58,11 +58,6 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Admin Dashboard</h1>
             <p className="text-slate-500 dark:text-slate-400 mt-1">Manage workspace settings and users securely.</p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button className="bg-[#5B7CFF] hover:bg-[#5B7CFF]/90 text-white font-bold rounded-xl shadow-[0_0_15px_rgba(91,124,255,0.3)]">
-              <Plus className="h-4 w-4 mr-2" /> Invite Users
-            </Button>
-          </div>
         </div>
 
         {/* Stats Row */}
