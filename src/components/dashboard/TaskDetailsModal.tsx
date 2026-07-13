@@ -27,7 +27,10 @@ export interface Task {
   assignee_name: string;
   assignee_id: string;
   priority: Priority;
+  start_date?: string;
   due_date: string;
+  milestone?: string;
+  created_at?: string;
   status: Status;
 }
 

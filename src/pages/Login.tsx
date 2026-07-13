@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, KeyRound, ArrowRight, Loader2, Compass, Sun, Moon, Eye, EyeOff } from 'lucide-react';
+import { Mail, KeyRound, ArrowRight, Loader2, Compass, Sun, Moon, Eye, EyeOff, CheckSquare, Users, TrendingUp, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -261,19 +261,52 @@ export default function Login({
         {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
       </button>
 
-      <div className="relative z-10 w-full max-w-md px-4 sm:px-6">
-        <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500">
-          
-          <div className="flex flex-col items-center text-center mb-4">
-            <div className="hover:scale-[1.03] transition-all duration-300">
-              <BrandLogo variant="auth" />
-            </div>
-            <div className="mt-2 flex flex-col items-center">
-              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-                Internal Workspace Portal
-              </p>
+      <div className="relative z-10 flex w-full min-h-screen">
+        
+        {/* Left Section - Branding (Hidden on Mobile) */}
+        <div className="hidden lg:flex flex-col justify-center w-[45%] xl:w-[50%] p-12 xl:p-24 border-r border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-sm z-10">
+          <div className="max-w-xl">
+            <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 whitespace-nowrap">
+              Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-green-600">Project OS</span>
+            </h1>
+            
+            <p className="text-lg text-slate-600 dark:text-slate-400 mb-12 max-w-md font-medium leading-relaxed">
+              The complete workspace solution to streamline your team's workflow and boost productivity.
+            </p>
+
+            <div className="space-y-6">
+              {[
+                { icon: <CheckSquare className="h-6 w-6 text-orange-500" />, text: "Manage Projects & Tasks" },
+                { icon: <Users className="h-6 w-6 text-green-500" />, text: "Collaborate with Teams" },
+                { icon: <TrendingUp className="h-6 w-6 text-blue-500" />, text: "Track Progress & Analytics" },
+                { icon: <Sparkles className="h-6 w-6 text-indigo-500" />, text: "Increase Daily Productivity" }
+              ].map((feature, i) => (
+                <div key={i} className="flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4" style={{ animationDelay: `${i * 150}ms`, animationFillMode: 'both' }}>
+                  <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800">
+                    {feature.icon}
+                  </div>
+                  <span className="text-base font-semibold text-slate-700 dark:text-slate-300">{feature.text}</span>
+                </div>
+              ))}
             </div>
           </div>
+        </div>
+
+        {/* Right Section - Login Form */}
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 w-full lg:w-[55%] xl:w-[50%] z-10">
+          <div className="w-full max-w-md">
+            <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500">
+              
+              <div className="flex flex-col items-center text-center mb-4">
+                <div className="hover:scale-[1.03] transition-all duration-300">
+                  <BrandLogo variant="auth" />
+                </div>
+                <div className="mt-2 flex flex-col items-center">
+                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                    Internal Workspace Portal
+                  </p>
+                </div>
+              </div>
 
           <form className="space-y-4" onSubmit={isOTPMode ? handleOTPRequest : handlePasswordLogin}>
             <div className="space-y-3">
@@ -449,8 +482,11 @@ export default function Login({
             </div>
           </form>
         </div>
+        </div>
+      </div>
       </div>
 
+      {/* OTP Verification Modal */}
       <Dialog open={showOTPDialog} onOpenChange={(open) => !verifying && setShowOTPDialog(open)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

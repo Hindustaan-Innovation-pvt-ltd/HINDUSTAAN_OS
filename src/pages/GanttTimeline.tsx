@@ -88,6 +88,34 @@ export default function GanttTimeline({ session }: { session?: any }) {
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Drag-to-scroll state
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX) * 2.5; // Increased scroll speed multiplier
+    scrollRef.current.scrollLeft = scrollLeft - walk;
+  };
+
   // New Project State
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
@@ -463,7 +491,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
       </div>
 
       {/* Gantt Chart Container */}
-      <div className="flex-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-lg overflow-hidden flex flex-col relative ring-1 ring-slate-900/5 mt-6">
+      <div className="flex-1 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] overflow-hidden flex flex-col relative mt-6">
         
         {/* Legend */}
         <div className="flex items-center gap-6 px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -474,12 +502,22 @@ export default function GanttTimeline({ session }: { session?: any }) {
           <div className="flex items-center gap-2"><div className="w-3 h-3 transform rotate-45 bg-amber-500 border border-amber-600" /> Milestone</div>
         </div>
 
-        <div ref={scrollRef} className="flex-1 overflow-auto smooth-scroll hide-scrollbar">
+        <div 
+          ref={scrollRef} 
+          className={cn(
+            "flex-1 overflow-auto hide-scrollbar",
+            isDragging ? "cursor-grabbing select-none" : "cursor-grab"
+          )}
+          onMouseDown={handleMouseDown}
+          onMouseLeave={handleMouseLeave}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
+        >
           <div className="min-w-max">
             
             {/* Timeline Header */}
-            <div className="flex sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="w-72 shrink-0 p-4 border-r border-slate-200 dark:border-slate-800 sticky left-0 z-50 bg-white/95 dark:bg-slate-900/95 shadow-[1px_0_0_0_rgba(0,0,0,0.05)] flex items-center justify-between">
+            <div className="flex sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 shadow-sm">
+              <div className="w-72 shrink-0 p-4 border-r border-slate-200/50 dark:border-slate-800/50 sticky left-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-[4px_0_12px_rgba(0,0,0,0.03)] flex items-center justify-between">
                 <span className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">Work Breakdown</span>
                 <MoreHorizontal className="h-4 w-4 text-slate-400" />
               </div>
@@ -547,10 +585,10 @@ export default function GanttTimeline({ session }: { session?: any }) {
                 // if (visibleTasks.length === 0 && project.tasks.length > 0) return null;
 
                 return (
-                  <div key={project.id} className="group relative z-10 mb-6 border-y border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-900/20 shadow-sm">
+                  <div key={project.id} className="group relative z-10 mb-6 border-y border-slate-200/60 dark:border-slate-700/40 bg-slate-50/20 dark:bg-slate-900/10 shadow-[0_4px_20px_rgba(0,0,0,0.02)] backdrop-blur-sm rounded-r-2xl mr-4 overflow-hidden">
                     {/* Project Row */}
-                    <div className="flex items-stretch border-b border-slate-200 dark:border-slate-800 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-colors cursor-pointer bg-slate-50/80 dark:bg-slate-900/40" onClick={() => toggleProject(project.id)}>
-                      <div className="w-72 shrink-0 p-3 pl-4 border-r border-slate-200 dark:border-slate-800 sticky left-0 z-30 transition-colors flex items-center justify-between shadow-[1px_0_0_0_rgba(0,0,0,0.05)] bg-slate-50/95 dark:bg-slate-900/95">
+                    <div className="flex items-stretch border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer bg-white/60 dark:bg-slate-950/40" onClick={() => toggleProject(project.id)}>
+                      <div className="w-72 shrink-0 p-3 pl-4 border-r border-slate-200/50 dark:border-slate-800/50 sticky left-0 z-30 transition-colors flex items-center justify-between shadow-[4px_0_12px_rgba(0,0,0,0.02)] bg-white/95 dark:bg-slate-950/95 backdrop-blur-md">
                         <div className="flex items-center gap-3 overflow-hidden pr-2">
                           <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-500 shrink-0">
                             {isCollapsed ? <ChevronRightIcon className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}

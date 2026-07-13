@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, KeyRound, User, Briefcase, Phone, Hash, ArrowRight, Loader2, Sun, Moon, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Mail, KeyRound, User, Briefcase, Phone, Hash, ArrowRight, Loader2, Sun, Moon, AlertCircle, Eye, EyeOff, CheckSquare, Users, TrendingUp, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -90,7 +90,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center font-sans transition-colors duration-500 overflow-y-auto relative">
+    <div className="relative flex min-h-screen w-full overflow-y-auto overflow-x-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-500 font-sans">
       {/* Background Ornaments */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
       <div className="fixed -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-orange-500/20 dark:bg-orange-600/20 blur-[120px] pointer-events-none transition-colors duration-500"></div>
@@ -100,15 +100,47 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
       <button
         type="button"
         onClick={() => setIsDark(!isDark)}
-        className="absolute top-6 right-6 p-2.5 rounded-full bg-white/50 dark:bg-slate-800/50 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-slate-300 hover:scale-110 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 z-50 shadow-sm"
+        className="fixed top-6 right-6 p-2.5 rounded-full bg-white/50 dark:bg-slate-800/50 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-slate-300 hover:scale-110 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 z-50 shadow-sm"
         aria-label="Toggle Dark Mode"
       >
         {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
       </button>
 
-      {/* Registration Form */}
-      <div className="relative z-10 w-full max-w-md px-4 sm:px-6">
-        <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-8">
+      <div className="relative z-10 flex w-full min-h-screen">
+        
+        {/* Left Section - Branding (Hidden on Mobile) */}
+        <div className="hidden lg:flex flex-col justify-center w-[45%] xl:w-[50%] p-12 xl:p-24 border-r border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-sm z-10">
+          <div className="max-w-xl">
+            <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 whitespace-nowrap">
+              Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-green-600">Project OS</span>
+            </h1>
+            
+            <p className="text-lg text-slate-600 dark:text-slate-400 mb-12 max-w-md font-medium leading-relaxed">
+              The complete workspace solution to streamline your team's workflow and boost productivity.
+            </p>
+
+            <div className="space-y-6">
+              {[
+                { icon: <CheckSquare className="h-6 w-6 text-orange-500" />, text: "Manage Projects & Tasks" },
+                { icon: <Users className="h-6 w-6 text-green-500" />, text: "Collaborate with Teams" },
+                { icon: <TrendingUp className="h-6 w-6 text-blue-500" />, text: "Track Progress & Analytics" },
+                { icon: <Sparkles className="h-6 w-6 text-indigo-500" />, text: "Increase Daily Productivity" }
+              ].map((feature, i) => (
+                <div key={i} className="flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4" style={{ animationDelay: `${i * 150}ms`, animationFillMode: 'both' }}>
+                  <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800">
+                    {feature.icon}
+                  </div>
+                  <span className="text-base font-semibold text-slate-700 dark:text-slate-300">{feature.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Section - Register Form */}
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 w-full lg:w-[55%] xl:w-[50%] z-10 py-16">
+          <div className="w-full max-w-md">
+            <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-8">
           
           <div className="flex flex-col items-center text-center mb-4">
             <div className="hover:scale-[1.03] transition-all duration-300">
@@ -338,11 +370,12 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
               </button>
             </div>
           </form>
-
+          </div>
         </div>
       </div>
+    </div>
 
-      {/* Terms and Conditions Modal */}
+    {/* Terms and Conditions Modal */}
       <Dialog open={showTerms} onOpenChange={setShowTerms}>
         <DialogContent className="sm:max-w-[500px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-800 shadow-2xl rounded-[24px]">
           <DialogHeader>
