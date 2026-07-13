@@ -99,6 +99,13 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
 
   useEffect(() => {
     localStorage.setItem('hindustaan_tasks_list', JSON.stringify(tasks));
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'hindustaan_tasks_list',
+      newValue: JSON.stringify(tasks)
+    }));
+    window.dispatchEvent(new CustomEvent('local-storage-update', {
+      detail: { key: 'hindustaan_tasks_list', value: JSON.stringify(tasks) }
+    }));
   }, [tasks]);
 
   useEffect(() => {
@@ -107,8 +114,24 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
         setTasks(JSON.parse(e.newValue));
       }
     };
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'hindustaan_tasks_list') {
+        const val = typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : e.detail.value;
+        setTasks(val);
+      }
+    };
+    const handleTasksUpdatedEvent = () => {
+      const saved = localStorage.getItem('hindustaan_tasks_list');
+      if (saved) setTasks(JSON.parse(saved));
+    };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    window.addEventListener('tasks-updated', handleTasksUpdatedEvent);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+      window.removeEventListener('tasks-updated', handleTasksUpdatedEvent);
+    };
   }, []);
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);

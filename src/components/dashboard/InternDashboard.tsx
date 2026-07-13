@@ -66,7 +66,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   
   // Extract dynamic tasks from central task list (TaskBoard source)
   const [tasks, setTasks] = useState<any[]>(() => {
-    const saved = null; // Bypass local storage to fix UI issues
+    const saved = localStorage.getItem('hindustaan_tasks_list');
     const allTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
     return allTasks.filter((t: any) => 
       t.assignee_name === currentUserName || 
@@ -95,12 +95,25 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       }
     };
 
+    const handleTasksUpdatedEvent = () => {
+      const saved = localStorage.getItem('hindustaan_tasks_list');
+      if (saved) {
+        const allTasks = JSON.parse(saved);
+        setTasks(allTasks.filter((t: any) => 
+          t.assignee_name === currentUserName || 
+          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
+        ));
+      }
+    };
+ 
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    window.addEventListener('tasks-updated', handleTasksUpdatedEvent);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+      window.removeEventListener('tasks-updated', handleTasksUpdatedEvent);
     };
   }, [currentUserName]);
 
