@@ -26,7 +26,8 @@ import {
   LifeBuoy,
   CalendarRange,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  UserCircle, Shield, Sliders, Building, Lock, Link, BellRing, Megaphone, Mail, ShieldCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
@@ -74,6 +75,47 @@ const managerNavigation = [
   { name: 'Settings', icon: Settings },
 ];
 
+const adminNavigationGroups = [
+  { name: 'Dashboard', icon: LayoutDashboard },
+  {
+    name: 'User Management',
+    icon: Users,
+    items: [
+      { name: 'Employees', icon: User },
+      { name: 'Managers', icon: UserCircle },
+      { name: 'Roles & Permissions', icon: Shield },
+    ]
+  },
+  {
+    name: 'Workspace Settings',
+    icon: Settings,
+    items: [
+      { name: 'General Settings', icon: Sliders },
+      { name: 'Company Information', icon: Building },
+      { name: 'Authentication Settings', icon: Lock },
+      { name: 'Integrations', icon: Link },
+    ]
+  },
+  {
+    name: 'Notifications',
+    icon: Bell,
+    badge: 3,
+    items: [
+      { name: 'System Notifications', icon: BellRing },
+      { name: 'Announcement Center', icon: Megaphone },
+      { name: 'Email Logs', icon: Mail },
+    ]
+  },
+  {
+    name: 'Profile',
+    icon: User,
+    items: [
+      { name: 'My Profile', icon: UserCircle },
+      { name: 'Security Settings', icon: ShieldCheck },
+    ]
+  }
+];
+
 
 import { useUser } from '@/context/UserContext';
 
@@ -85,6 +127,14 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
   const avatarUrl = user?.avatar;
 
   const collapsed = !isMobile && sidebarWidth < 150;
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (groupName: string) => {
+    if (collapsed && !isMobile) {
+      toggleSidebar();
+    }
+    setOpenGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }));
+  };
 
   return (
     <div className="flex h-full flex-col bg-white dark:bg-slate-900 overflow-hidden relative">
@@ -123,63 +173,117 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
         <div className="flex flex-1 flex-col overflow-y-auto py-6 px-3 custom-scrollbar">
           <style>{`.custom-scrollbar::-webkit-scrollbar{width:4px;display:none}.custom-scrollbar:hover::-webkit-scrollbar{display:block}.custom-scrollbar::-webkit-scrollbar-thumb{background:rgba(91,124,255,0.3);border-radius:10px}`}</style>
           <nav className="flex-1 space-y-1">
-            <TooltipProvider delayDuration={0}>
-              {activeNavigation.map((item: { name: string, icon: any }) => {
-                const Icon = item.icon;
-                const isCurrent = currentView === item.name;
-                
-                const NavItem = (
-                  <button
-                    key={item.name}
-                    onClick={() => {
-                      onNavigate(item.name);
-                      if (isMobile) setSidebarOpen(false);
-                    }}
-                    className={cn(
-                      "group flex items-center font-bold rounded-xl transition-all duration-300 py-3 relative w-full",
-                      collapsed ? "justify-center px-0 h-12 mb-1" : "px-3",
-                      isCurrent
-                        ? "bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] text-white shadow-[0_0_15px_rgba(91,124,255,0.4)]"
-                        : "text-slate-600 dark:text-slate-400 hover:bg-[#5B7CFF]/10 dark:hover:bg-[#5B7CFF]/10 hover:text-[#5B7CFF] dark:hover:text-[#5B7CFF]"
-                    )}
-                  >
-                    <Icon
+              <TooltipProvider delayDuration={0}>
+                {activeNavigation.map((item: any) => {
+                  const Icon = item.icon;
+                  const hasSubItems = !!item.items;
+                  const isCurrent = currentView === item.name || (hasSubItems && item.items.some((sub: any) => currentView === sub.name));
+                  const isGroupOpen = openGroups[item.name];
+                  
+                  const NavItemContent = (
+                    <div
+                      onClick={() => {
+                        if (hasSubItems) {
+                          toggleGroup(item.name);
+                        } else {
+                          onNavigate(item.name);
+                          if (isMobile) setSidebarOpen(false);
+                        }
+                      }}
                       className={cn(
-                        "h-5 w-5 shrink-0 transition-colors duration-200",
-                        !collapsed && "mr-3",
-                        isCurrent ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-[#5B7CFF] dark:group-hover:text-[#5B7CFF]"
+                        "group flex items-center justify-between font-bold rounded-xl transition-all duration-300 py-3 relative w-full cursor-pointer",
+                        collapsed ? "justify-center px-0 h-12 mb-1" : "px-3",
+                        isCurrent && !hasSubItems
+                          ? "bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] text-white shadow-[0_0_15px_rgba(91,124,255,0.4)]"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-[#5B7CFF]/10 dark:hover:bg-[#5B7CFF]/10 hover:text-[#5B7CFF] dark:hover:text-[#5B7CFF]"
                       )}
-                      aria-hidden="true"
-                    />
-                    <AnimatePresence>
-                      {!collapsed && (
-                        <motion.span 
-                          initial={{ opacity: 0, width: 0 }}
-                          animate={{ opacity: 1, width: 'auto' }}
-                          exit={{ opacity: 0, width: 0 }}
-                          className="truncate text-sm whitespace-nowrap overflow-hidden"
-                        >
-                          {item.name}
-                        </motion.span>
+                    >
+                      <div className="flex items-center overflow-hidden">
+                        <Icon
+                          className={cn(
+                            "h-5 w-5 shrink-0 transition-colors duration-200",
+                            !collapsed && "mr-3",
+                            isCurrent && !hasSubItems ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-[#5B7CFF] dark:group-hover:text-[#5B7CFF]"
+                          )}
+                          aria-hidden="true"
+                        />
+                        <AnimatePresence>
+                          {!collapsed && (
+                            <motion.span 
+                              initial={{ opacity: 0, width: 0 }}
+                              animate={{ opacity: 1, width: 'auto' }}
+                              exit={{ opacity: 0, width: 0 }}
+                              className="truncate text-sm whitespace-nowrap overflow-hidden"
+                            >
+                              {item.name}
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                      
+                      {!collapsed && hasSubItems && (
+                        <ChevronRight className={cn("h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200", isGroupOpen && "rotate-90")} />
                       )}
-                    </AnimatePresence>
-                  </button>
-                );
-
-                if (collapsed) {
-                  return (
-                    <Tooltip key={item.name}>
-                      <TooltipTrigger asChild>{NavItem}</TooltipTrigger>
-                      <TooltipContent side="right" sideOffset={16} className="bg-slate-900 text-white border-slate-800 font-medium">
-                        {item.name}
-                      </TooltipContent>
-                    </Tooltip>
+                      
+                      {item.badge && !collapsed && !hasSubItems && (
+                        <Badge className="ml-auto bg-rose-500 hover:bg-rose-600 text-white border-0">{item.badge}</Badge>
+                      )}
+                      {item.badge && collapsed && (
+                        <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500" />
+                      )}
+                    </div>
                   );
-                }
 
-                return NavItem;
-              })}
-            </TooltipProvider>
+                  return (
+                    <div key={item.name} className="w-full mb-1">
+                      {collapsed ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>{NavItemContent}</TooltipTrigger>
+                          <TooltipContent side="right" sideOffset={16} className="bg-slate-900 text-white border-slate-800 font-medium z-50">
+                            {item.name}
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        NavItemContent
+                      )}
+
+                      <AnimatePresence>
+                        {hasSubItems && isGroupOpen && !collapsed && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden ml-4 pl-4 border-l-2 border-slate-100 dark:border-slate-800 space-y-1 mt-1"
+                          >
+                            {item.items.map((subItem: any) => {
+                              const SubIcon = subItem.icon;
+                              const isSubCurrent = currentView === subItem.name;
+                              return (
+                                <button
+                                  key={subItem.name}
+                                  onClick={() => {
+                                    onNavigate(subItem.name);
+                                    if (isMobile) setSidebarOpen(false);
+                                  }}
+                                  className={cn(
+                                    "flex items-center font-bold rounded-xl transition-all duration-300 py-2.5 px-3 w-full",
+                                    isSubCurrent
+                                      ? "bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] text-white shadow-[0_0_10px_rgba(91,124,255,0.3)]"
+                                      : "text-slate-500 dark:text-slate-400 hover:text-[#5B7CFF] dark:hover:text-[#5B7CFF] hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                  )}
+                                >
+                                  <SubIcon className={cn("h-4 w-4 mr-3 shrink-0", isSubCurrent ? "text-white" : "text-slate-400 group-hover:text-[#5B7CFF]")} />
+                                  <span className="truncate text-[13px] whitespace-nowrap overflow-hidden">{subItem.name}</span>
+                                </button>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </TooltipProvider>
           </nav>
         </div>
 
@@ -346,7 +450,7 @@ export default function DashboardShell({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const activeNavigation = ['manager', 'admin'].includes(role) ? managerNavigation : employeeNavigation;
+  const activeNavigation = role === 'admin' ? adminNavigationGroups : (role === 'manager' ? managerNavigation : employeeNavigation);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-950 transition-colors duration-500">
