@@ -191,22 +191,31 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
     saveNotifications(updated);
 
     // 2. Perform cross-role routing and state changes
-    if (isManager) {
-      if (notification.metadata?.requestId) {
+    let targetPath = '';
+    let targetView = '';
+
+    if (notification.category === 'Leave Management') {
+      targetPath = isManager ? '/manager/leave-management' : '/employee/leave';
+      targetView = 'Leave Management';
+      if (isManager && notification.metadata?.requestId) {
         localStorage.setItem('selected_leave_request_id', String(notification.metadata.requestId));
       }
-      // Route manager to /manager/leave-management
-      window.history.pushState({}, '', '/manager/leave-management');
-      window.dispatchEvent(new Event('popstate'));
-      if (onNavigate) {
-        onNavigate('Leave Management');
-      }
+    } else if (notification.category === 'Tasks') {
+      targetPath = isManager ? '/manager/tasks' : '/employee/tasks';
+      targetView = isManager ? 'Tasks' : 'My Tasks';
+    } else if (notification.category === 'Standups') {
+      targetPath = isManager ? '/manager/daily-standups' : '/employee/time-standup'; 
+      targetView = isManager ? 'Daily Standups' : 'Daily Standup';
     } else {
-      // Route employee to /employee/leave
-      window.history.pushState({}, '', '/employee/leave');
+      targetPath = isManager ? '/manager/dashboard' : '/employee/dashboard';
+      targetView = 'Dashboard';
+    }
+
+    if (targetPath) {
+      window.history.pushState({}, '', targetPath);
       window.dispatchEvent(new Event('popstate'));
-      if (onNavigate) {
-        onNavigate('Leave Management');
+      if (onNavigate && targetView) {
+        onNavigate(targetView);
       }
     }
   };
@@ -239,9 +248,9 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
       <PopoverContent 
         align="end" 
         sideOffset={8}
-        className="w-80 p-2 bg-slate-900/95 border-slate-800 rounded-xl shadow-2xl text-white backdrop-blur-md z-[1000] border origin-top-right animate-in fade-in-50 zoom-in-95 duration-200"
+        className="w-80 p-2 bg-white/95 dark:bg-slate-900/95 border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl text-slate-900 dark:text-white backdrop-blur-md z-[1000] border origin-top-right animate-in fade-in-50 zoom-in-95 duration-200"
       >
-        <div className="flex items-center justify-between px-3 py-2 border-b border-slate-800">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <span className="font-bold text-sm">Notifications</span>
             {unreadCount > 0 && (
@@ -253,7 +262,7 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
           <div className="flex items-center gap-3">
             <button 
               onClick={markAllAsRead}
-              className="text-[10px] font-bold text-slate-400 hover:text-white transition-colors flex items-center gap-0.5"
+              className="text-[10px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors flex items-center gap-0.5"
             >
               <Check className="h-3 w-3" />
               All Read
@@ -283,27 +292,27 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
                         key={notification.id}
                         onClick={() => handleNotificationClick(notification)}
                         className={cn(
-                          "relative mx-1 p-2 rounded-lg transition-all hover:bg-slate-800/80 group cursor-pointer flex gap-3",
-                          notification.unread ? "bg-slate-800/40" : ""
+                          "relative mx-1 p-2 rounded-lg transition-all hover:bg-slate-100 dark:hover:bg-slate-800/80 group cursor-pointer flex gap-3",
+                          notification.unread ? "bg-slate-50 dark:bg-slate-800/40" : ""
                         )}
                       >
                         {notification.unread && (
                           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-rose-500 rounded-r-full" />
                         )}
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs">
                           {notification.icon}
                         </div>
                         <div className="flex-1 space-y-0.5 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <p className={cn(
-                              "text-xs font-bold truncate text-slate-100",
-                              notification.unread ? "text-white" : "text-slate-300"
+                              "text-xs font-bold truncate",
+                              notification.unread ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-300"
                             )}>
                               {notification.title}
                             </p>
                             <span className="text-[8px] font-semibold text-slate-500 whitespace-nowrap shrink-0">{notification.time}</span>
                           </div>
-                          <p className="text-[11px] font-medium text-slate-400 leading-snug break-words whitespace-pre-wrap">
+                          <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-snug break-words whitespace-pre-wrap">
                             {notification.message}
                           </p>
                           {notification.actions && notification.actions.length > 0 && (
@@ -313,7 +322,7 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
                                   key={action.label}
                                   size="sm" 
                                   variant={action.primary ? "default" : "outline"}
-                                  className={cn("h-6 text-[10px] px-2 py-0", action.primary ? "bg-orange-600 hover:bg-orange-700" : "border-slate-700 text-slate-300")}
+                                  className={cn("h-6 text-[10px] px-2 py-0", action.primary ? "bg-orange-600 hover:bg-orange-700" : "border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300")}
                                   onClick={(e) => handleActionClick(e, notification, action.actionType)}
                                 >
                                   {action.label}
@@ -332,12 +341,12 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
         </ScrollArea>
 
         {notifications.length > 0 && (
-          <div className="p-1 border-t border-slate-800 flex justify-end">
+          <div className="p-1 border-t border-slate-200 dark:border-slate-800 flex justify-end">
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={handleClearAll} 
-              className="h-7 text-[10px] font-bold text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg w-full flex items-center justify-center gap-1"
+              className="h-7 text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg w-full flex items-center justify-center gap-1"
             >
               <Trash2 className="h-3 w-3" /> Clear All
             </Button>
