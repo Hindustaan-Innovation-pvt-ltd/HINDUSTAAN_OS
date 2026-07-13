@@ -125,7 +125,7 @@ export default function OverviewDashboard() {
           </div>
           {/* Progress Bar (12/15 = 80%) */}
           <div className="mt-auto">
-            <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">
+            <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">
               <span>Capacity</span>
               <span>80%</span>
             </div>
@@ -153,7 +153,7 @@ export default function OverviewDashboard() {
           </div>
           {/* Progress Bar (28/50 hypothetical = 56%) */}
           <div className="mt-auto">
-            <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">
+            <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">
               <span>Completion Rate</span>
               <span>56%</span>
             </div>
@@ -283,7 +283,7 @@ export default function OverviewDashboard() {
                     </span>
                   </div>
                   
-                  <div className="flex items-center text-slate-400 dark:text-slate-500 text-xs font-semibold group-hover:text-slate-600 dark:text-slate-300 transition-colors">
+                  <div className="flex items-center text-slate-500 dark:text-slate-400 dark:text-slate-500 text-xs font-semibold group-hover:text-slate-600 dark:text-slate-700 dark:text-slate-300 transition-colors">
                     <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
                     {item.dueDate}
                   </div>
