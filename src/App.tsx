@@ -51,7 +51,7 @@ function App() {
         setCurrentView('Edit Profile');
       } else if (path === '/manager/leave-management' || path === '/employee/leave') {
         setCurrentView('Leave Management');
-      } else if (path === '/') {
+      } else if (path.includes('/dashboard') || path === '/') {
         setCurrentView('Dashboard');
       }
     };
@@ -61,6 +61,7 @@ function App() {
   }, []);
 
   const handleNavigate = (view: string) => {
+    const role = session?.user?.user_metadata?.role || 'employee';
     if (view === 'My Profile') {
       window.history.pushState({}, '', '/profile');
       setCurrentView('My Profile');
@@ -68,12 +69,14 @@ function App() {
       window.history.pushState({}, '', '/profile/edit');
       setCurrentView('Edit Profile');
     } else if (view === 'Leave Management') {
-      const role = session?.user?.user_metadata?.role || 'employee';
-      window.history.pushState({}, '', role === 'manager' ? '/manager/leave-management' : '/employee/leave');
+      window.history.pushState({}, '', ['manager', 'admin'].includes(role) ? '/manager/leave-management' : '/employee/leave');
       setCurrentView('Leave Management');
+    } else if (view === 'Dashboard') {
+      window.history.pushState({}, '', `/${role}/dashboard`);
+      setCurrentView('Dashboard');
     } else {
-      if (window.location.pathname !== '/') {
-        window.history.pushState({}, '', '/');
+      if (window.location.pathname === '/' || window.location.pathname === '/login') {
+        window.history.pushState({}, '', `/${role}/dashboard`);
       }
       setCurrentView(view);
     }
@@ -101,6 +104,16 @@ function App() {
           if (!localStorage.getItem(loginKey)) {
             localStorage.setItem(loginKey, Date.now().toString());
           }
+        }
+        
+        // Role-based Redirect Logic on Page Refresh
+        const path = window.location.pathname;
+        if (path === '/' || path === '/login' || path === '/admin/login') {
+          window.history.replaceState({}, '', `/${user.role}/dashboard`);
+        } else if (path.startsWith('/admin') && user.role !== 'admin') {
+          window.history.replaceState({}, '', `/${user.role}/dashboard`);
+        } else if (path.startsWith('/manager') && !['manager', 'admin'].includes(user.role)) {
+          window.history.replaceState({}, '', `/${user.role}/dashboard`);
         }
       } catch (e) {
         localStorage.removeItem('hindustaan_user');
@@ -130,7 +143,23 @@ function App() {
         <UserProvider key={session?.user?.email || 'guest'}>
       <TooltipProvider>
           {!session ? (
-            authView === 'login' ? (
+            window.location.pathname === '/admin/login' ? (
+              <Login 
+                isAdminLogin={true}
+                defaultEmail=""
+                defaultName=""
+                defaultRole="admin"
+                onMockLogin={(role, email) => {
+                  const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
+                  if (userStr) {
+                    const user = JSON.parse(userStr);
+                    setSession({ user: { email: user.email, user_metadata: { role: user.role, name: user.name, department: user.department } } });
+                    window.history.pushState({}, '', `/admin/dashboard`);
+                    setCurrentView('Dashboard');
+                  }
+                }}
+              />
+            ) : authView === 'login' ? (
               <Login 
                 defaultEmail={prefilledEmail}
                 defaultName={prefilledName}
@@ -140,7 +169,8 @@ function App() {
                   if (userStr) {
                     const user = JSON.parse(userStr);
                     setSession({ user: { email: user.email, user_metadata: { role: user.role, name: user.name, department: user.department } } });
-                    handleNavigate('Dashboard');
+                    window.history.pushState({}, '', `/${user.role}/dashboard`);
+                    setCurrentView('Dashboard');
                   }
                 }}
                 onNavigateToRegister={() => {
