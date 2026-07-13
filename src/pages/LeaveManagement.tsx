@@ -572,7 +572,7 @@ Reason:
                         key={`emp-history-${req.id}`}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-[18px] p-5 flex flex-col justify-between max-h-[240px] shadow-md hover:shadow-lg transition-all"
+                        className="bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-[18px] p-5 flex flex-col justify-between max-h-[240px] shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-400/50 hover:shadow-blue-500/10 dark:hover:border-purple-500/50 dark:hover:shadow-purple-500/20"
                       >
                         <div>
                           <div className="flex justify-between items-start mb-4">
@@ -964,7 +964,7 @@ Reason:
                               key={`processed-${req.id}`}
                               initial={{ opacity: 0, scale: 0.95 }}
                               animate={{ opacity: 1, scale: 1 }}
-                              className="bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-[18px] p-5 flex flex-col justify-between max-h-[220px] shadow-md hover:shadow-lg transition-all"
+                              className="bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-[18px] p-5 flex flex-col justify-between max-h-[220px] shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-400/50 hover:shadow-blue-500/10 dark:hover:border-purple-500/50 dark:hover:shadow-purple-500/20"
                             >
                               <div>
                                 <div className="flex justify-between items-start mb-3">
