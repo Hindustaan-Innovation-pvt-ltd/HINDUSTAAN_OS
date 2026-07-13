@@ -1029,140 +1029,6 @@ export default function DailyStandups({ session }: { session?: any }) {
         </div>
       </div>
 
-      {/* Quick Standup Command */}
-      {role !== 'manager' && (
-        <Card className="mb-8 rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900">
-          <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-base flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                <span className="text-xl">⚡</span>
-                Quick Standup Command
-              </CardTitle>
-              <CardDescription>Submit your standup using a WhatsApp-like command.</CardDescription>
-            </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 text-slate-500 hover:text-slate-700 font-bold">What is this?</Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[400px] bg-white dark:bg-slate-950">
-                <DialogHeader>
-                  <DialogTitle>Command Syntax</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-2">
-                  <p className="text-sm text-slate-500">
-                    Use a simple pipe-delimited command format to instantly parse your standup.
-                  </p>
-                  <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 font-mono text-sm text-slate-700 dark:text-slate-300">
-                    /standup<br/>
-                    [done] | [doing] | [blocked]
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold mb-2">Example:</p>
-                    <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 font-mono text-sm text-slate-700 dark:text-slate-300">
-                      /standup<br/>
-                      Completed dashboard UI |<br/>
-                      Building notification module |<br/>
-                      Need backend endpoint
-                    </div>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-            <div className="relative">
-              <textarea
-                value={quickCommand}
-                onChange={(e) => setQuickCommand(e.target.value)}
-                placeholder="/standup&#10;Completed Login UI | Working on Dashboard API | Waiting for backend access"
-                className="w-full h-24 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none p-3 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono resize-none"
-              />
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 justify-end">
-              <Button 
-                variant="outline" 
-                onClick={() => setQuickCommand('')}
-                className="rounded-lg h-9 w-full sm:w-auto"
-              >
-                Clear
-              </Button>
-              <Button 
-                variant="secondary" 
-                onClick={() => {
-                  const parsed = parseStandupCommand(quickCommand);
-                  if (parsed.isValid || quickCommand.includes('/standup')) {
-                    setFormData({
-                      yesterday: parsed.yesterday,
-                      today: parsed.today,
-                      blockers: parsed.blockers,
-                      notes: ''
-                    });
-                    setIsModalOpen(true);
-                  } else {
-                    toast.error("Command must start with /standup and have exactly 3 sections separated by '|'");
-                  }
-                }}
-                className="rounded-lg h-9 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 w-full sm:w-auto"
-              >
-                Parse Command
-              </Button>
-              <Button 
-                onClick={() => {
-                  const parsed = parseStandupCommand(quickCommand);
-                  if (parsed.isValid) {
-                    handleDirectCommandSubmit(parsed);
-                  } else {
-                    toast.error("Command must start with /standup and have exactly 3 sections separated by '|'");
-                  }
-                }}
-                className="rounded-lg h-9 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm w-full sm:w-auto"
-              >
-                <Send className="h-3.5 w-3.5 mr-1.5" /> Submit
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Recent Command Submissions Table */}
-      {role !== 'manager' && history.some(h => h.originalCommand && h.user === currentUserName) && (
-        <Card className="mb-8 rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900">
-          <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-            <CardTitle className="text-base">Recent Command Submissions</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0 p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 dark:text-slate-400">
-                  <tr>
-                    <th className="px-6 py-3 font-bold">Date</th>
-                    <th className="px-6 py-3 font-bold">Original Command</th>
-                    <th className="px-6 py-3 font-bold">Parsed Status</th>
-                    <th className="px-6 py-3 font-bold">Submitted Time</th>
-                    <th className="px-6 py-3 font-bold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.filter(h => h.originalCommand && h.user === currentUserName).slice(0, 5).map((h, i) => (
-                    <tr key={i} className="bg-white border-b dark:bg-slate-900 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900 dark:text-white">{getEntryDateString(h)}</td>
-                      <td className="px-6 py-4 font-mono text-xs text-slate-600 dark:text-slate-300 max-w-xs truncate">{h.originalCommand}</td>
-                      <td className="px-6 py-4">
-                        <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0 font-bold">Success</Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-500">{h.time}</td>
-                      <td className="px-6 py-4 text-right">
-                        <Button variant="ghost" size="sm" onClick={() => setViewingStandup(h)} className="h-8">View</Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Stats Row */}
       <div className="flex flex-row justify-between items-center w-full mb-8 gap-4">
         <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm w-fit">
@@ -1683,8 +1549,44 @@ export default function DailyStandups({ session }: { session?: any }) {
               What did you work on, and what's next?
             </p>
           </DialogHeader>
-          <div className="p-6 space-y-6">
-            <div className="space-y-2">
+            <div className="p-6 space-y-6">
+              {/* WhatsApp Quick Paste */}
+              <div className="space-y-2 pb-4 border-b border-slate-100 dark:border-slate-800">
+                <label className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-500 flex items-center">
+                  <span className="mr-1.5 text-sm">⚡</span> Paste WhatsApp Command
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="/standup done | doing | blocked"
+                    value={quickCommand}
+                    onChange={(e) => setQuickCommand(e.target.value)}
+                    className="flex-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 rounded-xl px-3 text-sm font-mono text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-slate-400"
+                  />
+                  <Button 
+                    type="button"
+                    onClick={() => {
+                      const parsed = parseStandupCommand(quickCommand);
+                      if (parsed.isValid || quickCommand.includes('/standup')) {
+                        setFormData({
+                          yesterday: parsed.yesterday,
+                          today: parsed.today,
+                          blockers: parsed.blockers,
+                          notes: ''
+                        });
+                        toast.success("Command parsed! Fields auto-filled.");
+                      } else {
+                        toast.error("Invalid command format.");
+                      }
+                    }}
+                    className="h-10 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 font-bold"
+                  >
+                    Parse
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
                 <Button 
