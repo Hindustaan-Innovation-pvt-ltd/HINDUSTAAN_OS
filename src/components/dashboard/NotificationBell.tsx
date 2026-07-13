@@ -23,6 +23,9 @@ interface NotificationItem {
     employee?: string;
     date?: string;
   };
+  actions?: { label: string; primary?: boolean; actionType: string }[];
+  richContent?: boolean;
+  details?: any;
 }
 
 const DEFAULT_MANAGER_NOTIFICATIONS: NotificationItem[] = [
@@ -175,6 +178,11 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
     toast.success('Notifications cleared');
   };
 
+  const handleActionClick = (e: React.MouseEvent, notification: NotificationItem, actionType: string) => {
+    e.stopPropagation();
+    window.dispatchEvent(new CustomEvent("notification-action", { detail: { actionType, notification } }));
+  };
+
   const handleNotificationClick = (notification: NotificationItem) => {
     // 1. Mark as read immediately
     const updated = notifications.map(n => n.id === notification.id ? { ...n, unread: false } : n);
@@ -293,9 +301,24 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
                             </p>
                             <span className="text-[8px] font-semibold text-slate-500 whitespace-nowrap shrink-0">{notification.time}</span>
                           </div>
-                          <p className="text-[11px] font-medium text-slate-400 leading-snug break-words">
+                          <p className="text-[11px] font-medium text-slate-400 leading-snug break-words whitespace-pre-wrap">
                             {notification.message}
                           </p>
+                          {notification.actions && notification.actions.length > 0 && (
+                            <div className="flex gap-2 mt-2">
+                              {notification.actions.map(action => (
+                                <Button 
+                                  key={action.label}
+                                  size="sm" 
+                                  variant={action.primary ? "default" : "outline"}
+                                  className={cn("h-6 text-[10px] px-2 py-0", action.primary ? "bg-orange-600 hover:bg-orange-700" : "border-slate-700 text-slate-300")}
+                                  onClick={(e) => handleActionClick(e, notification, action.actionType)}
+                                >
+                                  {action.label}
+                                </Button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
