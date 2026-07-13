@@ -349,7 +349,7 @@ function App() {
             )}
           </DashboardShell>
         )}
-        <Toaster position="bottom-right" />
+        <Toaster position="top-right" duration={4000} richColors closeButton expand />
       </TooltipProvider>
       </UserProvider>
       </ProjectProvider>
