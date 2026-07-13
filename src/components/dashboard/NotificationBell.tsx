@@ -202,14 +202,40 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
       }
 
       const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_requests') || '[]');
+      let employeeNotifReq: any = null;
       const updatedLeaves = allLeaves.map((l: any) => {
         if (l.id === requestId) {
+          employeeNotifReq = l;
           return { ...l, status: actionType === 'approve_leave' ? 'Approved' : 'Rejected', hrNotified: true, processedAt: Date.now() };
         }
         return l;
       });
       localStorage.setItem('hindustaan_leave_requests', JSON.stringify(updatedLeaves));
       window.dispatchEvent(new Event('leave-requests-updated'));
+
+      if (employeeNotifReq) {
+        const savedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
+        let empNotifs = savedEmpNotifs && savedEmpNotifs !== 'null' ? JSON.parse(savedEmpNotifs) : [];
+        const isApproved = actionType === 'approve_leave';
+        const newEmpNotification = {
+          id: Date.now(),
+          category: 'Leave Management',
+          icon: isApproved ? '✅' : '❌',
+          title: isApproved ? 'Leave Approved' : 'Leave Rejected',
+          message: `Manager ${isApproved ? 'approved' : 'rejected'} your leave request for ${employeeNotifReq.start}`,
+          time: 'Just now',
+          unread: true,
+          group: 'Today',
+          metadata: {
+            type: 'leave_status_update',
+            date: employeeNotifReq.start,
+            employeeName: employeeNotifReq.employee,
+            requestId: employeeNotifReq.id
+          }
+        };
+        localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifs]));
+        window.dispatchEvent(new Event('employee-notifications-updated'));
+      }
 
       const updatedNotifs = notifications.map(n => {
         if (n.id === notification.id) {
@@ -241,6 +267,31 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
       timestamp: new Date().toISOString()
     });
     localStorage.setItem('hindustaan_leave_comments', JSON.stringify(existing));
+
+    const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_requests') || '[]');
+    const req = allLeaves.find((l: any) => l.id === requestId);
+    if (req) {
+      const savedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
+      let empNotifs = savedEmpNotifs && savedEmpNotifs !== 'null' ? JSON.parse(savedEmpNotifs) : [];
+      const newEmpNotification = {
+        id: Date.now(),
+        category: 'Leave Management',
+        icon: '💬',
+        title: 'Manager Commented',
+        message: `💬 ${user?.name || "Manager"} commented:\n"${commentText}"`,
+        time: 'Just now',
+        unread: true,
+        group: 'Today',
+        metadata: {
+          type: 'leave_commented',
+          date: req.start,
+          employeeName: req.employee,
+          requestId: req.id
+        }
+      };
+      localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifs]));
+      window.dispatchEvent(new Event('employee-notifications-updated'));
+    }
     
     // Mark as read and clear comment actions
     const updatedNotifs = notifications.map(n => {
