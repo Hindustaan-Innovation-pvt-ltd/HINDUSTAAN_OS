@@ -112,7 +112,8 @@ export function LeaveCalendar({ leaves, selectedDate, onSelectDate }: LeaveCalen
             weekday: "text-slate-500 dark:text-slate-400 font-medium text-sm text-center select-none w-9 h-9 flex items-center justify-center",
             week: "grid grid-cols-7 gap-y-3 text-center items-center justify-items-center mt-2",
             day: "h-9 w-9 p-0 flex items-center justify-center relative",
-            day_hidden: "invisible",
+            day_disabled: "text-slate-400 opacity-50",
+            hidden: "invisible",
           }}
           components={{
             DayButton: ({ day, modifiers, ...props }) => {
