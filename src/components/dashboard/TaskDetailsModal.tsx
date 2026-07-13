@@ -423,9 +423,10 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                 <Button 
                   type="submit"
                   disabled={!newComment.trim()}
-                  className="rounded-lg h-9 w-9 p-0"
+                  variant="ghost"
+                  className="rounded-lg h-9 w-9 p-0 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors group"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className={cn("h-4 w-4 transition-colors", newComment.trim() ? "text-orange-600 dark:text-orange-500" : "text-slate-400 dark:text-slate-400")} />
                 </Button>
               </div>
             </form>

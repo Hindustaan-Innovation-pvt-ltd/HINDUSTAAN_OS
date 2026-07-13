@@ -582,8 +582,8 @@ export default function Settings({ session }: { session: any }) {
                   <DialogDescription className="text-slate-500">Scan this QR code with your authenticator app.</DialogDescription>
                 </DialogHeader>
                 <div className="py-4 flex flex-col items-center gap-6">
-                  <div className="p-4 bg-white rounded-xl border-2 border-slate-100 shadow-sm">
-                    <QrCode className="w-32 h-32 text-slate-900" />
+                  <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-100 dark:border-slate-700 shadow-sm">
+                    <QrCode className="w-32 h-32 text-slate-900 dark:text-white" />
                   </div>
                   <div className="w-full space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center block">Secret Key</label>
