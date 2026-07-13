@@ -30,7 +30,7 @@ export function ProjectDatePicker({
     if (value) {
       setMonth(value)
     }
-  }, [value])
+  }, [value ? value.getTime() : null])
   return (
     <Popover>
       {name && value && (
