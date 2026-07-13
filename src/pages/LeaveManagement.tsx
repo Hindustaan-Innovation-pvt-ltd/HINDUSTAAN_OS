@@ -102,7 +102,7 @@ export default function LeaveManagement({ session }: { session: any }) {
             time: 'Just now',
             unread: true,
             group: 'Today',
-            metadata: { type: 'leave_commented', date: req.start, requestId: req.id }
+            metadata: { type: 'leave_commented', date: req.start, requestId: req.id, employeeName: req.employee }
           };
           localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([notif, ...empNotifs]));
           window.dispatchEvent(new Event('employee-notifications-updated'));
@@ -131,7 +131,7 @@ export default function LeaveManagement({ session }: { session: any }) {
             time: 'Just now',
             unread: true,
             group: 'Today',
-            metadata: { type: 'leave_commented', date: req.start, requestId: req.id }
+            metadata: { type: 'leave_commented', date: req.start, requestId: req.id, employeeName: req.employee }
           };
           localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([notif, ...empNotifs]));
           window.dispatchEvent(new Event('employee-notifications-updated'));
@@ -334,7 +334,8 @@ Reason:
       group: 'Today',
       metadata: {
         type: 'leave_approved',
-        date: leaveDateFormatted
+        date: leaveDateFormatted,
+        employeeName: leaveObj.employee
       }
     };
     const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
@@ -376,7 +377,8 @@ Reason:
       group: 'Today',
       metadata: {
         type: 'leave_rejected',
-        date: leaveDateFormatted
+        date: leaveDateFormatted,
+        employeeName: leaveObj.employee
       }
     };
     const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
@@ -565,7 +567,7 @@ Reason:
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {leaveData.filter((l: any) => l.employee === "Tanvy Pandey").map((leave: any) => (
+                    {leaveData.filter((l: any) => l.employee === (session?.user?.user_metadata?.name || "Tanvy Pandey")).map((leave: any) => (
                       <tr key={leave.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors group">
                         <td className="px-6 py-5 font-semibold text-slate-600 dark:text-slate-400">{leave.appliedOn}</td>
                         <td className="px-6 py-5 font-bold text-slate-900 dark:text-white flex items-center gap-2">

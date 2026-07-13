@@ -260,7 +260,7 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
         </div>
 
         <ScrollArea className="max-h-[350px] overflow-y-auto pr-1">
-          {notifications.length === 0 ? (
+          {visibleNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-slate-500">
               <Bell className="h-8 w-8 mb-2 opacity-30" />
               <p className="text-xs font-semibold">No notifications</p>
