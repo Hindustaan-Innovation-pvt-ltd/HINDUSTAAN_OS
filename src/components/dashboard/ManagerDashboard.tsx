@@ -888,7 +888,7 @@ function ManagerDashboardInner() {
                   No active blockers at the moment. Great job!
                 </div>
               ) : (
-                blockers.map((blocker) => {
+                blockers.map((blocker: any) => {
                   const isResolved = (blocker as any).resolved;
                   return (
                     <div key={blocker.id} className={cn("flex flex-col gap-2 p-3.5 rounded-xl border relative transition-all duration-300", isResolved ? "bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-900/50" : cn(blocker.borderColor, blocker.bgColor))}>
@@ -916,7 +916,7 @@ function ManagerDashboardInner() {
                         <div className="flex items-center gap-3 ml-8 mt-1 relative z-10">
                           <Button 
                             onClick={() => {
-                              setBlockers(prev => prev.map(b => b.id === blocker.id ? { ...b, resolved: true } : b));
+                              setBlockers((prev: any[]) => prev.map((b: any) => b.id === blocker.id ? { ...b, resolved: true } : b));
                               import('sonner').then(m => m.toast.success('Blocker Resolved', { description: `Resolved for ${blocker.user}. The employee has been notified directly.` }));
                             }}
                             variant="ghost" 
