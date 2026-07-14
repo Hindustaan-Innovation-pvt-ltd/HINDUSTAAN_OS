@@ -747,37 +747,37 @@ export default function Settings({ session }: { session: any }) {
                         <TooltipTrigger asChild>
                           <button onClick={() => setAccentColor('cosmic')} className={cn("h-8 w-8 rounded-full bg-[#5B7CFF] ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'cosmic' && "ring-[#5B7CFF]/30 scale-110")}></button>
                         </TooltipTrigger>
-                        <TooltipContent><p>Default View</p></TooltipContent>
+                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Default View</p></TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button onClick={() => setAccentColor('orange')} className={cn("h-8 w-8 rounded-full bg-orange-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'orange' && "ring-orange-500/30 scale-110")}></button>
                         </TooltipTrigger>
-                        <TooltipContent><p>Orange</p></TooltipContent>
+                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Orange</p></TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button onClick={() => setAccentColor('blue')} className={cn("h-8 w-8 rounded-full bg-blue-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'blue' && "ring-blue-500/30 scale-110")}></button>
                         </TooltipTrigger>
-                        <TooltipContent><p>Blue</p></TooltipContent>
+                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Blue</p></TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button onClick={() => setAccentColor('emerald')} className={cn("h-8 w-8 rounded-full bg-emerald-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'emerald' && "ring-emerald-500/30 scale-110")}></button>
                         </TooltipTrigger>
-                        <TooltipContent><p>Emerald</p></TooltipContent>
+                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Emerald</p></TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button onClick={() => setAccentColor('rose')} className={cn("h-8 w-8 rounded-full bg-rose-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'rose' && "ring-rose-500/30 scale-110")}></button>
                         </TooltipTrigger>
-                        <TooltipContent><p>Rose</p></TooltipContent>
+                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Rose</p></TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button onClick={() => setAccentColor('purple')} className={cn("h-8 w-8 rounded-full bg-purple-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'purple' && "ring-purple-500/30 scale-110")}></button>
                         </TooltipTrigger>
-                        <TooltipContent><p>Purple</p></TooltipContent>
+                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Purple</p></TooltipContent>
                       </Tooltip>
                     </div>
                   </TooltipProvider>
