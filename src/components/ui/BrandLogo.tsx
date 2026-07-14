@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from "@/lib/utils";
+import { useWorkspace } from '@/context/WorkspaceContext';
 
 interface BrandLogoProps {
   variant?: 'auth' | 'sidebar' | 'minimized';
@@ -7,8 +8,15 @@ interface BrandLogoProps {
 }
 
 export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', className }) => {
+  const { config } = useWorkspace();
   const isAuth = variant === 'auth';
   const isMinimized = variant === 'minimized';
+  
+  // Try to split workspace name into two parts to maintain the gradient style
+  // E.g., "Hindustaan OS" -> ["Hindustaan", "OS"]
+  const parts = config.workspaceName.trim().split(' ');
+  const firstPart = parts.length > 1 ? parts.slice(0, -1).join(' ') : config.workspaceName;
+  const secondPart = parts.length > 1 ? parts[parts.length - 1] : '';
   
   return (
     <div className={cn(
@@ -26,11 +34,12 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', class
         isAuth ? "h-20 w-20" : (isMinimized ? "h-8 w-8" : "h-10 w-10")
       )}>
         <img 
-          src="/new-brand-logo.png" 
-          alt="Project OS Logo" 
+          src={config.workspaceLogo || "/new-brand-logo.png"} 
+          alt="Workspace Logo" 
           className={cn(
             "object-contain transition-all duration-200",
-            "h-[220%] w-[220%] max-w-none"
+            !config.workspaceLogo && "h-[220%] w-[220%] max-w-none", // Only apply crazy scaling to default logo
+            config.workspaceLogo && "h-full w-full" // Standard scaling for user-uploaded logos
           )}
         />
       </div>
@@ -42,11 +51,11 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', class
         )}>
           {isAuth ? (
             <>
-              Project <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-extrabold">OS</span>
+              {firstPart} {secondPart && <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-extrabold">{secondPart}</span>}
             </>
           ) : (
             <>
-              Project <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-extrabold ml-1.5">OS</span>
+              {firstPart} {secondPart && <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-extrabold ml-1.5">{secondPart}</span>}
             </>
           )}
         </h1>

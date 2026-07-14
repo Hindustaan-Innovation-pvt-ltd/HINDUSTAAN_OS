@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Calendar, User, Tag, Clock, Target, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useWorkspace } from '@/context/WorkspaceContext';
 import type { Task, Priority } from './TaskDetailsModal';
 import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 
@@ -12,10 +13,11 @@ interface CreateTaskModalProps {
 }
 
 export default function CreateTaskModal({ isOpen, onClose, onCreateTask, currentUser }: CreateTaskModalProps) {
+  const { config } = useWorkspace();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [projectTag, setProjectTag] = useState('');
-  const [priority, setPriority] = useState<Priority | ''>('');
+  const [priority, setPriority] = useState<Priority | ''>((config.defaultPriority as Priority) || 'Medium');
   
   // Interns can only assign to themselves. Default to their ID if intern.
   const [assigneeId, setAssigneeId] = useState(currentUser?.role === 'intern' ? currentUser.id : '');
@@ -68,7 +70,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
       due_date: dueDate || new Date().toISOString().split('T')[0],
       milestone: milestone || undefined,
       created_at: new Date().toISOString(),
-      status: 'To Do'
+      status: (config.defaultTaskStatus as any) || 'To Do'
     };
 
     onCreateTask(newTask);
@@ -76,7 +78,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
     setTitle('');
     setDescription('');
     setProjectTag('');
-    setPriority('');
+    setPriority((config.defaultPriority as Priority) || 'Medium');
     setAssigneeId(currentUser?.role === 'intern' ? currentUser.id : '');
     setStartDate('');
     setDueDate('');

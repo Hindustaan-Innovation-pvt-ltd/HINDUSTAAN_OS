@@ -78,7 +78,7 @@ export default function SecuritySettings({ session }: { session?: any }) {
 
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
-      
+
       {/* Header */}
       <div>
         <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
@@ -91,10 +91,10 @@ export default function SecuritySettings({ session }: { session?: any }) {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-        
+
         {/* LEFT COLUMN */}
         <div className="xl:col-span-7 flex flex-col gap-8">
-          
+
           {/* 1. Authentication Settings */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <CardHeader className="p-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/20">
@@ -112,28 +112,28 @@ export default function SecuritySettings({ session }: { session?: any }) {
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white">Password Login</h4>
                       <p className="text-xs text-slate-500">Allow standard email/password login.</p>
                     </div>
-                    <Switch checked={authSettings.passwordLogin} onCheckedChange={(v) => setAuthSettings({...authSettings, passwordLogin: v})} />
+                    <Switch checked={authSettings.passwordLogin} onCheckedChange={(v) => setAuthSettings({ ...authSettings, passwordLogin: v })} />
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white">Magic Link Login</h4>
                       <p className="text-xs text-slate-500">Allow passwordless email links.</p>
                     </div>
-                    <Switch checked={authSettings.magicLink} onCheckedChange={(v) => setAuthSettings({...authSettings, magicLink: v})} />
+                    <Switch checked={authSettings.magicLink} onCheckedChange={(v) => setAuthSettings({ ...authSettings, magicLink: v })} />
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white">Remember Me</h4>
                       <p className="text-xs text-slate-500">Allow extended 30-day sessions.</p>
                     </div>
-                    <Switch checked={authSettings.rememberMe} onCheckedChange={(v) => setAuthSettings({...authSettings, rememberMe: v})} />
+                    <Switch checked={authSettings.rememberMe} onCheckedChange={(v) => setAuthSettings({ ...authSettings, rememberMe: v })} />
                   </div>
                 </div>
 
                 <div className="space-y-5">
                   <div className="space-y-1.5">
                     <label className="text-sm font-bold text-slate-900 dark:text-white">Session Timeout</label>
-                    <Select value={authSettings.sessionTimeout} onValueChange={(v) => setAuthSettings({...authSettings, sessionTimeout: v})}>
+                    <Select value={authSettings.sessionTimeout} onValueChange={(v) => setAuthSettings({ ...authSettings, sessionTimeout: v })}>
                       <SelectTrigger className="w-full bg-slate-50 dark:bg-slate-900/50 rounded-xl">
                         <SelectValue />
                       </SelectTrigger>
@@ -149,7 +149,7 @@ export default function SecuritySettings({ session }: { session?: any }) {
 
                   <div className="space-y-1.5">
                     <label className="text-sm font-bold text-slate-900 dark:text-white">Max Failed Login Attempts</label>
-                    <Select value={authSettings.maxFailedAttempts} onValueChange={(v) => setAuthSettings({...authSettings, maxFailedAttempts: v})}>
+                    <Select value={authSettings.maxFailedAttempts} onValueChange={(v) => setAuthSettings({ ...authSettings, maxFailedAttempts: v })}>
                       <SelectTrigger className="w-full bg-slate-50 dark:bg-slate-900/50 rounded-xl">
                         <SelectValue />
                       </SelectTrigger>
@@ -160,10 +160,10 @@ export default function SecuritySettings({ session }: { session?: any }) {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <div className="flex items-center justify-between pt-2">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">Force Password Reset</h4>
-                    <Switch checked={authSettings.forceReset} onCheckedChange={(v) => setAuthSettings({...authSettings, forceReset: v})} />
+                    <Switch checked={authSettings.forceReset} onCheckedChange={(v) => setAuthSettings({ ...authSettings, forceReset: v })} />
                   </div>
                 </div>
               </div>
@@ -214,7 +214,7 @@ export default function SecuritySettings({ session }: { session?: any }) {
                     </Select>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">Require Uppercase</h4>
@@ -266,7 +266,7 @@ export default function SecuritySettings({ session }: { session?: any }) {
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
                             <AvatarFallback className="text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                              {s.user.split(' ').map(n=>n[0]).join('')}
+                              {s.user.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
                           <span className="font-bold text-slate-900 dark:text-white">{s.user}</span>
@@ -370,7 +370,7 @@ export default function SecuritySettings({ session }: { session?: any }) {
 
         {/* RIGHT COLUMN */}
         <div className="xl:col-span-5 flex flex-col gap-8">
-          
+
           {/* 2. Two Factor Authentication */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/20">
@@ -383,15 +383,15 @@ export default function SecuritySettings({ session }: { session?: any }) {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white">Enforce 2FA for Admins</h4>
-                  <Switch checked={mfaSettings.admin} onCheckedChange={(v) => setMfaSettings({...mfaSettings, admin: v})} />
+                  <Switch checked={mfaSettings.admin} onCheckedChange={(v) => setMfaSettings({ ...mfaSettings, admin: v })} />
                 </div>
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white">Enforce 2FA for Managers</h4>
-                  <Switch checked={mfaSettings.manager} onCheckedChange={(v) => setMfaSettings({...mfaSettings, manager: v})} />
+                  <Switch checked={mfaSettings.manager} onCheckedChange={(v) => setMfaSettings({ ...mfaSettings, manager: v })} />
                 </div>
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white">Optional for Employees</h4>
-                  <Switch checked={mfaSettings.employee} onCheckedChange={(v) => setMfaSettings({...mfaSettings, employee: v})} />
+                  <Switch checked={mfaSettings.employee} onCheckedChange={(v) => setMfaSettings({ ...mfaSettings, employee: v })} />
                 </div>
               </div>
 
@@ -457,15 +457,15 @@ export default function SecuritySettings({ session }: { session?: any }) {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white">Company Emails Only</h4>
-                  <Switch checked={workspaceRules.onlyCompanyEmail} onCheckedChange={(v) => setWorkspaceRules({...workspaceRules, onlyCompanyEmail: v})} />
+                  <Switch checked={workspaceRules.onlyCompanyEmail} onCheckedChange={(v) => setWorkspaceRules({ ...workspaceRules, onlyCompanyEmail: v })} />
                 </div>
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white">Restrict Unknown Devices</h4>
-                  <Switch checked={workspaceRules.restrictUnknown} onCheckedChange={(v) => setWorkspaceRules({...workspaceRules, restrictUnknown: v})} />
+                  <Switch checked={workspaceRules.restrictUnknown} onCheckedChange={(v) => setWorkspaceRules({ ...workspaceRules, restrictUnknown: v })} />
                 </div>
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white">Restrict Outside Office Hours</h4>
-                  <Switch checked={workspaceRules.restrictOutsideHours} onCheckedChange={(v) => setWorkspaceRules({...workspaceRules, restrictOutsideHours: v})} />
+                  <Switch checked={workspaceRules.restrictOutsideHours} onCheckedChange={(v) => setWorkspaceRules({ ...workspaceRules, restrictOutsideHours: v })} />
                 </div>
               </div>
 
@@ -535,12 +535,12 @@ export default function SecuritySettings({ session }: { session?: any }) {
             </DialogTitle>
             <DialogDescription className="font-medium text-slate-600 dark:text-slate-300 pt-2">
               {confirmDialog.desc}
-              <br/><br/>
+              <br /><br />
               This action cannot be undone. To proceed, please type <strong className="text-slate-900 dark:text-white">CONFIRM</strong> below.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Input 
+            <Input
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
               placeholder="Type CONFIRM"

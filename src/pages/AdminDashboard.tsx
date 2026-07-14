@@ -4,7 +4,7 @@ import {
   Plus, ExternalLink, Search, Edit2, ShieldAlert, Power, 
   Trash2, HelpCircle, CheckCircle2, X, Filter, UserPlus, Briefcase, Mail, Phone, ChevronRight,
   Calendar, Clock, MapPin, Laptop, Lock, Shield, MessageSquare, PlusCircle, Send, Globe, Award, ClipboardList, CheckSquare, FolderKanban,
-  User as UserIcon
+  User as UserIcon, CreditCard, Settings
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -352,6 +352,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     // Load registered users on mount
     setUsersList(getRegisteredUsers());
 
+    // Listen for storage changes
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'hindustaan_users' && e.newValue) setUsersList(JSON.parse(e.newValue));
       if (e.key === 'hindustaan_activity_feed' && e.newValue) setActivities(JSON.parse(e.newValue));
@@ -359,9 +360,15 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     };
     
     const handleLocalUpdate = (e: CustomEvent) => {
-      if (e.detail.key === 'hindustaan_users') setUsersList(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : getRegisteredUsers());
-      if (e.detail.key === 'hindustaan_activity_feed') setActivities(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_ACTIVITY_FEED);
-      if (e.detail.key === 'hindustaan_notifications') setNotifications(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_NOTIFICATIONS);
+      if (e.detail.key === 'hindustaan_users') {
+        setUsersList(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : getRegisteredUsers());
+      }
+      if (e.detail.key === 'hindustaan_activity_feed') {
+        setActivities(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_ACTIVITY_FEED);
+      }
+      if (e.detail.key === 'hindustaan_notifications') {
+        setNotifications(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_NOTIFICATIONS);
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -372,6 +379,57 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
       window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
     };
   }, []);
+
+  const navigateToView = (view: string) => {
+    window.dispatchEvent(new CustomEvent('navigate-to-view', { detail: { view } }));
+  };
+
+  const handleExportAuditLogs = () => {
+    try {
+      toast.loading("Preparing audit logs CSV...");
+      setTimeout(() => {
+        const headers = ["User Name", "Email", "Action Performed", "Module", "Timestamp"];
+        const rows = activities.map(act => [
+          act.user || "System",
+          act.email || `${(act.user || "system").toLowerCase().replace(" ", ".")}@hindustaan.in`,
+          act.action || "Performed action",
+          act.target || "General",
+          act.time || new Date().toISOString()
+        ]);
+        
+        const csvContent = "data:text/csv;charset=utf-8," 
+          + [headers.join(","), ...rows.map(e => e.map(val => `"${val.replace(/"/g, '""')}"`).join(","))].join("\n");
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        const dateStr = new Date().toISOString().slice(0, 10);
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `audit_logs_${dateStr}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast.dismiss();
+        toast.success("Audit logs exported successfully!");
+      }, 1000);
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Failed to export audit logs. Please try again.");
+    }
+  };
+
+  const quickActions = [
+    {
+      title: "Manage Subscriptions",
+      icon: CreditCard,
+      action: () => navigateToView("Subscription Management"),
+    },
+    {
+      title: "Export Audit Logs",
+      icon: ExternalLink,
+      action: handleExportAuditLogs,
+    }
+  ];
 
   const refreshUsers = () => {
     const fresh = getRegisteredUsers();
@@ -450,6 +508,12 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     });
 
     localStorage.setItem('hindustaan_users', JSON.stringify(updatedUsers));
+    
+    // Dispatch local storage update event
+    window.dispatchEvent(new CustomEvent('local-storage-update', {
+      detail: { key: 'hindustaan_users', value: JSON.stringify(updatedUsers) }
+    }));
+
     toast.success(`User "${formName}" updated successfully!`);
     setIsEditOpen(false);
     resetForm();
@@ -467,6 +531,9 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
       return u;
     });
     localStorage.setItem('hindustaan_users', JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('local-storage-update', {
+      detail: { key: 'hindustaan_users', value: JSON.stringify(updated) }
+    }));
     refreshUsers();
   };
 
@@ -479,7 +546,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     setFormDesig(user.designation || '');
     setFormPhone(user.phone || '');
     setFormManager(user.reportingManager || 'None');
-    setFormPassword(user.password || '');
+    setFormPassword('');
     setFormId(user.id || '');
     setIsEditOpen(true);
   };
@@ -507,18 +574,11 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   const departments = ['Engineering', 'Product', 'HR', 'Marketing', 'Sales', 'IT'];
 
   const filteredUsers = usersList.filter(u => {
-    // Search Filter
     const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (u.id && u.id.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    // Role Filter matches the current dashboard view category
     const matchesRole = u.role === showOnlyRole;
-    
-    // Department Filter
     const matchesDept = deptFilter === 'All' || u.department === deptFilter;
-
-    // Status Filter
     const isActive = u.isActive !== false;
     const matchesStatus = statusFilter === 'All' || 
       (statusFilter === 'Active' && isActive) || 
@@ -1181,121 +1241,186 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
               </Card>
             </div>
 
-            {/* Split layout: Team Directory vs Recent Activities */}
+            {/* Split layout: User Account Summary & Workspace Status */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Active Team Members Card */}
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden lg:col-span-2">
-                <CardHeader className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-                  <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Active Team Directory</CardTitle>
-                  <p className="text-xs text-slate-550 dark:text-slate-400 mt-1">A quick glance at current active users in the registry.</p>
-                </CardHeader>
-                <CardContent className="p-0 overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/60 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                      <tr>
-                        <th className="px-6 py-4 font-bold">User / ID</th>
-                        <th className="px-6 py-4 font-bold">Designation & Department</th>
-                        <th className="px-6 py-4 font-bold">System Role</th>
-                        <th className="px-6 py-4 font-bold">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {usersList.slice(0, 5).map((u, i) => {
-                        const initials = u.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-                        const isActive = u.isActive !== false;
+              
+              <div className="lg:col-span-2 space-y-6">
+                {/* User Account Summary */}
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden">
+                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+                    <CardTitle className="text-lg font-bold flex items-center justify-between text-slate-900 dark:text-white">
+                      User Account Summary
+                      <Button variant="ghost" size="sm" className="h-8 text-xs font-bold text-[#5B7CFF]">View All</Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0 overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                        <tr>
+                          <th className="px-6 py-4 font-bold">User</th>
+                          <th className="px-6 py-4 font-bold">Role</th>
+                          <th className="px-6 py-4 font-bold">Status</th>
+                          <th className="px-6 py-4 font-bold">Last Login</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {usersList.slice(0, 4).map((u: any, i: number) => {
+                          const initials = u.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+                          const isActive = u.isActive !== false;
+                          return (
+                            <tr 
+                              key={i} 
+                              className="border-b border-slate-100 dark:border-slate-800/60 cursor-pointer"
+                              onClick={() => setSelectedDetailUser(u)}
+                            >
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className={cn(
+                                    "h-9 w-9 rounded-full flex items-center justify-center text-xs font-extrabold border shrink-0",
+                                    isActive
+                                      ? "bg-orange-50 text-orange-700 border-orange-250 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20"
+                                      : "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-800"
+                                  )}>
+                                    {initials}
+                                  </div>
+                                  <div>
+                                    <div className="font-extrabold text-slate-900 dark:text-white leading-snug">{u.name}</div>
+                                    <div className="text-xs text-slate-450 dark:text-slate-400 leading-snug truncate max-w-[150px]">{u.email}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <Badge variant="outline" className={cn(
+                                  "font-black tracking-wide rounded px-2 uppercase text-[9px]",
+                                  u.role === 'admin' ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400" :
+                                  u.role === 'manager' ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400" :
+                                  "border-slate-255 bg-slate-50 text-slate-600 dark:border-slate-805 dark:bg-slate-900/60 dark:text-slate-350"
+                                )}>{u.role}</Badge>
+                              </td>
+                              <td className="px-6 py-4">
+                                <Badge className={isActive ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 'bg-slate-500/10 text-slate-500 hover:bg-slate-500/20'}>
+                                  {isActive ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </td>
+                              <td className="px-6 py-4 text-slate-500 text-xs">{isActive ? 'Just now' : '2 hours ago'}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </CardContent>
+                </Card>
+
+                {/* Recent Workspace Activity */}
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+                    <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Recent Workspace Activity</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="space-y-6">
+                      {activities.slice(0, 3).map((activity: any, i: number) => {
+                        let Icon = Activity;
+                        let color = 'text-[#5B7CFF]';
+                        let bg = 'bg-[#5B7CFF]/10';
+
+                        if (activity.type === 'project' || activity.type === 'assign') {
+                          Icon = ShieldCheck;
+                          color = 'text-emerald-500';
+                          bg = 'bg-emerald-500/10';
+                        } else if (activity.type === 'task' || activity.type === 'log') {
+                          Icon = Key;
+                          color = 'text-orange-500';
+                        }
+
                         return (
-                          <tr 
-                            key={i} 
-                            className="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/25 transition-colors cursor-pointer"
-                            onClick={() => setSelectedDetailUser(u)}
-                          >
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className={cn(
-                                  "h-9 w-9 rounded-full flex items-center justify-center text-xs font-extrabold border shrink-0",
-                                  isActive
-                                    ? "bg-orange-50 text-orange-700 border-orange-250 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20"
-                                    : "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-800"
-                                )}>
-                                  {initials}
-                                </div>
-                                <div>
-                                  <div className="font-extrabold text-slate-900 dark:text-white leading-snug">{u.name}</div>
-                                  <div className="text-xs text-slate-450 dark:text-slate-400 leading-snug truncate max-w-[150px]">{u.email}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="font-bold text-slate-800 dark:text-slate-200">{u.designation || 'Specialist'}</div>
-                              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">{u.department || 'Unassigned'}</div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <Badge variant="outline" className={cn(
-                                "font-black tracking-wide rounded px-2 uppercase text-[9px]",
-                                u.role === 'admin' ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400" :
-                                u.role === 'manager' ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400" :
-                                "border-slate-250 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-350"
-                              )}>
-                                {u.role}
-                              </Badge>
-                            </td>
-                            <td className="px-6 py-4">
-                              <Badge className={cn(
-                                "font-bold py-0.5 rounded text-[10px]",
-                                isActive 
-                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" 
-                                  : "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
-                              )}>
-                                {isActive ? 'Active' : 'Deactivated'}
-                              </Badge>
-                            </td>
-                          </tr>
+                          <div key={i} className="flex gap-4">
+                            <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${bg}`}>
+                              <Icon className={`h-5 w-5 ${color}`} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                                {activity.user} {activity.action} <span className="font-extrabold text-orange-600 dark:text-orange-400">{activity.target}</span>
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
+                            </div>
+                          </div>
                         );
                       })}
-                    </tbody>
-                  </table>
-                </CardContent>
-              </Card>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-              {/* Recent Workspace Activity */}
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm col-span-1">
-                <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-                  <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Workspace Activities</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-6">
-                    {activities.slice(0, 5).map((activity: any, i: number) => {
-                      let Icon = Activity;
-                      let color = 'text-[#5B7CFF]';
-                      let bg = 'bg-[#5B7CFF]/10';
-
-                      if (activity.type === 'project' || activity.type === 'assign') {
-                        Icon = ShieldCheck;
-                        color = 'text-emerald-500';
-                        bg = 'bg-emerald-500/10';
-                      } else if (activity.type === 'task' || activity.type === 'log') {
-                        Icon = Key;
-                        color = 'text-orange-500';
-                        bg = 'bg-orange-500/10';
-                      }
-
-                      return (
-                        <div key={i} className="flex gap-4">
-                          <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${bg}`}>
-                            <Icon className={`h-5 w-5 ${color}`} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                              {activity.user} {activity.action} <span className="font-extrabold text-orange-600 dark:text-orange-400">{activity.target}</span>
-                            </p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
-                          </div>
+              <div className="space-y-6 col-span-1">
+                {/* Workspace Configuration Status */}
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+                    <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Workspace Status</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-5">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                          <Server className="h-4 w-4 text-[#5B7CFF]" /> Storage Usage
                         </div>
+                        <span className="text-xs font-bold text-slate-500">45%</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] w-[45%]" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                          <Users className="h-4 w-4 text-emerald-500" /> Seats Used
+                        </div>
+                        <span className="text-xs font-bold text-slate-500">136 / 150</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 w-[90%]" />
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/60">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-550 dark:text-slate-400 font-medium">SSO Configuration</span>
+                        <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">Active</Badge>
+                      </div>
+                      <div className="flex items-center justify-between text-sm mt-3">
+                        <span className="text-slate-550 dark:text-slate-400 font-medium">2FA Enforcement</span>
+                        <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">Enabled</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Quick Actions */}
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+                    <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Quick Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-2">
+                    {quickActions.map((action, idx) => {
+                      const IconComponent = action.icon;
+                      return (
+                        <Button 
+                          key={idx} 
+                          onClick={action.action}
+                          variant="ghost" 
+                          className="w-full justify-between h-12 text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent hover:bg-transparent hover:text-orange-500 dark:hover:text-orange-400 transition-colors group"
+                        >
+                          <span className="flex items-center gap-2">
+                            <IconComponent className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors" />
+                            {action.title}
+                          </span>
+                          <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors" />
+                        </Button>
                       );
                     })}
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         ) : (
@@ -1303,7 +1428,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
           <div className="space-y-6 animate-in fade-in duration-300">
             {/* Filters and Search Toolbar */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm p-4">
-              <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
                 {/* Search Bar */}
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-450 pointer-events-none" />
@@ -1321,8 +1446,8 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 {/* Filter Dropdowns */}
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-1.5 rounded-xl">
-                    <Filter className="h-3.5 w-3.5 text-slate-450 ml-1.5" />
-                    <span className="text-xs font-bold text-slate-550 dark:text-slate-400 uppercase tracking-wider mr-1.5">Filters:</span>
+                    <Filter className="h-3.5 w-3.5 text-slate-400 ml-1.5" />
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1.5">Filters:</span>
                     
                     {/* Department Filter */}
                     <select
@@ -1361,14 +1486,14 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
               </div>
             </Card>
 
-            {/* Directory Board */}
+            {/* Directory Table Card */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden">
               <CardHeader className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30 flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">
                     {showOnlyRole === 'manager' ? 'Manager Directory' : 'Employee Directory'}
                   </CardTitle>
-                  <p className="text-xs text-slate-550 mt-1">
+                  <p className="text-xs text-slate-500 mt-1">
                     Showing {filteredUsers.length} of {usersList.filter(u => u.role === showOnlyRole).length} registered {showOnlyRole === 'manager' ? 'managers' : 'employees'}.
                   </p>
                 </div>
@@ -1405,21 +1530,21 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                               <div className={cn(
                                 "h-9 w-9 rounded-full flex items-center justify-center text-xs font-extrabold border shrink-0 transition-transform hover:scale-105",
                                 isActive 
-                                  ? "bg-orange-50 text-orange-700 border-orange-250 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20" 
+                                  ? "bg-orange-550/10 text-orange-600 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20" 
                                   : "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-800"
                               )}>
                                 {initials}
                               </div>
                               <div className="min-w-0">
                                 <div className="font-extrabold text-slate-900 dark:text-white leading-snug truncate">{u.name}</div>
-                                <div className="text-xs text-slate-450 dark:text-slate-400 leading-snug font-medium mt-0.5 truncate">{u.email}</div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400 leading-snug font-medium mt-0.5 truncate">{u.email}</div>
                                 <div className="text-[10px] text-slate-400 font-bold tracking-wider mt-1 font-mono uppercase">{u.id || 'N/A'}</div>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="font-bold text-slate-800 dark:text-slate-200">{u.designation || 'Specialist'}</div>
-                            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5 flex items-center">
+                            <div className="font-bold text-slate-850 dark:text-slate-200">{u.designation || 'Specialist'}</div>
+                            <div className="text-xs font-semibold text-slate-500 dark:text-slate-405 mt-0.5 flex items-center">
                               <Briefcase className="h-3 w-3 mr-1 text-slate-400" /> {u.department || 'Unassigned'}
                             </div>
                           </td>
@@ -1461,7 +1586,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                                 onClick={() => openEditModal(u)}
                                 variant="outline" 
                                 size="icon" 
-                                className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-800/80"
+                                className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80"
                                 title="Edit details"
                               >
                                 <Edit2 className="h-3.5 w-3.5" />
@@ -1487,8 +1612,8 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     })}
                     {filteredUsers.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="px-6 py-12 text-center text-slate-450 italic font-medium">
-                          No matching registries found.
+                        <td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic font-medium">
+                          No matching records found.
                         </td>
                       </tr>
                     )}
@@ -1507,7 +1632,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
         <DialogContent className="sm:max-w-[480px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
           <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/30">
             <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">Create Employee Account</DialogTitle>
-            <DialogDescription className="text-xs font-semibold text-slate-400">Initialize a new secure cohort employee profile.</DialogDescription>
+            <DialogDescription className="text-xs font-semibold text-slate-450">Initialize a new secure cohort employee profile.</DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleCreateSubmit}>
@@ -1648,7 +1773,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
         <DialogContent className="sm:max-w-[480px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
           <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/30">
             <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">Edit Employee Details</DialogTitle>
-            <DialogDescription className="text-xs font-semibold text-slate-400">Modify properties and assign roles dynamically.</DialogDescription>
+            <DialogDescription className="text-xs font-semibold text-slate-450">Modify properties and assign roles dynamically.</DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleEditSubmit}>

@@ -100,13 +100,7 @@ const adminNavigationGroups = [
   },
   {
     name: 'Workspace Settings',
-    icon: Settings,
-    items: [
-      { name: 'General Settings', icon: Sliders },
-      { name: 'Company Information', icon: Building },
-      { name: 'Authentication Settings', icon: Lock },
-      { name: 'Integrations', icon: Link },
-    ]
+    icon: Settings
   },
   {
     name: 'Notifications',

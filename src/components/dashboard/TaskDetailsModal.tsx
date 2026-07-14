@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 
 // --- Types ---
 export type Role = 'manager' | 'intern' | 'admin';
-export type Priority = 'High' | 'Medium' | 'Normal' | 'Low';
+export type Priority = 'Critical' | 'High' | 'Medium' | 'Normal' | 'Low';
 export type Status = 'To Do' | 'In Progress' | 'In Review' | 'Done';
 
 export interface UserProfile {
