@@ -17,6 +17,7 @@ import { AvatarUpload } from '@/components/profile/AvatarUpload';
 export default function ProfileEdit({ session, onNavigate }: { session?: any, onNavigate: (view: string) => void }) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const { updateUser } = useUser();
+  const isAdmin = session?.user?.user_metadata?.role === 'admin';
   
   // Form States
   const [name, setName] = useState('');
@@ -232,16 +233,18 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
               </div>
 
               {/* Skills Tags */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Skills (Comma-separated)</label>
-                <Input 
-                  value={skillsText} 
-                  onChange={(e) => setSkillsText(e.target.value)} 
-                  placeholder="React, TypeScript, Tailwind CSS, Git..."
-                  className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
-                />
-                <p className="text-[10px] text-slate-400 font-medium">Add multiple skills separated by commas.</p>
-              </div>
+              {!isAdmin && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Skills (Comma-separated)</label>
+                  <Input 
+                    value={skillsText} 
+                    onChange={(e) => setSkillsText(e.target.value)} 
+                    placeholder="React, TypeScript, Tailwind CSS, Git..."
+                    className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
+                  />
+                  <p className="text-[10px] text-slate-400 font-medium">Add multiple skills separated by commas.</p>
+                </div>
+              )}
 
               {/* About Me */}
               <div className="space-y-1.5">
@@ -255,74 +258,79 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
                 />
               </div>
 
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80">
-                <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4">Social Links</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* GitHub */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                      <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-                      </svg> GitHub URL
-                    </label>
-                    <Input 
-                      value={github} 
-                      onChange={(e) => setGithub(e.target.value)} 
-                      placeholder="https://github.com/..."
-                      className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
-                    />
-                  </div>
+              {/* Social Links */}
+              {!isAdmin && (
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                  <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4">Social Links</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* GitHub */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                        </svg> GitHub URL
+                      </label>
+                      <Input 
+                        value={github} 
+                        onChange={(e) => setGithub(e.target.value)} 
+                        placeholder="https://github.com/..."
+                        className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
+                      />
+                    </div>
 
-                  {/* LinkedIn */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                      <svg className="h-3.5 w-3.5 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-                      </svg> LinkedIn URL
-                    </label>
-                    <Input 
-                      value={linkedin} 
-                      onChange={(e) => setLinkedin(e.target.value)} 
-                      placeholder="https://linkedin.com/in/..."
-                      className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
-                    />
-                  </div>
+                    {/* LinkedIn */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <svg className="h-3.5 w-3.5 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                        </svg> LinkedIn URL
+                      </label>
+                      <Input 
+                        value={linkedin} 
+                        onChange={(e) => setLinkedin(e.target.value)} 
+                        placeholder="https://linkedin.com/in/..."
+                        className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
+                      />
+                    </div>
 
-                  {/* Portfolio */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                      <Globe className="h-3.5 w-3.5 text-green-500" /> Portfolio URL
-                    </label>
-                    <Input 
-                      value={portfolio} 
-                      onChange={(e) => setPortfolio(e.target.value)} 
-                      placeholder="https://..."
-                      className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
-                    />
+                    {/* Portfolio */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <Globe className="h-3.5 w-3.5 text-green-500" /> Portfolio URL
+                      </label>
+                      <Input 
+                        value={portfolio} 
+                        onChange={(e) => setPortfolio(e.target.value)} 
+                        placeholder="https://..."
+                        className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Read-Only Professional details hint */}
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/20 dark:bg-slate-900/20 p-4 rounded-xl">
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Read-Only Workplace Information</p>
-                <div className={`grid grid-cols-2 ${session?.user?.user_metadata?.role === 'manager' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4 text-xs font-semibold`}>
-                  {session?.user?.user_metadata?.role !== 'manager' && (
+              {!isAdmin && (
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/20 dark:bg-slate-900/20 p-4 rounded-xl">
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Read-Only Workplace Information</p>
+                  <div className={`grid grid-cols-2 ${session?.user?.user_metadata?.role === 'manager' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4 text-xs font-semibold`}>
+                    {session?.user?.user_metadata?.role !== 'manager' && (
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Manager</span>
+                        <span className="text-slate-700 dark:text-slate-300">{profile.manager}</span>
+                      </div>
+                    )}
                     <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Manager</span>
-                      <span className="text-slate-700 dark:text-slate-300">{profile.manager}</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Employment Type</span>
+                      <span className="text-slate-700 dark:text-slate-300">{profile.employmentType}</span>
                     </div>
-                  )}
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Employment Type</span>
-                    <span className="text-slate-700 dark:text-slate-300">{profile.employmentType}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Joining Date</span>
-                    <span className="text-slate-700 dark:text-slate-300">{profile.joiningDate}</span>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Joining Date</span>
+                      <span className="text-slate-700 dark:text-slate-300">{profile.joiningDate}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
             </div>
           </CardContent>
