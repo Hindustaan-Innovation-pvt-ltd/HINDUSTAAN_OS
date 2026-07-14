@@ -2,6 +2,7 @@ import React from 'react';
 import { SettingsSection, SettingsRow } from './SettingsLayout';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
+import { useWorkspace } from '@/context/WorkspaceContext';
 
 const ACCENT_COLORS = [
   { id: 'orange', hex: '#F97316' },
@@ -14,6 +15,7 @@ const ACCENT_COLORS = [
 
 export default function AppearanceTab({ data, updateField }: { data: any, updateField: (key: string, value: any) => void }) {
   const { themeMode, setThemeMode, setAccentColor } = useTheme();
+  const { updateConfig } = useWorkspace();
 
   return (
     <div className="animate-in fade-in duration-300">
@@ -37,6 +39,8 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
                   checked={data.themeMode === 'light'}
                   onChange={() => {
                     updateField('themeMode', 'light');
+                    setThemeMode('light');
+                    updateConfig({ themeMode: 'light' });
                   }}
                   className="sr-only peer" 
                 />
@@ -63,6 +67,8 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
                   checked={data.themeMode === 'dark'}
                   onChange={() => {
                     updateField('themeMode', 'dark');
+                    setThemeMode('dark');
+                    updateConfig({ themeMode: 'dark' });
                   }}
                   className="sr-only peer" 
                 />
@@ -99,6 +105,8 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
                 style={{ backgroundColor: color.hex }}
                 onClick={() => {
                   updateField('accentColor', color.id);
+                  setAccentColor(color.id as any);
+                  updateConfig({ accentColor: color.id });
                 }}
                 aria-label={`Select accent color ${color.id}`}
               >
