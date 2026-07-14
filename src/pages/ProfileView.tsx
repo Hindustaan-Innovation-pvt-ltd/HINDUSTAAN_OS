@@ -126,7 +126,6 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                 
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap justify-center">
                   <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/20 dark:text-indigo-400 border-0 font-bold uppercase tracking-wider text-[10px]">Super Admin</Badge>
-                  <span className="text-sm font-semibold text-slate-500 capitalize">{profile.department}</span>
                 </div>
 
                 <div className="w-full border-t border-slate-100 dark:border-slate-800/80 mt-6 pt-4 text-left space-y-3">
