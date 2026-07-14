@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Settings, ArrowLeft, Sliders, FolderKanban, Shield, Bell, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useWorkspace } from '@/context/WorkspaceContext';
 
 import GeneralTab from '@/components/workspace-settings/GeneralTab';
 import ProjectsTab from '@/components/workspace-settings/ProjectsTab';
@@ -21,52 +22,29 @@ const TABS = [
 export default function WorkspaceSettings({ onNavigate }: { onNavigate?: (view: string) => void }) {
   const [activeTab, setActiveTab] = useState('general');
   const [isSaving, setIsSaving] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
-  const [formData, setFormData] = useState(() => {
-    const saved = localStorage.getItem('workspace_config_v2');
-    const legacy = localStorage.getItem('workspace_auth_config');
-    const parsed = saved ? JSON.parse(saved) : (legacy ? JSON.parse(legacy) : {});
-    return {
-      workspaceName: 'Hindustaan OS',
-      defaultTimezone: 'Asia/Kolkata',
-      language: 'English',
-      supportEmail: 'support@hindustaan.in',
-      address: 'Raipur, Chhattisgarh, India',
-      currency: 'INR',
-      defaultProjectStatus: 'Planning',
-      defaultTaskStatus: 'To Do',
-      defaultPriority: 'Medium',
-      ssoEnabled: true,
-      twoFactorEnforced: true,
-      publicSignups: false,
-      autoProvisioning: true,
-      sessionTimeout: true,
-      passwordPolicy: 'Strong',
-      ipRestrictions: '',
-      emailNotifications: true,
-      inAppNotifications: true,
-      pushNotifications: false,
-      themeMode: 'system',
-      accentColor: '#5B7CFF',
-      ...parsed
-    };
-  });
+  const { config, updateConfig } = useWorkspace();
+  const [formData, setFormData] = useState(config);
+
+  const hasUnsavedChanges = JSON.stringify(formData) !== JSON.stringify(config);
+
+  React.useEffect(() => {
+    // Only update if no unsaved changes to prevent overwriting user input
+    if (JSON.stringify(formData) === JSON.stringify(config)) {
+      setFormData(config);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config]);
 
   const updateField = (key: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [key]: value }));
-    setHasUnsavedChanges(true);
   };
 
   const handleSave = () => {
     setIsSaving(true);
     setTimeout(() => {
       setIsSaving(false);
-      setHasUnsavedChanges(false);
-      localStorage.setItem('workspace_config_v2', JSON.stringify(formData));
-      
-      // Update CSS variables for accent color
-      document.documentElement.style.setProperty('--primary', formData.accentColor);
+      updateConfig(formData);
       
       toast.success('Workspace settings saved successfully');
     }, 1000);

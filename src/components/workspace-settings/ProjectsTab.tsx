@@ -29,6 +29,8 @@ export default function ProjectsTab({ data, updateField }: { data: any, updateFi
               <SelectItem value="Planning">Planning</SelectItem>
               <SelectItem value="Active">Active</SelectItem>
               <SelectItem value="On Hold">On Hold</SelectItem>
+              <SelectItem value="Completed">Completed</SelectItem>
+              <SelectItem value="Archived">Archived</SelectItem>
             </SelectContent>
           </Select>
         </SettingsRow>
@@ -67,7 +69,7 @@ export default function ProjectsTab({ data, updateField }: { data: any, updateFi
               <SelectItem value="Low">Low</SelectItem>
               <SelectItem value="Medium">Medium</SelectItem>
               <SelectItem value="High">High</SelectItem>
-              <SelectItem value="Urgent">Urgent</SelectItem>
+              <SelectItem value="Critical">Critical</SelectItem>
             </SelectContent>
           </Select>
         </SettingsRow>

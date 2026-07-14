@@ -19,8 +19,43 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
           title="Workspace Logo" 
           description="A square image works best. Recommended size is 256x256px."
         >
-          <div className="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer">
-            <span className="text-[10px] font-bold text-slate-500 uppercase">Upload</span>
+          <div className="relative group">
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              title="Upload Logo"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    if (event.target?.result) {
+                      updateField('workspaceLogo', event.target.result.toString());
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+            />
+            <div className="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors overflow-hidden">
+              {data.workspaceLogo ? (
+                <img src={data.workspaceLogo} alt="Workspace Logo" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Upload</span>
+              )}
+            </div>
+            {data.workspaceLogo && (
+              <button 
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  updateField('workspaceLogo', '');
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            )}
           </div>
         </SettingsRow>
         

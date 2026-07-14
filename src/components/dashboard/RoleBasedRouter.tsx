@@ -12,7 +12,7 @@ export default function RoleBasedRouter({ session, onNavigate }: RoleBasedRouter
   const role = session?.user?.user_metadata?.role || 'manager';
 
   if (role === 'admin') {
-    return <AdminDashboard onNavigate={onNavigate} />;
+    return <AdminDashboard />;
   }
 
   if (role === 'manager') {
@@ -21,3 +21,4 @@ export default function RoleBasedRouter({ session, onNavigate }: RoleBasedRouter
 
   return <InternDashboard session={session} />;
 }
+// Force re-eval

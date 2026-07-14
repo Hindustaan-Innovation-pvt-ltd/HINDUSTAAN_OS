@@ -3,8 +3,16 @@ import { SettingsSection, SettingsRow } from './SettingsLayout';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
 
+const ACCENT_COLORS = [
+  { id: 'orange', hex: '#F97316' },
+  { id: 'blue', hex: '#3B82F6' },
+  { id: 'emerald', hex: '#10B981' },
+  { id: 'rose', hex: '#F43F5E' },
+  { id: 'purple', hex: '#A855F7' }
+];
+
 export default function AppearanceTab({ data, updateField }: { data: any, updateField: (key: string, value: any) => void }) {
-  const { themeMode, setThemeMode } = useTheme();
+  const { themeMode, setThemeMode, setAccentColor } = useTheme();
 
   return (
     <div className="animate-in fade-in duration-300">
@@ -118,18 +126,21 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
       >
         <div className="p-6">
           <div className="flex flex-wrap gap-4">
-            {['#5B7CFF', '#A855F7', '#F97316', '#10B981', '#EAB308', '#EF4444', '#0F172A'].map((color) => (
+            {ACCENT_COLORS.map((color) => (
               <button
-                key={color}
+                key={color.id}
                 className={cn(
                   "w-12 h-12 rounded-full transition-all hover:scale-110 shadow-sm flex items-center justify-center border-4",
-                  data.accentColor === color ? "border-slate-300 dark:border-slate-600 scale-110 ring-4 ring-slate-100 dark:ring-slate-800" : "border-transparent"
+                  data.accentColor === color.id ? "border-slate-300 dark:border-slate-600 scale-110 ring-4 ring-slate-100 dark:ring-slate-800" : "border-transparent"
                 )}
-                style={{ backgroundColor: color }}
-                onClick={() => updateField('accentColor', color)}
-                aria-label={`Select accent color ${color}`}
+                style={{ backgroundColor: color.hex }}
+                onClick={() => {
+                  updateField('accentColor', color.id);
+                  setAccentColor(color.id as any);
+                }}
+                aria-label={`Select accent color ${color.id}`}
               >
-                {data.accentColor === color && (
+                {data.accentColor === color.id && (
                   <div className="w-3 h-3 rounded-full bg-white shadow-sm" />
                 )}
               </button>
