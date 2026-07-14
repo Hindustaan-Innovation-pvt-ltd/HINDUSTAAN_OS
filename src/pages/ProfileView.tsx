@@ -407,39 +407,39 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
       </Dialog>
 
       <Dialog open={isChangeEmailOpen} onOpenChange={setIsChangeEmailOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-2xl border-slate-800 bg-[#0f111a] text-slate-100 p-6 shadow-2xl">
+        <DialogContent className="sm:max-w-[500px] rounded-[16px] border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f111a] text-slate-900 dark:text-slate-100 p-6 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white">Change Email Address</DialogTitle>
-            <DialogDescription className="text-slate-400 text-xs font-semibold mt-1">
-              Update your account's primary email. You will use this to log in.
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Change Email Address</DialogTitle>
+            <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-1">
+              Update your account's primary email. You will use this to log in. You can only change your email once every 14 days.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-300">New Email Address</label>
+              <label className="text-sm font-bold text-slate-600 dark:text-slate-300">New Email Address</label>
               <Input 
                 type="email" 
                 value={newEmail} 
                 onChange={e => setNewEmail(e.target.value)} 
                 placeholder="admin@hindustaan.in" 
-                className="rounded-xl bg-slate-900/60 border-slate-800 text-white focus:ring-orange-500/50" 
+                className="rounded-xl bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:ring-orange-500/50" 
               />
             </div>
             
             <div className="space-y-1.5 relative">
-              <label className="text-sm font-bold text-slate-300">Current Password</label>
+              <label className="text-sm font-bold text-slate-600 dark:text-slate-300">Current Password</label>
               <div className="relative">
                 <Input 
                   type={showPassword.current ? "text" : "password"} 
                   value={emailCurrentPassword} 
                   onChange={e => setEmailCurrentPassword(e.target.value)} 
                   placeholder="••••••••" 
-                  className="rounded-xl bg-slate-900/60 border-slate-800 text-white pr-10 focus:ring-orange-500/50" 
+                  className="rounded-xl bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white pr-10 focus:ring-orange-500/50" 
                 />
                 <button 
                   type="button" 
                   onClick={() => setShowPassword(p => ({...p, current: !p.current}))} 
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
                   {showPassword.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
