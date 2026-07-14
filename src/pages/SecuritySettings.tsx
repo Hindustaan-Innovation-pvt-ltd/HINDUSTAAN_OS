@@ -82,11 +82,11 @@ export default function SecuritySettings({ session }: { session?: any }) {
       {/* Header */}
       <div>
         <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-          <Settings className="h-8 w-8 text-indigo-500" />
-          Workspace Settings
+          <Shield className="h-8 w-8 text-indigo-500" />
+          Security & Privacy
         </h2>
         <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5 max-w-3xl">
-          Manage workspace configuration and organizational preferences.
+          Configure organization-wide security policies, access controls, monitoring, and authentication rules.
         </p>
       </div>
 

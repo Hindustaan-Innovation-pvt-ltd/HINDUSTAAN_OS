@@ -39,7 +39,7 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
                   }}
                   className="sr-only peer" 
                 />
-                <div className="rounded-xl border-2 border-slate-200 dark:border-slate-800 peer-checked:border-[#5B7CFF] peer-checked:ring-4 peer-checked:ring-[#5B7CFF]/10 overflow-hidden transition-all bg-white">
+                <div className="rounded-xl border-2 border-slate-200 dark:border-slate-800 peer-checked:border-orange-500 peer-checked:ring-4 peer-checked:ring-orange-500/10 overflow-hidden transition-all bg-white">
                   <div className="h-32 bg-slate-50 flex flex-col p-3 space-y-3 group-hover:bg-slate-100 transition-colors">
                     <div className="h-4 bg-white rounded shadow-sm w-1/3" />
                     <div className="flex-1 bg-white rounded shadow-sm p-3 space-y-2 border border-slate-100">
@@ -65,7 +65,7 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
                   }}
                   className="sr-only peer" 
                 />
-                <div className="rounded-xl border-2 border-slate-200 dark:border-slate-800 peer-checked:border-[#5B7CFF] peer-checked:ring-4 peer-checked:ring-[#5B7CFF]/10 overflow-hidden transition-all bg-[#0c1222]">
+                <div className="rounded-xl border-2 border-slate-200 dark:border-slate-800 peer-checked:border-orange-500 peer-checked:ring-4 peer-checked:ring-orange-500/10 overflow-hidden transition-all bg-[#0c1222]">
                   <div className="h-32 bg-[#0c1222] flex flex-col p-3 space-y-3 group-hover:bg-slate-900 transition-colors">
                     <div className="h-4 bg-slate-800 rounded shadow-sm border border-slate-800/50 w-1/3" />
                     <div className="flex-1 bg-slate-900 rounded shadow-sm border border-slate-800/50 p-3 space-y-2">
@@ -91,7 +91,7 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
                   }}
                   className="sr-only peer" 
                 />
-                <div className="rounded-xl border-2 border-slate-200 dark:border-slate-800 peer-checked:border-[#5B7CFF] peer-checked:ring-4 peer-checked:ring-[#5B7CFF]/10 overflow-hidden transition-all relative">
+                <div className="rounded-xl border-2 border-slate-200 dark:border-slate-800 peer-checked:border-orange-500 peer-checked:ring-4 peer-checked:ring-orange-500/10 overflow-hidden transition-all relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-slate-50 to-[#0c1222] pointer-events-none" />
                   <div className="h-32 flex flex-col p-3 space-y-3 relative z-10">
                     <div className="flex gap-2">

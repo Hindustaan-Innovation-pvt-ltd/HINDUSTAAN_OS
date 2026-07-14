@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Settings, ArrowLeft } from 'lucide-react';
+import { Settings, ArrowLeft, Sliders, FolderKanban, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkspace } from '@/context/WorkspaceContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -11,6 +11,31 @@ import AppearanceTab from '@/components/workspace-settings/AppearanceTab';
 
 export default function WorkspaceSettings({ onNavigate, currentView }: { onNavigate?: (view: string) => void, currentView?: string }) {
   const activeTab = currentView ? currentView.split(' - ')[1]?.toLowerCase() : 'general';
+  const getHeaderDetails = () => {
+    switch (activeTab) {
+      case 'projects':
+        return {
+          title: 'Projects',
+          description: 'Configure default projects settings, categories, and tags.',
+          icon: FolderKanban
+        };
+      case 'appearance':
+        return {
+          title: 'Appearance',
+          description: 'Customize workspace themes, accent colors, and branding elements.',
+          icon: Palette
+        };
+      case 'general':
+      default:
+        return {
+          title: 'General',
+          description: 'Manage general workspace details, metadata, and operational status.',
+          icon: Sliders
+        };
+    }
+  };
+
+  const { title, description, icon: HeaderIcon } = getHeaderDetails();
   const [isSaving, setIsSaving] = useState(false);
   
   const { config, updateConfig } = useWorkspace();
@@ -66,11 +91,11 @@ export default function WorkspaceSettings({ onNavigate, currentView }: { onNavig
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-            <Settings className="h-8 w-8 text-indigo-500" />
-            Workspace Settings
+            <HeaderIcon className="h-8 w-8 text-indigo-500" />
+            {title}
           </h2>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5 max-w-3xl">
-            Manage workspace configuration and organizational preferences.
+            {description}
           </p>
         </div>
         
@@ -95,7 +120,7 @@ export default function WorkspaceSettings({ onNavigate, currentView }: { onNavig
             disabled={isSaving || !hasUnsavedChanges}
             className={cn(
               "rounded-lg font-semibold px-4 transition-all",
-              hasUnsavedChanges ? "bg-[#5B7CFF] hover:bg-[#5B7CFF]/90 text-white shadow-sm" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+              hasUnsavedChanges ? "bg-orange-500 hover:bg-orange-500/90 text-white shadow-sm" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
             )}
           >
             {isSaving ? 'Saving...' : 'Update Settings'}
