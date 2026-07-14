@@ -10,6 +10,8 @@ export interface User {
   dateJoined?: string;
   isActive?: boolean;
   reportingManager?: string;
+  empId?: string;
+  avatarUrl?: string;
 }
 
 const USERS_KEY = 'hindustaan_users';
@@ -191,4 +193,38 @@ export const updatePassword = (email: string, currentPass: string, newPass: stri
   users[index].password = newPass;
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
   return {success: true, message: 'Password updated successfully.'};
+};
+
+export const updateProfileOnBackend = async (
+  userId: string,
+  fields: { name?: string; department?: string; designation?: string; avatarUrl?: string }
+): Promise<User | null> => {
+  const current = getCurrentUser();
+  if (current) {
+    const updated: User = {
+      ...current,
+      name: fields.name ?? current.name,
+      department: fields.department ?? current.department,
+      designation: fields.designation ?? current.designation,
+      avatarUrl: fields.avatarUrl ?? current.avatarUrl,
+    };
+    const key = 'hindustaan_user';
+    if (localStorage.getItem(key)) {
+      localStorage.setItem(key, JSON.stringify(updated));
+    } else {
+      sessionStorage.setItem(key, JSON.stringify(updated));
+    }
+    return updated;
+  }
+  return null;
+};
+
+export const uploadAvatarToBackend = async (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      resolve(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  });
 };

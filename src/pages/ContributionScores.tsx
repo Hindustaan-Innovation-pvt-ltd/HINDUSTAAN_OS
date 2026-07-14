@@ -749,7 +749,7 @@ export default function ContributionScores({ session }: { session?: any }) {
             <p className="text-[9px] lg:text-[10px] 2xl:text-[11px] font-bold text-slate-500 uppercase tracking-tight whitespace-nowrap">Highest Score</p>
             <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-900 shadow-sm shrink-0">
               <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-xs lg:text-sm">
-                {highestScorer.name.split(' ').map(n => n[0]).join('')}
+                {highestScorer.name.split(' ').map((n: string) => n[0]).join('')}
               </AvatarFallback>
             </Avatar>
             <div className="w-full flex flex-col items-center">
@@ -815,7 +815,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs">
-                              {intern.name.split(' ').map(n => n[0]).join('')}
+                              {intern.name.split(' ').map((n: string) => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
                           <div>
@@ -957,7 +957,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                 <div key={intern.id} className="flex items-center justify-between bg-white dark:bg-slate-900 p-3 rounded-xl border border-rose-100 dark:border-rose-900/30">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-rose-100 text-rose-700 text-xs font-bold">{intern.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                      <AvatarFallback className="bg-rose-100 text-rose-700 text-xs font-bold">{intern.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="text-sm font-bold text-slate-900 dark:text-white">{intern.name}</p>

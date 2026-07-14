@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from "@/lib/utils";
 
 interface BrandLogoProps {
-  variant?: 'auth' | 'sidebar';
+  variant?: 'auth' | 'sidebar' | 'minimized';
   className?: string;
 }
 
