@@ -216,7 +216,7 @@ export default function SystemNotificationsModule() {
                 className={`px-3 py-1.5 text-xs font-bold rounded-md capitalize transition-all ${
                   activeFilter === filter 
                     ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' 
-                    : 'text-slate-500 hover:text-slate-900 hover:bg-white hover:shadow-sm dark:hover:bg-slate-800/40 dark:hover:text-slate-350'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-white hover:shadow-sm dark:hover:bg-slate-800/40 dark:hover:text-white'
                 }`}
               >
                 {filter === 'all' ? 'All Alerts' : filter}

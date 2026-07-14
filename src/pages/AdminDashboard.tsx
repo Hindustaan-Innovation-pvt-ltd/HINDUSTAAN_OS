@@ -1311,44 +1311,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   </CardContent>
                 </Card>
 
-                {/* Recent Workspace Activity */}
-                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
-                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-                    <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Recent Workspace Activity</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="space-y-6">
-                      {activities.slice(0, 3).map((activity: any, i: number) => {
-                        let Icon = Activity;
-                        let color = 'text-[#5B7CFF]';
-                        let bg = 'bg-[#5B7CFF]/10';
 
-                        if (activity.type === 'project' || activity.type === 'assign') {
-                          Icon = ShieldCheck;
-                          color = 'text-emerald-500';
-                          bg = 'bg-emerald-500/10';
-                        } else if (activity.type === 'task' || activity.type === 'log') {
-                          Icon = Key;
-                          color = 'text-orange-500';
-                        }
-
-                        return (
-                          <div key={i} className="flex gap-4">
-                            <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${bg}`}>
-                              <Icon className={`h-5 w-5 ${color}`} />
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                                {activity.user} {activity.action} <span className="font-extrabold text-orange-600 dark:text-orange-400">{activity.target}</span>
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
 
               <div className="space-y-6 col-span-1">
@@ -1395,41 +1358,47 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   </CardContent>
                 </Card>
 
-                {/* Audit Logs */}
-                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
-                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30 flex flex-row items-center justify-between">
-                    <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Audit Logs</CardTitle>
-                    <Button 
-                      onClick={handleExportAuditLogs}
-                      variant="outline" 
-                      size="sm" 
-                      className="h-8 rounded-xl font-bold border-slate-200 dark:border-slate-800 text-xs flex items-center gap-1.5"
-                    >
-                      <Download className="h-3.5 w-3.5" /> Export CSV
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                      {activities.slice(0, 4).map((activity: any, idx: number) => (
-                        <div key={idx} className="py-3 first:pt-0 last:pb-0 flex items-start justify-between gap-4">
-                          <div className="space-y-0.5">
-                            <p className="text-xs font-bold text-slate-900 dark:text-white leading-snug">
-                              {activity.user} {activity.action}
-                            </p>
-                            <p className="text-[10px] font-bold text-orange-500/90 dark:text-orange-400">
-                              {activity.target}
-                            </p>
-                          </div>
-                          <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 shrink-0 self-center">
-                            {activity.time}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             </div>
+
+            {/* Recent Workspace Activity */}
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm animate-in fade-in duration-300">
+              <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+                <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Recent Workspace Activity</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {activities.slice(0, 6).map((activity: any, i: number) => {
+                    let Icon = Activity;
+                    let color = 'text-[#5B7CFF]';
+                    let bg = 'bg-[#5B7CFF]/10';
+
+                    if (activity.type === 'project' || activity.type === 'assign') {
+                      Icon = ShieldCheck;
+                      color = 'text-emerald-500';
+                      bg = 'bg-emerald-500/10';
+                    } else if (activity.type === 'task' || activity.type === 'log') {
+                      Icon = Key;
+                      color = 'text-orange-500';
+                    }
+
+                    return (
+                      <div key={i} className="flex gap-4 p-4 rounded-xl border border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${bg}`}>
+                          <Icon className={`h-5 w-5 ${color}`} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                            {activity.user} {activity.action} <span className="font-extrabold text-orange-600 dark:text-orange-400">{activity.target}</span>
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ) : (
           // CRUD Registry View
