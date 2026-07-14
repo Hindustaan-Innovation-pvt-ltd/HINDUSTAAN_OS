@@ -155,15 +155,14 @@ export function AvatarUpload({ avatar, name, role, onAvatarChange, email }: Avat
             <Upload className="h-4 w-4" />
             Upload New Photo
           </DropdownMenuItem>
-          {avatar && (
-            <DropdownMenuItem
-              onClick={handleRemovePhoto}
-              className="flex items-center gap-2 font-medium text-red-500 hover:text-red-600 dark:hover:bg-red-950/30 cursor-pointer focus:bg-red-50 dark:focus:bg-red-950/30 focus:text-red-600"
-            >
-              <Trash2 className="h-4 w-4" />
-              Remove Current Photo
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem
+            onClick={handleRemovePhoto}
+            disabled={!avatar}
+            className="flex items-center gap-2 font-medium text-red-500 hover:text-red-600 dark:hover:bg-red-950/30 cursor-pointer focus:bg-red-50 dark:focus:bg-red-950/30 focus:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+          >
+            <Trash2 className="h-4 w-4" />
+            Remove Current Photo
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
