@@ -339,7 +339,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
               {userRole !== 'admin' && onNavigate && (
                 <DropdownMenuItem 
                   onClick={() => {
-                    onNavigate('Profile');
+                    onNavigate('My Profile');
                     if (isMobile) setSidebarOpen(false);
                   }}
                   className="cursor-pointer text-slate-700 dark:text-slate-200 focus:bg-slate-50 dark:focus:bg-slate-800/50 text-sm font-medium rounded-xl flex items-center justify-between py-2.5 transition-colors mb-1"
