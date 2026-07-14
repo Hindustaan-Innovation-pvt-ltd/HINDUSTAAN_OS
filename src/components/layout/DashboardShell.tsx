@@ -100,7 +100,13 @@ const adminNavigationGroups = [
   },
   {
     name: 'Workspace Settings',
-    icon: Settings
+    icon: Settings,
+    items: [
+      { name: 'General', id: 'Workspace Settings - General', icon: Settings },
+      { name: 'Projects', id: 'Workspace Settings - Projects', icon: FolderKanban },
+      { name: 'Security & Access', id: 'Workspace Settings - Security & Access', icon: ShieldCheck },
+      { name: 'Appearance', id: 'Workspace Settings - Appearance', icon: Settings }
+    ]
   },
   {
     name: 'Notifications',
@@ -108,7 +114,7 @@ const adminNavigationGroups = [
     badge: 3,
     items: [
       { name: 'System Notifications', icon: BellRing },
-      { name: 'Announcement Center', icon: Megaphone },
+      { name: 'Announcement Center', icon: Bell },
       { name: 'Email Logs', icon: Mail },
     ]
   },
@@ -117,7 +123,6 @@ const adminNavigationGroups = [
     icon: User,
     items: [
       { name: 'My Profile', icon: UserCircle },
-      { name: 'Security Settings', icon: ShieldCheck },
     ]
   }
 ];
@@ -261,12 +266,12 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                           >
                             {item.items.map((subItem: any) => {
                               const SubIcon = subItem.icon;
-                              const isSubCurrent = currentView === subItem.name;
+                              const isSubCurrent = currentView === (subItem.id || subItem.name);
                               return (
                                 <button
                                   key={subItem.name}
                                   onClick={() => {
-                                    onNavigate(subItem.name);
+                                    onNavigate(subItem.id || subItem.name);
                                     if (isMobile) setSidebarOpen(false);
                                   }}
                                   className={cn(

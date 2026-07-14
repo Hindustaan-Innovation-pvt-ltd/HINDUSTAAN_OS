@@ -1314,43 +1314,45 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
               </div>
 
-              <div className="space-y-6 col-span-1">
+              <div className="h-full col-span-1">
                 {/* Workspace Configuration Status */}
-                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm h-full flex flex-col">
                   <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
                     <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Workspace Status</CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6 space-y-5">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-                          <Server className="h-4 w-4 text-[#5B7CFF]" /> Storage Usage
+                  <CardContent className="p-6 flex-1 flex flex-col justify-between">
+                    <div className="space-y-8">
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                            <Server className="h-4 w-4 text-[#5B7CFF]" /> Storage Usage
+                          </div>
+                          <span className="text-xs font-bold text-slate-500">45%</span>
                         </div>
-                        <span className="text-xs font-bold text-slate-500">45%</span>
+                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] w-[45%]" />
+                        </div>
                       </div>
-                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] w-[45%]" />
-                      </div>
-                    </div>
 
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-                          <Users className="h-4 w-4 text-emerald-500" /> Seats Used
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                            <Users className="h-4 w-4 text-emerald-500" /> Seats Used
+                          </div>
+                          <span className="text-xs font-bold text-slate-500">136 / 150</span>
                         </div>
-                        <span className="text-xs font-bold text-slate-500">136 / 150</span>
-                      </div>
-                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 w-[90%]" />
+                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-emerald-500 w-[90%]" />
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/60">
+                    <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60 space-y-4">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-slate-550 dark:text-slate-400 font-medium">SSO Configuration</span>
                         <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">Active</Badge>
                       </div>
-                      <div className="flex items-center justify-between text-sm mt-3">
+                      <div className="flex items-center justify-between text-sm">
                         <span className="text-slate-550 dark:text-slate-400 font-medium">2FA Enforcement</span>
                         <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">Enabled</Badge>
                       </div>

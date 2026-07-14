@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Shield, Key, Fingerprint, Lock, Unlock, Smartphone, MapPin, Search, AlertTriangle, LogOut, CheckCircle2, MonitorSmartphone, Clock, Activity, Users, Settings2, Globe, Building2, Download } from 'lucide-react';
+import { Shield, Key, Fingerprint, Lock, Unlock, Smartphone, MapPin, Search, AlertTriangle, LogOut, CheckCircle2, MonitorSmartphone, Clock, Activity, Users, Settings2, Globe, Building2, Download, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
@@ -82,11 +82,11 @@ export default function SecuritySettings({ session }: { session?: any }) {
       {/* Header */}
       <div>
         <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-          <Shield className="h-8 w-8 text-indigo-500" />
-          Security Settings
+          <Settings className="h-8 w-8 text-indigo-500" />
+          Workspace Settings
         </h2>
         <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5 max-w-3xl">
-          Configure organization-wide security policies, access controls, monitoring, and authentication rules.
+          Manage workspace configuration and organizational preferences.
         </p>
       </div>
 

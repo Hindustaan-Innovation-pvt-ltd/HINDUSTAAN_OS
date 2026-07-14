@@ -231,8 +231,18 @@ export default function EmailLogsModule() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      
+    <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+      {/* Header */}
+      <div>
+        <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+          <Mail className="h-8 w-8 text-indigo-500" />
+          Email Logs
+        </h2>
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5 max-w-3xl">
+          View email history and delivery records.
+        </p>
+      </div>
+
       {/* Analytics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
