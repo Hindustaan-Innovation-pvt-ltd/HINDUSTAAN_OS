@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
 import { GlobalSearch } from '../dashboard/GlobalSearch';
 import { NotificationBell } from '../dashboard/NotificationBell';
+import { EmployeeNotificationBell } from '../dashboard/EmployeeNotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -336,6 +337,18 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
               sideOffset={12} 
               className="w-64 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-700/50 shadow-2xl rounded-[18px] p-2 animate-in fade-in zoom-in-95 duration-200"
             >
+              {userRole !== 'admin' && onNavigate && (
+                <DropdownMenuItem 
+                  onClick={() => {
+                    onNavigate('Profile');
+                    if (isMobile) setSidebarOpen(false);
+                  }}
+                  className="cursor-pointer text-slate-700 dark:text-slate-200 focus:bg-slate-50 dark:focus:bg-slate-800/50 text-sm font-medium rounded-xl flex items-center justify-between py-2.5 transition-colors mb-1"
+                >
+                  My Profile
+                  <User className="h-4 w-4 ml-2 text-slate-400" />
+                </DropdownMenuItem>
+              )}
               {onSignOut && (
                 <DropdownMenuItem 
                   onClick={onSignOut}
@@ -438,8 +451,16 @@ export default function DashboardShell({
     });
   }, [onMinimizeChange]);
 
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, accentColor } = useTheme();
   const isDark = theme === 'dark';
+
+  // Apply accent color based on user role
+  useEffect(() => {
+    const root = window.document.documentElement;
+    const activeColor = role === 'admin' ? accentColor : 'cosmic';
+    ['theme-orange', 'theme-blue', 'theme-emerald', 'theme-rose', 'theme-purple', 'theme-cosmic'].forEach(c => root.classList.remove(c));
+    root.classList.add(`theme-${activeColor}`);
+  }, [role, accentColor]);
 
   // Ensure sidebar open state resets on resize to desktop/tablet
   useEffect(() => {
@@ -559,7 +580,11 @@ export default function DashboardShell({
                 {isDark ? <Sun className="h-5 w-5 sm:h-6 sm:w-6" /> : <Moon className="h-5 w-5 sm:h-6 sm:w-6" />}
               </button>
 
-              <NotificationBell onNavigate={onNavigate} />
+              {role === 'admin' ? (
+                <NotificationBell onNavigate={onNavigate} />
+              ) : (
+                <EmployeeNotificationBell onNavigate={onNavigate} />
+              )}
             </div>
           </div>
 

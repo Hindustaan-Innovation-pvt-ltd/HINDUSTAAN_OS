@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type ThemeMode = 'light' | 'dark' | 'system';
-type AccentColor = 'orange' | 'blue' | 'emerald' | 'rose' | 'purple';
+type AccentColor = 'orange' | 'blue' | 'emerald' | 'rose' | 'purple' | 'cosmic';
 
 interface ThemeContextType {
   theme: 'light' | 'dark'; // Computed actual theme
@@ -66,9 +66,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Apply Accent Color to DOM
   useEffect(() => {
-    const root = window.document.documentElement;
-    ['theme-orange', 'theme-blue', 'theme-emerald', 'theme-rose', 'theme-purple'].forEach(c => root.classList.remove(c));
-    root.classList.add(`theme-${accentColor}`);
     localStorage.setItem('accentColor', accentColor);
   }, [accentColor]);
 
