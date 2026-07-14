@@ -129,7 +129,6 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
             
             {/* 1. Profile Header */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-500 to-purple-600"></div>
               
               <CardContent className="p-6 pt-8 flex flex-col items-center text-center relative">
                 <button

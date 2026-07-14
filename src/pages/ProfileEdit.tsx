@@ -152,7 +152,6 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
       <div className="grid grid-cols-1 gap-6">
         {/* Main Edit Form Card */}
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-orange-500"></div>
           
           <CardContent className="p-6 sm:p-8 space-y-8">
             
@@ -160,7 +159,7 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
             <AvatarUpload
               avatar={avatar}
               name={profile.name}
-              role={profile.role}
+              role={isAdmin ? "" : profile.role}
               onAvatarChange={(newAvatar) => setAvatar(newAvatar)}
               email={profile.email}
             />
@@ -221,11 +220,13 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
                   </Select>
                 </div>
 
-                {/* Role (Read-Only) */}
+                {/* Role */}
                 <div className="space-y-1.5 opacity-70">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Role (Read-Only)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    {isAdmin ? "Role" : "Role (Read-Only)"}
+                  </label>
                   <Input 
-                    value={profile.role} 
+                    value={isAdmin ? "admin" : profile.role} 
                     disabled 
                     className="rounded-xl bg-slate-100 dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 font-semibold text-slate-400 cursor-not-allowed" 
                   />
