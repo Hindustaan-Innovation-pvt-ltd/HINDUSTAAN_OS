@@ -153,6 +153,11 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
       action: () => navigateToView("Tasks"),
     },
     {
+      title: "Review Leave Requests",
+      icon: Users,
+      action: () => navigateToView("Leave Management"),
+    },
+    {
       title: "Workspace Settings",
       icon: Settings,
       action: () => navigateToView("Settings"),
@@ -479,7 +484,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   </CardHeader>
                   <CardContent className="p-6">
                     <div className="space-y-6">
-                      {activities.slice(0, 8).map((activity: any, i: number) => {
+                      {activities.slice(0, 3).map((activity: any, i: number) => {
                         let Icon = Activity;
                         let color = 'text-[#5B7CFF]';
                         let bg = 'bg-[#5B7CFF]/10';
@@ -570,13 +575,13 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                           key={idx} 
                           onClick={action.action}
                           variant="ghost" 
-                          className="w-full justify-between h-12 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          className="w-full justify-between h-12 text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent hover:bg-transparent hover:text-orange-500 dark:hover:text-orange-400 transition-colors group"
                         >
                           <span className="flex items-center gap-2">
-                            <IconComponent className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                            <IconComponent className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors" />
                             {action.title}
                           </span>
-                          <ChevronRight className="h-4 w-4 text-slate-400" />
+                          <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors" />
                         </Button>
                       );
                     })}
