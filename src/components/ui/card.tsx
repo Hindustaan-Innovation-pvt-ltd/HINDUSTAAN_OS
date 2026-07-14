@@ -3,11 +3,23 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 function Card({ className, ...props }: React.ComponentProps<"div">) {
+  let isEmployee = false;
+  try {
+    const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
+    if (userStr) {
+      const role = JSON.parse(userStr).role;
+      if (role === 'employee' || role === 'intern') isEmployee = true;
+    }
+  } catch (e) {}
+
   return (
     <div
       data-slot="card"
       className={cn(
-        "flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm transition-all duration-300 hover:border-blue-500/50 hover:shadow-[0_0_15px_rgba(59,130,246,0.12)] dark:hover:border-purple-500/50 dark:hover:shadow-[0_0_15px_rgba(168,85,247,0.2)]",
+        "flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm transition-all duration-300",
+        isEmployee
+          ? "hover:bg-blue-50/80 hover:border-blue-200 hover:shadow-md dark:hover:bg-transparent dark:hover:border-purple-500/50 dark:hover:shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+          : "hover:border-blue-500/50 hover:shadow-[0_0_15px_rgba(59,130,246,0.12)] dark:hover:border-purple-500/50 dark:hover:shadow-[0_0_15px_rgba(168,85,247,0.2)]",
         className
       )}
       {...props}

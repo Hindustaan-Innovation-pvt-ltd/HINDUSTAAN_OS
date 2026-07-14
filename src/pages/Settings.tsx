@@ -36,7 +36,7 @@ const SETTINGS_SECTIONS = [
 ];
 
 export default function Settings({ session }: { session: any }) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, accentColor, setAccentColor, compactMode, setCompactMode } = useTheme();
   const role = session?.user?.user_metadata?.role || 'intern';
   
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -742,21 +742,24 @@ export default function Settings({ session }: { session: any }) {
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Accent Color</h3>
                   <div className="flex items-center gap-3">
-                    <button className="h-8 w-8 rounded-full bg-orange-500 ring-4 ring-orange-500/20"></button>
-                    <button className="h-8 w-8 rounded-full bg-blue-500 hover:scale-110 transition-transform"></button>
-                    <button className="h-8 w-8 rounded-full bg-emerald-500 hover:scale-110 transition-transform"></button>
-                    <button className="h-8 w-8 rounded-full bg-rose-500 hover:scale-110 transition-transform"></button>
-                    <button className="h-8 w-8 rounded-full bg-purple-500 hover:scale-110 transition-transform"></button>
+                    <button onClick={() => setAccentColor('cosmic')} className={cn("h-8 w-8 rounded-full bg-[#5B7CFF] hover:scale-110 transition-transform", accentColor === 'cosmic' && "ring-4 ring-[#5B7CFF]/20")}></button>
+                    <button onClick={() => setAccentColor('orange')} className={cn("h-8 w-8 rounded-full bg-orange-500 hover:scale-110 transition-transform", accentColor === 'orange' && "ring-4 ring-orange-500/20")}></button>
+                    <button onClick={() => setAccentColor('blue')} className={cn("h-8 w-8 rounded-full bg-blue-500 hover:scale-110 transition-transform", accentColor === 'blue' && "ring-4 ring-blue-500/20")}></button>
+                    <button onClick={() => setAccentColor('emerald')} className={cn("h-8 w-8 rounded-full bg-emerald-500 hover:scale-110 transition-transform", accentColor === 'emerald' && "ring-4 ring-emerald-500/20")}></button>
+                    <button onClick={() => setAccentColor('rose')} className={cn("h-8 w-8 rounded-full bg-rose-500 hover:scale-110 transition-transform", accentColor === 'rose' && "ring-4 ring-rose-500/20")}></button>
+                    <button onClick={() => setAccentColor('purple')} className={cn("h-8 w-8 rounded-full bg-purple-500 hover:scale-110 transition-transform", accentColor === 'purple' && "ring-4 ring-purple-500/20")}></button>
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Compact Mode</h3>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Reduce spacing to fit more content on screen.</p>
+                {role !== 'employee' && (
+                  <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">Compact Mode</h3>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Reduce spacing to fit more content on screen.</p>
+                    </div>
+                    <Switch checked={compactMode} onCheckedChange={(checked) => setCompactMode(checked)} />
                   </div>
-                  <Switch checked={toggles.compactMode} onCheckedChange={() => handleToggle('compactMode')} />
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
