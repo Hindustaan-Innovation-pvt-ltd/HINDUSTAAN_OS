@@ -116,6 +116,7 @@ const adminNavigationGroups = [
       { name: 'System Notifications', icon: BellRing },
       { name: 'Announcement Center', icon: Bell },
       { name: 'Email Logs', icon: Mail },
+      { name: 'Delivery Channels', icon: Settings },
     ]
   },
   {
@@ -203,8 +204,8 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                         "group flex items-center justify-between font-bold rounded-xl transition-all duration-300 py-3 relative w-full cursor-pointer",
                         collapsed ? "justify-center px-0 h-12 mb-1" : "px-3",
                         isCurrent && !hasSubItems
-                          ? "bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] text-white shadow-[0_0_15px_rgba(91,124,255,0.4)]"
-                          : "text-slate-600 dark:text-slate-400 hover:bg-[#5B7CFF]/10 dark:hover:bg-[#5B7CFF]/10 hover:text-[#5B7CFF] dark:hover:text-[#5B7CFF]"
+                          ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-[0_0_15px_color-mix(in_srgb,var(--color-orange-500)_40%,transparent)]"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-orange-500/10 dark:hover:bg-orange-500/10 hover:text-orange-500 dark:hover:text-orange-500"
                       )}
                     >
                       <div className="flex items-center overflow-hidden">
@@ -212,7 +213,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                           className={cn(
                             "h-5 w-5 shrink-0 transition-colors duration-200",
                             !collapsed && "mr-3",
-                            isCurrent && !hasSubItems ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-[#5B7CFF] dark:group-hover:text-[#5B7CFF]"
+                            isCurrent && !hasSubItems ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-orange-500 dark:group-hover:text-orange-500"
                           )}
                           aria-hidden="true"
                         />
@@ -277,11 +278,11 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                                   className={cn(
                                     "flex items-center font-bold rounded-xl transition-all duration-300 py-2.5 px-3 w-full",
                                     isSubCurrent
-                                      ? "bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] text-white shadow-[0_0_10px_rgba(91,124,255,0.3)]"
-                                      : "text-slate-500 dark:text-slate-400 hover:text-[#5B7CFF] dark:hover:text-[#5B7CFF] hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                      ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-[0_0_10px_color-mix(in_srgb,var(--color-orange-500)_30%,transparent)]"
+                                      : "text-slate-500 dark:text-slate-400 hover:text-orange-500 dark:hover:text-orange-500 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                                   )}
                                 >
-                                  <SubIcon className={cn("h-4 w-4 mr-3 shrink-0", isSubCurrent ? "text-white" : "text-slate-400 group-hover:text-[#5B7CFF]")} />
+                                  <SubIcon className={cn("h-4 w-4 mr-3 shrink-0", isSubCurrent ? "text-white" : "text-slate-400 group-hover:text-orange-500")} />
                                   <span className="truncate text-[13px] whitespace-nowrap overflow-hidden">{subItem.name}</span>
                                 </button>
                               );
@@ -453,6 +454,21 @@ export default function DashboardShell({
 
   const activeNavigation = role === 'admin' ? adminNavigationGroups : (role === 'manager' ? managerNavigation : employeeNavigation);
 
+  const getMainModuleName = () => {
+    for (const group of activeNavigation) {
+      if (group.name === currentView) return group.name;
+      const g = group as any;
+      if (g.items) {
+        for (const subItem of g.items) {
+          if (subItem.name === currentView || subItem.id === currentView) {
+            return group.name;
+          }
+        }
+      }
+    }
+    return currentView;
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-950 transition-colors duration-500">
       {/* Left Desktop Sidebar */}
@@ -510,7 +526,7 @@ export default function DashboardShell({
               {/* Greeting Desktop */}
               <div className="hidden lg:flex items-center">
                 <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  {currentView}
+                  {getMainModuleName()}
                 </h1>
               </div>
             </div>

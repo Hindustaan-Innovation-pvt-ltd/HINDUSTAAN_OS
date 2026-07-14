@@ -7,24 +7,13 @@ import AnnouncementCenterModule from './AnnouncementCenterModule';
 import SystemNotificationsModule from './SystemNotificationsModule';
 
 export default function NotificationsTab({ data, updateField }: { data: any, updateField: (key: string, value: any) => void }) {
-  const [activeSubTab, setActiveSubTab] = useState<'channels' | 'email-logs' | 'announcements' | 'system'>('channels');
+  const [activeSubTab, setActiveSubTab] = useState<'email-logs' | 'channels' | 'announcements' | 'system'>('email-logs');
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       
       {/* Sub-tab Navigation */}
       <div className="flex flex-wrap border-b border-slate-200 dark:border-slate-800">
-        <button
-          onClick={() => setActiveSubTab('channels')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-all ${
-            activeSubTab === 'channels'
-              ? 'border-orange-500 text-slate-900 dark:text-white'
-              : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-350'
-          }`}
-        >
-          <Settings className="h-4 w-4" />
-          Delivery Channels
-        </button>
         <button
           onClick={() => setActiveSubTab('email-logs')}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-all ${
@@ -35,6 +24,17 @@ export default function NotificationsTab({ data, updateField }: { data: any, upd
         >
           <Mail className="h-4 w-4" />
           Email Logs
+        </button>
+        <button
+          onClick={() => setActiveSubTab('channels')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-all ${
+            activeSubTab === 'channels'
+              ? 'border-orange-500 text-slate-900 dark:text-white'
+              : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-350'
+          }`}
+        >
+          <Settings className="h-4 w-4" />
+          Delivery Channels
         </button>
         <button
           onClick={() => setActiveSubTab('announcements')}

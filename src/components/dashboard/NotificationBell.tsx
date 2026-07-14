@@ -510,6 +510,10 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
     const updated = notifications.map(n => n.id === notification.id ? { ...n, isRead: true, unread: false } : n);
     saveNotifications(updated);
 
+    if (role === 'admin' && notification.type === 'leave') {
+      return;
+    }
+
     let targetPath = notification.redirectUrl || '';
     let targetView = '';
 

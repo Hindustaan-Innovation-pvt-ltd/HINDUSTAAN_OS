@@ -156,6 +156,7 @@ html.compact-mode {
 
 /* NEON COSMIC THEME OVERRIDES */
 @theme {
+  --font-sans: "Inter", sans-serif;
   --color-slate-950: #050816;
   --color-slate-900: #0B1023;
   --color-slate-800: #12182F;
@@ -195,16 +196,16 @@ body.dark {
 /* Button Gradients */
 .dark .bg-orange-600,
 .dark .hover\:bg-orange-700:hover {
-  background: linear-gradient(135deg, #5B7CFF, #A855F7) !important;
+  background: linear-gradient(135deg, var(--color-orange-500), var(--color-orange-600)) !important;
   border: none !important;
-  box-shadow: 0 4px 15px rgba(91, 124, 255, 0.4) !important;
+  box-shadow: 0 4px 15px var(--color-orange-500) !important;
   transition: all 0.3s ease !important;
   color: white !important;
 }
 
 .dark .bg-orange-600:hover {
-  background: linear-gradient(135deg, #6b89ff, #b56cf8) !important;
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.6) !important;
+  background: linear-gradient(135deg, var(--color-orange-400), var(--color-orange-500)) !important;
+  box-shadow: 0 0 20px var(--color-orange-500) !important;
   transform: translateY(-1px) !important;
 }
 
