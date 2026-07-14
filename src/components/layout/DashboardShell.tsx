@@ -56,16 +56,16 @@ const employeeNavigation = [
   { name: 'Work Logs', icon: Clock },
   { name: 'Leave Management', icon: CalendarRange },
   { name: 'Daily Standup', icon: Mic },
-  { name: 'My Projects', icon: FolderKanban },
+  { name: 'Projects', icon: FolderKanban },
   { name: 'Milestones', icon: Flag },
-  { name: 'My Performance', icon: Trophy },
+  { name: 'Contribution Scores', icon: Trophy },
   { name: 'Settings', icon: Settings },
 ];
 
 const managerNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
   { name: 'Projects', icon: FolderKanban },
-  { name: 'Tasks', icon: CheckSquare },
+  { name: 'My Tasks', icon: CheckSquare },
   { name: 'Gantt Timeline', icon: CalendarDays },
   { name: 'Progress Tracker', icon: BarChart2 },
   { name: 'Work Logs', icon: Clock },
@@ -83,7 +83,7 @@ const adminNavigationGroups = [
     icon: Building,
     items: [
       { name: 'Projects', icon: FolderKanban },
-      { name: 'Tasks', icon: CheckSquare },
+      { name: 'My Tasks', icon: CheckSquare },
       { name: 'Team Members', icon: Users },
       { name: 'Gantt Timeline', icon: CalendarDays },
       { name: 'Progress Tracker', icon: BarChart2 },

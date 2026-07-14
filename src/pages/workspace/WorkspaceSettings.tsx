@@ -99,33 +99,35 @@ export default function WorkspaceSettings({ onNavigate, currentView }: { onNavig
           </p>
         </div>
         
-        <div className="flex items-center gap-3 shrink-0 mt-2 sm:mt-0">
-          {hasUnsavedChanges && (
-            <span className="text-xs font-medium text-amber-600 dark:text-amber-500 hidden sm:inline-block bg-amber-100 dark:bg-amber-500/10 px-2 py-1 rounded-md">Unsaved changes</span>
-          )}
-          {hasUnsavedChanges && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setFormData(config)}
-              disabled={isSaving}
-              className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-            >
-              Discard
-            </Button>
-          )}
-          <Button 
-            size="sm"
-            onClick={handleSave} 
-            disabled={isSaving || !hasUnsavedChanges}
-            className={cn(
-              "rounded-lg font-semibold px-4 transition-all",
-              hasUnsavedChanges ? "bg-orange-500 hover:bg-orange-500/90 text-white shadow-sm" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+        {activeTab !== 'appearance' && (
+          <div className="flex items-center gap-3 shrink-0 mt-2 sm:mt-0">
+            {hasUnsavedChanges && (
+              <span className="text-xs font-medium text-amber-600 dark:text-amber-500 hidden sm:inline-block bg-amber-100 dark:bg-amber-500/10 px-2 py-1 rounded-md">Unsaved changes</span>
             )}
-          >
-            {isSaving ? 'Saving...' : 'Update Settings'}
-          </Button>
-        </div>
+            {hasUnsavedChanges && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setFormData(config)}
+                disabled={isSaving}
+                className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+              >
+                Discard
+              </Button>
+            )}
+            <Button 
+              size="sm"
+              onClick={handleSave} 
+              disabled={isSaving || !hasUnsavedChanges}
+              className={cn(
+                "rounded-lg font-semibold px-4 transition-all",
+                hasUnsavedChanges ? "bg-orange-500 hover:bg-orange-500/90 text-white shadow-sm" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+              )}
+            >
+              {isSaving ? 'Saving...' : 'Update Settings'}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Main Layout Content */}

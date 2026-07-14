@@ -12,11 +12,9 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', class
   const isAuth = variant === 'auth';
   const isMinimized = variant === 'minimized';
   
-  // Try to split workspace name into two parts to maintain the gradient style
-  // E.g., "Hindustaan OS" -> ["Hindustaan", "OS"]
-  const parts = config.workspaceName.trim().split(' ');
-  const firstPart = parts.length > 1 ? parts.slice(0, -1).join(' ') : config.workspaceName;
-  const secondPart = parts.length > 1 ? parts[parts.length - 1] : '';
+  // The app brand name is fixed to "Project OS"
+  const firstPart = "Project";
+  const secondPart = "OS";
   
   return (
     <div className={cn(
