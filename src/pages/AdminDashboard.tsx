@@ -588,6 +588,14 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   const totalManagersCount = usersList.filter(u => u.role === 'manager').length;
   const activeManagersList = usersList.filter(u => u.role === 'manager' && u.isActive !== false);
   const pendingNotifications = notifications.filter((n: any) => n.unread).length;
+  const totalProjectsCount = (() => {
+    try {
+      const saved = localStorage.getItem('hindustaan_projects');
+      return saved ? JSON.parse(saved).length : GLOBAL_PROJECTS.length;
+    } catch {
+      return GLOBAL_PROJECTS.length;
+    }
+  })();
 
   const departments = ['Engineering', 'Product', 'HR', 'Marketing', 'Sales', 'IT'];
 
@@ -1209,51 +1217,75 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
           // Admin Overview Dashboard View
           <div className="space-y-6">
             {/* Stats Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
               <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
-                    <Users className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                <CardContent className="p-4 flex flex-col items-start gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
+                    <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Total Employees</p>
-                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">{totalEmployeesCount}</h3>
+                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Total Employees</p>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1.5 leading-none">{totalEmployeesCount}</h3>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-75 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-[#5B7CFF]/10 flex items-center justify-center shrink-0">
-                    <ShieldCheck className="h-6 w-6 text-[#5B7CFF]" />
+                <CardContent className="p-4 flex flex-col items-start gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-[#5B7CFF]/10 flex items-center justify-center shrink-0">
+                    <ShieldCheck className="h-5 w-5 text-[#5B7CFF]" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Total Managers</p>
-                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">{totalManagersCount}</h3>
+                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Total Managers</p>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1.5 leading-none">{totalManagersCount}</h3>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-100 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
+                <CardContent className="p-4 flex flex-col items-start gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center shrink-0">
+                    <FolderKanban className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Total Projects</p>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1.5 leading-none">{totalProjectsCount}</h3>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-125 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
+                <CardContent className="p-4 flex flex-col items-start gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-cyan-50 dark:bg-cyan-500/10 flex items-center justify-center shrink-0">
+                    <Activity className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Active Users Today</p>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1.5 leading-none">{activeUsersCount}</h3>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-150 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center shrink-0">
-                    <Activity className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <CardContent className="p-4 flex flex-col items-start gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-teal-50 dark:bg-teal-500/10 flex items-center justify-center shrink-0">
+                    <Award className="h-5 w-5 text-teal-600 dark:text-teal-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Active Users Today</p>
-                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">{activeUsersCount}</h3>
+                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Workspace Productivity</p>
+                    <h3 className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1.5 leading-none">92%</h3>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-200 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
-                    <BellRing className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                <CardContent className="p-4 flex flex-col items-start gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
+                    <BellRing className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Pending Notifications</p>
-                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">{pendingNotifications}</h3>
+                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Pending Notifications</p>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1.5 leading-none">{pendingNotifications}</h3>
                   </div>
                 </CardContent>
               </Card>

@@ -101,31 +101,51 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
               </CardContent>
             </Card>
 
-            {/* 4. Admin Access Summary */}
+            {/* 2. Personal Information */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
-              <CardHeader className="p-5 pb-0">
-                <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                  <Lock className="h-4 w-4 text-indigo-500" />
-                  Access Summary
+              <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 flex flex-row items-center justify-between">
+                <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
+                  <User className="mr-2.5 h-5 w-5 text-indigo-500" />
+                  Personal Information
                 </CardTitle>
-              </CardHeader>
-              <CardContent className="p-5 pt-4 space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  {['User Management', 'Workspace Management', 'Notifications', 'Roles & Permissions', 'Organization Monitoring'].map(perm => (
-                    <Badge key={perm} variant="outline" className="border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 font-semibold px-2 py-1 flex items-center gap-1.5">
-                      <CheckCircle2 className="h-3 w-3" />
-                      {perm}
-                    </Badge>
-                  ))}
-                </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full font-bold justify-between text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 border-indigo-200 dark:border-indigo-900"
-                  onClick={() => onNavigate('Roles & Permissions')}
-                >
-                  View Role Permissions
-                  <ArrowUpRight className="h-4 w-4" />
+                <Button variant="ghost" size="sm" onClick={() => onNavigate('Edit Profile')} className="text-xs font-bold text-indigo-600 hover:text-indigo-700 -my-2">
+                  Edit Details
                 </Button>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Full Name</span>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{profile.name}</p>
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Address</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 break-all">{profile.email}</p>
+                      <Badge className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/20 text-[10px] font-bold py-0 px-2 rounded-md shrink-0">Verified</Badge>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Phone Number</span>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{profile.phone || '+91 98765 43210'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gender</span>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Not Specified</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Date of Birth</span>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Jan 1, 1990</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Address</span>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{profile.officeLocation}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Emergency Contact</span>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{profile.emergencyContact || 'Not provided'}</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -155,84 +175,9 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
           {/* Right Column */}
           <div className="lg:col-span-8 space-y-6">
             
-            {/* 5. Workspace Statistics */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
-                <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Total Employees</p>
-                <p className="text-2xl font-black text-slate-900 dark:text-white">124</p>
-              </div>
-              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
-                <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Total Managers</p>
-                <p className="text-2xl font-black text-slate-900 dark:text-white">12</p>
-              </div>
-              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
-                <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Total Projects</p>
-                <p className="text-2xl font-black text-slate-900 dark:text-white">45</p>
-              </div>
-              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
-                <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Active Users Today</p>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse" />
-                  <p className="text-2xl font-black text-slate-900 dark:text-white">89</p>
-                </div>
-              </div>
-              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
-                <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Workspace Productivity</p>
-                <p className="text-2xl font-black text-emerald-600">92%</p>
-              </div>
-              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
-                <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Pending Notifications</p>
-                <p className="text-2xl font-black text-amber-500">7</p>
-              </div>
-            </div>
 
-            {/* 2. Personal Information */}
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
-              <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 flex flex-row items-center justify-between">
-                <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
-                  <User className="mr-2.5 h-5 w-5 text-indigo-500" />
-                  Personal Information
-                </CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => onNavigate('Edit Profile')} className="text-xs font-bold text-indigo-600 hover:text-indigo-700 -my-2">
-                  Edit Details
-                </Button>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Full Name</span>
-                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.name}</p>
-                  </div>
-                  <div className="space-y-1 min-w-0">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Address</span>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-base font-bold text-slate-800 dark:text-slate-200 break-all">{profile.email}</p>
-                      <Badge className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/20 text-[10px] font-bold py-0 px-2 rounded-md shrink-0">Verified</Badge>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Phone Number</span>
-                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.phone || '+91 98765 43210'}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gender</span>
-                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">Not Specified</p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Date of Birth</span>
-                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">Jan 1, 1990</p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Address</span>
-                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.officeLocation}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Emergency Contact</span>
-                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.emergencyContact || 'Not provided'}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+
+
 
             {/* 3. Professional Information */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
