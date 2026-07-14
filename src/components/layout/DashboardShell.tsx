@@ -116,6 +116,7 @@ const adminNavigationGroups = [
       { name: 'System Notifications', icon: BellRing },
       { name: 'Announcement Center', icon: Bell },
       { name: 'Email Logs', icon: Mail },
+      { name: 'Delivery Channels', icon: Settings },
     ]
   },
   {

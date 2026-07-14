@@ -25,6 +25,7 @@ import WorkspaceSettings from './pages/workspace/WorkspaceSettings';
 import EmailLogsModule from '@/components/workspace-settings/EmailLogsModule';
 import AnnouncementCenterModule from '@/components/workspace-settings/AnnouncementCenterModule';
 import SystemNotificationsModule from '@/components/workspace-settings/SystemNotificationsModule';
+import DeliveryChannelsModule from '@/components/workspace-settings/DeliveryChannelsModule';
 import SecuritySettings from './pages/SecuritySettings';
 import Subscriptions from './pages/Subscriptions';
 // Supabase client removed for mock auth implementation
@@ -409,6 +410,7 @@ function App() {
                   {currentView === 'Email Logs' && <EmailLogsModule />}
                   {currentView === 'Announcement Center' && <AnnouncementCenterModule />}
                   {currentView === 'System Notifications' && <SystemNotificationsModule />}
+                  {currentView === 'Delivery Channels' && <DeliveryChannelsModule />}
 
                   {currentView === 'Subscription Management' && (
                     <Subscriptions session={session} onBack={() => handleNavigate('Dashboard')} />
@@ -421,7 +423,7 @@ function App() {
                     'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
                     'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support', 'Workspace Settings - Security & Access',
                     'Workspace Settings - General', 'Workspace Settings - Projects', 'Workspace Settings - Appearance', 'Subscription Management', 'Employees', 'Managers', 'Roles & Permissions',
-                    'Email Logs', 'Announcement Center', 'System Notifications'
+                    'Email Logs', 'Announcement Center', 'System Notifications', 'Delivery Channels'
                   ].includes(currentView) && (
                       <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
                         <p>Module "{currentView}" is under construction.</p>
