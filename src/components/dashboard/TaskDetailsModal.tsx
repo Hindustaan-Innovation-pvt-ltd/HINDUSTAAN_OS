@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 // --- Types ---
-export type Role = 'manager' | 'intern';
+export type Role = 'manager' | 'intern' | 'admin';
 export type Priority = 'High' | 'Medium' | 'Normal' | 'Low';
 export type Status = 'To Do' | 'In Progress' | 'In Review' | 'Done';
 
@@ -83,9 +83,11 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
   if (!task || !editedTask) return null;
 
   const isManager = currentUser.role === 'manager';
+  const isAdmin = currentUser.role === 'admin';
   const canEditStatus = isManager || (currentUser.role === 'intern' && currentUser.id === task.assignee_id);
 
   const handleUpdateField = (field: keyof Task, value: any) => {
+    if (isAdmin) return;
     if (!isManager && field !== 'status') return; // Extra safety guard
     setEditedTask(prev => prev ? { ...prev, [field]: value } : null);
     if (onUpdateTask) {
@@ -137,6 +139,11 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
           <DialogDescription className="sr-only">View and edit task details.</DialogDescription>
           
           <div className="flex flex-col gap-2 pt-1 pr-4">
+            {isAdmin && (
+              <Badge variant="outline" className="w-max bg-blue-50/50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 font-bold px-2 py-0.5">
+                View Only
+              </Badge>
+            )}
             <div className="flex items-center space-x-2">
               <Tag className="h-4 w-4 text-slate-400 dark:text-slate-500" />
               {isManager ? (
@@ -356,7 +363,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                       <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{comment.author_name}</span>
                       <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">{comment.timestamp}</span>
                     </div>
-                    {comment.author_name === currentUser.name && editingCommentId !== comment.id && (
+                    {comment.author_name === currentUser.name && editingCommentId !== comment.id && !isAdmin && (
                       <button 
                         onClick={() => {
                           setEditingCommentId(comment.id);
@@ -408,28 +415,30 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
             </div>
 
             {/* Comment Input */}
-            <form onSubmit={submitComment} className="flex gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                {getInitials(currentUser.name || 'User')}
-              </div>
-              <div className="flex-1 flex bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/10 transition-all p-1 overflow-hidden shadow-sm">
-                <input 
-                  type="text" 
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="flex-1 bg-transparent border-none px-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
-                  placeholder="Write a comment or log an update..."
-                />
-                <Button 
-                  type="submit"
-                  disabled={!newComment.trim()}
-                  variant="ghost"
-                  className="rounded-lg h-9 w-9 p-0 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors group"
-                >
-                  <Send className={cn("h-4 w-4 transition-colors", newComment.trim() ? "text-orange-600 dark:text-orange-500" : "text-slate-400 dark:text-slate-400")} />
-                </Button>
-              </div>
-            </form>
+            {!isAdmin && (
+              <form onSubmit={submitComment} className="flex gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                  {getInitials(currentUser.name || 'User')}
+                </div>
+                <div className="flex-1 flex bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/10 transition-all p-1 overflow-hidden shadow-sm">
+                  <input 
+                    type="text" 
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="flex-1 bg-transparent border-none px-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
+                    placeholder="Write a comment or log an update..."
+                  />
+                  <Button 
+                    type="submit"
+                    disabled={!newComment.trim()}
+                    variant="ghost"
+                    className="rounded-lg h-9 w-9 p-0 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors group"
+                  >
+                    <Send className={cn("h-4 w-4 transition-colors", newComment.trim() ? "text-orange-600 dark:text-orange-500" : "text-slate-400 dark:text-slate-400")} />
+                  </Button>
+                </div>
+              </form>
+            )}
           </div>
 
         </div>

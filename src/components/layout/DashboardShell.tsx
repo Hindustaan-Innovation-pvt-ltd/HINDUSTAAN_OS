@@ -27,7 +27,7 @@ import {
   CalendarRange,
   PanelLeftClose,
   PanelLeftOpen,
-  UserCircle, Shield, Sliders, Building, Lock, Link, BellRing, Megaphone, Mail, ShieldCheck
+  UserCircle, Shield, Sliders, Building, Lock, Link, BellRing, Megaphone, Mail, ShieldCheck, Activity
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
@@ -77,6 +77,18 @@ const managerNavigation = [
 
 const adminNavigationGroups = [
   { name: 'Dashboard', icon: LayoutDashboard },
+  {
+    name: 'Organization Overview',
+    icon: Building,
+    items: [
+      { name: 'Projects', icon: FolderKanban },
+      { name: 'Tasks', icon: CheckSquare },
+      { name: 'Team Members', icon: Users },
+      { name: 'Gantt Timeline', icon: CalendarDays },
+      { name: 'Progress Tracker', icon: BarChart2 },
+      { name: 'Contribution Scores', icon: Activity }
+    ]
+  },
   {
     name: 'User Management',
     icon: Users,
@@ -318,14 +330,6 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
               sideOffset={12} 
               className="w-64 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-700/50 shadow-2xl rounded-[18px] p-2 animate-in fade-in zoom-in-95 duration-200"
             >
-              <DropdownMenuItem 
-                onClick={() => { onNavigate('My Profile'); setSidebarOpen(false); }}
-                className="cursor-pointer text-slate-700 dark:text-slate-200 focus:bg-slate-100 dark:focus:bg-slate-800/80 text-sm font-medium rounded-xl flex items-center py-2.5 transition-colors"
-              >
-                <User className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />
-                My Profile
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-slate-200/50 dark:bg-slate-700/50 my-1 -mx-2" />
               {onSignOut && (
                 <DropdownMenuItem 
                   onClick={onSignOut}
