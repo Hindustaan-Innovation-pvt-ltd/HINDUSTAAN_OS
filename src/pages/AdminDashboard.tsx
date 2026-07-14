@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, UserCheck, Activity, BellRing, ShieldCheck, Server, Key, 
   Plus, ExternalLink, Search, Edit2, ShieldAlert, Power, 
-  Trash2, HelpCircle, CheckCircle2, X, Filter, UserPlus, Briefcase, Mail, Phone, ChevronRight
+  Trash2, HelpCircle, CheckCircle2, X, Filter, UserPlus, Briefcase, Mail, Phone, ChevronRight, CreditCard, Settings
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -87,6 +87,87 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
       window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
     };
   }, []);
+
+  const navigateToView = (view: string) => {
+    window.dispatchEvent(new CustomEvent('navigate-to-view', { detail: { view } }));
+  };
+
+  const handleExportAuditLogs = () => {
+    try {
+      toast.loading("Preparing audit logs CSV...");
+      setTimeout(() => {
+        const headers = ["User Name", "Email", "Action Performed", "Module", "Timestamp"];
+        const rows = activities.map(act => [
+          act.user || "System",
+          act.email || `${(act.user || "system").toLowerCase().replace(" ", ".")}@hindustaan.in`,
+          act.action || "Performed action",
+          act.target || "General",
+          act.time || new Date().toISOString()
+        ]);
+        
+        const csvContent = "data:text/csv;charset=utf-8," 
+          + [headers.join(","), ...rows.map(e => e.map(val => `"${val.replace(/"/g, '""')}"`).join(","))].join("\n");
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        const dateStr = new Date().toISOString().slice(0, 10);
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `audit_logs_${dateStr}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast.dismiss();
+        toast.success("Audit logs exported successfully!");
+      }, 1000);
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Failed to export audit logs. Please try again.");
+    }
+  };
+
+  const quickActions = [
+    {
+      title: "Manage Subscriptions",
+      icon: CreditCard,
+      action: () => navigateToView("Subscription Management"),
+    },
+    {
+      title: "Export Audit Logs",
+      icon: ExternalLink,
+      action: handleExportAuditLogs,
+    },
+    {
+      title: "Invite User",
+      icon: UserPlus,
+      action: () => setIsCreateOpen(true),
+    },
+    {
+      title: "Create Project",
+      icon: Briefcase,
+      action: () => navigateToView("Projects"),
+    },
+    {
+      title: "Assign Task",
+      icon: CheckCircle2,
+      action: () => navigateToView("Tasks"),
+    },
+    {
+      title: "Review Leave Requests",
+      icon: Users,
+      action: () => navigateToView("Leave Management"),
+    },
+    {
+      title: "Workspace Settings",
+      icon: Settings,
+      action: () => navigateToView("Settings"),
+    },
+    {
+      title: "View Reports",
+      icon: Activity,
+      action: () => navigateToView("Contribution Scores"),
+    }
+  ];
 
   const refreshUsers = () => {
     const fresh = getRegisteredUsers();
@@ -330,117 +411,183 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
               </Card>
             </div>
 
-            {/* Split layout: Team Directory vs Recent Activities */}
+            {/* Split layout: User Account Summary & Workspace Status */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Active Team Members Card */}
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden lg:col-span-2">
-                <CardHeader className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-                  <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Active Team Directory</CardTitle>
-                  <p className="text-xs text-slate-550 dark:text-slate-400 mt-1">A quick glance at current active users in the registry.</p>
-                </CardHeader>
-                <CardContent className="p-0 overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/60 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                      <tr>
-                        <th className="px-6 py-4 font-bold">User / ID</th>
-                        <th className="px-6 py-4 font-bold">Designation & Department</th>
-                        <th className="px-6 py-4 font-bold">System Role</th>
-                        <th className="px-6 py-4 font-bold">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {usersList.slice(0, 5).map((u, i) => {
-                        const initials = u.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-                        const isActive = u.isActive !== false;
+              
+              <div className="lg:col-span-2 space-y-6">
+                {/* User Account Summary */}
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden">
+                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+                    <CardTitle className="text-lg font-bold flex items-center justify-between text-slate-900 dark:text-white">
+                      User Account Summary
+                      <Button variant="ghost" size="sm" className="h-8 text-xs font-bold text-[#5B7CFF]">View All</Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0 overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                        <tr>
+                          <th className="px-6 py-4 font-bold">User</th>
+                          <th className="px-6 py-4 font-bold">Role</th>
+                          <th className="px-6 py-4 font-bold">Status</th>
+                          <th className="px-6 py-4 font-bold">Last Login</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {usersList.slice(0, 4).map((u: any, i: number) => {
+                          const initials = u.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+                          const isActive = u.isActive !== false;
+                          return (
+                            <tr key={i} className="border-b border-slate-100 dark:border-slate-800/60">
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className={cn(
+                                    "h-9 w-9 rounded-full flex items-center justify-center text-xs font-extrabold border shrink-0",
+                                    isActive
+                                      ? "bg-orange-50 text-orange-700 border-orange-250 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20"
+                                      : "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-800"
+                                  )}>
+                                    {initials}
+                                  </div>
+                                  <div>
+                                    <div className="font-extrabold text-slate-900 dark:text-white leading-snug">{u.name}</div>
+                                    <div className="text-xs text-slate-450 dark:text-slate-400 leading-snug truncate max-w-[150px]">{u.email}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <Badge variant="outline" className={cn(
+                                  "font-black tracking-wide rounded px-2 uppercase text-[9px]",
+                                  u.role === 'admin' ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400" :
+                                  u.role === 'manager' ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400" :
+                                  "border-slate-255 bg-slate-50 text-slate-600 dark:border-slate-805 dark:bg-slate-900/60 dark:text-slate-350"
+                                )}>{u.role}</Badge>
+                              </td>
+                              <td className="px-6 py-4">
+                                <Badge className={isActive ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 'bg-slate-500/10 text-slate-500 hover:bg-slate-500/20'}>
+                                  {isActive ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </td>
+                              <td className="px-6 py-4 text-slate-500 text-xs">{isActive ? 'Just now' : '2 hours ago'}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </CardContent>
+                </Card>
+
+                {/* Recent Workspace Activity */}
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+                    <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Recent Workspace Activity</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="space-y-6">
+                      {activities.slice(0, 3).map((activity: any, i: number) => {
+                        let Icon = Activity;
+                        let color = 'text-[#5B7CFF]';
+                        let bg = 'bg-[#5B7CFF]/10';
+
+                        if (activity.type === 'project' || activity.type === 'assign') {
+                          Icon = ShieldCheck;
+                          color = 'text-emerald-500';
+                          bg = 'bg-emerald-500/10';
+                        } else if (activity.type === 'task' || activity.type === 'log') {
+                          Icon = Key;
+                          color = 'text-orange-500';
+                          bg = 'bg-orange-500/10';
+                        }
+
                         return (
-                          <tr key={i} className="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/25 transition-colors">
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className={cn(
-                                  "h-9 w-9 rounded-full flex items-center justify-center text-xs font-extrabold border shrink-0",
-                                  isActive
-                                    ? "bg-orange-50 text-orange-700 border-orange-250 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20"
-                                    : "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-800"
-                                )}>
-                                  {initials}
-                                </div>
-                                <div>
-                                  <div className="font-extrabold text-slate-900 dark:text-white leading-snug">{u.name}</div>
-                                  <div className="text-xs text-slate-450 dark:text-slate-400 leading-snug truncate max-w-[150px]">{u.email}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="font-bold text-slate-800 dark:text-slate-200">{u.designation || 'Specialist'}</div>
-                              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">{u.department || 'Unassigned'}</div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <Badge variant="outline" className={cn(
-                                "font-black tracking-wide rounded px-2 uppercase text-[9px]",
-                                u.role === 'admin' ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400" :
-                                u.role === 'manager' ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400" :
-                                "border-slate-250 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-350"
-                              )}>
-                                {u.role}
-                              </Badge>
-                            </td>
-                            <td className="px-6 py-4">
-                              <Badge className={cn(
-                                "font-bold py-0.5 rounded text-[10px]",
-                                isActive 
-                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" 
-                                  : "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
-                              )}>
-                                {isActive ? 'Active' : 'Deactivated'}
-                              </Badge>
-                            </td>
-                          </tr>
+                          <div key={i} className="flex gap-4">
+                            <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${bg}`}>
+                              <Icon className={`h-5 w-5 ${color}`} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                                {activity.user} {activity.action} <span className="font-extrabold text-orange-600 dark:text-orange-400">{activity.target}</span>
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
+                            </div>
+                          </div>
                         );
                       })}
-                    </tbody>
-                  </table>
-                </CardContent>
-              </Card>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-              {/* Recent Workspace Activity */}
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm col-span-1">
-                <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-                  <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Workspace Activities</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-6">
-                    {activities.slice(0, 5).map((activity: any, i: number) => {
-                      let Icon = Activity;
-                      let color = 'text-[#5B7CFF]';
-                      let bg = 'bg-[#5B7CFF]/10';
-
-                      if (activity.type === 'project' || activity.type === 'assign') {
-                        Icon = ShieldCheck;
-                        color = 'text-emerald-500';
-                        bg = 'bg-emerald-500/10';
-                      } else if (activity.type === 'task' || activity.type === 'log') {
-                        Icon = Key;
-                        color = 'text-orange-500';
-                        bg = 'bg-orange-500/10';
-                      }
-
-                      return (
-                        <div key={i} className="flex gap-4">
-                          <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${bg}`}>
-                            <Icon className={`h-5 w-5 ${color}`} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                              {activity.user} {activity.action} <span className="font-extrabold text-orange-600 dark:text-orange-400">{activity.target}</span>
-                            </p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
-                          </div>
+              <div className="space-y-6 col-span-1">
+                {/* Workspace Configuration Status */}
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+                    <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Workspace Status</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-5">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                          <Server className="h-4 w-4 text-[#5B7CFF]" /> Storage Usage
                         </div>
+                        <span className="text-xs font-bold text-slate-500">45%</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] w-[45%]" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                          <Users className="h-4 w-4 text-emerald-500" /> Seats Used
+                        </div>
+                        <span className="text-xs font-bold text-slate-500">136 / 150</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 w-[90%]" />
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/60">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-550 dark:text-slate-400 font-medium">SSO Configuration</span>
+                        <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">Active</Badge>
+                      </div>
+                      <div className="flex items-center justify-between text-sm mt-3">
+                        <span className="text-slate-550 dark:text-slate-400 font-medium">2FA Enforcement</span>
+                        <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">Enabled</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Quick Actions */}
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+                    <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Quick Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-2">
+                    {quickActions.map((action, idx) => {
+                      const IconComponent = action.icon;
+                      return (
+                        <Button 
+                          key={idx} 
+                          onClick={action.action}
+                          variant="ghost" 
+                          className="w-full justify-between h-12 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        >
+                          <span className="flex items-center gap-2">
+                            <IconComponent className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                            {action.title}
+                          </span>
+                          <ChevronRight className="h-4 w-4 text-slate-400" />
+                        </Button>
                       );
                     })}
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         ) : (
