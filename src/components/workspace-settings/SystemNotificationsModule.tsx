@@ -208,7 +208,7 @@ export default function SystemNotificationsModule() {
       {/* Toolbar / Filters */}
       <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm p-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-900/50 p-1">
+          <div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-900/50 p-1 w-full sm:w-auto justify-center sm:justify-start">
             {(['all', 'unread', 'security', 'critical'] as const).map((filter) => (
               <button
                 key={filter}
@@ -216,7 +216,7 @@ export default function SystemNotificationsModule() {
                 className={`px-3 py-1.5 text-xs font-bold rounded-md capitalize transition-all ${
                   activeFilter === filter 
                     ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' 
-                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-350'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-white hover:shadow-sm dark:hover:bg-slate-800/40 dark:hover:text-slate-350'
                 }`}
               >
                 {filter === 'all' ? 'All Alerts' : filter}

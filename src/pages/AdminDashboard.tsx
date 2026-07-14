@@ -1453,7 +1453,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
                 {/* Filter Dropdowns */}
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-1.5 rounded-xl">
+                  <div className="flex flex-wrap items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-1.5 rounded-xl w-full sm:w-auto">
                     <Filter className="h-3.5 w-3.5 text-slate-400 ml-1.5" />
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1.5">Filters:</span>
                     

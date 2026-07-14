@@ -328,7 +328,7 @@ export default function EmailLogsModule() {
             </span>
 
             {/* Status Filter buttons */}
-            <div className="flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-900/50 p-1">
+            <div className="flex flex-wrap items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-900/50 p-1">
               {['all', 'success', 'failed', 'pending'].map((status) => (
                 <button
                   key={status}
@@ -336,7 +336,7 @@ export default function EmailLogsModule() {
                   className={`px-3 py-1 text-xs font-bold rounded-md capitalize transition-all ${
                     statusFilter === status 
                       ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' 
-                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-300'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-white hover:shadow-sm dark:hover:bg-slate-800/40 dark:hover:text-slate-300'
                   }`}
                 >
                   {status}

@@ -316,7 +316,7 @@ export default function AnnouncementCenterModule() {
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-start sm:justify-end">
             {/* Audience Filters */}
             <Select value={audienceFilter} onValueChange={setAudienceFilter}>
               <SelectTrigger className="w-[140px] h-10 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800">
@@ -394,7 +394,7 @@ export default function AnnouncementCenterModule() {
                   <div className="flex items-center gap-2 flex-wrap mb-2">
                     {priorityBadge}
                     {statusBadge}
-                    <Badge variant="outline" className="border-slate-200 dark:border-slate-800 text-[10px]">{ann.targetAudience}</Badge>
+                    <Badge variant="outline" className="border-slate-200 dark:border-slate-800 text-[10px] text-slate-600 dark:text-slate-400">{ann.targetAudience}</Badge>
                   </div>
                   <CardTitle className="text-base font-bold text-slate-900 dark:text-white leading-snug">{ann.title}</CardTitle>
                   <CardDescription className="flex items-center gap-2 text-xs font-semibold text-slate-400 mt-1">
@@ -523,8 +523,7 @@ export default function AnnouncementCenterModule() {
                 id="ann-textarea"
                 value={formDesc}
                 onChange={(e) => setFormDesc(e.target.value)}
-                placeholder="Write your announcement content here. Use HTML like <strong>bold</strong> or <em>italic</em>, or use the editor toolbar."
-                className="w-full h-32 p-3 text-sm rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/55 transition-all font-medium"
+                className="w-full h-32 p-3 text-sm rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/55 transition-all font-medium"
               />
             </div>
 
