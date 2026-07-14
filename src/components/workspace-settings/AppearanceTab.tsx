@@ -3,6 +3,7 @@ import { SettingsSection, SettingsRow } from './SettingsLayout';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
 import { useWorkspace } from '@/context/WorkspaceContext';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 const ACCENT_COLORS = [
   { id: 'orange', hex: '#F97316' },
@@ -94,28 +95,36 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
         description="Choose a brand color for primary buttons and active states."
       >
         <div className="p-6">
-          <div className="flex flex-wrap gap-4">
-            {ACCENT_COLORS.map((color) => (
-              <button
-                key={color.id}
-                className={cn(
-                  "w-12 h-12 rounded-full transition-all hover:scale-110 shadow-sm flex items-center justify-center border-4",
-                  data.accentColor === color.id ? "border-slate-300 dark:border-slate-600 scale-110 ring-4 ring-slate-100 dark:ring-slate-800" : "border-transparent"
-                )}
-                style={{ backgroundColor: color.hex }}
-                onClick={() => {
-                  updateField('accentColor', color.id);
-                  setAccentColor(color.id as any);
-                  updateConfig({ accentColor: color.id });
-                }}
-                aria-label={`Select accent color ${color.id}`}
-              >
-                {data.accentColor === color.id && (
-                  <div className="w-3 h-3 rounded-full bg-white shadow-sm" />
-                )}
-              </button>
-            ))}
-          </div>
+          <TooltipProvider delayDuration={100}>
+            <div className="flex flex-wrap gap-4">
+              {ACCENT_COLORS.map((color) => (
+                <Tooltip key={color.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      className={cn(
+                        "w-12 h-12 rounded-full transition-all hover:scale-110 shadow-sm flex items-center justify-center border-4 ring-4 ring-transparent",
+                        data.accentColor === color.id ? "border-slate-300 dark:border-slate-600 scale-110 ring-slate-100 dark:ring-slate-800" : "border-transparent"
+                      )}
+                      style={{ backgroundColor: color.hex }}
+                      onClick={() => {
+                        updateField('accentColor', color.id);
+                        setAccentColor(color.id as any);
+                        updateConfig({ accentColor: color.id });
+                      }}
+                      aria-label={`Select accent color ${color.id}`}
+                    >
+                      {data.accentColor === color.id && (
+                        <div className="w-3 h-3 rounded-full bg-white shadow-sm" />
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md font-bold capitalize">
+                    <p>{color.id === 'cosmic' ? 'Default View' : color.id}</p>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </TooltipProvider>
         </div>
       </SettingsSection>
     </div>
