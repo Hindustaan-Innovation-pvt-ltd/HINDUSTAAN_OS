@@ -450,16 +450,18 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     }
 
     const newUser: User = {
-      id: formId.trim() || `EMP${Math.floor(100 + Math.random() * 900)}`,
+      id: formId.trim() || (showOnlyRole === 'manager' 
+        ? `MGR${Math.floor(100 + Math.random() * 900)}` 
+        : `EMP${Math.floor(100 + Math.random() * 900)}`),
       name: formName.trim(),
       email: formEmail.trim().toLowerCase(),
-      role: formRole,
+      role: (showOnlyRole === 'manager' ? 'manager' : 'employee') as any,
       department: formDept,
-      designation: formDesig.trim() || (formRole === 'manager' ? 'Product Manager' : 'Frontend Developer'),
+      designation: formDesig.trim() || (showOnlyRole === 'manager' ? 'Product Manager' : 'Frontend Developer'),
       phone: formPhone.trim() || undefined,
-      password: formPassword.trim() || 'Employee@123',
+      password: formPassword.trim() || (showOnlyRole === 'manager' ? 'Manager@123' : 'Employee@123'),
       isActive: true,
-      reportingManager: formManager
+      reportingManager: showOnlyRole === 'manager' ? 'None' : formManager
     };
 
     const success = registerUser(newUser);
@@ -564,6 +566,22 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     setSelectedUser(null);
   };
 
+  const generateNewEmpId = () => {
+    let newId = '';
+    let isUnique = false;
+    let attempts = 0;
+    const prefix = showOnlyRole === 'manager' ? 'MGR' : 'EMP';
+    while (!isUnique && attempts < 100) {
+      const num = Math.floor(100 + Math.random() * 900);
+      newId = `${prefix}${num}`;
+      if (!usersList.some(u => u.id === newId)) {
+        isUnique = true;
+      }
+      attempts++;
+    }
+    setFormId(newId);
+  };
+
   // Filters & Calculations
   const activeUsersCount = usersList.filter(u => u.isActive !== false).length;
   const totalEmployeesCount = usersList.filter(u => u.role === 'employee').length;
@@ -600,7 +618,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 <Button 
                   onClick={() => setSelectedDetailUser(null)}
                   variant="outline" 
-                  className="rounded-xl border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 font-bold bg-white dark:bg-slate-900 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-transform active:scale-95"
+                  className="rounded-xl border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 font-bold bg-white dark:bg-slate-900 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-transform active:scale-95"
                 >
                   ← Back to Directory
                 </Button>
@@ -651,7 +669,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                         "flex items-center gap-2 px-6 py-4.5 text-xs font-bold transition-all border-b-2 outline-none whitespace-nowrap",
                         active
                           ? "border-orange-600 text-orange-600 dark:border-orange-500 dark:text-orange-400"
-                          : "border-transparent text-slate-550 dark:text-slate-400 hover:text-slate-805 dark:hover:text-slate-200 hover:border-slate-200 dark:hover:border-slate-800"
+                          : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-200 dark:hover:border-slate-800"
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -715,7 +733,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                                 <Icon className="h-4 w-4 text-slate-400 shrink-0" />
                                 {item.label}
                               </span>
-                              <span className="text-sm font-bold text-slate-805 dark:text-slate-205 text-left sm:text-right">
+                              <span className="text-sm font-bold text-slate-800 dark:text-slate-200 text-left sm:text-right">
                                 {item.value}
                               </span>
                             </div>
@@ -759,7 +777,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                                     </div>
                                   </div>
                                 </td>
-                                <td className="px-4 py-3.5 font-mono text-xs font-bold text-slate-700 dark:text-slate-350">{s.ipAddress}</td>
+                                <td className="px-4 py-3.5 font-mono text-xs font-bold text-slate-700 dark:text-slate-300">{s.ipAddress}</td>
                                 <td className="px-4 py-3.5 text-xs font-semibold text-slate-500 dark:text-slate-400">{s.timestamp}</td>
                                 <td className="px-4 py-3.5 text-right">
                                   {s.isActive ? (
@@ -769,7 +787,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                                         onClick={() => handleRevokeSession(s.id)}
                                         variant="ghost"
                                         size="sm"
-                                        className="h-6 text-[10px] font-black uppercase tracking-wider text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 p-1.5 rounded-md flex items-center gap-1 mt-0.5"
+                                        className="h-6 text-[10px] font-black uppercase tracking-wider text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:text-red-500 dark:hover:text-red-400 dark:hover:bg-red-500/10 p-1.5 rounded-md flex items-center gap-1 mt-0.5"
                                       >
                                         <Lock className="h-3 w-3" /> Revoke
                                       </Button>
@@ -793,11 +811,11 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/60 p-4 space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-black uppercase tracking-wider text-slate-505 dark:text-slate-400">Activity Type</label>
+                          <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Activity Type</label>
                           <select
                             value={activityTypeFilter}
                             onChange={(e) => setActivityTypeFilter(e.target.value)}
-                            className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-705 dark:text-slate-205 outline-none focus:ring-1 focus:ring-orange-505"
+                            className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
                           >
                             <option value="all">All Activities</option>
                             <option value="task">Tasks Completed</option>
@@ -808,11 +826,11 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-black uppercase tracking-wider text-slate-505 dark:text-slate-400">Date Range</label>
+                          <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Date Range</label>
                           <select
                             value={activityDatePreset}
                             onChange={(e) => setActivityDatePreset(e.target.value)}
-                            className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-705 dark:text-slate-205 outline-none focus:ring-1 focus:ring-orange-505"
+                            className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
                           >
                             <option value="all">All Time</option>
                             <option value="24h">Last 24 Hours</option>
@@ -831,7 +849,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                               type="date"
                               value={activityStartDate}
                               onChange={(e) => setActivityStartDate(e.target.value)}
-                              className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-orange-505"
+                              className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-orange-500"
                             />
                           </div>
                           <div className="space-y-1.5">
@@ -840,7 +858,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                               type="date"
                               value={activityEndDate}
                               onChange={(e) => setActivityEndDate(e.target.value)}
-                              className="w-full h-9 px-3 rounded-lg border border-slate-205 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-705 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-orange-505"
+                              className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-orange-500"
                             />
                           </div>
                         </div>
@@ -882,7 +900,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                                 </span>
                               </div>
                               {activity.description && (
-                                <p className="text-xs text-slate-550 dark:text-slate-400 mt-2 font-medium leading-relaxed bg-slate-50/50 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-100 dark:border-slate-805/40">
+                                <p className="text-xs text-slate-550 dark:text-slate-400 mt-2 font-medium leading-relaxed bg-slate-50/50 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-100 dark:border-transparent">
                                   {activity.description}
                                 </p>
                               )}
@@ -1192,7 +1210,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
           <div className="space-y-6">
             {/* Stats Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
                 <CardContent className="p-5 flex items-center gap-4">
                   <div className="h-12 w-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
                     <Users className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
@@ -1204,7 +1222,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-75">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-75 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
                 <CardContent className="p-5 flex items-center gap-4">
                   <div className="h-12 w-12 rounded-xl bg-[#5B7CFF]/10 flex items-center justify-center shrink-0">
                     <ShieldCheck className="h-6 w-6 text-[#5B7CFF]" />
@@ -1216,7 +1234,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-150">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-150 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
                 <CardContent className="p-5 flex items-center gap-4">
                   <div className="h-12 w-12 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center shrink-0">
                     <Activity className="h-6 w-6 text-purple-600 dark:text-purple-400" />
@@ -1228,7 +1246,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-200">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-200 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
                 <CardContent className="p-5 flex items-center gap-4">
                   <div className="h-12 w-12 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
                     <BellRing className="h-6 w-6 text-amber-600 dark:text-amber-400" />
@@ -1410,7 +1428,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
                 {/* Search Bar */}
                 <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-450 pointer-events-none" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-400 pointer-events-none" />
                   <input
                     type="text"
                     placeholder={showOnlyRole === 'manager' 
@@ -1483,7 +1501,9 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     <tr>
                       <th className="px-6 py-4 font-bold">User / ID</th>
                       <th className="px-6 py-4 font-bold">Designation & Department</th>
-                      <th className="px-6 py-4 font-bold">Reporting Manager</th>
+                      {showOnlyRole !== 'manager' && (
+                        <th className="px-6 py-4 font-bold">Reporting Manager</th>
+                      )}
                       <th className="px-6 py-4 font-bold">Phone Number</th>
                       <th className="px-6 py-4 font-bold">System Role</th>
                       <th className="px-6 py-4 font-bold">Status</th>
@@ -1527,15 +1547,17 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                               <Briefcase className="h-3 w-3 mr-1 text-slate-400" /> {u.department || 'Unassigned'}
                             </div>
                           </td>
-                          <td className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">
-                            {u.reportingManager && u.reportingManager !== 'None' ? (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20">
-                                {u.reportingManager}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-slate-400 font-medium">None</span>
-                            )}
-                          </td>
+                          {showOnlyRole !== 'manager' && (
+                            <td className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">
+                              {u.reportingManager && u.reportingManager !== 'None' ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20">
+                                  {u.reportingManager}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-slate-400 font-medium">None</span>
+                              )}
+                            </td>
+                          )}
                           <td className="px-6 py-4 font-medium text-slate-500 dark:text-slate-400">
                             {u.phone ? u.phone : <span className="text-xs italic text-slate-400">No phone</span>}
                           </td>
@@ -1575,10 +1597,10 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                                 variant="outline"
                                 size="icon"
                                 className={cn(
-                                  "h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800",
+                                  "h-8 w-8 rounded-lg border-slate-200",
                                   isActive
-                                    ? "text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-550/10 hover:border-rose-200"
-                                    : "text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-550/10 hover:border-emerald-200"
+                                    ? "text-rose-500 hover:bg-rose-50 hover:border-rose-200 dark:text-red-400 dark:border-red-950/60 dark:hover:bg-red-500/10 dark:hover:text-red-300"
+                                    : "text-emerald-500 hover:bg-emerald-50 hover:border-emerald-200 dark:text-emerald-400 dark:border-emerald-950/60 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-300"
                                 )}
                                 title={isActive ? 'Deactivate account' : 'Activate account'}
                               >
@@ -1591,7 +1613,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     })}
                     {filteredUsers.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic font-medium">
+                        <td colSpan={showOnlyRole === 'manager' ? 6 : 7} className="px-6 py-12 text-center text-slate-400 italic font-medium">
                           No matching records found.
                         </td>
                       </tr>
@@ -1610,8 +1632,12 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-[480px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
           <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/30">
-            <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">Create Employee Account</DialogTitle>
-            <DialogDescription className="text-xs font-semibold text-slate-450">Initialize a new secure cohort employee profile.</DialogDescription>
+            <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
+              {showOnlyRole === 'manager' ? 'Create Manager Account' : 'Create Employee Account'}
+            </DialogTitle>
+            <DialogDescription className="text-xs font-semibold text-slate-450">
+              {showOnlyRole === 'manager' ? 'Initialize a new secure cohort manager profile.' : 'Initialize a new secure cohort employee profile.'}
+            </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleCreateSubmit}>
@@ -1642,27 +1668,33 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Employee ID</label>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    {showOnlyRole === 'manager' ? 'Manager ID' : 'Employee ID'}
+                  </label>
                   <input
                     type="text"
                     value={formId}
                     onChange={(e) => setFormId(e.target.value)}
-                    placeholder="E.g. EMP123"
+                    placeholder={showOnlyRole === 'manager' ? 'E.g. MGR123' : 'E.g. EMP123'}
                     className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
                   />
+                  <button
+                    type="button"
+                    onClick={generateNewEmpId}
+                    className="text-xs font-bold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors focus:outline-none underline decoration-dotted mt-1 block"
+                  >
+                    Generate {showOnlyRole === 'manager' ? 'Manager ID' : 'EMP ID'}
+                  </button>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">System Role</label>
-                  <select
-                    value={formRole}
-                    onChange={(e) => setFormRole(e.target.value as any)}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer"
-                  >
-                    <option value="employee">Employee</option>
-                    <option value="manager">Manager</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                  <input
+                    type="text"
+                    readOnly
+                    value={showOnlyRole === 'manager' ? 'Manager' : 'Employee'}
+                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm font-semibold text-slate-500 dark:text-slate-400 cursor-not-allowed focus:outline-none"
+                  />
                 </div>
 
                 <div className="space-y-1.5">
@@ -1689,19 +1721,21 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Reporting Manager</label>
-                  <select
-                    value={formManager}
-                    onChange={(e) => setFormManager(e.target.value)}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/55 cursor-pointer"
-                  >
-                    <option value="None">None</option>
-                    {activeManagersList.map(m => (
-                      <option key={m.name} value={m.name}>{m.name}</option>
-                    ))}
-                  </select>
-                </div>
+                {showOnlyRole !== 'manager' && (
+                  <div className="space-y-1.5 col-span-2">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Reporting Manager</label>
+                    <select
+                      value={formManager}
+                      onChange={(e) => setFormManager(e.target.value)}
+                      className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/55 cursor-pointer"
+                    >
+                      <option value="None">None</option>
+                      {activeManagersList.map(m => (
+                        <option key={m.name} value={m.name}>{m.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Phone</label>
@@ -1714,13 +1748,13 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   />
                 </div>
 
-                <div className="space-y-1.5 col-span-2">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Password</label>
                   <input
                     type="password"
                     value={formPassword}
                     onChange={(e) => setFormPassword(e.target.value)}
-                    placeholder="Default: Employee@123"
+                    placeholder={showOnlyRole === 'manager' ? 'Default: Manager@123' : 'Default: Employee@123'}
                     className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
                   />
                 </div>
@@ -1826,7 +1860,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   />
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 col-span-2">
                   <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Reporting Manager</label>
                   <select
                     value={formManager}
@@ -1850,7 +1884,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   />
                 </div>
 
-                <div className="space-y-1.5 col-span-2">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">New Password (leave empty to keep current)</label>
                   <input
                     type="password"

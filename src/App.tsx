@@ -372,10 +372,10 @@ function App() {
                 >
                   {currentView === 'Dashboard' && <RoleBasedRouter session={session} onNavigate={handleNavigate} />}
                   {currentView === 'Employees' && (
-                    <AdminDashboard />
+                    <AdminDashboard showOnlyRole="employee" />
                   )}
                   {currentView === 'Managers' && (
-                    <AdminDashboard />
+                    <AdminDashboard showOnlyRole="manager" />
                   )}
                   {currentView === 'Roles & Permissions' && (
                     <RolesAndPermissions />

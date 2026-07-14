@@ -174,13 +174,6 @@ export default function RolesAndPermissions() {
       desc: 'Task assignment capability, daily standups log, work hours logs, and profile self-service.',
       icon: UserCheck,
       color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-    },
-    { 
-      name: 'Intern', 
-      count: usersList.filter(u => u.role === 'employee' && u.designation?.toLowerCase().includes('intern')).length || 0, 
-      desc: 'Limited workflow view, task completion tracking, learning plans, and mentor evaluations.',
-      icon: Users,
-      color: 'bg-amber-500/10 text-amber-500 border-amber-500/20'
     }
   ];
 
@@ -195,15 +188,15 @@ export default function RolesAndPermissions() {
         </div>
 
         {/* Roles List Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {roles.map((r, idx) => (
-            <Card key={idx} className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm relative overflow-hidden transition-all duration-300 hover:scale-[1.01]">
+            <Card key={idx} className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm relative overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
               <CardContent className="p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0 border", r.color)}>
                     <r.icon className="h-5 w-5" />
                   </div>
-                  <Badge variant="secondary" className="font-extrabold px-2.5 py-0.5 text-xs bg-slate-100 dark:bg-slate-900">
+                  <Badge variant="secondary" className="font-extrabold px-2.5 py-0.5 text-xs bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                     {r.count} Registered
                   </Badge>
                 </div>
@@ -317,7 +310,6 @@ export default function RolesAndPermissions() {
                       <option value="Admin">Admin</option>
                       <option value="Manager">Manager</option>
                       <option value="Employee">Employee</option>
-                      <option value="Intern">Intern (Set designation to Intern)</option>
                     </select>
                   </div>
 
@@ -369,10 +361,10 @@ export default function RolesAndPermissions() {
                       <tr key={h.id} className="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                         <td className="px-6 py-4">
                           <div className="font-extrabold text-slate-900 dark:text-white">{h.userName}</div>
-                          <div className="text-xs text-slate-450 font-medium mt-0.5">{h.userEmail}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{h.userEmail}</div>
                         </td>
                         <td className="px-6 py-4">
-                          <Badge variant="outline" className="uppercase font-bold text-[9px] border-slate-200 dark:border-slate-800">
+                          <Badge variant="outline" className="uppercase font-bold text-[9px] border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
                             {h.prevRole}
                           </Badge>
                         </td>
