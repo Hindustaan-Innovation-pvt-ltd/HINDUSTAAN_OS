@@ -9,20 +9,11 @@ export default function DeliveryChannelsModule() {
   const { config, updateConfig } = useWorkspace();
   const [formData, setFormData] = useState(config);
   
-  const hasUnsavedChanges = JSON.stringify(formData) !== JSON.stringify(config);
-  const [isSaving, setIsSaving] = useState(false);
-
   const updateField = (field: string, value: any) => {
-    setFormData((prev: any) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSave = () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      updateConfig(formData);
-      setIsSaving(false);
-      toast.success('Delivery channel preferences saved successfully');
-    }, 600);
+    const newConfig = { ...formData, [field]: value };
+    setFormData(newConfig);
+    updateConfig(newConfig);
+    toast.success('Delivery channel preferences updated');
   };
 
   return (
@@ -32,15 +23,6 @@ export default function DeliveryChannelsModule() {
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Delivery Channels</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Select which channels are active by default. Users can override these in their own settings.</p>
         </div>
-        <Button 
-          onClick={handleSave} 
-          disabled={!hasUnsavedChanges || isSaving}
-          className={`shrink-0 rounded-xl font-bold transition-all ${
-            hasUnsavedChanges ? "bg-orange-600 hover:bg-orange-700 text-white shadow-sm" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
-          }`}
-        >
-          {isSaving ? "Saving..." : "Save Preferences"}
-        </Button>
       </div>
 
       <div className="bg-white dark:bg-[#0c1222] rounded-2xl border border-slate-200 dark:border-slate-800/80 overflow-hidden shadow-sm">

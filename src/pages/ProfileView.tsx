@@ -217,13 +217,25 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                 >
                   <Edit className="mr-2 h-4 w-4" /> Edit Profile
                 </Button>
-                <Button variant="outline" className="w-full justify-start font-bold" onClick={() => setIsChangePasswordOpen(true)}>
+                <Button 
+                  variant="secondary" 
+                  className="w-full justify-start font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200" 
+                  onClick={() => setIsChangePasswordOpen(true)}
+                >
                   <ShieldCheck className="mr-2 h-4 w-4 text-emerald-500" /> Change Password
                 </Button>
-                <Button variant="outline" className="w-full justify-start font-bold" onClick={() => setIsChangeEmailOpen(true)}>
+                <Button 
+                  variant="secondary" 
+                  className="w-full justify-start font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200" 
+                  onClick={() => setIsChangeEmailOpen(true)}
+                >
                   <Mail className="mr-2 h-4 w-4 text-blue-500" /> Change Email
                 </Button>
-                <Button variant="outline" className="w-full justify-start font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20" onClick={() => toast.success('Logged out of all other sessions')}>
+                <Button 
+                  variant="secondary" 
+                  className="w-full justify-start font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-rose-600 hover:text-rose-700 dark:text-rose-400" 
+                  onClick={() => toast.success('Logged out of all other sessions')}
+                >
                   <LogOut className="mr-2 h-4 w-4" /> Logout Other Sessions
                 </Button>
               </CardContent>
@@ -314,28 +326,28 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
       </div>
 
       <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-2xl border-slate-800 bg-[#0f111a] text-slate-100 p-6 shadow-2xl">
+        <DialogContent className="sm:max-w-[500px] rounded-[16px] border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f111a] text-slate-900 dark:text-slate-100 p-6 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white">Change Password</DialogTitle>
-            <DialogDescription className="text-slate-400 text-xs font-semibold mt-1">
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Change Password</DialogTitle>
+            <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-1">
               Ensure your account is using a long, random password.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-1.5 relative">
-              <label className="text-sm font-bold text-slate-300">Current Password</label>
+              <label className="text-sm font-bold text-slate-600 dark:text-slate-300">Current Password</label>
               <div className="relative">
                 <Input 
                   type={showPassword.current ? "text" : "password"} 
                   value={currentPassword} 
                   onChange={e => setCurrentPassword(e.target.value)} 
                   placeholder="••••••••" 
-                  className="rounded-xl bg-slate-900/60 border-slate-800 text-white pr-10 focus:ring-orange-500/50" 
+                  className="rounded-xl bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white pr-10 focus:ring-indigo-500/50" 
                 />
                 <button 
                   type="button" 
                   onClick={() => setShowPassword(p => ({...p, current: !p.current}))} 
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
                   {showPassword.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -343,19 +355,19 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
             </div>
             
             <div className="space-y-1.5 relative">
-              <label className="text-sm font-bold text-slate-300">New Password</label>
+              <label className="text-sm font-bold text-slate-600 dark:text-slate-300">New Password</label>
               <div className="relative">
                 <Input 
                   type={showPassword.new ? "text" : "password"} 
                   value={newPassword} 
                   onChange={e => setNewPassword(e.target.value)} 
                   placeholder="••••••••" 
-                  className="rounded-xl bg-slate-900/60 border-slate-800 text-white pr-10 focus:ring-orange-500/50" 
+                  className="rounded-xl bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white pr-10 focus:ring-indigo-500/50" 
                 />
                 <button 
                   type="button" 
                   onClick={() => setShowPassword(p => ({...p, new: !p.new}))} 
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
                   {showPassword.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -363,19 +375,19 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
             </div>
             
             <div className="space-y-1.5 relative">
-              <label className="text-sm font-bold text-slate-300">Confirm New Password</label>
+              <label className="text-sm font-bold text-slate-600 dark:text-slate-300">Confirm New Password</label>
               <div className="relative">
                 <Input 
                   type={showPassword.confirm ? "text" : "password"} 
                   value={confirmPassword} 
                   onChange={e => setConfirmPassword(e.target.value)} 
                   placeholder="••••••••" 
-                  className="rounded-xl bg-slate-900/60 border-slate-800 text-white pr-10 focus:ring-orange-500/50" 
+                  className="rounded-xl bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white pr-10 focus:ring-indigo-500/50" 
                 />
                 <button 
                   type="button" 
                   onClick={() => setShowPassword(p => ({...p, confirm: !p.confirm}))} 
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
                   {showPassword.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
