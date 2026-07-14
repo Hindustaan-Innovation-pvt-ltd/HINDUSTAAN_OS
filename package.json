@@ -24,7 +24,6 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.4.0",
-    "dotenv": "^17.4.2",
     "framer-motion": "^12.42.2",
     "input-otp": "^1.4.2",
     "jspdf": "^4.2.1",

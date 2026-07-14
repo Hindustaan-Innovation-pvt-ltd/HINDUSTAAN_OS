@@ -1,55 +1,4 @@
 import React, { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { Users, UserCheck, Activity, BellRing, ShieldCheck, Server, Key, Plus, ExternalLink } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { GLOBAL_TEAM_MEMBERS, GLOBAL_ACTIVITY_FEED, GLOBAL_NOTIFICATIONS } from '@/data/mockData';
-
-export default function AdminDashboard() {
-  const [teamMembers, setTeamMembers] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_users');
-    return saved ? JSON.parse(saved) : GLOBAL_TEAM_MEMBERS;
-  });
-
-  const [activities, setActivities] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_activity_feed');
-    return saved ? JSON.parse(saved) : GLOBAL_ACTIVITY_FEED;
-  });
-
-  const [notifications, setNotifications] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_notifications');
-    return saved ? JSON.parse(saved) : GLOBAL_NOTIFICATIONS;
-  });
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'hindustaan_users' && e.newValue) setTeamMembers(JSON.parse(e.newValue));
-      if (e.key === 'hindustaan_activity_feed' && e.newValue) setActivities(JSON.parse(e.newValue));
-      if (e.key === 'hindustaan_notifications' && e.newValue) setNotifications(JSON.parse(e.newValue));
-    };
-    
-    const handleLocalUpdate = (e: CustomEvent) => {
-      if (e.detail.key === 'hindustaan_users') setTeamMembers(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_TEAM_MEMBERS);
-      if (e.detail.key === 'hindustaan_activity_feed') setActivities(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_ACTIVITY_FEED);
-      if (e.detail.key === 'hindustaan_notifications') setNotifications(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_NOTIFICATIONS);
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    };
-  }, []);
-
-  const totalEmployees = teamMembers.length;
-  const totalManagers = teamMembers.filter((u: any) => u.role?.toLowerCase().includes('lead') || u.role?.toLowerCase().includes('manager')).length;
-  const activeUsers = teamMembers.filter((u: any) => u.status === 'online' || u.status === 'busy').length;
-  const pendingNotifications = notifications.filter((n: any) => n.unread).length;
-
-=======
 import { 
   Users, UserCheck, Activity, BellRing, ShieldCheck, Server, Key, 
   Plus, ExternalLink, Search, Edit2, ShieldAlert, Power, 
@@ -63,6 +12,7 @@ import { getRegisteredUsers, registerUser } from '@/lib/auth';
 import type { User } from '@/lib/auth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { GLOBAL_ACTIVITY_FEED, GLOBAL_NOTIFICATIONS } from '@/data/mockData';
 
 export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnlyRole?: 'employee' | 'manager' }) {
   // User Management State
@@ -87,6 +37,17 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
   const [formPassword, setFormPassword] = useState('');
   const [formId, setFormId] = useState('');
 
+  // Activities & Notifications
+  const [activities, setActivities] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_activity_feed');
+    return saved ? JSON.parse(saved) : GLOBAL_ACTIVITY_FEED;
+  });
+
+  const [notifications, setNotifications] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_notifications');
+    return saved ? JSON.parse(saved) : GLOBAL_NOTIFICATIONS;
+  });
+
   useEffect(() => {
     setFormRole(showOnlyRole);
   }, [showOnlyRole]);
@@ -94,6 +55,33 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
   useEffect(() => {
     // Load registered users on mount
     setUsersList(getRegisteredUsers());
+
+    // Listen for storage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hindustaan_users' && e.newValue) setUsersList(JSON.parse(e.newValue));
+      if (e.key === 'hindustaan_activity_feed' && e.newValue) setActivities(JSON.parse(e.newValue));
+      if (e.key === 'hindustaan_notifications' && e.newValue) setNotifications(JSON.parse(e.newValue));
+    };
+    
+    const handleLocalUpdate = (e: CustomEvent) => {
+      if (e.detail.key === 'hindustaan_users') {
+        setUsersList(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : getRegisteredUsers());
+      }
+      if (e.detail.key === 'hindustaan_activity_feed') {
+        setActivities(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_ACTIVITY_FEED);
+      }
+      if (e.detail.key === 'hindustaan_notifications') {
+        setNotifications(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_NOTIFICATIONS);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    };
   }, []);
 
   const refreshUsers = () => {
@@ -166,7 +154,6 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
           designation: formDesig.trim(),
           phone: formPhone.trim() || undefined,
           reportingManager: formManager,
-          // Retain password
           password: formPassword.trim() || u.password
         };
       }
@@ -174,6 +161,12 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
     });
 
     localStorage.setItem('hindustaan_users', JSON.stringify(updatedUsers));
+    
+    // Dispatch local storage update event
+    window.dispatchEvent(new CustomEvent('local-storage-update', {
+      detail: { key: 'hindustaan_users', value: JSON.stringify(updatedUsers) }
+    }));
+
     toast.success(`User "${formName}" updated successfully!`);
     setIsEditOpen(false);
     resetForm();
@@ -191,6 +184,9 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
       return u;
     });
     localStorage.setItem('hindustaan_users', JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('local-storage-update', {
+      detail: { key: 'hindustaan_users', value: JSON.stringify(updated) }
+    }));
     refreshUsers();
   };
 
@@ -203,7 +199,7 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
     setFormDesig(user.designation || '');
     setFormPhone(user.phone || '');
     setFormManager(user.reportingManager || 'None');
-    setFormPassword(user.password || '');
+    setFormPassword('');
     setFormId(user.id || '');
     setIsEditOpen(true);
   };
@@ -222,26 +218,20 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
   };
 
   // Filters calculation
-  const activeUsersCount = usersList.filter(u => u.isActive !== false).length;
-  const totalEmployeesCount = usersList.filter(u => u.role === 'employee').length;
-  const totalManagersCount = usersList.filter(u => u.role === 'manager').length;
-  const activeManagersList = usersList.filter(u => u.role === 'manager' && u.isActive !== false);
+  const totalEmployees = usersList.filter(u => u.role === 'employee').length;
+  const totalManagers = usersList.filter(u => u.role === 'manager').length;
+  const activeUsers = usersList.filter(u => u.isActive !== false).length;
+  const pendingNotifications = notifications.filter((n: any) => n.unread).length;
 
+  const activeManagersList = usersList.filter(u => u.role === 'manager' && u.isActive !== false);
   const departments = ['Engineering', 'Product', 'HR', 'Marketing', 'Sales', 'IT'];
 
   const filteredUsers = usersList.filter(u => {
-    // Search Filter
     const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (u.id && u.id.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    // Role Filter matches the current dashboard view category
     const matchesRole = u.role === showOnlyRole;
-    
-    // Department Filter
     const matchesDept = deptFilter === 'All' || u.department === deptFilter;
-
-    // Status Filter
     const isActive = u.isActive !== false;
     const matchesStatus = statusFilter === 'All' || 
       (statusFilter === 'Active' && isActive) || 
@@ -250,7 +240,6 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
     return matchesSearch && matchesRole && matchesDept && matchesStatus;
   });
 
->>>>>>> 303a4aad6613cb10fbcb12b39aa4474ea50e0acc
   return (
     <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 transition-colors duration-300">
       <div className="max-w-[1600px] mx-auto space-y-6">
@@ -267,7 +256,15 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                 : 'Manage employee accounts, roles, and designations.'}
             </p>
           </div>
-<<<<<<< HEAD
+          
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={() => { resetForm(); setIsCreateOpen(true); }}
+              className="bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md shadow-orange-500/10 transition-transform active:scale-95"
+            >
+              <UserPlus className="h-4 w-4 mr-2" /> Add {showOnlyRole === 'manager' ? 'Manager' : 'Employee'}
+            </Button>
+          </div>
         </div>
 
         {/* Stats Row */}
@@ -307,23 +304,28 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
               </div>
             </CardContent>
           </Card>
-=======
-          
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={() => { resetForm(); setIsCreateOpen(true); }}
-              className="bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md shadow-orange-500/10 transition-transform active:scale-95"
-            >
-              <UserPlus className="h-4 w-4 mr-2" /> Add {showOnlyRole === 'manager' ? 'Manager' : 'Employee'}
-            </Button>
-          </div>
+
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center shrink-0">
+                <BellRing className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Pending Notifications</p>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{pendingNotifications}</h3>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* User Management Directory */}
-        <div className="space-y-6 animate-in fade-in duration-300">
+        {/* Directory & Workspace activity Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          
+          {/* Main Directory Table */}
+          <div className="xl:col-span-2 space-y-6">
             {/* Filters and Search Toolbar */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm p-4">
-              <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
                 {/* Search Bar */}
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -341,8 +343,8 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                 {/* Filter Dropdowns */}
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-1.5 rounded-xl">
-                    <Filter className="h-3.5 w-3.5 text-slate-450 ml-1.5" />
-                    <span className="text-xs font-bold text-slate-550 dark:text-slate-400 uppercase tracking-wider mr-1.5">Filters:</span>
+                    <Filter className="h-3.5 w-3.5 text-slate-400 ml-1.5" />
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1.5">Filters:</span>
                     
                     {/* Department Filter */}
                     <select
@@ -367,7 +369,6 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                       <option value="Inactive">Deactivated</option>
                     </select>
                   </div>
->>>>>>> 303a4aad6613cb10fbcb12b39aa4474ea50e0acc
 
                   {(searchQuery || deptFilter !== 'All' || statusFilter !== 'All') && (
                     <Button 
@@ -380,26 +381,16 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                   )}
                 </div>
               </div>
-<<<<<<< HEAD
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Pending Notifications</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{pendingNotifications}</h3>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-=======
             </Card>
->>>>>>> 303a4aad6613cb10fbcb12b39aa4474ea50e0acc
 
-            {/* Directory Board */}
+            {/* Directory Table Card */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden">
-              <CardHeader className="p-4 sm:p-6 border-b border-slate-105 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/30 flex flex-row items-center justify-between">
+              <CardHeader className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
                 <div>
                   <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">
                     {showOnlyRole === 'manager' ? 'Manager Directory' : 'Employee Directory'}
                   </CardTitle>
-                  <p className="text-xs text-slate-550 mt-1">
+                  <p className="text-xs text-slate-500 mt-1">
                     Showing {filteredUsers.length} of {usersList.filter(u => u.role === showOnlyRole).length} registered {showOnlyRole === 'manager' ? 'managers' : 'employees'}.
                   </p>
                 </div>
@@ -418,23 +409,6 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                     </tr>
                   </thead>
                   <tbody>
-<<<<<<< HEAD
-                    {teamMembers.slice(0, 4).map((u: any, i: number) => (
-                      <tr key={i} className="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-900 dark:text-white">{u.name}</div>
-                          <div className="text-xs text-slate-500">{u.name.toLowerCase().replace(' ', '.')}@hindustaan.in</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Badge variant="outline" className="font-bold border-slate-200 dark:border-slate-700">{u.role}</Badge>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Badge className={u.status === 'online' || u.status === 'busy' ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 'bg-slate-500/10 text-slate-500 hover:bg-slate-500/20'}>
-                            {u.status === 'online' || u.status === 'busy' ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 text-slate-500">{u.status === 'online' ? 'Just now' : '2 hours ago'}</td>
-=======
                     {filteredUsers.map((u, i) => {
                       const isActive = u.isActive !== false;
                       const initials = u.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
@@ -448,14 +422,14 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                               <div className={cn(
                                 "h-9 w-9 rounded-full flex items-center justify-center text-xs font-extrabold border shrink-0 transition-transform hover:scale-105",
                                 isActive 
-                                  ? "bg-orange-50 text-orange-700 border-orange-250 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20" 
+                                  ? "bg-orange-550/10 text-orange-600 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20" 
                                   : "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-800"
                               )}>
                                 {initials}
                               </div>
                               <div className="min-w-0">
                                 <div className="font-extrabold text-slate-900 dark:text-white leading-snug truncate">{u.name}</div>
-                                <div className="text-xs text-slate-450 dark:text-slate-400 leading-snug font-medium mt-0.5 truncate">{u.email}</div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400 leading-snug font-medium mt-0.5 truncate">{u.email}</div>
                                 <div className="text-[10px] text-slate-400 font-bold tracking-wider mt-1 font-mono uppercase">{u.id || 'N/A'}</div>
                               </div>
                             </div>
@@ -463,8 +437,8 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
 
                           {/* Designation & Department */}
                           <td className="px-6 py-4">
-                            <div className="font-bold text-slate-800 dark:text-slate-200">{u.designation || 'Specialist'}</div>
-                            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5 flex items-center">
+                            <div className="font-bold text-slate-850 dark:text-slate-200">{u.designation || 'Specialist'}</div>
+                            <div className="text-xs font-semibold text-slate-500 dark:text-slate-405 mt-0.5 flex items-center">
                               <Briefcase className="h-3 w-3 mr-1 text-slate-400" /> {u.department || 'Unassigned'}
                             </div>
                           </td>
@@ -516,7 +490,7 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                                 onClick={() => openEditModal(u)}
                                 variant="outline" 
                                 size="icon" 
-                                className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-800/80"
+                                className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80"
                                 title="Edit employee details"
                               >
                                 <Edit2 className="h-3.5 w-3.5" />
@@ -543,26 +517,26 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                     })}
                     {filteredUsers.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="px-6 py-12 text-center text-slate-450 italic font-medium">
+                        <td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic font-medium">
                           No matching employees found in registry directory.
                         </td>
->>>>>>> 303a4aad6613cb10fbcb12b39aa4474ea50e0acc
                       </tr>
                     )}
                   </tbody>
                 </table>
               </CardContent>
             </Card>
-<<<<<<< HEAD
+          </div>
 
-            {/* Recent Workspace Activity */}
+          {/* Right Sidebar: Recent Workspace Activity */}
+          <div className="xl:col-span-1 space-y-6">
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm">
               <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60">
                 <CardTitle className="text-lg font-bold">Recent Workspace Activity</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-6">
-                  {activities.slice(0, 3).map((activity: any, i: number) => {
+                  {activities.slice(0, 5).map((activity: any, i: number) => {
                     let Icon = Activity;
                     let color = 'text-[#5B7CFF]';
                     let bg = 'bg-[#5B7CFF]/10';
@@ -583,7 +557,9 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                           <Icon className={`h-5 w-5 ${color}`} />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-slate-900 dark:text-white">{activity.user} {activity.action} {activity.target}</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">
+                            {activity.user} {activity.action} {activity.target}
+                          </p>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
                         </div>
                       </div>
@@ -592,10 +568,9 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
                 </div>
               </CardContent>
             </Card>
-=======
->>>>>>> 303a4aad6613cb10fbcb12b39aa4474ea50e0acc
           </div>
 
+        </div>
       </div>
 
       {/* CREATE MODAL */}
@@ -603,7 +578,7 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
         <DialogContent className="sm:max-w-[480px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
           <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/30">
             <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">Create Employee Account</DialogTitle>
-            <DialogDescription className="text-xs font-semibold text-slate-400">Initialize a new secure cohort employee profile.</DialogDescription>
+            <DialogDescription className="text-xs font-semibold text-slate-450">Initialize a new secure cohort employee profile.</DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleCreateSubmit}>
@@ -744,7 +719,7 @@ export default function AdminDashboard({ showOnlyRole = 'employee' }: { showOnly
         <DialogContent className="sm:max-w-[480px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
           <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/30">
             <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">Edit Employee Details</DialogTitle>
-            <DialogDescription className="text-xs font-semibold text-slate-400">Modify properties and assign roles dynamically.</DialogDescription>
+            <DialogDescription className="text-xs font-semibold text-slate-450">Modify properties and assign roles dynamically.</DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleEditSubmit}>
