@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
 import { GlobalSearch } from '../dashboard/GlobalSearch';
 import { NotificationBell } from '../dashboard/NotificationBell';
+import { EmployeeNotificationBell } from '../dashboard/EmployeeNotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -579,7 +580,11 @@ export default function DashboardShell({
                 {isDark ? <Sun className="h-5 w-5 sm:h-6 sm:w-6" /> : <Moon className="h-5 w-5 sm:h-6 sm:w-6" />}
               </button>
 
-              <NotificationBell onNavigate={onNavigate} />
+              {role === 'admin' ? (
+                <NotificationBell onNavigate={onNavigate} />
+              ) : (
+                <EmployeeNotificationBell onNavigate={onNavigate} />
+              )}
             </div>
           </div>
 
