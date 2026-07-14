@@ -153,11 +153,6 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
       action: () => navigateToView("Tasks"),
     },
     {
-      title: "Review Leave Requests",
-      icon: Users,
-      action: () => navigateToView("Leave Management"),
-    },
-    {
       title: "Workspace Settings",
       icon: Settings,
       action: () => navigateToView("Settings"),
@@ -484,7 +479,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   </CardHeader>
                   <CardContent className="p-6">
                     <div className="space-y-6">
-                      {activities.slice(0, 3).map((activity: any, i: number) => {
+                      {activities.slice(0, 8).map((activity: any, i: number) => {
                         let Icon = Activity;
                         let color = 'text-[#5B7CFF]';
                         let bg = 'bg-[#5B7CFF]/10';
