@@ -192,3 +192,34 @@ export const updatePassword = (email: string, currentPass: string, newPass: stri
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
   return {success: true, message: 'Password updated successfully.'};
 };
+
+export const updateEmail = (oldEmail: string, newEmail: string, currentPass: string): {success: boolean, message: string} => {
+  const users = getRegisteredUsers();
+  const index = users.findIndex(u => u.email === oldEmail);
+  if (index === -1) return {success: false, message: 'User not found.'};
+  
+  // Verify password
+  if (users[index].password && users[index].password !== currentPass) {
+    return {success: false, message: 'Incorrect current password.'};
+  }
+
+  // Check if new email is already in use
+  if (users.find(u => u.email.toLowerCase() === newEmail.toLowerCase() && u.email !== oldEmail)) {
+    return {success: false, message: 'Email already exists.'};
+  }
+  
+  users[index].email = newEmail;
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+
+  // Update session if it's the current user
+  const local = localStorage.getItem(LOCAL_SESSION_KEY);
+  if (local) {
+    const sessionUser = JSON.parse(local);
+    if (sessionUser.email === oldEmail) {
+      sessionUser.email = newEmail;
+      localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(sessionUser));
+    }
+  }
+
+  return {success: true, message: 'Email updated successfully.'};
+};

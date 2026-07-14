@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { getCurrentUser, updatePassword } from '@/lib/auth';
+import { getCurrentUser, updatePassword, updateEmail } from '@/lib/auth';
 import { getProfileData, type ProfileData } from '@/lib/profile';
 import { 
   User, Mail, Phone, Shield, Briefcase, Calendar, MapPin, 
@@ -27,6 +27,11 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
     confirm: false,
   });
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [emailCurrentPassword, setEmailCurrentPassword] = useState('');
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
 
   useEffect(() => {
     const user = getCurrentUser();
@@ -59,6 +64,32 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
         setIsChangePasswordOpen(false);
       } else {
         toast.error(result.message || 'Error updating password');
+      }
+    }, 1200);
+  };
+
+  const handleUpdateEmail = () => {
+    if (!emailCurrentPassword) return toast.error('Current password required.');
+    if (!newEmail || !newEmail.includes('@')) {
+      return toast.error('Please enter a valid email address.');
+    }
+
+    setIsUpdatingEmail(true);
+    setTimeout(() => {
+      setIsUpdatingEmail(false);
+      
+      const user = getCurrentUser();
+      const userEmail = user?.email || 'admin@hindustaan.in';
+      const result = updateEmail(userEmail, newEmail, emailCurrentPassword);
+      
+      if (result.success) {
+        toast.success('Email updated successfully!');
+        setNewEmail('');
+        setEmailCurrentPassword('');
+        setIsChangeEmailOpen(false);
+        setProfile(prev => prev ? { ...prev, email: newEmail } : null);
+      } else {
+        toast.error(result.message || 'Error updating email');
       }
     }, 1200);
   };
@@ -188,6 +219,9 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                 </Button>
                 <Button variant="outline" className="w-full justify-start font-bold" onClick={() => setIsChangePasswordOpen(true)}>
                   <ShieldCheck className="mr-2 h-4 w-4 text-emerald-500" /> Change Password
+                </Button>
+                <Button variant="outline" className="w-full justify-start font-bold" onClick={() => setIsChangeEmailOpen(true)}>
+                  <Mail className="mr-2 h-4 w-4 text-blue-500" /> Change Email
                 </Button>
                 <Button variant="outline" className="w-full justify-start font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20" onClick={() => toast.success('Logged out of all other sessions')}>
                   <LogOut className="mr-2 h-4 w-4" /> Logout Other Sessions
@@ -355,6 +389,58 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
               className="rounded-xl bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white font-bold px-6 py-2 shadow-[0_0_15px_rgba(249,115,22,0.4)] disabled:opacity-50"
             >
               {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isChangeEmailOpen} onOpenChange={setIsChangeEmailOpen}>
+        <DialogContent className="sm:max-w-[500px] rounded-2xl border-slate-800 bg-[#0f111a] text-slate-100 p-6 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-white">Change Email Address</DialogTitle>
+            <DialogDescription className="text-slate-400 text-xs font-semibold mt-1">
+              Update your account's primary email. You will use this to log in.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-slate-300">New Email Address</label>
+              <Input 
+                type="email" 
+                value={newEmail} 
+                onChange={e => setNewEmail(e.target.value)} 
+                placeholder="admin@hindustaan.in" 
+                className="rounded-xl bg-slate-900/60 border-slate-800 text-white focus:ring-orange-500/50" 
+              />
+            </div>
+            
+            <div className="space-y-1.5 relative">
+              <label className="text-sm font-bold text-slate-300">Current Password</label>
+              <div className="relative">
+                <Input 
+                  type={showPassword.current ? "text" : "password"} 
+                  value={emailCurrentPassword} 
+                  onChange={e => setEmailCurrentPassword(e.target.value)} 
+                  placeholder="••••••••" 
+                  className="rounded-xl bg-slate-900/60 border-slate-800 text-white pr-10 focus:ring-orange-500/50" 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(p => ({...p, current: !p.current}))} 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                >
+                  {showPassword.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-start mt-2">
+            <Button 
+              disabled={isUpdatingEmail} 
+              onClick={handleUpdateEmail} 
+              className="rounded-xl bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white font-bold px-6 py-2 shadow-[0_0_15px_rgba(249,115,22,0.4)] disabled:opacity-50"
+            >
+              {isUpdatingEmail ? 'Updating...' : 'Update Email'}
             </Button>
           </div>
         </DialogContent>
