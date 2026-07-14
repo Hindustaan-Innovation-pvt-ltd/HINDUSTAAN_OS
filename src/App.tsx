@@ -19,6 +19,8 @@ import ContributionScores from './pages/ContributionScores';
 import Register from './pages/Register';
 import ProfileView from './pages/ProfileView';
 import ProfileEdit from './pages/ProfileEdit';
+import EmployeeProfileView from './pages/EmployeeProfileView';
+import EmployeeProfileEdit from './pages/EmployeeProfileEdit';
 import HelpSupport from '@/pages/HelpSupport';
 import LeaveManagement from './pages/LeaveManagement';
 import WorkspaceSettings from './pages/workspace/WorkspaceSettings';
@@ -390,10 +392,18 @@ function App() {
                   {currentView === 'About Us' && <AboutUs />}
                   {currentView === 'Settings' && <Settings session={session} />}
                   {currentView === 'My Profile' && (
-                    <ProfileView session={session} onNavigate={handleNavigate} />
+                    session?.user?.user_metadata?.role === 'admin' ? (
+                      <ProfileView session={session} onNavigate={handleNavigate} />
+                    ) : (
+                      <EmployeeProfileView session={session} onNavigate={handleNavigate} />
+                    )
                   )}
                   {currentView === 'Edit Profile' && (
-                    <ProfileEdit session={session} onNavigate={handleNavigate} />
+                    session?.user?.user_metadata?.role === 'admin' ? (
+                      <ProfileEdit session={session} onNavigate={handleNavigate} />
+                    ) : (
+                      <EmployeeProfileEdit session={session} onNavigate={handleNavigate} />
+                    )
                   )}
                   {currentView === 'Team Members' && <TeamMembers />}
 

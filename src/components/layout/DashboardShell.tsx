@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
 import { GlobalSearch } from '../dashboard/GlobalSearch';
 import { NotificationBell } from '../dashboard/NotificationBell';
+import { EmployeeNotificationBell } from '../dashboard/EmployeeNotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -450,8 +451,16 @@ export default function DashboardShell({
     });
   }, [onMinimizeChange]);
 
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, accentColor } = useTheme();
   const isDark = theme === 'dark';
+
+  // Apply accent color based on user role
+  useEffect(() => {
+    const root = window.document.documentElement;
+    const activeColor = role === 'admin' ? accentColor : 'cosmic';
+    ['theme-orange', 'theme-blue', 'theme-emerald', 'theme-rose', 'theme-purple', 'theme-cosmic'].forEach(c => root.classList.remove(c));
+    root.classList.add(`theme-${activeColor}`);
+  }, [role, accentColor]);
 
   // Ensure sidebar open state resets on resize to desktop/tablet
   useEffect(() => {
@@ -571,7 +580,11 @@ export default function DashboardShell({
                 {isDark ? <Sun className="h-5 w-5 sm:h-6 sm:w-6" /> : <Moon className="h-5 w-5 sm:h-6 sm:w-6" />}
               </button>
 
-              <NotificationBell onNavigate={onNavigate} />
+              {role === 'admin' ? (
+                <NotificationBell onNavigate={onNavigate} />
+              ) : (
+                <EmployeeNotificationBell onNavigate={onNavigate} />
+              )}
             </div>
           </div>
 

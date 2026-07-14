@@ -161,11 +161,57 @@ html.compact-mode {
   --color-slate-900: #0B1023;
   --color-slate-800: #12182F;
   --color-slate-700: #1A223F;
+}
+
+@layer base {
+  :root {
+    --color-orange-400: #00D4FF; 
+    --color-orange-500: #5B7CFF; 
+    --color-orange-600: #A855F7; 
+    --color-orange-700: #8833D7; 
+  }
+
+  :root.theme-orange {
+    --color-orange-400: #fb923c;
+    --color-orange-500: #f97316;
+    --color-orange-600: #ea580c;
+    --color-orange-700: #c2410c;
+  }
   
-  --color-orange-400: #00D4FF; 
-  --color-orange-500: #5B7CFF; 
-  --color-orange-600: #A855F7; 
-  --color-orange-700: #8833D7; 
+  :root.theme-blue {
+    --color-orange-400: #60a5fa;
+    --color-orange-500: #3b82f6;
+    --color-orange-600: #2563eb;
+    --color-orange-700: #1d4ed8;
+  }
+  
+  :root.theme-emerald {
+    --color-orange-400: #34d399;
+    --color-orange-500: #10b981;
+    --color-orange-600: #059669;
+    --color-orange-700: #047857;
+  }
+  
+  :root.theme-rose {
+    --color-orange-400: #fb7185;
+    --color-orange-500: #f43f5e;
+    --color-orange-600: #e11d48;
+    --color-orange-700: #be123c;
+  }
+  
+  :root.theme-purple {
+    --color-orange-400: #c084fc;
+    --color-orange-500: #a855f7;
+    --color-orange-600: #9333ea;
+    --color-orange-700: #7e22ce;
+  }
+  
+  :root.theme-cosmic {
+    --color-orange-400: #00D4FF; 
+    --color-orange-500: #5B7CFF; 
+    --color-orange-600: #A855F7; 
+    --color-orange-700: #8833D7; 
+  }
 }
 
 body.dark {
