@@ -17,6 +17,7 @@ interface Task {
   title: string;
   description: string;
   project_tag: string;
+  projectId?: string;
   assignee_name: string;
   assignee_id: string;
   priority: Priority;
