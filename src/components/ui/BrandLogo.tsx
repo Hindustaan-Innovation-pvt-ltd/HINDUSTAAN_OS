@@ -1,20 +1,13 @@
 import React from 'react';
 import { cn } from "@/lib/utils";
-import { useWorkspace } from '@/context/WorkspaceContext';
 
 interface BrandLogoProps {
-  variant?: 'auth' | 'sidebar' | 'minimized';
+  variant?: 'auth' | 'sidebar';
   className?: string;
 }
 
 export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', className }) => {
-  const { config } = useWorkspace();
   const isAuth = variant === 'auth';
-  const isMinimized = variant === 'minimized';
-  
-  // The app brand name is fixed to "Project OS"
-  const firstPart = "Project";
-  const secondPart = "OS";
   
   return (
     <div className={cn(
@@ -23,41 +16,34 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', class
       className
     )}>
       {/* 
-        The new neon P logo has significant transparent padding around the visible graphic.
-        We use an overflow-hidden wrapper with scaled-up image to crop the padding 
-        and make the visible logo fill the space properly.
+        Image wrapper with light drop-shadow/mix-blend for canvas sanitization.
+        This allows the white circle in the PNG to pop cleanly on both light and dark themes 
       */}
-      <div className={cn(
-        "relative flex items-center justify-center overflow-hidden rounded-xl",
-        isAuth ? "h-20 w-20" : (isMinimized ? "h-8 w-8" : "h-10 w-10")
-      )}>
+      <div className="relative flex items-center justify-center drop-shadow-md dark:drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]">
         <img 
-          src={config.workspaceLogo || "/new-brand-logo.png"} 
-          alt="Workspace Logo" 
+          src="/project-os-logo-new.png" 
+          alt="Project OS Logo" 
           className={cn(
             "object-contain transition-all duration-200",
-            !config.workspaceLogo && "h-[220%] w-[220%] max-w-none", // Only apply crazy scaling to default logo
-            config.workspaceLogo && "h-full w-full" // Standard scaling for user-uploaded logos
+            isAuth ? "h-32 w-32" : "h-9 w-9"
           )}
         />
       </div>
       
-      {!isMinimized && (
-        <h1 className={cn(
-          "tracking-tight text-slate-900 dark:text-white",
-          isAuth ? "text-2xl md:text-3xl font-extrabold mt-2 flex flex-row items-center justify-center gap-2" : "text-lg ml-2 flex items-center font-bold"
-        )}>
-          {isAuth ? (
-            <>
-              {firstPart} {secondPart && <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-extrabold">{secondPart}</span>}
-            </>
-          ) : (
-            <>
-              {firstPart} {secondPart && <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-extrabold ml-1.5">{secondPart}</span>}
-            </>
-          )}
-        </h1>
-      )}
+      <h1 className={cn(
+        "tracking-tight text-slate-900 dark:text-white",
+        isAuth ? "text-3xl md:text-4xl font-extrabold mt-3 flex flex-col items-center" : "text-lg ml-2 flex items-center font-bold"
+      )}>
+        {isAuth ? (
+          <>
+            Project <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-extrabold block">OS</span>
+          </>
+        ) : (
+          <>
+            Project <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-extrabold ml-1.5">OS</span>
+          </>
+        )}
+      </h1>
     </div>
   );
 };

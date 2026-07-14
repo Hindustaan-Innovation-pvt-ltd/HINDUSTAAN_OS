@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Target, TrendingUp, CheckCircle, Clock, AlertOctagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import { useTheme } from '@/context/ThemeContext';
 import { useProjects } from '@/context/ProjectContext';
-import { ProjectSelect } from '@/components/ui/project-select';
+import api from '@/lib/api';
 
 export default function ProgressTracker({ session }: { session?: any }) {
   const { theme } = useTheme();
@@ -68,11 +68,41 @@ export default function ProgressTracker({ session }: { session?: any }) {
     };
   }, [activeProject]);
 
+  // Fetch real velocity data from backend
+  const [backendVelocity, setBackendVelocity] = useState<any[]>([]);
+  const [backendSummary, setBackendSummary] = useState<any>(null);
+
+  useEffect(() => {
+    if (!activeProject?.id) return;
+    const fetchProgressData = async () => {
+      try {
+        const [velRes, sumRes] = await Promise.all([
+          api.get(`/progress/velocity/${activeProject.id}`),
+          api.get(`/progress/summary/${activeProject.id}`)
+        ]);
+        if (velRes.data?.success && Array.isArray(velRes.data.data)) {
+          setBackendVelocity(velRes.data.data.map((v: any) => ({
+            day: v.day || v.date?.slice(0, 3) || 'Day',
+            tasks: v.completedTasks ?? v.tasks ?? 0
+          })));
+        }
+        if (sumRes.data?.success) {
+          setBackendSummary(sumRes.data.data);
+        }
+      } catch (err) {
+        console.warn('Progress tracker fetch failed, using local data:', err);
+      }
+    };
+    fetchProgressData();
+  }, [activeProject?.id]);
+
   const velocityData = useMemo(() => {
+    // Prefer backend velocity data if available
+    if (backendVelocity.length > 0) return backendVelocity;
     if (!activeProject || !activeProject.tasks) return [];
     
     const doneCount = activeProject.tasks.filter((t:any) => t.status === 'Done').length;
-    // Mock smooth curve for visual parity with screenshot
+    // Fallback: local smooth curve
     return [
       { day: 'Fri', tasks: 0 },
       { day: 'Sat', tasks: 0 },
@@ -82,7 +112,7 @@ export default function ProgressTracker({ session }: { session?: any }) {
       { day: 'Wed', tasks: 0 },
       { day: 'Thu', tasks: 0 }
     ];
-  }, [activeProject]);
+  }, [backendVelocity, activeProject]);
 
   const blockedTasksList = useMemo(() => {
     if (!activeProject || !activeProject.tasks) return [];
@@ -120,14 +150,7 @@ export default function ProgressTracker({ session }: { session?: any }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-              Progress Tracker
-              {session?.user?.user_metadata?.role === 'admin' && (
-                <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold border-0">
-                  Organization Monitoring
-                </Badge>
-              )}
-            </h2>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Progress Tracker</h2>
             {isAborted && (
               <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-200 border-transparent dark:bg-red-900/40 dark:text-red-400 font-bold uppercase tracking-wider text-[10px]">
                 Aborted
@@ -135,16 +158,17 @@ export default function ProgressTracker({ session }: { session?: any }) {
             )}
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Real-time metrics calculated from active project data.</p>
-          {session?.user?.user_metadata?.role === 'admin' && (
-            <p className="text-xs font-bold text-[#5B7CFF] mt-1">You are viewing organization-wide data in read-only mode.</p>
-          )}
         </div>
-        <div className="w-full sm:w-64">
-          <ProjectSelect 
+        <div>
+          <select
             value={activeProjectId}
-            onChange={setActiveProjectId}
-            options={projects.map(p => ({ value: p.id, label: p.name }))}
-          />
+            onChange={(e) => setActiveProjectId(e.target.value)}
+            className="w-full sm:w-64 h-12 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-all font-bold text-sm shadow-sm"
+          >
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
         </div>
       </div>
 

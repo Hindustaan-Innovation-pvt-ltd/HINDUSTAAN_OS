@@ -8,7 +8,6 @@ export interface WorkLogEntry {
   task: string;
   hours: number;
   status?: string;
-  source?: string;
 }
 
 export const mockWorkLogs: WorkLogEntry[] = [
@@ -99,8 +98,7 @@ export const mockWorkLogs: WorkLogEntry[] = [
     project: "Design System",
     task: "Rebuilding settings dashboard into horizontal layout tabs",
     hours: 2.8,
-    status: "Pending",
-    source: "whatsapp"
+    status: "Pending"
   },
   {
     id: "WL-109",

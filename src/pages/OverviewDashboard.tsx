@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FolderKanban, 
   Loader2, 
@@ -16,6 +16,8 @@ import {
   CartesianGrid 
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import api from '@/lib/api';
+import { getCurrentUser } from '@/lib/auth';
 
 // --- Mock Data ---
 
@@ -29,7 +31,7 @@ const VELOCITY_DATA = [
   { name: 'Sun', completed: 50, inProgress: 12, overdue: 1 },
 ];
 
-const UPCOMING_DEADLINES = [
+const UPCOMING_DEADLINES_MOCK = [
   {
     id: '1',
     project: 'UI Design System',
@@ -95,12 +97,44 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 // --- Main Page Component ---
 
 export default function OverviewDashboard() {
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const user = getCurrentUser();
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await api.get('/dashboard');
+        if (res.data?.success) {
+          setStats(res.data.data);
+        }
+      } catch (err) {
+        console.warn('Failed to load Overview Dashboard stats:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const activeProjectsCount = stats 
+    ? (user?.role === 'manager' || user?.role === 'admin' ? stats.totalProjectsCount : stats.projectExecution?.length || 0)
+    : 12;
+
+  const activeTasksCount = stats
+    ? (user?.role === 'manager' || user?.role === 'admin' ? stats.totalTasksCount : stats.activeTasksCount || 0)
+    : 28;
+
+  const dueTodayCount = stats
+    ? (user?.role === 'manager' || user?.role === 'admin' ? stats.dueTodayTasksCount : stats.dueTodayCount || 0)
+    : 5;
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
       
       {/* Header */}
       <div>
-        <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">Project Overview</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Project Overview</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Real-time metrics and sprint velocity tracking.</p>
       </div>
 
@@ -121,16 +155,18 @@ export default function OverviewDashboard() {
             <h3 className="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-sm font-semibold">Active Projects</h3>
           </div>
           <div className="flex items-baseline space-x-2 mb-4">
-            <h2 className="text-page-title text-slate-900 dark:text-white">12</h2>
+            <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white">
+              {loading ? <Loader2 className="h-6 w-6 animate-spin text-orange-500" /> : activeProjectsCount}
+            </h2>
           </div>
-          {/* Progress Bar (12/15 = 80%) */}
+          {/* Progress Bar */}
           <div className="mt-auto">
-            <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">
+            <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">
               <span>Capacity</span>
-              <span>80%</span>
+              <span>{Math.round((activeProjectsCount / 15) * 100)}%</span>
             </div>
             <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-              <div className="bg-orange-50 dark:bg-orange-500/100 h-1.5 rounded-full" style={{ width: '80%' }}></div>
+              <div className="bg-orange-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, Math.round((activeProjectsCount / 15) * 100))}%` }}></div>
             </div>
           </div>
         </div>
@@ -149,29 +185,31 @@ export default function OverviewDashboard() {
             <h3 className="text-slate-500 dark:text-slate-400 dark:text-slate-500 text-sm font-semibold">Tasks In Progress</h3>
           </div>
           <div className="flex items-baseline space-x-2 mb-4">
-            <h2 className="text-page-title text-slate-900 dark:text-white">28</h2>
+            <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white">
+              {loading ? <Loader2 className="h-6 w-6 animate-spin text-amber-500" /> : activeTasksCount}
+            </h2>
           </div>
-          {/* Progress Bar (28/50 hypothetical = 56%) */}
+          {/* Progress Bar */}
           <div className="mt-auto">
-            <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">
+            <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">
               <span>Completion Rate</span>
-              <span>56%</span>
+              <span>{activeTasksCount > 0 ? '56%' : '0%'}</span>
             </div>
             <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-              <div className="bg-amber-400 h-1.5 rounded-full" style={{ width: '56%' }}></div>
+              <div className="bg-amber-400 h-1.5 rounded-full" style={{ width: activeTasksCount > 0 ? '56%' : '0%' }}></div>
             </div>
           </div>
         </div>
 
         {/* Card C: Tasks Overdue */}
         <div className="bg-rose-50/30 rounded-2xl p-6 border border-rose-100 shadow-sm flex flex-col relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 dark:bg-rose-500/100/5 rounded-bl-full pointer-events-none"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 dark:bg-rose-500/5 rounded-bl-full pointer-events-none"></div>
           <div className="flex justify-between items-start mb-4 relative z-10">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-100 text-rose-600 dark:text-rose-400">
               <AlertOctagon className="h-6 w-6" />
             </div>
             <span className="text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-100 px-2 py-1 rounded-md flex items-center">
-              <span className="w-1.5 h-1.5 bg-rose-50 dark:bg-rose-500/100 rounded-full mr-1.5 animate-pulse"></span>
+              <span className="w-1.5 h-1.5 bg-rose-500 rounded-full mr-1.5 animate-pulse"></span>
               Action Required
             </span>
           </div>
@@ -179,16 +217,18 @@ export default function OverviewDashboard() {
             <h3 className="text-rose-900/60 text-sm font-semibold">Tasks Overdue</h3>
           </div>
           <div className="flex items-baseline space-x-2 mb-4 relative z-10">
-            <h2 className="text-page-title text-rose-600 dark:text-rose-400">5</h2>
+            <h2 className="text-4xl font-extrabold text-rose-600 dark:text-rose-400">
+              {loading ? <Loader2 className="h-6 w-6 animate-spin text-rose-500" /> : dueTodayCount}
+            </h2>
           </div>
-          {/* Progress Bar (5/100 hypothetical risk tolerance = 5%) */}
+          {/* Progress Bar */}
           <div className="mt-auto relative z-10">
             <div className="flex justify-between text-[10px] font-bold text-rose-900/50 mb-1.5 uppercase tracking-wider">
               <span>Risk Threshold</span>
-              <span>12%</span>
+              <span>{dueTodayCount > 0 ? '12%' : '0%'}</span>
             </div>
             <div className="w-full bg-rose-100 rounded-full h-1.5 overflow-hidden">
-              <div className="bg-rose-50 dark:bg-rose-500/100 h-1.5 rounded-full" style={{ width: '12%' }}></div>
+              <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: dueTodayCount > 0 ? '12%' : '0%' }}></div>
             </div>
           </div>
         </div>
@@ -271,46 +311,83 @@ export default function OverviewDashboard() {
           </div>
 
           <div className="space-y-5 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-            {UPCOMING_DEADLINES.map((item) => (
-              <div key={item.id} className="group flex flex-col p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-50 dark:bg-slate-900/40 transition-all cursor-pointer">
-                
-                {/* Top Row: Category Tag & Due Date */}
-                <div className="flex items-center justify-between mb-2">
-                  <div className={cn("flex items-center px-2 py-1 rounded-md", item.bgColor)}>
-                    <div className={cn("w-1.5 h-1.5 rounded-full mr-1.5", item.color)}></div>
-                    <span className={cn("text-[10px] font-bold uppercase tracking-wider", item.textColor)}>
-                      {item.project}
-                    </span>
+            {(() => {
+              const deadlines = stats 
+                ? (user?.role === 'manager' || user?.role === 'admin' 
+                  ? (stats.deadlinesList || []).map((d: any) => ({
+                      id: d.id,
+                      project: 'Task Deadline',
+                      task: d.task,
+                      dueDate: 'Today',
+                      daysLeft: 0,
+                      color: 'bg-rose-500',
+                      bgColor: 'bg-rose-50 dark:bg-rose-500/10',
+                      textColor: 'text-rose-700 dark:text-rose-300'
+                    }))
+                  : (stats.upcomingTasks || []).map((t: any) => {
+                      const daysLeft = Math.max(0, Math.ceil((new Date(t.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+                      return {
+                        id: t.id,
+                        project: 'Upcoming Task',
+                        task: t.title,
+                        dueDate: new Date(t.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                        daysLeft,
+                        color: t.priority === 'high' ? 'bg-rose-500' : 'bg-amber-500',
+                        bgColor: t.priority === 'high' ? 'bg-rose-50 dark:bg-rose-500/10' : 'bg-amber-50 dark:bg-amber-500/10',
+                        textColor: t.priority === 'high' ? 'text-rose-700 dark:text-rose-300' : 'text-amber-700 dark:text-amber-300'
+                      };
+                    })
+                ) : UPCOMING_DEADLINES_MOCK;
+
+              if (deadlines.length === 0) {
+                return (
+                  <div className="flex h-full items-center justify-center text-slate-400 text-xs font-semibold py-8">
+                    No upcoming deadlines found.
                   </div>
+                );
+              }
+
+              return deadlines.map((item: any) => (
+                <div key={item.id} className="group flex flex-col p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-50 dark:bg-slate-900/40 transition-all cursor-pointer">
                   
-                  <div className="flex items-center text-slate-500 dark:text-slate-400 dark:text-slate-500 text-xs font-semibold group-hover:text-slate-600 dark:text-slate-700 dark:text-slate-300 transition-colors">
-                    <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
-                    {item.dueDate}
+                  {/* Top Row: Category Tag & Due Date */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className={cn("flex items-center px-2 py-1 rounded-md", item.bgColor)}>
+                      <div className={cn("w-1.5 h-1.5 rounded-full mr-1.5", item.color)}></div>
+                      <span className={cn("text-[10px] font-bold uppercase tracking-wider", item.textColor)}>
+                        {item.project}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center text-slate-400 dark:text-slate-500 text-xs font-semibold group-hover:text-slate-600 dark:text-slate-300 transition-colors">
+                      <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
+                      {item.dueDate}
+                    </div>
                   </div>
-                </div>
 
-                {/* Middle Row: Task Name */}
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug mb-3">
-                  {item.task}
-                </h4>
+                  {/* Middle Row: Task Name */}
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug mb-3">
+                    {item.task}
+                  </h4>
 
-                {/* Bottom Row: Countdown Badge */}
-                <div className="flex items-center justify-end mt-auto pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <div className={cn(
-                    "flex items-center px-2.5 py-1 rounded-lg text-xs font-bold",
-                    item.daysLeft <= 2 
-                      ? "bg-rose-100 text-rose-700 dark:text-rose-300" 
-                      : item.daysLeft <= 4 
-                        ? "bg-amber-100 text-amber-700 dark:text-amber-300"
-                        : "bg-slate-200 text-slate-700 dark:text-slate-200"
-                  )}>
-                    <Clock className="h-3.5 w-3.5 mr-1.5" />
-                    {item.daysLeft} {item.daysLeft === 1 ? 'day' : 'days'} left
+                  {/* Bottom Row: Countdown Badge */}
+                  <div className="flex items-center justify-end mt-auto pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <div className={cn(
+                      "flex items-center px-2.5 py-1 rounded-lg text-xs font-bold",
+                      item.daysLeft <= 2 
+                        ? "bg-rose-100 text-rose-700 dark:text-rose-300" 
+                        : item.daysLeft <= 4 
+                          ? "bg-amber-100 text-amber-700 dark:text-amber-300"
+                          : "bg-slate-200 text-slate-700 dark:text-slate-200"
+                    )}>
+                      <Clock className="h-3.5 w-3.5 mr-1.5" />
+                      {item.daysLeft} {item.daysLeft === 1 ? 'day' : 'days'} left
+                    </div>
                   </div>
-                </div>
 
-              </div>
-            ))}
+                </div>
+              ));
+            })()}
           </div>
 
         </div>

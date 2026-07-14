@@ -10,14 +10,7 @@ import {
 import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext';
 import { cn } from '@/lib/utils';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-
-const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+import { uploadAvatarToBackend } from '@/lib/auth';
 
 interface AvatarUploadProps {
   avatar: string;
@@ -31,75 +24,73 @@ export function AvatarUpload({ avatar, name, role, onAvatarChange, email }: Avat
   const { updateUser } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        
-        // Compress image using canvas
+    if (!file) return;
+
+    // Show optimistic preview using FileReader while upload is in progress
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const previewUrl = event.target?.result as string;
+      onAvatarChange(previewUrl); // instant preview
+
+      try {
+        // Upload to backend → Cloudinary
+        const cloudUrl = await uploadAvatarToBackend(file);
+
+        // Replace preview with real CDN URL
+        onAvatarChange(cloudUrl);
+        const emailKey = email.toLowerCase();
+        localStorage.setItem(`userAvatar_${emailKey}`, cloudUrl);
+        updateUser({ avatar: cloudUrl });
+        toast.success('Profile picture uploaded successfully.');
+      } catch (err: any) {
+        console.error('Upload to backend failed, keeping local preview:', err);
+        // Fallback: compress & keep base64 locally
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
           const MAX_SIZE = 256;
           let width = img.width;
           let height = img.height;
-          
           if (width > height) {
-            if (width > MAX_SIZE) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            }
+            if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
           } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
+            if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
           }
-          
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-          
           const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
           onAvatarChange(compressedDataUrl);
-          
-          // Sync localStorage and context immediately
           const emailKey = email.toLowerCase();
           localStorage.setItem(`userAvatar_${emailKey}`, compressedDataUrl);
           updateUser({ avatar: compressedDataUrl });
-          
-          toast.success('Profile picture updated successfully.');
         };
-        img.src = result;
-      };
-      reader.readAsDataURL(file);
-    }
+        img.src = previewUrl;
+        toast.warning('Saved locally', { description: 'Upload to server failed. Avatar saved in your browser only.' });
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleRemovePhoto = async () => {
     try {
       const emailKey = email.toLowerCase();
+      const { getCurrentUser, updateProfileOnBackend } = await import('@/lib/auth');
+      const currentUser = getCurrentUser();
 
-      // 1. Supabase deletion flow if active
-      if (supabase && avatar && !avatar.startsWith('data:')) {
-        const fileName = avatar.substring(avatar.lastIndexOf('/') + 1);
-        
-        // Remove from storage
-        const { error: storageError } = await supabase.storage.from('avatars').remove([fileName]);
-        if (storageError) throw storageError;
-
-        // Update profiles table
-        const { error: dbError } = await supabase
-          .from('profiles')
-          .update({ avatar_url: null })
-          .eq('email', email);
-        if (dbError) throw dbError;
+      // Clear avatar on backend if user has an ID
+      if (currentUser?.id && avatar && !avatar.startsWith('data:')) {
+        try {
+          await updateProfileOnBackend(currentUser.id, { avatarUrl: '' });
+        } catch (backendErr) {
+          console.warn('Could not clear avatar on backend:', backendErr);
+        }
       }
 
-      // 2. Clear state and localStorage
+      // Clear state and localStorage
       onAvatarChange('');
       localStorage.removeItem(`userAvatar_${emailKey}`);
       
@@ -155,20 +146,21 @@ export function AvatarUpload({ avatar, name, role, onAvatarChange, email }: Avat
             <Upload className="h-4 w-4" />
             Upload New Photo
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={handleRemovePhoto}
-            disabled={!avatar}
-            className="flex items-center gap-2 font-medium text-red-500 hover:text-red-600 dark:hover:bg-red-950/30 cursor-pointer focus:bg-red-50 dark:focus:bg-red-950/30 focus:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
-          >
-            <Trash2 className="h-4 w-4" />
-            Remove Current Photo
-          </DropdownMenuItem>
+          {avatar && (
+            <DropdownMenuItem
+              onClick={handleRemovePhoto}
+              className="flex items-center gap-2 font-medium text-red-500 hover:text-red-600 dark:hover:bg-red-950/30 cursor-pointer focus:bg-red-50 dark:focus:bg-red-950/30 focus:text-red-600"
+            >
+              <Trash2 className="h-4 w-4" />
+              Remove Current Photo
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
       <div className="space-y-1 text-center sm:text-left">
         <h3 className="text-xl font-bold text-slate-900 dark:text-white">{name}</h3>
-        {role && <p className="text-sm font-semibold text-slate-500">{role}</p>}
+        <p className="text-sm font-semibold text-slate-500">{role}</p>
       </div>
     </div>
   );

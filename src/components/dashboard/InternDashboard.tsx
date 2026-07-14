@@ -15,7 +15,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ProjectSelect } from "@/components/ui/project-select";
 import { toast } from "sonner";
 import { WhatsAppBroadcastDialog } from "./WhatsAppBroadcastDialog";
 import { FigjamDialog } from "./FigjamDialog";
@@ -26,6 +25,7 @@ import { format, isSameDay, isAfter, startOfDay } from 'date-fns';
 import { getCurrentUser } from '@/lib/auth';
 import { useProjects } from '@/context/ProjectContext';
 import { useUser } from '@/context/UserContext';
+import api from '@/lib/api';
 
 
 interface InternDashboardProps {
@@ -65,55 +65,63 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const { projects } = useProjects();
   
   // Extract dynamic tasks from central task list (TaskBoard source)
-  const [tasks, setTasks] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_tasks_list');
-    const allTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
-    return allTasks.filter((t: any) => 
-      t.assignee_name === currentUserName || 
-      (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
-    );
-  });
+  const [tasks, setTasks] = useState<any[]>([]);
+
+  const fetchInternTasks = async () => {
+    try {
+      const res = await api.get('/tasks?limit=1000');
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        const mapped = res.data.data.map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          description: t.desc || '',
+          project_tag: t.project?.name || 'General',
+          projectId: t.projectId,
+          assignee_name: t.assignee?.name || 'Unassigned',
+          assignee_id: t.assigneeId || 'unassigned',
+          priority: t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
+          due_date: t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          status: t.status === 'done' || t.status === 'completed' ? 'Done' :
+                  t.status === 'in-progress' ? 'In Progress' :
+                  t.status === 'in-review' ? 'In Review' : 'To Do'
+        }));
+        
+        // Filter tasks assigned to this user
+        const filtered = mapped.filter((t: any) => 
+          t.assignee_id === currentUserId ||
+          t.assignee_name === currentUserName ||
+          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
+        );
+        setTasks(filtered);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch tasks on InternDashboard:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchInternTasks();
+  }, [currentUserId, currentUserName]);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'hindustaan_tasks_list' && e.newValue) {
-        const allTasks = JSON.parse(e.newValue);
-        setTasks(allTasks.filter((t: any) => 
-          t.assignee_name === currentUserName || 
-          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
-        ));
+      if (e.key === 'hindustaan_tasks_list' || e.key === 'local-storage-update') {
+        fetchInternTasks();
       }
     };
     
     const handleLocalUpdate = (e: CustomEvent) => {
       if (e.detail.key === 'hindustaan_tasks_list') {
-        const allTasks = typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : INITIAL_TASKS;
-        setTasks(allTasks.filter((t: any) => 
-          t.assignee_name === currentUserName || 
-          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
-        ));
+        fetchInternTasks();
       }
     };
 
-    const handleTasksUpdatedEvent = () => {
-      const saved = localStorage.getItem('hindustaan_tasks_list');
-      if (saved) {
-        const allTasks = JSON.parse(saved);
-        setTasks(allTasks.filter((t: any) => 
-          t.assignee_name === currentUserName || 
-          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
-        ));
-      }
-    };
- 
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    window.addEventListener('tasks-updated', handleTasksUpdatedEvent);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
-      window.removeEventListener('tasks-updated', handleTasksUpdatedEvent);
     };
   }, [currentUserName]);
 
@@ -286,7 +294,32 @@ export default function InternDashboard({ session }: InternDashboardProps) {
     }
   };
 
-  const activeTasksCount = tasks.filter(t => t.status !== 'Done').length;
+  // Live backend dashboard data
+  const [dashboardData, setDashboardData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const res = await api.get('/dashboard');
+        if (res.data?.success) {
+          setDashboardData(res.data.data);
+          // Hydrate todaysStandup from live data
+          if (res.data.data.standupStatus?.submittedToday) {
+            setTodaysStandup({ status: 'Submitted', time: res.data.data.standupStatus.submissionTime || '' });
+          }
+          // Hydrate logged hours
+          if (typeof res.data.data.loggedHours === 'number') {
+            setLoggedHours(res.data.data.loggedHours);
+          }
+        }
+      } catch (err) {
+        console.warn('Intern dashboard fetch failed, using local data:', err);
+      }
+    };
+    fetchDashboard();
+  }, []);
+
+  const activeTasksCount = dashboardData?.activeTasksCount ?? tasks.filter((t: any) => t.status !== 'Done').length;
 
   // Compute upcoming deadlines (handling relative dates like 'Today' and 'Tomorrow')
   const upcomingDeadlines = useMemo(() => {
@@ -431,7 +464,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-page-title font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
             {greeting}, {currentUserName} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
           <p className="text-base sm:text-lg font-medium text-orange-600 dark:text-orange-400 mt-1 break-words whitespace-normal">
@@ -882,15 +915,18 @@ export default function InternDashboard({ session }: InternDashboardProps) {
               <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Select Task / Milestone</label>
               {upcomingDeadlines.length > 0 ? (
                 <div className="relative">
-                  <ProjectSelect
+                  <select
                     value={selectedTaskId}
-                    onChange={setSelectedTaskId}
-                    placeholder="Select task..."
-                    options={upcomingDeadlines.map((t: any) => ({
-                      value: t.id,
-                      label: `${t.title} (Due: ${new Date(t.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`
-                    }))}
-                  />
+                    onChange={(e) => setSelectedTaskId(e.target.value)}
+                    className="w-full h-11 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 font-medium text-sm appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled className="text-slate-400 dark:bg-slate-900">Select task...</option>
+                    {upcomingDeadlines.map((t: any) => (
+                      <option key={t.id} value={t.id} className="dark:bg-slate-900">
+                        {t.title} (Due: {new Date(t.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               ) : (
                 <div className="p-3 text-center text-xs text-rose-500 font-bold bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-100 dark:border-rose-900/30">

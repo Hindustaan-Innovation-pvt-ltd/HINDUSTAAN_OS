@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,10 +15,11 @@ import {
   CartesianGrid, RadialBarChart, RadialBar, AreaChart, Area, Legend
 } from 'recharts';
 import { getCurrentUser } from '@/lib/auth';
+import api from '@/lib/api';
 import {
   Trophy, TrendingUp, TrendingDown, Target, Clock, Mic,
   Download, RefreshCw, Filter, Calendar, Search, MoreVertical,
-  AlertTriangle, CheckCircle2, ChevronRight, BarChart2, ChevronDown
+  AlertTriangle, CheckCircle2, ChevronRight, BarChart2, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
@@ -144,7 +145,6 @@ export default function ContributionScores({ session }: { session?: any }) {
   const gridColor = isDarkMode ? '#334155' : '#e2e8f0'; // slate-700 for dark mode, slate-200 for light mode
 
   const role = session?.user?.user_metadata?.role || 'employee';
-  const isAdmin = role === 'admin';
   const email = session?.user?.email || 'user@hindustaan.in';
 
   const user = getCurrentUser();
@@ -159,34 +159,73 @@ export default function ContributionScores({ session }: { session?: any }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
   const [analyticsIntern, setAnalyticsIntern] = useState<any>(null);
+  // Backend data
+  const [backendInterns, setBackendInterns] = useState<any[]>([]);
+  const [myScore, setMyScore] = useState<any>(null);
+  const [isLoadingScores, setIsLoadingScores] = useState(true);
+  const [managerAnalytics, setManagerAnalytics] = useState<any>(null);
+
+  // Fetch scores from backend
+  useEffect(() => {
+    const fetchScores = async () => {
+      setIsLoadingScores(true);
+      try {
+        const currentUser = getCurrentUser();
+        if (!currentUser?.id) { setIsLoadingScores(false); return; }
+
+        if (currentUser.role === 'manager' || currentUser.role === 'admin') {
+          // Manager: fetch full cohort leaderboard
+          const [cohortRes, analyticsRes] = await Promise.all([
+            api.get('/scores/cohort'),
+            api.get('/scores/manager/analytics')
+          ]);
+          if (cohortRes.data?.success && Array.isArray(cohortRes.data.data)) {
+            const mapped = cohortRes.data.data.map((s: any, i: number) => ({
+              id: s.userId,
+              name: s.user?.name || `Member ${i + 1}`,
+              department: s.user?.department || 'General',
+              project: s.user?.project || 'Core',
+              manager: 'Manager',
+              score: s.total || 0,
+              taskScore: s.tasksScore || 0,
+              logScore: s.hoursScore || 0,
+              standupScore: s.milestoneScore || 0,
+              trend: s.trend || '0.0',
+              status: (s.total || 0) >= 90 ? 'Excellent' : (s.total || 0) >= 80 ? 'Good' : (s.total || 0) >= 70 ? 'Average' : 'Needs Improvement',
+              hoursLogged: s.hoursLogged || 0,
+              tasksCompleted: s.tasksCompleted || 0
+            }));
+            setBackendInterns(mapped);
+          }
+          if (analyticsRes.data?.success) {
+            setManagerAnalytics(analyticsRes.data.data);
+          }
+        } else {
+          // Intern: fetch own score
+          const res = await api.get(`/scores/${currentUser.id}`);
+          if (res.data?.success) {
+            setMyScore(res.data.data);
+          }
+        }
+      } catch (err: any) {
+        console.warn('Scores fetch failed, using mock data:', err.response?.data?.message || err.message);
+      } finally {
+        setIsLoadingScores(false);
+      }
+    };
+    fetchScores();
+  }, []);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
-  const [startY, setStartY] = useState(0);
-  const [scrollTopPos, setScrollTopPos] = useState(0);
-
-  const [isTableScrolledEnd, setIsTableScrolledEnd] = useState(false);
-  const [isRightColScrolledEnd, setIsRightColScrolledEnd] = useState(false);
-
-  const handleTableScrollEvent = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    setIsTableScrolledEnd(Math.abs(scrollHeight - clientHeight - scrollTop) < 5);
-  };
-
-  const handleRightColScrollEvent = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    setIsRightColScrolledEnd(Math.abs(scrollHeight - clientHeight - scrollTop) < 5);
-  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollRef.current) return;
     setIsDragging(true);
     setStartX(e.pageX - scrollRef.current.offsetLeft);
     setScrollLeft(scrollRef.current.scrollLeft);
-    setStartY(e.pageY - scrollRef.current.offsetTop);
-    setScrollTopPos(scrollRef.current.scrollTop);
   };
 
   const handleMouseLeave = () => {
@@ -201,36 +240,63 @@ export default function ContributionScores({ session }: { session?: any }) {
     if (!isDragging || !scrollRef.current) return;
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
-    const walkX = (x - startX) * 2.5;
-    scrollRef.current.scrollLeft = scrollLeft - walkX;
-
-    const y = e.pageY - scrollRef.current.offsetTop;
-    const walkY = (y - startY) * 2.5;
-    scrollRef.current.scrollTop = scrollTopPos - walkY;
+    const walk = (x - startX) * 2.5;
+    scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
-  const filteredInterns = MOCK_INTERNS.filter(intern =>
+  // Use backend data if available, otherwise fallback to mock
+  const activeInterns = backendInterns.length > 0 ? backendInterns : MOCK_INTERNS;
+
+  const filteredInterns = activeInterns.filter(intern =>
     intern.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     intern.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
     intern.project.toLowerCase().includes(searchTerm.toLowerCase())
-  ).sort((a, b) => b.score - a.score);
+  ).sort((a: any, b: any) => b.score - a.score);
 
-  const top3 = MOCK_INTERNS.slice(0, 3);
-  const needsAttention = MOCK_INTERNS.filter(i => i.score < 70).slice(0, 3);
+  const top3 = activeInterns.slice(0, 3);
+  const needsAttention = activeInterns.filter((i: any) => i.score < 70).slice(0, 3);
 
   // Distribution for Donut
   const distData = [
-    { name: 'Excellent', value: MOCK_INTERNS.filter(i => i.score >= 90).length, fill: COLORS.excellent },
-    { name: 'Good', value: MOCK_INTERNS.filter(i => i.score >= 80 && i.score < 90).length, fill: COLORS.good },
-    { name: 'Average', value: MOCK_INTERNS.filter(i => i.score >= 70 && i.score < 80).length, fill: COLORS.average },
-    { name: 'Needs Imp.', value: MOCK_INTERNS.filter(i => i.score < 70).length, fill: COLORS.poor },
+    { name: 'Excellent', value: activeInterns.filter((i: any) => i.score >= 90).length, fill: COLORS.excellent },
+    { name: 'Good', value: activeInterns.filter((i: any) => i.score >= 80 && i.score < 90).length, fill: COLORS.good },
+    { name: 'Average', value: activeInterns.filter((i: any) => i.score >= 70 && i.score < 80).length, fill: COLORS.average },
+    { name: 'Needs Imp.', value: activeInterns.filter((i: any) => i.score < 70).length, fill: COLORS.poor },
   ];
 
-  const highestScorer = MOCK_INTERNS.reduce((max, intern) => (intern.score > max.score ? intern : max), MOCK_INTERNS[0]);
+  const highestScorer = activeInterns.reduce((max: any, intern: any) => (intern.score > max.score ? intern : max), activeInterns[0] || MOCK_INTERNS[0]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
+    try {
+      const currentUser = getCurrentUser();
+      if (currentUser?.role === 'manager' || currentUser?.role === 'admin') {
+        const res = await api.get('/scores/cohort');
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          const mapped = res.data.data.map((s: any, i: number) => ({
+            id: s.userId,
+            name: s.user?.name || `Member ${i + 1}`,
+            department: s.user?.department || 'General',
+            project: s.user?.project || 'Core',
+            manager: 'Manager',
+            score: s.total || 0,
+            taskScore: s.tasksScore || 0,
+            logScore: s.hoursScore || 0,
+            standupScore: s.milestoneScore || 0,
+            trend: s.trend || '0.0',
+            status: (s.total || 0) >= 90 ? 'Excellent' : (s.total || 0) >= 80 ? 'Good' : (s.total || 0) >= 70 ? 'Average' : 'Needs Improvement',
+            hoursLogged: s.hoursLogged || 0,
+            tasksCompleted: s.tasksCompleted || 0
+          }));
+          setBackendInterns(mapped);
+          toast.success('Scores refreshed from server.');
+        }
+      }
+    } catch (err) {
+      toast.error('Could not refresh scores.');
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleExportPDF = () => {
@@ -238,7 +304,7 @@ export default function ContributionScores({ session }: { session?: any }) {
 
     // Add title
     doc.setFontSize(20);
-    doc.text('Contribution Scores Report', 14, 22);
+    doc.text('Contribution Analytics Report', 14, 22);
 
     doc.setFontSize(11);
     doc.text(`Generated on: ${format(new Date(), 'PPP')}`, 14, 30);
@@ -354,7 +420,7 @@ export default function ContributionScores({ session }: { session?: any }) {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center">
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
               <Trophy className="mr-3 h-8 w-8 text-orange-500" />
               My Performance
             </h2>
@@ -613,21 +679,13 @@ export default function ContributionScores({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
             <Trophy className="mr-3 h-8 w-8 text-orange-500" />
-            Contribution Scores
-            {isAdmin && (
-              <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold border-0">
-                Organization Monitoring
-              </Badge>
-            )}
+            Contribution Analytics
           </h2>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
             Monitor intern performance, identify top contributors, and track productivity trends.
           </p>
-          {isAdmin && (
-            <p className="text-xs font-bold text-[#5B7CFF] mt-1">You are viewing organization-wide data in read-only mode.</p>
-          )}
         </div>
         <div className="flex items-center gap-3">
           <Button onClick={handleExportPDF} variant="outline" className="font-bold border-slate-200 dark:border-slate-800 rounded-xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-900">
@@ -706,8 +764,8 @@ export default function ContributionScores({ session }: { session?: any }) {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
         {/* Left Column - Main Table */}
-        <div className="xl:col-span-8 flex flex-col min-w-0 h-auto xl:h-[800px] relative">
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-full">
+        <div className="xl:col-span-8 flex flex-col min-w-0">
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col flex-1">
             <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Team Performance Overview</CardTitle>
@@ -724,13 +782,12 @@ export default function ContributionScores({ session }: { session?: any }) {
               </div>
             </CardHeader>
             <CardContent 
-              className={cn("p-0 overflow-auto flex-1 relative", isDragging ? "cursor-grabbing select-none" : "cursor-grab")}
+              className={cn("p-0 overflow-auto flex-1 relative hide-scrollbar", isDragging ? "cursor-grabbing select-none" : "cursor-grab")}
               ref={scrollRef}
               onMouseDown={handleMouseDown}
               onMouseLeave={handleMouseLeave}
               onMouseUp={handleMouseUp}
               onMouseMove={handleMouseMove}
-              onScroll={handleTableScrollEvent}
             >
               <table className="w-full whitespace-nowrap text-sm text-left relative">
                 <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-20">
@@ -802,7 +859,6 @@ export default function ContributionScores({ session }: { session?: any }) {
                         </Badge>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        {isAdmin ? null : (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={e => e.stopPropagation()}>
@@ -816,7 +872,6 @@ export default function ContributionScores({ session }: { session?: any }) {
                             <DropdownMenuItem className="text-rose-600 cursor-pointer" onClick={() => toast.success(`Performance flagged for ${intern.name}`)}><AlertTriangle className="mr-2 h-4 w-4" /> Flag Performance</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                        )}
                       </td>
                     </tr>
                   ))}
@@ -824,16 +879,10 @@ export default function ContributionScores({ session }: { session?: any }) {
               </table>
             </CardContent>
           </Card>
-          {!isTableScrolledEnd && (
-            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white dark:from-slate-900 pointer-events-none flex items-end justify-center pb-2 z-10 rounded-b-2xl opacity-90">
-              <ChevronDown className="h-6 w-6 text-orange-500 animate-bounce drop-shadow-md" />
-            </div>
-          )}
         </div>
 
         {/* Right Column - Charts & Top Performers */}
-        <div className="xl:col-span-4 flex flex-col h-auto xl:h-[800px] relative">
-          <div className="flex flex-col space-y-6 overflow-y-auto pr-2 pb-10" onScroll={handleRightColScrollEvent}>
+        <div className="xl:col-span-4 space-y-6 xl:sticky xl:top-24 h-fit">
 
           {/* Score Distribution Donut */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
@@ -848,11 +897,10 @@ export default function ContributionScores({ session }: { session?: any }) {
                       data={distData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={55}
-                      outerRadius={75}
+                      innerRadius={60}
+                      outerRadius={80}
                       paddingAngle={5}
                       dataKey="value"
-                      label={({ name, value }) => `${value}`}
                     >
                       {distData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -884,10 +932,10 @@ export default function ContributionScores({ session }: { session?: any }) {
             <CardContent className="p-5">
               <div className="h-[180px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={deptData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} domain={[60, 100]} />
+                  <BarChart data={deptData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-slate-500 dark:text-slate-400" />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-slate-500 dark:text-slate-400" domain={[60, 100]} />
                     <RechartsTooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px' }} />
                     <Bar dataKey="score" fill={COLORS.orange} radius={[4, 4, 0, 0]} barSize={30} />
                   </BarChart>
@@ -921,12 +969,6 @@ export default function ContributionScores({ session }: { session?: any }) {
               ))}
             </CardContent>
           </Card>
-          </div>
-          {!isRightColScrolledEnd && (
-            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#f8fafc] dark:from-[#0f172a] pointer-events-none flex items-end justify-center pb-2 z-10 rounded-b-2xl opacity-90 pr-2">
-              <ChevronDown className="h-6 w-6 text-orange-500 animate-bounce drop-shadow-md" />
-            </div>
-          )}
         </div>
       </div>
 

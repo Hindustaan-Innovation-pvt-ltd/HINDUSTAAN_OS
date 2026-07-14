@@ -10,19 +10,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ProjectSelect } from '@/components/ui/project-select';
 
 const registerSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(50),
   email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, "Password must contain uppercase, lowercase and a number"),
   confirmPassword: z.string(),
   role: z.enum(['employee', 'manager']),
   designation: z.string().optional(),
   department: z.string(),
   employeeId: z.string().optional(),
-  managerId: z.string().optional(),
-  phone: z.string().optional(),
+  phone: z.string().regex(/^[6-9]\d{9}$/, "Must be a valid 10-digit Indian mobile number (starts with 6-9)"),
   termsAccepted: z.boolean().refine(val => val === true, "You must accept the terms")
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
@@ -41,14 +41,12 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
       designation: 'Frontend Developer',
       department: 'Engineering',
       employeeId: '',
-      managerId: '',
       phone: '',
       termsAccepted: false
     }
   });
 
   const selectedRole = watch('role');
-  const selectedDepartment = watch('department');
   const [loading, setLoading] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [showTerms, setShowTerms] = useState(false);
@@ -66,8 +64,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const success = registerUser({
+      const success = await registerUser({
         name: data.name,
         email: data.email,
         password: data.password,
@@ -79,20 +76,20 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
       });
 
       if (success) {
-        toast.success('Account created successfully.', { description: 'Please login.' });
+        toast.success('Account created successfully.', { description: 'Your account is pending approval by a manager or admin.' });
         onNavigateToLogin(data.email, data.name, data.role);
       } else {
-        toast.error('Email is already registered. Please login.');
+        toast.error('Registration failed. Please check details or login.');
       }
-    } catch (error) {
-      toast.error('An error occurred during registration.');
+    } catch (error: any) {
+      toast.error('Registration Error', { description: error.message || 'An error occurred during registration.' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="relative flex min-h-screen lg:h-screen lg:overflow-hidden w-full overflow-y-auto lg:overflow-y-hidden overflow-x-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-500 font-sans">
+    <div className="relative flex min-h-screen w-full overflow-y-auto overflow-x-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-500 font-sans">
       {/* Background Ornaments */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
       <div className="fixed -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-orange-500/20 dark:bg-orange-600/20 blur-[120px] pointer-events-none transition-colors duration-500"></div>
@@ -108,12 +105,12 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
         {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
       </button>
 
-      <div className="relative z-10 flex w-full min-h-screen lg:h-full lg:min-h-0">
+      <div className="relative z-10 flex w-full min-h-screen">
         
         {/* Left Section - Branding (Hidden on Mobile) */}
         <div className="hidden lg:flex flex-col justify-center w-[45%] xl:w-[50%] p-12 xl:p-24 border-r border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-sm z-10">
           <div className="max-w-xl">
-            <h1 className="text-page-title tracking-tight text-slate-900 dark:text-white mb-6 whitespace-nowrap">
+            <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 whitespace-nowrap">
               Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-green-600">Project OS</span>
             </h1>
             
@@ -140,25 +137,25 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
         </div>
 
         {/* Right Section - Register Form */}
-        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 w-full lg:w-[55%] xl:w-[50%] z-10 py-16 lg:py-8 lg:h-full lg:overflow-y-auto">
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 w-full lg:w-[55%] xl:w-[50%] z-10 py-16">
           <div className="w-full max-w-md">
-            <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-4 sm:p-5 lg:p-4.5 xl:p-5 shadow-2xl backdrop-blur-xl transition-all duration-500 hover:border-orange-500/30 dark:hover:border-purple-500/30 hover:shadow-[0_20px_50px_rgba(249,115,22,0.08)] dark:hover:shadow-[0_20px_50px_rgba(168,85,247,0.12)] animate-in fade-in slide-in-from-bottom-8">
+            <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-8">
           
-          <div className="flex flex-col items-center text-center mb-1.5">
+          <div className="flex flex-col items-center text-center mb-4">
             <div className="hover:scale-[1.03] transition-all duration-300">
               <BrandLogo variant="auth" />
             </div>
-            <div className="mt-0.5 flex flex-col items-center">
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+            <div className="mt-2 flex flex-col items-center">
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                 Create Account
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-1.5 mt-1">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 mt-4">
             {/* Full Name */}
-            <div className="space-y-0.5">
-              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Full Name</label>
+            <div className="space-y-1">
+              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Full Name</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                   <User className="h-4 w-4" />
@@ -166,7 +163,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                 <input
                   type="text"
                   {...register("name")}
-                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.name ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 focus:border-orange-500 dark:focus:border-purple-500 focus:ring-orange-500/10 dark:focus:ring-purple-500/20")}
+                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.name ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10 dark:focus:ring-orange-500/20")}
                   placeholder="Enter your full name"
                 />
               </div>
@@ -174,8 +171,8 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
             </div>
 
             {/* Email Address */}
-            <div className="space-y-0.5">
-              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Email Address</label>
+            <div className="space-y-1">
+              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Email Address</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                   <Mail className="h-4 w-4" />
@@ -183,152 +180,94 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                 <input
                   type="email"
                   {...register("email")}
-                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 focus:border-orange-500 dark:focus:border-purple-500 focus:ring-orange-500/10 dark:focus:ring-purple-500/20")}
+                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10 dark:focus:ring-orange-500/20")}
                   placeholder="name@hindustaan.in"
                 />
               </div>
               {errors.email && <p className="text-[10px] text-red-500 font-medium flex items-center mt-1"><AlertCircle className="w-3 h-3 mr-1"/>{errors.email.message}</p>}
             </div>
             
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
                 {/* Role */}
-                <div className="space-y-0.5">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Role</label>
+                <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Role</label>
                 <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors z-10">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                     <Briefcase className="h-4 w-4" />
                     </div>
-                    <ProjectSelect 
-                      value={selectedRole}
-                      onChange={(val) => setValue('role', val as 'employee' | 'manager')}
-                      className="pl-11 border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all"
-                      options={[
-                        { value: 'employee', label: 'Employee' },
-                        { value: 'manager', label: 'Manager' }
-                      ]}
-                    />
+                    <select
+                    {...register("role")}
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200 appearance-none"
+                    >
+                        <option value="employee">Employee</option>
+                        <option value="manager">Manager</option>
+                    </select>
                 </div>
                 </div>
 
                 {/* Department */}
-                <div className="space-y-0.5">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Department</label>
+                <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Department</label>
                 <div className="relative group">
-                    <ProjectSelect 
-                      value={selectedDepartment}
-                      onChange={(val) => setValue('department', val as any)}
-                      className="border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all"
-                      options={[
-                        { value: 'Engineering', label: 'Engineering' },
-                        { value: 'HR', label: 'HR' },
-                        { value: 'Marketing', label: 'Marketing' },
-                        { value: 'Sales', label: 'Sales' },
-                        { value: 'Operations', label: 'Operations' }
-                      ]}
-                    />
+                    <select
+                    {...register("department")}
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 px-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200 appearance-none"
+                    >
+                        <option value="Engineering">Engineering</option>
+                        <option value="HR">HR</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Sales">Sales</option>
+                        <option value="Operations">Operations</option>
+                    </select>
                 </div>
                 </div>
             </div>
 
-            {/* Employee: Emp ID | Designation on same line */}
+            {/* Dynamic Designation for Employee */}
             {selectedRole === 'employee' && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-0.5">
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Employee ID</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                      <Hash className="h-4 w-4" />
-                    </div>
-                    <input
-                      type="text"
-                      {...register("employeeId")}
-                      className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-orange-500 dark:focus:border-purple-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200"
-                      placeholder="E.g. EMP001"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-0.5">
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Designation</label>
-                  <Controller
-                    name="designation"
-                    control={control}
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className="w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 h-[36px] px-4 text-sm text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200">
-                          <SelectValue placeholder="Select designation" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl">
-                          <SelectItem value="Frontend Developer">Frontend Developer</SelectItem>
-                          <SelectItem value="Backend Developer">Backend Developer</SelectItem>
-                          <SelectItem value="Product Manager">Product Manager</SelectItem>
-                          <SelectItem value="App Developer">App Developer</SelectItem>
-                          <SelectItem value="Graphic Designer">Graphic Designer</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Designation / Specialization</label>
+                <Controller
+                  name="designation"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 h-[42px] px-4 text-sm text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10">
+                        <SelectValue placeholder="Select designation" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl">
+                        <SelectItem value="Frontend Developer">Frontend Developer</SelectItem>
+                        <SelectItem value="Backend Developer">Backend Developer</SelectItem>
+                        <SelectItem value="Product Manager">Product Manager</SelectItem>
+                        <SelectItem value="App Developer">App Developer</SelectItem>
+                        <SelectItem value="Graphic Designer">Graphic Designer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             )}
 
-            {/* Manager: Manager ID | Phone on same line */}
-            {selectedRole === 'manager' && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-0.5">
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Manager ID</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                      <Hash className="h-4 w-4" />
-                    </div>
-                    <input
-                      type="text"
-                      {...register("managerId")}
-                      className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-orange-500 dark:focus:border-purple-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200"
-                      placeholder="E.g. MGR001"
-                    />
-                  </div>
+            <div className="space-y-1">
+              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Phone</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                  <Phone className="h-4 w-4" />
                 </div>
-
-                <div className="space-y-0.5">
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Phone</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                      <Phone className="h-4 w-4" />
-                    </div>
-                    <input
-                      type="tel"
-                      {...register("phone")}
-                      className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-orange-500 dark:focus:border-purple-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200"
-                      placeholder="+91..."
-                    />
-                  </div>
-                </div>
+                <input
+                  type="tel"
+                  {...register("phone")}
+                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.phone ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
+                  placeholder="9876543210"
+                />
               </div>
-            )}
+              {errors.phone && <p className="text-[10px] text-red-500 font-medium flex items-center mt-1"><AlertCircle className="w-3 h-3 mr-1"/>{errors.phone.message}</p>}
+            </div>
 
-            {/* Phone for employee role (standalone) */}
-            {selectedRole === 'employee' && (
-              <div className="space-y-0.5">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Phone</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                    <Phone className="h-4 w-4" />
-                  </div>
-                  <input
-                    type="tel"
-                    {...register("phone")}
-                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-orange-500 dark:focus:border-purple-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200"
-                    placeholder="+91..."
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Password */}
-                <div className="space-y-0.5">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Password</label>
+                <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Password</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                     <KeyRound className="h-4 w-4" />
@@ -336,7 +275,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                      <input
                     type={showPassword ? "text" : "password"}
                     {...register("password")}
-                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 focus:border-orange-500 dark:focus:border-purple-500 focus:ring-orange-500/10 dark:focus:ring-purple-500/20")}
+                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
                     placeholder="••••••••"
                     />
                     <button
@@ -355,8 +294,8 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                 </div>
 
                 {/* Confirm Password */}
-                <div className="space-y-0.5">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Confirm Password</label>
+                <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Confirm Password</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                     <KeyRound className="h-4 w-4" />
@@ -364,7 +303,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                     <input
                     type={showConfirmPassword ? "text" : "password"}
                     {...register("confirmPassword")}
-                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 focus:border-orange-500 dark:focus:border-purple-500 focus:ring-orange-500/10 dark:focus:ring-purple-500/20")}
+                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
                     placeholder="••••••••"
                     />
                     <button
@@ -384,7 +323,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
             </div>
 
             {/* Terms and Conditions */}
-            <div className="flex flex-col space-y-0.5">
+            <div className="flex flex-col space-y-1">
               <div className="flex items-center space-x-2 pt-0.5">
                 <input
                   type="checkbox"
@@ -403,7 +342,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative flex w-full justify-center items-center space-x-2 rounded-xl bg-gradient-to-r from-orange-500 to-green-600 px-4 py-1.5 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-green-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:opacity-70 disabled:hover:scale-100 transition-all duration-200 ease-out"
+                className="group relative flex w-full justify-center items-center space-x-2 rounded-xl bg-gradient-to-r from-orange-500 to-green-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-green-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:opacity-70 disabled:hover:scale-100 transition-all duration-200 ease-out"
               >
                 {loading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -416,7 +355,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
               </button>
             </div>
             
-            <div className="text-center pt-1.5 pb-0.5">
+            <div className="text-center pt-3 pb-1">
               <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Already have an account? </span>
               <button 
                 type="button" 

@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, updateProfileOnBackend } from '@/lib/auth';
 import { getProfileData, saveProfileData, type ProfileData } from '@/lib/profile';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext';
 import { 
@@ -17,7 +18,7 @@ import { AvatarUpload } from '@/components/profile/AvatarUpload';
 export default function ProfileEdit({ session, onNavigate }: { session?: any, onNavigate: (view: string) => void }) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const { updateUser } = useUser();
-  const isAdmin = session?.user?.user_metadata?.role === 'admin';
+  const [isSaving, setIsSaving] = useState(false);
   
   // Form States
   const [name, setName] = useState('');
@@ -53,7 +54,7 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
 
 
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const user = getCurrentUser();
     if (!user || !profile) {
       toast.error('Authentication Error', { description: 'Please log in again.' });
@@ -85,10 +86,10 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
       avatar: avatar
     };
 
-    // Save profile data
+    // 1. Save extended profile data locally (skills, bio, social links — not in backend schema)
     saveProfileData(user.email, updatedProfile);
 
-    // Save active user session details update
+    // 2. Update active user session in storage
     const sessionUser = {
       ...user,
       name: name.trim(),
@@ -97,23 +98,41 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
     };
     localStorage.setItem('hindustaan_user', JSON.stringify(sessionUser));
 
-    // Update global avatar in localStorage and dispatch event for header/sidebar updates
-    if (avatar) {
+    // 3. Dispatch avatar update event
+    if (avatar && !avatar.startsWith('http')) {
+      // base64 local avatar – keep in localStorage only (no upload since AvatarUpload handles cloud upload)
       localStorage.setItem(`userAvatar_${user.email.toLowerCase()}`, avatar);
-    } else {
+    } else if (!avatar) {
       localStorage.removeItem(`userAvatar_${user.email.toLowerCase()}`);
     }
     window.dispatchEvent(new Event('avatar-updated'));
 
-    // Update user context for name and department changes to immediately sync layout sidebar/topbar
+    // 4. Update user context immediately so sidebar/topbar re-renders
     updateUser({
       name: name.trim(),
       department: department,
       avatar: avatar || null
     });
 
-    toast.success('Profile Updated Successfully', { description: 'Your profile changes have been persisted.' });
-    
+    // 5. Persist to backend — only fields the backend schema supports
+    if (user.id) {
+      setIsSaving(true);
+      try {
+        await updateProfileOnBackend(user.id, {
+          name: name.trim(),
+          department: department || undefined,
+        });
+        toast.success('Profile Saved', { description: 'Your changes have been synced to the server.' });
+      } catch (err: any) {
+        // Still saved locally — show soft warning
+        toast.warning('Saved locally', { description: err.message || 'Could not sync to server. Changes saved locally.' });
+      } finally {
+        setIsSaving(false);
+      }
+    } else {
+      toast.success('Profile Updated Successfully', { description: 'Your profile changes have been saved.' });
+    }
+
     // Navigate back to view profile
     onNavigate('My Profile');
   };
@@ -140,7 +159,7 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center">
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
             Edit Profile
           </h2>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
@@ -152,6 +171,7 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
       <div className="grid grid-cols-1 gap-6">
         {/* Main Edit Form Card */}
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-orange-500"></div>
           
           <CardContent className="p-6 sm:p-8 space-y-8">
             
@@ -159,7 +179,7 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
             <AvatarUpload
               avatar={avatar}
               name={profile.name}
-              role={isAdmin ? "" : profile.role}
+              role={profile.role}
               onAvatarChange={(newAvatar) => setAvatar(newAvatar)}
               email={profile.email}
             />
@@ -220,13 +240,11 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
                   </Select>
                 </div>
 
-                {/* Role */}
+                {/* Role (Read-Only) */}
                 <div className="space-y-1.5 opacity-70">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    {isAdmin ? "Role" : "Role (Read-Only)"}
-                  </label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Role (Read-Only)</label>
                   <Input 
-                    value={isAdmin ? "admin" : profile.role} 
+                    value={profile.role} 
                     disabled 
                     className="rounded-xl bg-slate-100 dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 font-semibold text-slate-400 cursor-not-allowed" 
                   />
@@ -234,18 +252,16 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
               </div>
 
               {/* Skills Tags */}
-              {!isAdmin && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Skills (Comma-separated)</label>
-                  <Input 
-                    value={skillsText} 
-                    onChange={(e) => setSkillsText(e.target.value)} 
-                    placeholder="React, TypeScript, Tailwind CSS, Git..."
-                    className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
-                  />
-                  <p className="text-[10px] text-slate-400 font-medium">Add multiple skills separated by commas.</p>
-                </div>
-              )}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Skills (Comma-separated)</label>
+                <Input 
+                  value={skillsText} 
+                  onChange={(e) => setSkillsText(e.target.value)} 
+                  placeholder="React, TypeScript, Tailwind CSS, Git..."
+                  className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
+                />
+                <p className="text-[10px] text-slate-400 font-medium">Add multiple skills separated by commas.</p>
+              </div>
 
               {/* About Me */}
               <div className="space-y-1.5">
@@ -259,79 +275,74 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
                 />
               </div>
 
-              {/* Social Links */}
-              {!isAdmin && (
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80">
-                  <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4">Social Links</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* GitHub */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-                        </svg> GitHub URL
-                      </label>
-                      <Input 
-                        value={github} 
-                        onChange={(e) => setGithub(e.target.value)} 
-                        placeholder="https://github.com/..."
-                        className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
-                      />
-                    </div>
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4">Social Links</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* GitHub */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                      </svg> GitHub URL
+                    </label>
+                    <Input 
+                      value={github} 
+                      onChange={(e) => setGithub(e.target.value)} 
+                      placeholder="https://github.com/..."
+                      className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
+                    />
+                  </div>
 
-                    {/* LinkedIn */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <svg className="h-3.5 w-3.5 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-                        </svg> LinkedIn URL
-                      </label>
-                      <Input 
-                        value={linkedin} 
-                        onChange={(e) => setLinkedin(e.target.value)} 
-                        placeholder="https://linkedin.com/in/..."
-                        className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
-                      />
-                    </div>
+                  {/* LinkedIn */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <svg className="h-3.5 w-3.5 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                      </svg> LinkedIn URL
+                    </label>
+                    <Input 
+                      value={linkedin} 
+                      onChange={(e) => setLinkedin(e.target.value)} 
+                      placeholder="https://linkedin.com/in/..."
+                      className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
+                    />
+                  </div>
 
-                    {/* Portfolio */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <Globe className="h-3.5 w-3.5 text-green-500" /> Portfolio URL
-                      </label>
-                      <Input 
-                        value={portfolio} 
-                        onChange={(e) => setPortfolio(e.target.value)} 
-                        placeholder="https://..."
-                        className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
-                      />
-                    </div>
+                  {/* Portfolio */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <Globe className="h-3.5 w-3.5 text-green-500" /> Portfolio URL
+                    </label>
+                    <Input 
+                      value={portfolio} 
+                      onChange={(e) => setPortfolio(e.target.value)} 
+                      placeholder="https://..."
+                      className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
+                    />
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Read-Only Professional details hint */}
-              {!isAdmin && (
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/20 dark:bg-slate-900/20 p-4 rounded-xl">
-                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Read-Only Workplace Information</p>
-                  <div className={`grid grid-cols-2 ${session?.user?.user_metadata?.role === 'manager' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4 text-xs font-semibold`}>
-                    {session?.user?.user_metadata?.role !== 'manager' && (
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Manager</span>
-                        <span className="text-slate-700 dark:text-slate-300">{profile.manager}</span>
-                      </div>
-                    )}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/20 dark:bg-slate-900/20 p-4 rounded-xl">
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Read-Only Workplace Information</p>
+                <div className={`grid grid-cols-2 ${session?.user?.user_metadata?.role === 'manager' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4 text-xs font-semibold`}>
+                  {session?.user?.user_metadata?.role !== 'manager' && (
                     <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Employment Type</span>
-                      <span className="text-slate-700 dark:text-slate-300">{profile.employmentType}</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Manager</span>
+                      <span className="text-slate-700 dark:text-slate-300">{profile.manager}</span>
                     </div>
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Joining Date</span>
-                      <span className="text-slate-700 dark:text-slate-300">{profile.joiningDate}</span>
-                    </div>
+                  )}
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Employment Type</span>
+                    <span className="text-slate-700 dark:text-slate-300">{profile.employmentType}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Joining Date</span>
+                    <span className="text-slate-700 dark:text-slate-300">{profile.joiningDate}</span>
                   </div>
                 </div>
-              )}
+              </div>
 
             </div>
           </CardContent>
@@ -347,10 +358,18 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
             </Button>
             <Button 
               type="button"
-              onClick={handleSave} 
-              className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 shadow-sm shadow-orange-500/10"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 shadow-sm shadow-orange-500/10 disabled:opacity-70"
             >
-              Save Changes
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </CardFooter>
         </Card>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -49,6 +49,8 @@ import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { INITIAL_TASKS } from '@/data/mockData';
+import api from '@/lib/api';
+import { getCurrentUser } from '@/lib/auth';
 
 // Mock Data
 const PROJECTS = [
@@ -89,6 +91,25 @@ const assignTaskSchema = z.object({
 
 export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
   const [loading, setLoading] = useState(false);
+  const [dbProjects, setDbProjects] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    const loadDialogData = async () => {
+      try {
+        const [projRes, teamRes] = await Promise.all([
+          api.get('/projects'),
+          api.get('/team')
+        ]);
+        if (projRes.data?.success) setDbProjects(projRes.data.data || []);
+        if (teamRes.data?.success) setTeamMembers(teamRes.data.data.members || []);
+      } catch (err) {
+        console.warn('Failed to load dialog metadata:', err);
+      }
+    };
+    loadDialogData();
+  }, [open]);
 
   const form = useForm<z.infer<typeof assignTaskSchema>>({
     resolver: zodResolver(assignTaskSchema),
@@ -106,47 +127,57 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
 
   const onSubmit = async (values: z.infer<typeof assignTaskSchema>) => {
     setLoading(true);
-    
-    // Simulate API call to Supabase
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const assignee = GLOBAL_TEAM_MEMBERS.find(i => i.id === values.assigneeId);
-    const project = PROJECTS.find(p => p.id === values.projectId);
-    
-    const newTask = {
-      id: `t-${Date.now()}`,
-      title: values.title,
-      description: values.description || '',
-      project_tag: project ? project.name : 'General',
-      assignee_name: assignee ? assignee.name : 'Unassigned',
-      assignee_id: values.assigneeId,
-      priority: (values.priority || 'Normal') as 'High' | 'Normal' | 'Low',
-      due_date: values.dueDate ? format(values.dueDate, 'MMM dd, yyyy') : 'No Date',
-      status: (values.status || 'To Do') as 'To Do' | 'In Progress' | 'In Review' | 'Done',
-    };
+    const loggedIn = getCurrentUser();
+    const assignee = teamMembers.find(i => i.id === values.assigneeId);
+    const project = dbProjects.find(p => p.id === values.projectId);
 
-    const saved = localStorage.getItem('hindustaan_tasks_list');
-    const existingTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
-    const updatedTasks = [newTask, ...existingTasks];
-    
-    localStorage.setItem('hindustaan_tasks_list', JSON.stringify(updatedTasks));
-    
-    // Dispatch local StorageEvent for real-time tab updates
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'hindustaan_tasks_list',
-      newValue: JSON.stringify(updatedTasks)
-    }));
+    // Save to backend database
+    try {
+      const backendPriority = values.priority.toLowerCase() === 'normal' ? 'medium' : values.priority.toLowerCase();
+      const res = await api.post('/tasks', {
+        title: values.title,
+        desc: values.description || '',
+        projectId: values.projectId,
+        assigneeId: values.assigneeId || undefined,
+        priority: backendPriority,
+        startDate: values.startDate ? new Date(values.startDate) : undefined,
+        dueDate: values.dueDate ? new Date(values.dueDate) : undefined,
+        status: values.status === 'Done' ? 'done' : values.status === 'In Progress' ? 'in-progress' : values.status === 'In Review' ? 'in-review' : 'todo'
+      });
 
-    // Log Activity
-    logActivity('Manager', 'assigned task to', assignee ? assignee.name : 'Unknown', 'assign');
+      if (res.data?.success) {
+        toast.success('Task created and assigned successfully on server!');
+        // Update local cache for immediate feedback
+        const newTask = {
+          id: res.data.data?.id || `t-${Date.now()}`,
+          title: values.title,
+          description: values.description || '',
+          project_tag: project ? project.name : 'General',
+          assignee_name: assignee ? assignee.name : 'Unassigned',
+          assignee_id: values.assigneeId,
+          priority: (values.priority || 'Normal') as any,
+          due_date: values.dueDate ? format(values.dueDate, 'yyyy-MM-dd') : 'No Date',
+          status: (values.status || 'To Do') as any,
+        };
 
-    setLoading(false);
-    toast.success('Task assigned successfully.', {
-      description: `Amanda assigned '${values.title}' to ${assignee?.name || 'Unassigned'}.`
-    });
-    
-    form.reset();
-    onOpenChange(false);
+        const saved = localStorage.getItem('hindustaan_tasks_list');
+        const existingTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
+        const updatedTasks = [newTask, ...existingTasks];
+        localStorage.setItem('hindustaan_tasks_list', JSON.stringify(updatedTasks));
+        
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'hindustaan_tasks_list',
+          newValue: JSON.stringify(updatedTasks)
+        }));
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Could not save task to database', { description: err.response?.data?.message || err.message });
+    } finally {
+      setLoading(false);
+      form.reset();
+      onOpenChange(false);
+    }
   };
 
   return (
@@ -193,7 +224,7 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl">
-                          {PROJECTS.map(project => (
+                          {dbProjects.map(project => (
                             <SelectItem key={project.id} value={project.id} className="font-medium">{project.name}</SelectItem>
                           ))}
                         </SelectContent>
@@ -247,10 +278,10 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
                                   <div className="flex items-center gap-2">
                                     <Avatar className="h-5 w-5">
                                       <AvatarFallback className="text-[9px] bg-orange-100 text-orange-700">
-                                        {GLOBAL_TEAM_MEMBERS.find(i => i.id === field.value)?.initials}
+                                        {teamMembers.find(i => i.id === field.value)?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                                       </AvatarFallback>
                                     </Avatar>
-                                    <span>{GLOBAL_TEAM_MEMBERS.find(i => i.id === field.value)?.name}</span>
+                                    <span>{teamMembers.find(i => i.id === field.value)?.name}</span>
                                   </div>
                                 )
                                 : "Select intern..."}
@@ -264,7 +295,7 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
                             <CommandList>
                               <CommandEmpty>No intern found.</CommandEmpty>
                               <CommandGroup>
-                                {GLOBAL_TEAM_MEMBERS.map((intern) => (
+                                {teamMembers.map((intern) => (
                                   <CommandItem
                                     value={intern.name}
                                     key={intern.id}
@@ -283,12 +314,12 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
                                     />
                                     <Avatar className="h-6 w-6">
                                       <AvatarFallback className="text-[10px] bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                                        {intern.initials}
+                                        {intern.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                                       </AvatarFallback>
                                     </Avatar>
                                     <div className="flex flex-col">
                                       <span>{intern.name}</span>
-                                      <span className="text-xs text-slate-500">{intern.role}</span>
+                                      <span className="text-xs text-slate-500">{intern.designation || 'Intern'}</span>
                                     </div>
                                   </CommandItem>
                                 ))}

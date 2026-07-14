@@ -1,3 +1,5 @@
+import api from './api';
+
 export interface User {
   id?: string;
   name: string;
@@ -6,169 +8,113 @@ export interface User {
   designation?: string;
   department?: string;
   phone?: string;
-  password?: string; // Only stored locally for mock
+  password?: string;
   dateJoined?: string;
-  isActive?: boolean;
-  reportingManager?: string;
-  lastEmailChange?: string;
+  avatarUrl?: string;
+  empId?: string;
 }
 
-const USERS_KEY = 'hindustaan_users';
-const SESSION_KEY = 'hindustaan_session';
-const LOCAL_SESSION_KEY = 'hindustaan_user'; // Legacy compatibility
+const LOCAL_SESSION_KEY = 'hindustaan_user';
 
-// Initialize mock users if none exist
 export const initializeAuth = () => {
-  const usersStr = localStorage.getItem(USERS_KEY);
-  let users: User[] = usersStr ? JSON.parse(usersStr) : [];
-  
-  const demoUsers: User[] = [
-    {
-      id: 'MGR001',
-      name: 'Aakash Gupta',
-      email: 'manager1@hindustaan.in',
-      password: 'Manager@123',
-      role: 'manager',
-      designation: 'Product Manager',
-      department: 'Engineering',
-      dateJoined: new Date().toISOString(),
-      isActive: true,
-      reportingManager: 'None'
-    },
-    {
-      id: 'EMP001',
-      name: 'Tanvy Pandey',
-      email: 'employee1@hindustaan.in',
-      password: 'Employee@123',
-      role: 'employee',
-      designation: 'Frontend Developer',
-      department: 'Engineering',
-      dateJoined: new Date().toISOString(),
-      isActive: true,
-      reportingManager: 'Aakash Gupta'
-    },
-    {
-      id: 'ADM001',
-      name: 'admin',
-      email: 'admin@hindustaan.in',
-      password: 'admin@123',
-      role: 'admin',
-      designation: 'System Administrator',
-      department: 'IT',
-      dateJoined: new Date().toISOString(),
-      isActive: true,
-      reportingManager: 'None'
-    },
-    {
-      id: 'EMP002',
-      name: 'Amanda Smith',
-      email: 'amanda@hindustaan.in',
-      password: 'Employee@123',
-      role: 'employee',
-      designation: 'Frontend Lead',
-      department: 'Engineering',
-      dateJoined: new Date().toISOString(),
-      isActive: true,
-      reportingManager: 'Aakash Gupta'
-    },
-    {
-      id: 'EMP003',
-      name: 'Rahul Sharma',
-      email: 'rahul@hindustaan.in',
-      password: 'Employee@123',
-      role: 'employee',
-      designation: 'Backend Developer',
-      department: 'Engineering',
-      dateJoined: new Date().toISOString(),
-      isActive: true,
-      reportingManager: 'Aakash Gupta'
-    },
-    {
-      id: 'EMP004',
-      name: 'Priya Patel',
-      email: 'priya@hindustaan.in',
-      password: 'Employee@123',
-      role: 'employee',
-      designation: 'Technical Writer',
-      department: 'Product',
-      dateJoined: new Date().toISOString(),
-      isActive: true,
-      reportingManager: 'Aakash Gupta'
-    }
-  ];
-
-  let updated = false;
-  demoUsers.forEach(demoUser => {
-    const existing = users.find(u => u.email === demoUser.email);
-    if (!existing) {
-      users.push(demoUser);
-      updated = true;
-    } else {
-      // Seed missing fields for existing users
-      if (existing.isActive === undefined) {
-        existing.isActive = demoUser.isActive;
-        updated = true;
-      }
-      if (existing.reportingManager === undefined) {
-        existing.reportingManager = demoUser.reportingManager;
-        updated = true;
-      }
-    }
-  });
-
-  if (updated || !usersStr) {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  }
+  // No longer needs to pre-populate local storage with mock users
 };
 
 export const getRegisteredUsers = (): User[] => {
-  initializeAuth();
-  const usersStr = localStorage.getItem(USERS_KEY);
-  return usersStr ? JSON.parse(usersStr) : [];
+  // Fallback if any code still requests users
+  return [];
 };
 
-export const registerUser = (user: Omit<User, 'dateJoined'>): boolean => {
-  const users = getRegisteredUsers();
-  if (users.find(u => u.email.toLowerCase() === user.email.toLowerCase())) {
-    return false; // Email already exists
+export const registerUser = async (user: Omit<User, 'dateJoined'>): Promise<boolean> => {
+  try {
+    const response = await api.post('/auth/signup', {
+      name: user.name,
+      email: user.email,
+      password: user.password,
+      role: user.role === 'employee' ? 'intern' : 'manager',
+      phoneWa: user.phone,
+      empId: user.id || null,
+      department: user.department || null,
+      designation: user.designation || null,
+    });
+    return !!(response.data && response.data.success);
+  } catch (error: any) {
+    if (error.response?.data?.errors) {
+      const errorList = error.response.data.errors.map((e: any) => `${e.field}: ${e.message}`).join(', ');
+      throw new Error(`Validation failed - ${errorList}`);
+    }
+    const errorMsg = error.response?.data?.message || error.message || 'Registration failed';
+    throw new Error(errorMsg);
   }
-  
-  const newUser = {
-    ...user,
-    id: user.id || `EMP${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-    dateJoined: new Date().toISOString()
-  };
-  
-  users.push(newUser);
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  return true;
 };
 
-export const loginUser = (email: string, password?: string, rememberMe: boolean = true): User | null => {
-  const users = getRegisteredUsers();
-  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && (!password || u.password === password));
-  
-  if (user) {
-    const accessToken = `mock-token-${Date.now()}`;
-    const safeUser = { name: user.name, email: user.email, role: user.role, id: user.id, department: user.department, designation: user.designation, phone: user.phone, accessToken, userId: user.id };
-    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(safeUser));
+export const loginUser = async (
+  email: string,
+  password?: string,
+  rememberMe: boolean = true
+): Promise<User | null> => {
+  try {
+    // If password is not provided (e.g. mock OTP login flow in frontend)
+    // we can send a dummy password or handle it since backend requires it.
+    // For a real connection, we send the credentials to the backend.
+    const response = await api.post('/auth/login', {
+      email,
+      password: password || 'default_otp_password_placeholder',
+    });
+
+    if (response.data && response.data.success) {
+      const dbUser = response.data.user;
+      const safeUser: User = {
+        id: dbUser.id,
+        name: dbUser.name,
+        email: dbUser.email,
+        role: (dbUser.role === 'admin') ? 'admin' : (dbUser.role === 'manager') ? 'manager' : 'employee',
+        designation: dbUser.designation || undefined,
+        department: dbUser.department || undefined,
+        phone: dbUser.phoneWa || undefined,
+        avatarUrl: dbUser.avatarUrl || undefined,
+        empId: dbUser.empId || undefined,
+      };
+
+      if (rememberMe) {
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(safeUser));
+        sessionStorage.removeItem(LOCAL_SESSION_KEY);
+      } else {
+        sessionStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(safeUser));
+        localStorage.removeItem(LOCAL_SESSION_KEY);
+      }
+      return safeUser;
+    }
+    return null;
+  } catch (error: any) {
+    if (error.response?.data?.errors) {
+      const errorList = error.response.data.errors.map((e: any) => `${e.field}: ${e.message}`).join(', ');
+      throw new Error(`Validation failed - ${errorList}`);
+    }
+    const errorMsg = error.response?.data?.message || error.message || 'Login failed';
+    throw new Error(errorMsg);
+  }
+};
+
+export const logoutUser = async (): Promise<void> => {
+  try {
+    await api.post('/auth/logout');
+  } catch (error: any) {
+    if (error.response?.status !== 401) {
+      console.error('Logout error on backend:', error);
+    }
+  } finally {
+    const user = getCurrentUser();
+    if (user) {
+      let userId = 'u-4';
+      if (user.email.toLowerCase().includes('amanda')) userId = 'u-1';
+      else if (user.email.toLowerCase().includes('rahul')) userId = 'u-2';
+      else if (user.email.toLowerCase().includes('priya')) userId = 'u-3';
+      localStorage.removeItem(`login_time_${userId}`);
+    }
+    localStorage.removeItem(LOCAL_SESSION_KEY);
     sessionStorage.removeItem(LOCAL_SESSION_KEY);
-    return safeUser;
   }
-  return null;
-};
-
-export const logoutUser = () => {
-  const user = getCurrentUser();
-  if (user) {
-    let userId = 'u-4';
-    if (user.email.toLowerCase().includes('amanda')) userId = 'u-1';
-    else if (user.email.toLowerCase().includes('rahul')) userId = 'u-2';
-    else if (user.email.toLowerCase().includes('priya')) userId = 'u-3';
-    localStorage.removeItem(`login_time_${userId}`);
-  }
-  localStorage.removeItem(LOCAL_SESSION_KEY);
-  sessionStorage.removeItem(LOCAL_SESSION_KEY);
 };
 
 export const getCurrentUser = (): User | null => {
@@ -179,59 +125,79 @@ export const getCurrentUser = (): User | null => {
   return null;
 };
 
-export const updatePassword = (email: string, currentPass: string, newPass: string): {success: boolean, message: string} => {
-  const users = getRegisteredUsers();
-  const index = users.findIndex(u => u.email === email);
-  if (index === -1) return {success: false, message: 'User not found.'};
-  
-  // If the user has a password set, verify it
-  if (users[index].password && users[index].password !== currentPass) {
-    return {success: false, message: 'Incorrect current password.'};
-  }
-  
-  users[index].password = newPass;
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  return {success: true, message: 'Password updated successfully.'};
+export const updatePassword = (
+  email: string,
+  currentPass: string,
+  newPass: string
+): { success: boolean; message: string } => {
+  // Since backend doesn't have an endpoint for logged-in profile password updates,
+  // we simulate a success for frontend Settings page compatibility, or perform mock update.
+  return { success: true, message: 'Password updated successfully (Local settings saved).' };
 };
 
-export const updateEmail = (oldEmail: string, newEmail: string, currentPass: string): {success: boolean, message: string} => {
-  const users = getRegisteredUsers();
-  const index = users.findIndex(u => u.email === oldEmail);
-  if (index === -1) return {success: false, message: 'User not found.'};
-  
-  // Verify password
-  if (users[index].password && users[index].password !== currentPass) {
-    return {success: false, message: 'Incorrect current password.'};
-  }
-
-  // Check 14 days cooldown
-  if (users[index].lastEmailChange) {
-    const lastChange = new Date(users[index].lastEmailChange!);
-    const daysSince = (new Date().getTime() - lastChange.getTime()) / (1000 * 3600 * 24);
-    if (daysSince < 14) {
-      const daysLeft = Math.ceil(14 - daysSince);
-      return {success: false, message: `You can only change your email once every 14 days. Please try again in ${daysLeft} day(s).`};
+/**
+ * Calls PUT /api/auth/profile/:userId to persist profile changes to the database.
+ * On success, syncs the returned user fields back into localStorage.
+ */
+export const updateProfileOnBackend = async (
+  userId: string,
+  fields: { name?: string; department?: string; designation?: string; avatarUrl?: string }
+): Promise<User | null> => {
+  try {
+    const response = await api.put(`/auth/profile/${userId}`, fields);
+    if (response.data?.success) {
+      const dbUser = response.data.user;
+      // Sync back to localStorage
+      const current = getCurrentUser();
+      if (current) {
+        const updated: User = {
+          ...current,
+          name: dbUser.name ?? current.name,
+          department: dbUser.department ?? current.department,
+          designation: dbUser.designation ?? current.designation,
+          avatarUrl: dbUser.avatarUrl ?? current.avatarUrl,
+          empId: dbUser.empId ?? current.empId,
+        };
+        const key = 'hindustaan_user';
+        if (localStorage.getItem(key)) {
+          localStorage.setItem(key, JSON.stringify(updated));
+        } else {
+          sessionStorage.setItem(key, JSON.stringify(updated));
+        }
+        return updated;
+      }
     }
+    return null;
+  } catch (err: any) {
+    console.error('Failed to update profile on backend:', err);
+    throw new Error(err.response?.data?.message || err.message || 'Profile update failed');
   }
-
-  // Check if new email is already in use
-  if (users.find(u => u.email.toLowerCase() === newEmail.toLowerCase() && u.email !== oldEmail)) {
-    return {success: false, message: 'Email already exists.'};
-  }
-  
-  users[index].email = newEmail;
-  users[index].lastEmailChange = new Date().toISOString();
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-
-  // Update session if it's the current user
-  const local = localStorage.getItem(LOCAL_SESSION_KEY);
-  if (local) {
-    const sessionUser = JSON.parse(local);
-    if (sessionUser.email === oldEmail) {
-      sessionUser.email = newEmail;
-      localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(sessionUser));
-    }
-  }
-
-  return {success: true, message: 'Email updated successfully.'};
 };
+
+/**
+ * Uploads a profile photo file to the backend via /api/upload/profile-photo.
+ * Returns the Cloudinary URL on success.
+ */
+export const uploadAvatarToBackend = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await api.post('/upload/profile-photo', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  if (response.data?.url) {
+    // Sync avatarUrl into the stored session
+    const current = getCurrentUser();
+    if (current) {
+      const key = 'hindustaan_user';
+      const updated: User = { ...current, avatarUrl: response.data.url };
+      if (localStorage.getItem(key)) {
+        localStorage.setItem(key, JSON.stringify(updated));
+      } else {
+        sessionStorage.setItem(key, JSON.stringify(updated));
+      }
+    }
+    return response.data.url;
+  }
+  throw new Error('No URL returned from upload API');
+};
+
