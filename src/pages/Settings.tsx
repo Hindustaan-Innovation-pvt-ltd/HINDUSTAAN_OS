@@ -866,7 +866,7 @@ export default function Settings({ session }: { session: any }) {
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 dark:text-white">FAQ</h3>
-                    <p className="text-sm font-medium text-slate-500 mt-1">Find answers to common questions about Hindustaan OS.</p>
+                    <p className="text-sm font-medium text-slate-500 mt-1">Find answers to common questions about Project OS.</p>
                   </div>
                 </CardContent>
               </Card>

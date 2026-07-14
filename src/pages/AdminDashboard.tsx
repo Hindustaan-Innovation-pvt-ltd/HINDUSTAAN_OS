@@ -4,7 +4,7 @@ import {
   Plus, ExternalLink, Search, Edit2, ShieldAlert, Power, 
   Trash2, HelpCircle, CheckCircle2, X, Filter, UserPlus, Briefcase, Mail, Phone, ChevronRight,
   Calendar, Clock, MapPin, Laptop, Lock, Shield, MessageSquare, PlusCircle, Send, Globe, Award, ClipboardList, CheckSquare, FolderKanban,
-  User as UserIcon, CreditCard, Settings
+  User as UserIcon, CreditCard, Settings, Download
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -1395,29 +1395,37 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   </CardContent>
                 </Card>
 
-                {/* Quick Actions */}
+                {/* Audit Logs */}
                 <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
-                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-                    <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Quick Actions</CardTitle>
+                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30 flex flex-row items-center justify-between">
+                    <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Audit Logs</CardTitle>
+                    <Button 
+                      onClick={handleExportAuditLogs}
+                      variant="outline" 
+                      size="sm" 
+                      className="h-8 rounded-xl font-bold border-slate-200 dark:border-slate-800 text-xs flex items-center gap-1.5"
+                    >
+                      <Download className="h-3.5 w-3.5" /> Export CSV
+                    </Button>
                   </CardHeader>
-                  <CardContent className="p-4 space-y-2">
-                    {quickActions.map((action, idx) => {
-                      const IconComponent = action.icon;
-                      return (
-                        <Button 
-                          key={idx} 
-                          onClick={action.action}
-                          variant="ghost" 
-                          className="w-full justify-between h-12 text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent hover:bg-transparent hover:text-orange-500 dark:hover:text-orange-400 transition-colors group"
-                        >
-                          <span className="flex items-center gap-2">
-                            <IconComponent className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors" />
-                            {action.title}
+                  <CardContent className="p-4">
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                      {activities.slice(0, 4).map((activity: any, idx: number) => (
+                        <div key={idx} className="py-3 first:pt-0 last:pb-0 flex items-start justify-between gap-4">
+                          <div className="space-y-0.5">
+                            <p className="text-xs font-bold text-slate-900 dark:text-white leading-snug">
+                              {activity.user} {activity.action}
+                            </p>
+                            <p className="text-[10px] font-bold text-orange-500/90 dark:text-orange-400">
+                              {activity.target}
+                            </p>
+                          </div>
+                          <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 shrink-0 self-center">
+                            {activity.time}
                           </span>
-                          <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors" />
-                        </Button>
-                      );
-                    })}
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
