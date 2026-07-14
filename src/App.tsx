@@ -23,6 +23,7 @@ import HelpSupport from '@/pages/HelpSupport';
 import LeaveManagement from './pages/LeaveManagement';
 import WorkspaceSettings from './pages/workspace/WorkspaceSettings';
 import SecuritySettings from './pages/SecuritySettings';
+import Subscriptions from './pages/Subscriptions';
 // Supabase client removed for mock auth implementation
 
 import { ThemeProvider } from '@/context/ThemeContext';
@@ -55,13 +56,26 @@ function App() {
         setCurrentView('Edit Profile');
       } else if (path === '/manager/leave-management' || path === '/employee/leave') {
         setCurrentView('Leave Management');
+      } else if (path === '/admin/subscriptions') {
+        setCurrentView('Subscription Management');
       } else if (path.includes('/dashboard') || path === '/') {
         setCurrentView('Dashboard');
       }
     };
+
+    const handleCustomNavigation = (e: CustomEvent) => {
+      if (e.detail && e.detail.view) {
+        handleNavigate(e.detail.view);
+      }
+    };
+
     window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('navigate-to-view', handleCustomNavigation as EventListener);
     handleLocationChange(); // run once on mount
-    return () => window.removeEventListener('popstate', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('navigate-to-view', handleCustomNavigation as EventListener);
+    };
   }, []);
 
   const handleNavigate = (view: string) => {
@@ -75,6 +89,9 @@ function App() {
     } else if (view === 'Leave Management') {
       window.history.pushState({}, '', ['manager', 'admin'].includes(role) ? '/manager/leave-management' : '/employee/leave');
       setCurrentView('Leave Management');
+    } else if (view === 'Subscription Management') {
+      window.history.pushState({}, '', '/admin/subscriptions');
+      setCurrentView('Subscription Management');
     } else if (view === 'Dashboard') {
       window.history.pushState({}, '', `/${role}/dashboard`);
       setCurrentView('Dashboard');
@@ -387,13 +404,17 @@ function App() {
                   {currentView === 'Workspace Settings' && <WorkspaceSettings onNavigate={handleNavigate} />}
                   {currentView === 'Security Settings' && <SecuritySettings session={session} />}
 
+                  {currentView === 'Subscription Management' && (
+                    <Subscriptions session={session} onBack={() => handleNavigate('Dashboard')} />
+                  )}
+
                   {/* Fallback for anything else */}
                   {![
                     'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
                     'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Edit Profile', 'Team Members',
                     'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
                     'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support', 'Security Settings',
-                    'Workspace Settings', 'Employees', 'Managers', 'Roles & Permissions'
+                    'Workspace Settings', 'Subscription Management', 'Employees', 'Managers', 'Roles & Permissions'
                   ].includes(currentView) && (
                       <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
                         <p>Module "{currentView}" is under construction.</p>
