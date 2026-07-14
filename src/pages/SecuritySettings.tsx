@@ -21,6 +21,7 @@ import {
 export default function SecuritySettings({ session }: { session?: any }) {
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; actionType: string; title: string; desc: string }>({ isOpen: false, actionType: '', title: '', desc: '' });
   const [confirmText, setConfirmText] = useState('');
+  const [showAllLogs, setShowAllLogs] = useState(false);
 
   const [authSettings, setAuthSettings] = useState({
     passwordLogin: true,
@@ -68,7 +69,12 @@ export default function SecuritySettings({ session }: { session?: any }) {
     { id: 1, user: 'Aakash Gupta', role: 'admin', action: 'Workspace settings updated', type: 'Config', time: '10 mins ago', desc: 'Enabled SSO login' },
     { id: 2, user: 'System', role: 'system', action: 'Failed login detected', type: 'Alert', time: '1 hour ago', desc: '3 failed attempts from 45.33.22.11' },
     { id: 3, user: 'Rahul Sharma', role: 'manager', action: 'Permissions modified', type: 'Access', time: 'Yesterday', desc: 'Granted Project Manager access to Amanda Smith' },
+    { id: 4, user: 'Amanda Smith', role: 'employee', action: 'Data export completed', type: 'Access', time: '2 days ago', desc: 'Exported Q2 performance metrics CSV' },
+    { id: 5, user: 'System', role: 'system', action: 'Automated backup completed', type: 'Config', time: '3 days ago', desc: 'Successfully backed up database to S3' },
+    { id: 6, user: 'Priya Patel', role: 'employee', action: 'Password changed', type: 'Config', time: 'Last week', desc: 'Successfully updated account password' },
   ];
+
+  const visibleLogs = showAllLogs ? auditLogs : auditLogs.slice(0, 3);
 
   const rbacRoles = [
     { name: 'Admin', count: 2, permissions: 120, editable: true, restricted: 0, description: 'Full workspace access' },
@@ -498,13 +504,15 @@ export default function SecuritySettings({ session }: { session?: any }) {
                   <Button variant="outline" size="sm" className="h-8 text-xs font-bold rounded-xl border-slate-200 dark:border-slate-800 flex items-center gap-1.5" onClick={() => toast.success('Audit logs exported successfully.')}>
                     <Download className="h-3.5 w-3.5" /> Export CSV
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-8 text-xs font-bold" onClick={() => toast.info('Loading full audit history...')}>View All</Button>
+                  <Button variant="ghost" size="sm" className="h-8 text-xs font-bold" onClick={() => setShowAllLogs(!showAllLogs)}>
+                    {showAllLogs ? 'View Less' : 'View All'}
+                  </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-5">
               <div className="space-y-6 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 dark:before:via-slate-800 before:to-transparent">
-                {auditLogs.map((log) => (
+                {visibleLogs.map((log) => (
                   <div key={log.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                     <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-800 text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
                       {log.type === 'Config' ? <Settings2 className="h-4 w-4" /> : log.type === 'Alert' ? <AlertTriangle className="h-4 w-4 text-rose-500" /> : <Shield className="h-4 w-4 text-indigo-500" />}

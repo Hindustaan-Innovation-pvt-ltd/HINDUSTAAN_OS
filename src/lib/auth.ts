@@ -10,6 +10,7 @@ export interface User {
   dateJoined?: string;
   isActive?: boolean;
   reportingManager?: string;
+  lastEmailChange?: string;
 }
 
 const USERS_KEY = 'hindustaan_users';
@@ -191,4 +192,46 @@ export const updatePassword = (email: string, currentPass: string, newPass: stri
   users[index].password = newPass;
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
   return {success: true, message: 'Password updated successfully.'};
+};
+
+export const updateEmail = (oldEmail: string, newEmail: string, currentPass: string): {success: boolean, message: string} => {
+  const users = getRegisteredUsers();
+  const index = users.findIndex(u => u.email === oldEmail);
+  if (index === -1) return {success: false, message: 'User not found.'};
+  
+  // Verify password
+  if (users[index].password && users[index].password !== currentPass) {
+    return {success: false, message: 'Incorrect current password.'};
+  }
+
+  // Check 14 days cooldown
+  if (users[index].lastEmailChange) {
+    const lastChange = new Date(users[index].lastEmailChange!);
+    const daysSince = (new Date().getTime() - lastChange.getTime()) / (1000 * 3600 * 24);
+    if (daysSince < 14) {
+      const daysLeft = Math.ceil(14 - daysSince);
+      return {success: false, message: `You can only change your email once every 14 days. Please try again in ${daysLeft} day(s).`};
+    }
+  }
+
+  // Check if new email is already in use
+  if (users.find(u => u.email.toLowerCase() === newEmail.toLowerCase() && u.email !== oldEmail)) {
+    return {success: false, message: 'Email already exists.'};
+  }
+  
+  users[index].email = newEmail;
+  users[index].lastEmailChange = new Date().toISOString();
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+
+  // Update session if it's the current user
+  const local = localStorage.getItem(LOCAL_SESSION_KEY);
+  if (local) {
+    const sessionUser = JSON.parse(local);
+    if (sessionUser.email === oldEmail) {
+      sessionUser.email = newEmail;
+      localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(sessionUser));
+    }
+  }
+
+  return {success: true, message: 'Email updated successfully.'};
 };
