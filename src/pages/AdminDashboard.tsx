@@ -136,36 +136,6 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
       title: "Export Audit Logs",
       icon: ExternalLink,
       action: handleExportAuditLogs,
-    },
-    {
-      title: "Invite User",
-      icon: UserPlus,
-      action: () => setIsCreateOpen(true),
-    },
-    {
-      title: "Create Project",
-      icon: Briefcase,
-      action: () => navigateToView("Projects"),
-    },
-    {
-      title: "Assign Task",
-      icon: CheckCircle2,
-      action: () => navigateToView("Tasks"),
-    },
-    {
-      title: "Review Leave Requests",
-      icon: Users,
-      action: () => navigateToView("Leave Management"),
-    },
-    {
-      title: "Workspace Settings",
-      icon: Settings,
-      action: () => navigateToView("Settings"),
-    },
-    {
-      title: "View Reports",
-      icon: Activity,
-      action: () => navigateToView("Contribution Scores"),
     }
   ];
 
