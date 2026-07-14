@@ -212,7 +212,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
             <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20 font-bold uppercase tracking-wider text-[10px]">Enterprise View</Badge>
           </div>
           <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-            Master Gantt Schedule
+            Gantt Timeline
             {isAdmin && (
               <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold border-0">
                 Organization Monitoring
