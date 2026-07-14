@@ -705,7 +705,7 @@ export default function Settings({ session }: { session: any }) {
               <CardContent className="p-6 space-y-6">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Theme Preferences</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <button 
                       onClick={() => theme !== 'light' && toggleTheme()}
                       className={cn(
@@ -726,15 +726,6 @@ export default function Settings({ session }: { session: any }) {
                     >
                       <Moon className={cn("h-8 w-8", theme === 'dark' ? "text-orange-600" : "text-slate-400")} />
                       <span className={cn("text-sm font-bold", theme === 'dark' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Dark Theme</span>
-                    </button>
-
-                    <button 
-                      className={cn(
-                        "flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 opacity-50 cursor-not-allowed"
-                      )}
-                    >
-                      <Monitor className="h-8 w-8 text-slate-400" />
-                      <span className="text-sm font-bold text-slate-600 dark:text-slate-400">System Theme</span>
                     </button>
                   </div>
                 </div>
@@ -783,7 +774,7 @@ export default function Settings({ session }: { session: any }) {
                   </TooltipProvider>
                 </div>
 
-                {role !== 'employee' && (
+                {role === 'admin' && (
                   <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-bold text-slate-900 dark:text-white">Compact Mode</h3>
