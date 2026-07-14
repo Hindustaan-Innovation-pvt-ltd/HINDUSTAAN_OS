@@ -66,9 +66,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Apply Accent Color to DOM
   useEffect(() => {
-    const root = window.document.documentElement;
-    ['theme-orange', 'theme-blue', 'theme-emerald', 'theme-rose', 'theme-purple', 'theme-cosmic'].forEach(c => root.classList.remove(c));
-    root.classList.add(`theme-${accentColor}`);
     localStorage.setItem('accentColor', accentColor);
   }, [accentColor]);
 
