@@ -52,11 +52,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 const employeeNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
-  { name: 'My Tasks - Kanban Board', icon: CheckSquare },
+  { name: 'My Tasks', icon: CheckSquare },
   { name: 'Work Logs', icon: Clock },
   { name: 'Leave Management', icon: CalendarRange },
   { name: 'Daily Standup', icon: Mic },
-  { name: 'Projects - Project timeline', icon: FolderKanban },
+  { name: 'Projects', icon: FolderKanban },
   { name: 'Milestones', icon: Flag },
   { name: 'Contribution Scores', icon: Trophy },
   { name: 'Settings', icon: Settings },
@@ -64,8 +64,8 @@ const employeeNavigation = [
 
 const managerNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
-  { name: 'Projects - Project timeline', icon: FolderKanban },
-  { name: 'My Tasks - Kanban Board', icon: CheckSquare },
+  { name: 'Projects', icon: FolderKanban },
+  { name: 'My Tasks', icon: CheckSquare },
   { name: 'Gantt Timeline', icon: CalendarDays },
   { name: 'Progress Tracker', icon: BarChart2 },
   { name: 'Work Logs', icon: Clock },
@@ -82,8 +82,8 @@ const adminNavigationGroups = [
     name: 'Organization Overview',
     icon: Building,
     items: [
-      { name: 'Projects - Project timeline', icon: FolderKanban },
-      { name: 'My Tasks - Kanban Board', icon: CheckSquare },
+      { name: 'Projects', icon: FolderKanban },
+      { name: 'My Tasks', icon: CheckSquare },
       { name: 'Team Members', icon: Users },
       { name: 'Gantt Timeline', icon: CalendarDays },
       { name: 'Progress Tracker', icon: BarChart2 },
