@@ -1050,8 +1050,8 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                           <ClipboardList className="h-4 w-4 text-purple-500 shrink-0" /> Recent Work Logs / Timesheet
                         </h3>
                       </div>
-                      <CardContent className="p-0 max-h-[220px] overflow-y-auto custom-scrollbar">
-                        <table className="w-full text-xs text-left">
+                      <CardContent className="p-0 max-h-[220px] overflow-y-auto overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-xs text-left min-w-[500px]">
                           <thead className="text-[10px] text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/60 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                             <tr>
                               <th className="px-4 py-2 font-bold">Date</th>
@@ -1272,7 +1272,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0 overflow-x-auto">
-                    <table className="w-full text-sm text-left">
+                    <table className="w-full text-sm text-left min-w-[600px]">
                       <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                         <tr>
                           <th className="px-6 py-4 font-bold">User</th>

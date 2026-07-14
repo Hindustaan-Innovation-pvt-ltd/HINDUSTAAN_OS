@@ -156,6 +156,7 @@ html.compact-mode {
 
 /* NEON COSMIC THEME OVERRIDES */
 @theme {
+  --font-sans: "Inter", sans-serif;
   --color-slate-950: #050816;
   --color-slate-900: #0B1023;
   --color-slate-800: #12182F;

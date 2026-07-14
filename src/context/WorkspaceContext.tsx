@@ -51,7 +51,7 @@ const DEFAULT_CONFIG: WorkspaceConfig = {
   emailNotifications: true,
   inAppNotifications: true,
   pushNotifications: false,
-  themeMode: 'system',
+  themeMode: 'dark',
   accentColor: 'blue',
 };
 
@@ -66,6 +66,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       const merged = { ...DEFAULT_CONFIG, ...parsed };
       if (merged.workspaceName === 'Hindustaan OS') {
         merged.workspaceName = 'Project OS';
+      }
+      if (merged.themeMode === 'system') {
+        merged.themeMode = 'dark';
       }
       return merged;
     } catch (e) {

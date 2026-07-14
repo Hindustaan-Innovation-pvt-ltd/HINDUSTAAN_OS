@@ -26,7 +26,7 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
         description="Select a default theme or follow the system preference."
       >
         <div className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
               <label className="cursor-pointer block group">
                 <input 
@@ -76,41 +76,6 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
                   </div>
                 </div>
                 <div className="text-center mt-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Dark Mode</div>
-              </label>
-            </div>
-
-            <div>
-              <label className="cursor-pointer block group">
-                <input 
-                  type="radio" 
-                  name="themeMode" 
-                  value="system"
-                  checked={data.themeMode === 'system'}
-                  onChange={() => {
-                    updateField('themeMode', 'system');
-                  }}
-                  className="sr-only peer" 
-                />
-                <div className="rounded-xl border-2 border-slate-200 dark:border-slate-800 peer-checked:border-orange-500 peer-checked:ring-4 peer-checked:ring-orange-500/10 overflow-hidden transition-all relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-slate-50 to-[#0c1222] pointer-events-none" />
-                  <div className="h-32 flex flex-col p-3 space-y-3 relative z-10">
-                    <div className="flex gap-2">
-                      <div className="h-4 bg-white rounded shadow-sm w-full" />
-                      <div className="h-4 bg-slate-800 rounded shadow-sm border border-slate-800/50 w-full" />
-                    </div>
-                    <div className="flex-1 flex gap-2">
-                      <div className="h-full w-full bg-white rounded shadow-sm p-3 space-y-2 border border-slate-100">
-                        <div className="h-2 bg-slate-200 rounded w-full" />
-                        <div className="h-2 bg-slate-200 rounded w-4/5" />
-                      </div>
-                      <div className="h-full w-full bg-slate-900 rounded shadow-sm border border-slate-800/50 p-3 space-y-2">
-                        <div className="h-2 bg-slate-800 rounded w-full" />
-                        <div className="h-2 bg-slate-800 rounded w-4/5" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-center mt-3 text-sm font-semibold text-slate-700 dark:text-slate-300">System</div>
               </label>
             </div>
           </div>
