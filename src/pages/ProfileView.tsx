@@ -3,17 +3,30 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, updatePassword } from '@/lib/auth';
 import { getProfileData, type ProfileData } from '@/lib/profile';
 import { 
   User, Mail, Phone, Shield, Briefcase, Calendar, MapPin, 
   Globe, Building, Clock, Edit, CheckCircle2,
-  AlertCircle, ShieldCheck, Activity, Users, FileText, Lock, LayoutDashboard, Link, ArrowUpRight, LogOut, Settings
+  AlertCircle, ShieldCheck, Activity, Users, FileText, Lock, LayoutDashboard, Link, ArrowUpRight, LogOut, Settings,
+  Eye, EyeOff
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 export default function ProfileView({ session, onNavigate }: { session?: any, onNavigate: (view: string) => void }) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   useEffect(() => {
     const user = getCurrentUser();
@@ -22,6 +35,33 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
       setProfile(data);
     }
   }, []);
+
+  const handleUpdatePassword = () => {
+    if (!currentPassword) return toast.error('Current password required.');
+    if (newPassword.length < 8) {
+      return toast.error('Password must be at least 8 characters long.');
+    }
+    if (newPassword !== confirmPassword) return toast.error('Passwords do not match.');
+
+    setIsUpdatingPassword(true);
+    setTimeout(() => {
+      setIsUpdatingPassword(false);
+      
+      const user = getCurrentUser();
+      const userEmail = user?.email || 'admin@hindustaan.in';
+      const result = updatePassword(userEmail, currentPassword, newPassword);
+      
+      if (result.success) {
+        toast.success('Password updated successfully!');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setIsChangePasswordOpen(false);
+      } else {
+        toast.error(result.message || 'Error updating password');
+      }
+    }, 1200);
+  };
 
   if (!profile) {
     return (
@@ -35,7 +75,8 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
 
   if (isAdmin) {
     return (
-      <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1400px] mx-auto space-y-6 animate-in fade-in duration-500">
+      <>
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1400px] mx-auto space-y-6 animate-in fade-in duration-500">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -89,14 +130,10 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                 </div>
 
                 <div className="w-full border-t border-slate-100 dark:border-slate-800/80 mt-6 pt-4 text-left space-y-3">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">Employee ID</span>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">{profile.employeeId}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="font-bold text-slate-400 uppercase tracking-wider text-xs">Join Date</span>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">{profile.joiningDate}</span>
-                  </div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">About Me</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                    {profile.aboutMe || 'No description provided.'}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -130,20 +167,8 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                     <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{profile.phone || '+91 98765 43210'}</p>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gender</span>
-                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Not Specified</p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Date of Birth</span>
-                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Jan 1, 1990</p>
-                  </div>
-                  <div className="space-y-1">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Address</span>
                     <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{profile.officeLocation}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Emergency Contact</span>
-                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{profile.emergencyContact || 'Not provided'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -155,14 +180,15 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                 <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Account Actions</CardTitle>
               </CardHeader>
               <CardContent className="p-5 pt-4 flex flex-col gap-2">
-                <Button variant="secondary" className="w-full justify-start font-bold" onClick={() => onNavigate('Edit Profile')}>
+                <Button 
+                  variant="secondary" 
+                  className="w-full justify-start font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200" 
+                  onClick={() => onNavigate('Edit Profile')}
+                >
                   <Edit className="mr-2 h-4 w-4" /> Edit Profile
                 </Button>
-                <Button variant="outline" className="w-full justify-start font-bold" onClick={() => toast.success('Password change email sent')}>
+                <Button variant="outline" className="w-full justify-start font-bold" onClick={() => setIsChangePasswordOpen(true)}>
                   <ShieldCheck className="mr-2 h-4 w-4 text-emerald-500" /> Change Password
-                </Button>
-                <Button variant="outline" className="w-full justify-start font-bold" onClick={() => toast.success('Data export started')}>
-                  <FileText className="mr-2 h-4 w-4 text-blue-500" /> Download My Data
                 </Button>
                 <Button variant="outline" className="w-full justify-start font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20" onClick={() => toast.success('Logged out of all other sessions')}>
                   <LogOut className="mr-2 h-4 w-4" /> Logout Other Sessions
@@ -201,32 +227,16 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Employment Type</span>
                     <p className="text-base font-bold text-slate-800 dark:text-slate-200">Full Time</p>
                   </div>
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Reporting Manager</span>
-                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">None (CEO)</p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Workspace ID</span>
-                    <p className="text-base font-mono font-bold text-slate-800 dark:text-slate-200">WS-9842</p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Joining Date</span>
-                    <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.joiningDate}</p>
-                  </div>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-4 pt-6 border-t border-slate-100 dark:border-slate-800">
-                  <div className="text-center">
+                <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-100 dark:border-slate-800">
+                  <div className="text-center border-r border-slate-100 dark:border-slate-800">
                     <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">124</p>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Employees Managed</p>
                   </div>
-                  <div className="text-center border-x border-slate-100 dark:border-slate-800">
+                  <div className="text-center">
                     <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">12</p>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Managers Managed</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">4 yrs</p>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Workspace Tenure</p>
                   </div>
                 </div>
               </CardContent>
@@ -258,7 +268,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                           <span className="text-[10px] font-semibold text-slate-400">{log.time}</span>
                         </div>
                         <p className="text-xs text-slate-500 mb-2">{log.desc}</p>
-                        <Badge variant="outline" className="text-[9px] uppercase tracking-wider font-bold bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700">{log.badge}</Badge>
+                        <Badge variant="outline" className="text-[9px] uppercase tracking-wider font-bold bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">{log.badge}</Badge>
                       </div>
                     </div>
                   ))}
@@ -269,6 +279,88 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
           </div>
         </div>
       </div>
+
+      <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
+        <DialogContent className="sm:max-w-[500px] rounded-2xl border-slate-800 bg-[#0f111a] text-slate-100 p-6 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-white">Change Password</DialogTitle>
+            <DialogDescription className="text-slate-400 text-xs font-semibold mt-1">
+              Ensure your account is using a long, random password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-1.5 relative">
+              <label className="text-sm font-bold text-slate-300">Current Password</label>
+              <div className="relative">
+                <Input 
+                  type={showPassword.current ? "text" : "password"} 
+                  value={currentPassword} 
+                  onChange={e => setCurrentPassword(e.target.value)} 
+                  placeholder="••••••••" 
+                  className="rounded-xl bg-slate-900/60 border-slate-800 text-white pr-10 focus:ring-indigo-500/50" 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(p => ({...p, current: !p.current}))} 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                >
+                  {showPassword.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            
+            <div className="space-y-1.5 relative">
+              <label className="text-sm font-bold text-slate-300">New Password</label>
+              <div className="relative">
+                <Input 
+                  type={showPassword.new ? "text" : "password"} 
+                  value={newPassword} 
+                  onChange={e => setNewPassword(e.target.value)} 
+                  placeholder="••••••••" 
+                  className="rounded-xl bg-slate-900/60 border-slate-800 text-white pr-10 focus:ring-indigo-500/50" 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(p => ({...p, new: !p.new}))} 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                >
+                  {showPassword.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            
+            <div className="space-y-1.5 relative">
+              <label className="text-sm font-bold text-slate-300">Confirm New Password</label>
+              <div className="relative">
+                <Input 
+                  type={showPassword.confirm ? "text" : "password"} 
+                  value={confirmPassword} 
+                  onChange={e => setConfirmPassword(e.target.value)} 
+                  placeholder="••••••••" 
+                  className="rounded-xl bg-slate-900/60 border-slate-800 text-white pr-10 focus:ring-indigo-500/50" 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(p => ({...p, confirm: !p.confirm}))} 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                >
+                  {showPassword.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-start mt-2">
+            <Button 
+              disabled={isUpdatingPassword} 
+              onClick={handleUpdatePassword} 
+              className="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold px-6 py-2 shadow-[0_0_15px_rgba(99,102,241,0.4)] disabled:opacity-50"
+            >
+              {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      </>
     );
   }
 
