@@ -454,13 +454,12 @@ export default function DashboardShell({
   const { theme, toggleTheme, accentColor } = useTheme();
   const isDark = theme === 'dark';
 
-  // Apply accent color based on user role
+  // Apply accent color to DOM
   useEffect(() => {
     const root = window.document.documentElement;
-    const activeColor = role === 'admin' ? accentColor : 'cosmic';
     ['theme-orange', 'theme-blue', 'theme-emerald', 'theme-rose', 'theme-purple', 'theme-cosmic'].forEach(c => root.classList.remove(c));
-    root.classList.add(`theme-${activeColor}`);
-  }, [role, accentColor]);
+    root.classList.add(`theme-${accentColor}`);
+  }, [accentColor]);
 
   // Ensure sidebar open state resets on resize to desktop/tablet
   useEffect(() => {
