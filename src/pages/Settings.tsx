@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ProjectTimeSelect } from '@/components/ui/project-time-select';
 import { Button } from '@/components/ui/button';
+import { useNotifications } from '@/context/NotificationContext';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -33,7 +36,7 @@ const SETTINGS_SECTIONS = [
 ];
 
 export default function Settings({ session }: { session: any }) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, accentColor, setAccentColor, compactMode, setCompactMode } = useTheme();
   const role = session?.user?.user_metadata?.role || 'intern';
   
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -348,7 +351,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Standup Settings</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white">Standup Settings</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize how Daily Standups work for you {role === 'manager' && 'and your team'}.</p>
             </div>
             
@@ -398,16 +401,20 @@ export default function Settings({ session }: { session: any }) {
                     <Switch checked={standupSettings.reminderEnabled} onCheckedChange={() => handleStandupToggle('reminderEnabled')} />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Reminder Time</label>
-                      <Input type="time" value={standupSettings.reminderTime} onChange={(e) => handleStandupSelect('reminderTime', e.target.value)} disabled={!standupSettings.reminderEnabled} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Reminder Time</label>
+                        {!standupSettings.reminderEnabled ? (
+                           <Input disabled value={standupSettings.reminderTime} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold" />
+                        ) : (
+                           <ProjectTimeSelect value={standupSettings.reminderTime} onChange={(v) => handleStandupSelect('reminderTime', v)} />
+                        )}
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Submission Deadline</label>
+                        <ProjectTimeSelect value={standupSettings.deadline} onChange={(v) => handleStandupSelect('deadline', v)} />
+                      </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Submission Deadline</label>
-                      <Input type="time" value={standupSettings.deadline} onChange={(e) => handleStandupSelect('deadline', e.target.value)} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold" />
-                    </div>
-                  </div>
                 </div>
 
 
@@ -472,7 +479,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Account & Security</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white">Account & Security</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage your password and security preferences.</p>
             </div>
             
@@ -575,8 +582,8 @@ export default function Settings({ session }: { session: any }) {
                   <DialogDescription className="text-slate-500">Scan this QR code with your authenticator app.</DialogDescription>
                 </DialogHeader>
                 <div className="py-4 flex flex-col items-center gap-6">
-                  <div className="p-4 bg-white rounded-xl border-2 border-slate-100 shadow-sm">
-                    <QrCode className="w-32 h-32 text-slate-900" />
+                  <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-100 dark:border-slate-700 shadow-sm">
+                    <QrCode className="w-32 h-32 text-slate-900 dark:text-white" />
                   </div>
                   <div className="w-full space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center block">Secret Key</label>
@@ -628,7 +635,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Notification Preferences</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white">Notification Preferences</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Control how and when you receive alerts.</p>
             </div>
             
@@ -690,7 +697,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Appearance</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white">Appearance</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize how the application looks on your device.</p>
             </div>
             
@@ -698,7 +705,7 @@ export default function Settings({ session }: { session: any }) {
               <CardContent className="p-6 space-y-6">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Theme Preferences</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <button 
                       onClick={() => theme !== 'light' && toggleTheme()}
                       className={cn(
@@ -720,36 +727,62 @@ export default function Settings({ session }: { session: any }) {
                       <Moon className={cn("h-8 w-8", theme === 'dark' ? "text-orange-600" : "text-slate-400")} />
                       <span className={cn("text-sm font-bold", theme === 'dark' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Dark Theme</span>
                     </button>
-
-                    <button 
-                      className={cn(
-                        "flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 opacity-50 cursor-not-allowed"
-                      )}
-                    >
-                      <Monitor className="h-8 w-8 text-slate-400" />
-                      <span className="text-sm font-bold text-slate-600 dark:text-slate-400">System Theme</span>
-                    </button>
                   </div>
                 </div>
 
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Accent Color</h3>
-                  <div className="flex items-center gap-3">
-                    <button className="h-8 w-8 rounded-full bg-orange-500 ring-4 ring-orange-500/20"></button>
-                    <button className="h-8 w-8 rounded-full bg-blue-500 hover:scale-110 transition-transform"></button>
-                    <button className="h-8 w-8 rounded-full bg-emerald-500 hover:scale-110 transition-transform"></button>
-                    <button className="h-8 w-8 rounded-full bg-rose-500 hover:scale-110 transition-transform"></button>
-                    <button className="h-8 w-8 rounded-full bg-purple-500 hover:scale-110 transition-transform"></button>
-                  </div>
+                  <TooltipProvider>
+                    <div className="flex items-center gap-3">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => setAccentColor('cosmic')} className={cn("h-8 w-8 rounded-full bg-[#5B7CFF] ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'cosmic' && "ring-[#5B7CFF]/30 scale-110")}></button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Default View</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => setAccentColor('orange')} className={cn("h-8 w-8 rounded-full bg-orange-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'orange' && "ring-orange-500/30 scale-110")}></button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Orange</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => setAccentColor('blue')} className={cn("h-8 w-8 rounded-full bg-blue-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'blue' && "ring-blue-500/30 scale-110")}></button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Blue</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => setAccentColor('emerald')} className={cn("h-8 w-8 rounded-full bg-emerald-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'emerald' && "ring-emerald-500/30 scale-110")}></button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Emerald</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => setAccentColor('rose')} className={cn("h-8 w-8 rounded-full bg-rose-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'rose' && "ring-rose-500/30 scale-110")}></button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Rose</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => setAccentColor('purple')} className={cn("h-8 w-8 rounded-full bg-purple-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'purple' && "ring-purple-500/30 scale-110")}></button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Purple</p></TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TooltipProvider>
                 </div>
 
-                <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Compact Mode</h3>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Reduce spacing to fit more content on screen.</p>
+                {role === 'admin' && (
+                  <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">Compact Mode</h3>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Reduce spacing to fit more content on screen.</p>
+                    </div>
+                    <Switch checked={compactMode} onCheckedChange={(checked) => setCompactMode(checked)} />
                   </div>
-                  <Switch checked={toggles.compactMode} onCheckedChange={() => handleToggle('compactMode')} />
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -764,7 +797,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Data & Storage</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white">Data & Storage</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage local cache and export your data.</p>
             </div>
 
@@ -798,7 +831,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Language & Region</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white">Language & Region</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize your localization settings.</p>
             </div>
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
@@ -847,7 +880,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Help & Support</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white">Help & Support</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Get assistance and read documentation.</p>
             </div>
             
@@ -859,7 +892,7 @@ export default function Settings({ session }: { session: any }) {
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 dark:text-white">FAQ</h3>
-                    <p className="text-sm font-medium text-slate-500 mt-1">Find answers to common questions about Hindustaan OS.</p>
+                    <p className="text-sm font-medium text-slate-500 mt-1">Find answers to common questions about Project OS.</p>
                   </div>
                 </CardContent>
               </Card>
@@ -912,7 +945,7 @@ export default function Settings({ session }: { session: any }) {
       {!activeTab ? (
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Settings Overview</h1>
+            <h1 className="text-page-title tracking-tight text-slate-900 dark:text-white">Settings Overview</h1>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">Manage your account preferences and application configuration.</p>
           </div>
           

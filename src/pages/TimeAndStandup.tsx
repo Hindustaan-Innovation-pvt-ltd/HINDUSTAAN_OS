@@ -9,6 +9,7 @@ import {
   Send 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ProjectSelect } from '@/components/ui/project-select';
 
 export default function TimeAndStandup({ session }: { session?: any }) {
   const role = session?.user?.user_metadata?.role || 'intern';
@@ -82,7 +83,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto space-y-8">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Team Submissions</h2>
+          <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">Team Submissions</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Review daily standups and time logs for all employees.</p>
         </div>
 
@@ -155,7 +156,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Daily Core Tracking</h2>
+          <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">Daily Core Tracking</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Submit your morning standup and log project hours.</p>
         </div>
       </div>
@@ -276,17 +277,16 @@ export default function TimeAndStandup({ session }: { session?: any }) {
                 <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
                   Assigned Task
                 </label>
-                <select 
-                  required
+                <ProjectSelect 
                   value={selectedTask}
-                  onChange={e => setSelectedTask(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/30 p-3 text-sm text-slate-900 dark:text-white focus:border-orange-500 focus:bg-white dark:bg-slate-900 focus:outline-none focus:ring-4 focus:ring-orange-500/10 cursor-pointer"
-                >
-                  <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="" disabled>Select a task...</option>
-                  <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="t-1">Design Authentication Split Screen</option>
-                  <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="t-2">Configure Supabase RLS Policies</option>
-                  <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="t-3">Implement Kanban Drag-and-Drop</option>
-                </select>
+                  onChange={setSelectedTask}
+                  placeholder="Select a task..."
+                  options={[
+                    { value: "t-1", label: "Design Authentication Split Screen" },
+                    { value: "t-2", label: "Configure Supabase RLS Policies" },
+                    { value: "t-3", label: "Implement Kanban Drag-and-Drop" }
+                  ]}
+                />
               </div>
               
               <div>

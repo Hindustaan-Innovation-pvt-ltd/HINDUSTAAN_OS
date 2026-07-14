@@ -1,4 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .text-hero-title {
+    font-size: 42px;
+    font-weight: 700;
+  }
+  .text-page-title {
+    font-size: 32px;
+    font-weight: 700;
+  }
+  .text-section-title {
+    font-size: 24px;
+    font-weight: 700;
+  }
+  .text-card-title {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .text-sidebar-item {
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .text-body {
+    font-size: 16px;
+    font-weight: 400;
+  }
+  .text-label {
+    font-size: 13px;
+    font-weight: 400;
+  }
+  .text-button {
+    font-size: 15px;
+    font-weight: 600;
+  }
+}
 
 @variant dark (&:where(.dark, .dark *));
 
@@ -112,15 +156,62 @@ html.compact-mode {
 
 /* NEON COSMIC THEME OVERRIDES */
 @theme {
+  --font-sans: "Inter", sans-serif;
   --color-slate-950: #050816;
   --color-slate-900: #0B1023;
   --color-slate-800: #12182F;
   --color-slate-700: #1A223F;
+}
+
+@layer base {
+  :root {
+    --color-orange-400: #00D4FF; 
+    --color-orange-500: #5B7CFF; 
+    --color-orange-600: #A855F7; 
+    --color-orange-700: #8833D7; 
+  }
+
+  :root.theme-orange {
+    --color-orange-400: #fb923c;
+    --color-orange-500: #f97316;
+    --color-orange-600: #ea580c;
+    --color-orange-700: #c2410c;
+  }
   
-  --color-orange-400: #00D4FF; 
-  --color-orange-500: #5B7CFF; 
-  --color-orange-600: #A855F7; 
-  --color-orange-700: #8833D7; 
+  :root.theme-blue {
+    --color-orange-400: #60a5fa;
+    --color-orange-500: #3b82f6;
+    --color-orange-600: #2563eb;
+    --color-orange-700: #1d4ed8;
+  }
+  
+  :root.theme-emerald {
+    --color-orange-400: #34d399;
+    --color-orange-500: #10b981;
+    --color-orange-600: #059669;
+    --color-orange-700: #047857;
+  }
+  
+  :root.theme-rose {
+    --color-orange-400: #fb7185;
+    --color-orange-500: #f43f5e;
+    --color-orange-600: #e11d48;
+    --color-orange-700: #be123c;
+  }
+  
+  :root.theme-purple {
+    --color-orange-400: #c084fc;
+    --color-orange-500: #a855f7;
+    --color-orange-600: #9333ea;
+    --color-orange-700: #7e22ce;
+  }
+  
+  :root.theme-cosmic {
+    --color-orange-400: #00D4FF; 
+    --color-orange-500: #5B7CFF; 
+    --color-orange-600: #A855F7; 
+    --color-orange-700: #8833D7; 
+  }
 }
 
 body.dark {
@@ -151,16 +242,16 @@ body.dark {
 /* Button Gradients */
 .dark .bg-orange-600,
 .dark .hover\:bg-orange-700:hover {
-  background: linear-gradient(135deg, #5B7CFF, #A855F7) !important;
+  background: linear-gradient(135deg, var(--color-orange-500), var(--color-orange-600)) !important;
   border: none !important;
-  box-shadow: 0 4px 15px rgba(91, 124, 255, 0.4) !important;
+  box-shadow: 0 4px 15px var(--color-orange-500) !important;
   transition: all 0.3s ease !important;
   color: white !important;
 }
 
 .dark .bg-orange-600:hover {
-  background: linear-gradient(135deg, #6b89ff, #b56cf8) !important;
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.6) !important;
+  background: linear-gradient(135deg, var(--color-orange-400), var(--color-orange-500)) !important;
+  box-shadow: 0 0 20px var(--color-orange-500) !important;
   transform: translateY(-1px) !important;
 }
 
@@ -197,3 +288,20 @@ body.dark {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+/* Custom Toaster Positioning */
+[data-sonner-toaster][data-y-position="top"] {
+  top: 20px !important;
+  right: 20px !important;
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+}
+
+@media (max-width: 768px) {
+  [data-sonner-toaster][data-y-position="top"] {
+    top: 16px !important;
+    right: 12px !important;
+    left: 12px !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+}

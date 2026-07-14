@@ -3,10 +3,12 @@ import { ArrowLeft, CheckCircle2, Clock, Flag, LayoutGrid, Target, Users, CheckS
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { useProjects } from '@/context/ProjectContext';
 import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
+import { ProjectSelect } from '@/components/ui/project-select';
 
-export default function ProjectDetails({ project, onBack }: { project: any, onBack: () => void }) {
+export default function ProjectDetails({ project, role, onBack }: { project: any, role?: string, onBack: () => void }) {
   const { updateProject } = useProjects();
   const [editingTask, setEditingTask] = useState<any>(null);
 
@@ -55,6 +57,12 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
           </p>
         </div>
       </div>
+
+      {role === 'admin' && (
+        <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/50 rounded-xl p-4 flex items-center justify-center">
+          <p className="text-xs font-bold text-[#5B7CFF]">You are viewing organization-wide data in read-only mode.</p>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -160,7 +168,11 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                 </div>
                 <div className="space-y-3 flex-1">
                   {tasks.filter((t: any) => t?.status === status).map((task: any, i: number) => (
-                    <div key={task?.id || i} className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                    <div 
+                      key={task?.id || i} 
+                      className={cn("bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm transition-shadow", role !== 'admin' ? "hover:shadow-md cursor-pointer" : "cursor-default")}
+                      onClick={() => role !== 'admin' && setEditingTask(task)}
+                    >
                       <p className="text-sm font-semibold text-slate-900 dark:text-white mb-3">{task?.title}</p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
@@ -203,34 +215,26 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Assignee</label>
-                <div className="relative">
-                  <select
-                    value={editingTask.assignee}
-                    onChange={(e) => setEditingTask({ ...editingTask, assignee: e.target.value })}
-                    className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
-                  >
-                    <option value="Unassigned">Unassigned</option>
-                    {GLOBAL_TEAM_MEMBERS.map(member => (
-                      <option key={member.id} value={member.name}>{member.name}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
-                </div>
+                <ProjectSelect
+                  value={editingTask.assignee}
+                  onChange={(val) => setEditingTask({ ...editingTask, assignee: val })}
+                  options={[
+                    { value: 'Unassigned', label: 'Unassigned' },
+                    ...GLOBAL_TEAM_MEMBERS.map(m => ({ value: m.name, label: m.name }))
+                  ]}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</label>
-                <div className="relative">
-                  <select
-                    value={editingTask.status}
-                    onChange={(e) => setEditingTask({ ...editingTask, status: e.target.value })}
-                    className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
-                  >
-                    <option value="To Do">To Do</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Done">Done</option>
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
-                </div>
+                <ProjectSelect
+                  value={editingTask.status}
+                  onChange={(val) => setEditingTask({ ...editingTask, status: val })}
+                  options={[
+                    { value: 'To Do', label: 'To Do' },
+                    { value: 'In Progress', label: 'In Progress' },
+                    { value: 'Done', label: 'Done' }
+                  ]}
+                />
               </div>
             </div>
             <div className="p-6 pt-0 flex gap-3 mt-2">

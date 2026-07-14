@@ -23,14 +23,14 @@ function StatCard({ label, value, sub, icon:Icon, from, to, border }:{ label:str
   return (
     <div className={`rounded-[28px] border ${border} bg-gradient-to-br ${from} ${to} p-7 flex flex-col justify-between min-h-[190px]`}>
       <div className="flex items-center justify-between">
-        <p className="text-sm font-bold uppercase tracking-widest text-white/60">{label}</p>
+        <p className="text-sm font-bold uppercase tracking-widest text-slate-900 dark:text-white/60">{label}</p>
         <div className="h-10 w-10 rounded-2xl bg-white/15 flex items-center justify-center">
-          <Icon className="h-5 w-5 text-white/80" />
+          <Icon className="h-5 w-5 text-slate-900 dark:text-white/80" />
         </div>
       </div>
       <div>
-        <p className="text-6xl font-bold text-white leading-none mt-4">{value}</p>
-        {sub && <p className="text-sm text-white/50 mt-2">{sub}</p>}
+        <p className="text-6xl font-bold text-slate-900 dark:text-white leading-none mt-4">{value}</p>
+        {sub && <p className="text-sm text-slate-900 dark:text-white/50 mt-2">{sub}</p>}
       </div>
     </div>
   );
@@ -137,32 +137,32 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[98vw] sm:w-[95vw] xl:w-[92vw] max-w-[1800px] sm:max-w-none h-[92vh] overflow-hidden rounded-[32px] border border-white/10 bg-[#070a14]/96 backdrop-blur-[32px] p-0 shadow-[0_32px_80px_rgba(0,0,0,0.7)] animate-in fade-in zoom-in-95 duration-300">
+      <DialogContent className="w-[98vw] sm:w-[95vw] xl:w-[92vw] max-w-[1800px] sm:max-w-none h-[92vh] overflow-hidden rounded-[32px] border border-slate-200 dark:border-white/10 bg-white/96 dark:bg-[#070a14]/96 backdrop-blur-[32px] p-0 shadow-[0_32px_80px_rgba(0,0,0,0.7)] animate-in fade-in zoom-in-95 duration-300">
         <style>{`.ms::-webkit-scrollbar{width:5px}.ms::-webkit-scrollbar-thumb{background:rgba(139,92,246,0.4);border-radius:99px}`}</style>
 
         {/* ── STICKY HEADER ── */}
-        <div className="shrink-0 px-10 py-8 border-b border-white/[0.07] bg-[#070a14]/90 backdrop-blur-xl">
+        <div className="shrink-0 px-10 py-8 border-b border-slate-200 dark:border-white/[0.07] bg-white/90 dark:bg-[#070a14]/90 backdrop-blur-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
             <div className="flex items-center gap-5">
               <div className="h-14 w-14 rounded-2xl bg-violet-500/20 flex items-center justify-center shrink-0 ring-1 ring-violet-500/30">
                 <Clock className="h-7 w-7 text-violet-400" />
               </div>
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-white">{isManager ? "Employee's Productivity Overview" : 'My Work Summary'}</h2>
-                <p className="text-sm text-slate-400 mt-1 flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5"/>Generated dynamically from work logs</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{isManager ? "Employee's Productivity Overview" : 'My Work Summary'}</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5"/>Generated dynamically from work logs</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-[160px] h-10 rounded-2xl border-white/10 bg-white/5 text-slate-300 text-sm font-semibold"><SelectValue/></SelectTrigger>
-                <SelectContent className="rounded-2xl bg-[#0f172a] border-white/10 text-white">
+                <SelectTrigger className="w-[160px] h-10 rounded-2xl border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 text-sm font-semibold"><SelectValue/></SelectTrigger>
+                <SelectContent className="rounded-2xl bg-white dark:bg-[#0f172a] border-slate-200 dark:border-white/10 text-slate-900 dark:text-white">
                   {['Today','Yesterday','Last 7 Days','This Month','Custom Range'].map(v=><SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
               {dateRange === 'Custom Range' && (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="h-10 rounded-2xl bg-white/5 border-white/10 text-slate-300 hover:text-white font-semibold hover:bg-white/10 border transition-all">
+                    <Button variant="outline" className="h-10 rounded-2xl bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white font-semibold hover:bg-slate-200 dark:bg-white/10 border transition-all">
                       <Calendar className="mr-2 h-4 w-4" />
                       {customRange?.from ? (
                         customRange.to ? (
@@ -178,21 +178,21 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                       )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 rounded-2xl border border-white/10 bg-[#0f172a] text-white shadow-2xl" align="start">
+                  <PopoverContent className="w-auto p-0 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white shadow-2xl" align="start">
                     <CalendarComponent
                       mode="range"
                       defaultMonth={customRange?.from}
                       selected={customRange}
                       onSelect={setCustomRange}
                       numberOfMonths={2}
-                      className="text-white bg-[#0f172a] rounded-2xl p-3"
+                      className="text-slate-900 dark:text-white bg-white dark:bg-[#0f172a] rounded-2xl p-3"
                     />
                   </PopoverContent>
                 </Popover>
               )}
               {isManager && <>
-                <Button onClick={handlePDF} size="sm" className="h-10 px-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-violet-500/20 text-slate-300 hover:text-white text-sm font-semibold transition-all"><Download className="h-4 w-4 mr-2"/>PDF</Button>
-                <Button onClick={handleCSV} size="sm" className="h-10 px-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-violet-500/20 text-slate-300 hover:text-white text-sm font-semibold transition-all"><Download className="h-4 w-4 mr-2"/>CSV</Button>
+                <Button onClick={handlePDF} size="sm" className="h-10 px-5 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-violet-500/20 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white text-sm font-semibold transition-all"><Download className="h-4 w-4 mr-2"/>PDF</Button>
+                <Button onClick={handleCSV} size="sm" className="h-10 px-5 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-violet-500/20 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white text-sm font-semibold transition-all"><Download className="h-4 w-4 mr-2"/>CSV</Button>
               </>}
             </div>
           </div>
@@ -210,18 +210,18 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                 <Section title="Project Analysis" icon={FolderKanban} color="text-violet-400">
                   <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-7">
                     {projectsArr.map(([pName,pData],i)=>(
-                      <div key={i} className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06] hover:border-violet-500/30 transition-all p-6 min-h-[200px] flex flex-col justify-between">
+                      <div key={i} className="rounded-[28px] border border-slate-200 dark:border-white/[0.07] bg-slate-50 dark:bg-white/[0.03] hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:border-violet-500/30 transition-all p-6 min-h-[200px] flex flex-col justify-between">
                         <div>
                           <div className="flex justify-between items-start mb-3">
-                            <span className="font-bold text-white text-base leading-snug">{pName}</span>
+                            <span className="font-bold text-slate-900 dark:text-white text-base leading-snug">{pName}</span>
                             <Badge className="bg-violet-500/20 text-violet-300 border-violet-500/30 font-bold ml-2 shrink-0 text-sm px-2.5 py-1">{pData.hours.toFixed(1)}h</Badge>
                           </div>
-                          <p className="text-sm text-slate-400 mb-4">{pData.tasks} tasks logged</p>
+                          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">{pData.tasks} tasks logged</p>
                           <div className="space-y-2">
                             {Array.from(pData.employees.entries()).slice(0,3).map(([emp,hrs],j)=>(
                               <div key={j} className="flex justify-between items-center text-sm">
-                                <span className="text-slate-400 flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-slate-500"/>{emp.split(' ')[0]}</span>
-                                <span className="font-semibold text-slate-300">{hrs.toFixed(1)}h</span>
+                                <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-slate-500"/>{emp.split(' ')[0]}</span>
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">{hrs.toFixed(1)}h</span>
                               </div>
                             ))}
                           </div>
@@ -238,16 +238,16 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                       {employees.slice(0,4).map(([name,data],i)=>{
                         const pct = Math.round((data.hours/maxHours)*100);
                         return (
-                          <div key={i} className="py-4 border-b border-white/[0.06] last:border-0">
+                          <div key={i} className="py-4 border-b border-slate-200 dark:border-white/[0.06] last:border-0">
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-3">
                                 <span className="text-xl">{['🥇','🥈','🥉','4️⃣'][i]}</span>
-                                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-violet-500/40 to-indigo-500/40 flex items-center justify-center text-white font-bold text-sm">{name.split(' ').map((n:string)=>n[0]).join('')}</div>
-                                <span className="font-semibold text-white text-base">{name}</span>
+                                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-violet-500/40 to-indigo-500/40 flex items-center justify-center text-slate-900 dark:text-white font-bold text-sm">{name.split(' ').map((n:string)=>n[0]).join('')}</div>
+                                <span className="font-semibold text-slate-900 dark:text-white text-base">{name}</span>
                               </div>
                               <span className="font-black text-amber-400 text-lg">{data.hours.toFixed(1)}h</span>
                             </div>
-                            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden ml-12">
+                            <div className="h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden ml-12">
                               <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all" style={{width:`${pct}%`}}/>
                             </div>
                           </div>
@@ -261,7 +261,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
               {/* ROW 2: Three charts */}
               <div className="grid xl:grid-cols-3 gap-8">
                 {/* Hours Trend */}
-                <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-8 min-h-[420px]">
+                <div className="rounded-[28px] border border-slate-200 dark:border-white/[0.07] bg-slate-50 dark:bg-white/[0.03] p-8 min-h-[420px]">
                   <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-indigo-400 flex items-center gap-2 mb-6"><Activity className="h-4 w-4"/>Team Hours Trend</h4>
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -276,7 +276,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                 </div>
 
                 {/* Project Distribution Pie */}
-                <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-8 min-h-[420px]">
+                <div className="rounded-[28px] border border-slate-200 dark:border-white/[0.07] bg-slate-50 dark:bg-white/[0.03] p-8 min-h-[420px]">
                   <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-violet-400 flex items-center gap-2 mb-6"><FolderKanban className="h-4 w-4"/>Project Distribution</h4>
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -285,14 +285,14 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                           {pieData.map((_,i)=><Cell key={i} fill={C[i%C.length]}/>)}
                         </Pie>
                         <Tooltip contentStyle={TT}/>
-                        <Legend iconType="circle" iconSize={10} formatter={(v)=><span className="text-xs text-slate-400">{v}</span>}/>
+                        <Legend iconType="circle" iconSize={10} formatter={(v)=><span className="text-xs text-slate-500 dark:text-slate-400">{v}</span>}/>
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
                 {/* Productivity Ranking */}
-                <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-8 min-h-[420px]">
+                <div className="rounded-[28px] border border-slate-200 dark:border-white/[0.07] bg-slate-50 dark:bg-white/[0.03] p-8 min-h-[420px]">
                   <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-400 flex items-center gap-2 mb-6"><Users className="h-4 w-4"/>Productivity Ranking</h4>
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -308,26 +308,26 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
               </div>
 
               {/* ROW 3: Table */}
-              <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] overflow-hidden">
-                <div className="px-8 py-6 border-b border-white/[0.07]">
-                  <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-slate-400">Employee Productivity Table</h3>
+              <div className="rounded-[28px] border border-slate-200 dark:border-white/[0.07] bg-slate-50 dark:bg-white/[0.03] overflow-hidden">
+                <div className="px-8 py-6 border-b border-slate-200 dark:border-white/[0.07]">
+                  <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">Employee Productivity Table</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
-                    <thead className="border-b border-white/[0.05]">
+                    <thead className="border-b border-slate-200 dark:border-white/[0.05]">
                       <tr>{['Employee','Projects','Tasks','Total Logged','Pending'].map(h=><th key={h} className="px-8 py-5 text-xs font-bold uppercase tracking-wider text-slate-500">{h}</th>)}</tr>
                     </thead>
                     <tbody>
                       {employees.map(([name,data],i)=>(
-                        <tr key={i} className={`hover:bg-white/[0.03] transition-colors border-b border-white/[0.04] last:border-0 ${i%2===0?'bg-white/[0.01]':''}`}>
+                        <tr key={i} className={`hover:bg-slate-50 dark:bg-white/[0.03] transition-colors border-b border-slate-100 dark:border-white/[0.04] last:border-0 ${i%2===0?'bg-slate-50 dark:bg-white/[0.01]':''}`}>
                           <td className="px-8 py-6">
                             <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500/30 to-indigo-500/30 flex items-center justify-center text-white font-bold text-sm shrink-0">{name.split(' ').map((n:string)=>n[0]).join('')}</div>
-                              <span className="text-lg font-bold text-white">{name}</span>
+                              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500/30 to-indigo-500/30 flex items-center justify-center text-slate-900 dark:text-white font-bold text-sm shrink-0">{name.split(' ').map((n:string)=>n[0]).join('')}</div>
+                              <span className="text-lg font-bold text-slate-900 dark:text-white">{name}</span>
                             </div>
                           </td>
-                          <td className="px-8 py-6 text-base text-slate-400">{data.projects.size}</td>
-                          <td className="px-8 py-6 text-base text-slate-400">{data.tasks}</td>
+                          <td className="px-8 py-6 text-base text-slate-500 dark:text-slate-400">{data.projects.size}</td>
+                          <td className="px-8 py-6 text-base text-slate-500 dark:text-slate-400">{data.tasks}</td>
                           <td className="px-8 py-6 text-lg font-bold text-violet-400">{data.hours.toFixed(1)}h</td>
                           <td className="px-8 py-6">{data.pending>0?<Badge className="bg-amber-500/15 text-amber-400 border-amber-500/25 font-bold text-sm px-3 py-1">{data.pending.toFixed(1)}h</Badge>:<span className="text-slate-600 text-lg">—</span>}</td>
                         </tr>
@@ -344,19 +344,19 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
             <>
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-7">
                 {/* Projects */}
-                <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-7">
+                <div className="rounded-[28px] border border-slate-200 dark:border-white/[0.07] bg-slate-50 dark:bg-white/[0.03] p-7">
                   <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-violet-400 flex items-center gap-2 mb-5"><FolderKanban className="h-4 w-4"/>Projects</h4>
                   <div className="space-y-4">
                     {projectsArr.map(([name,d],i)=>{
                       const pct = total>0?Math.round((d.hours/total)*100):0;
                       return (
-                        <div key={i} className="p-4 rounded-2xl bg-white/[0.04] border border-white/[0.06] hover:border-violet-500/30 transition-colors">
+                        <div key={i} className="p-4 rounded-2xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.06] hover:border-violet-500/30 transition-colors">
                           <div className="flex justify-between items-center mb-1">
-                            <span className="font-bold text-white">{name}</span>
+                            <span className="font-bold text-slate-900 dark:text-white">{name}</span>
                             <Badge className="bg-violet-500/20 text-violet-300 border-0 font-bold">{d.hours.toFixed(1)}h</Badge>
                           </div>
-                          <p className="text-xs text-slate-400 mb-2">{d.tasks} tasks</p>
-                          <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{d.tasks} tasks</p>
+                          <div className="h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
                             <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500" style={{width:`${pct}%`}}/>
                           </div>
                         </div>
@@ -366,7 +366,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                 </div>
 
                 {/* Pie */}
-                <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-7">
+                <div className="rounded-[28px] border border-slate-200 dark:border-white/[0.07] bg-slate-50 dark:bg-white/[0.03] p-7">
                   <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-400 flex items-center gap-2 mb-5"><FolderKanban className="h-4 w-4"/>Hours Per Project</h4>
                   <div className="h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -375,14 +375,14 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                           {empPie.map((_,i)=><Cell key={i} fill={C[i%C.length]}/>)}
                         </Pie>
                         <Tooltip contentStyle={TT}/>
-                        <Legend iconType="circle" iconSize={8} formatter={(v)=><span className="text-xs text-slate-400">{v}</span>}/>
+                        <Legend iconType="circle" iconSize={8} formatter={(v)=><span className="text-xs text-slate-500 dark:text-slate-400">{v}</span>}/>
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
                 {/* Bar */}
-                <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-7">
+                <div className="rounded-[28px] border border-slate-200 dark:border-white/[0.07] bg-slate-50 dark:bg-white/[0.03] p-7">
                   <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-blue-400 flex items-center gap-2 mb-5"><Activity className="h-4 w-4"/>Daily Logged Hours</h4>
                   <div className="h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -398,18 +398,18 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
               </div>
 
               {/* Timeline */}
-              <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-8">
+              <div className="rounded-[28px] border border-slate-200 dark:border-white/[0.07] bg-slate-50 dark:bg-white/[0.03] p-8">
                 <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-indigo-400 flex items-center gap-2 mb-6"><Calendar className="h-4 w-4"/>Task History Timeline</h4>
                 <div className="space-y-6">
                   {timelineMap.map(([date,items],i)=>(
                     <div key={i} className="relative pl-6 border-l-2 border-violet-500/30 pb-2">
                       <div className="absolute w-3 h-3 bg-violet-500 rounded-full -left-[7px] top-1"/>
-                      <h5 className="text-xs font-bold text-slate-400 mb-3">{date}</h5>
+                      <h5 className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-3">{date}</h5>
                       <div className="grid sm:grid-cols-2 gap-3">
                         {items.map(item=>(
-                          <div key={item.id} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] px-5 py-4 flex justify-between items-start gap-3">
+                          <div key={item.id} className="rounded-2xl border border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-white/[0.03] px-5 py-4 flex justify-between items-start gap-3">
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold text-slate-200 leading-snug truncate">{item.task}</p>
+                              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 leading-snug truncate">{item.task}</p>
                               <p className="text-xs text-slate-500 mt-1">{item.project}</p>
                             </div>
                             <Badge className="bg-violet-500/15 text-violet-300 border-violet-500/20 font-bold shrink-0 text-xs">{item.hours}h</Badge>

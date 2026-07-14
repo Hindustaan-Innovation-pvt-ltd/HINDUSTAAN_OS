@@ -18,7 +18,7 @@ import { getCurrentUser } from '@/lib/auth';
 import {
   Trophy, TrendingUp, TrendingDown, Target, Clock, Mic,
   Download, RefreshCw, Filter, Calendar, Search, MoreVertical,
-  AlertTriangle, CheckCircle2, ChevronRight, BarChart2
+  AlertTriangle, CheckCircle2, ChevronRight, BarChart2, ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
@@ -144,6 +144,7 @@ export default function ContributionScores({ session }: { session?: any }) {
   const gridColor = isDarkMode ? '#334155' : '#e2e8f0'; // slate-700 for dark mode, slate-200 for light mode
 
   const role = session?.user?.user_metadata?.role || 'employee';
+  const isAdmin = role === 'admin';
   const email = session?.user?.email || 'user@hindustaan.in';
 
   const user = getCurrentUser();
@@ -163,12 +164,29 @@ export default function ContributionScores({ session }: { session?: any }) {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const [startY, setStartY] = useState(0);
+  const [scrollTopPos, setScrollTopPos] = useState(0);
+
+  const [isTableScrolledEnd, setIsTableScrolledEnd] = useState(false);
+  const [isRightColScrolledEnd, setIsRightColScrolledEnd] = useState(false);
+
+  const handleTableScrollEvent = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    setIsTableScrolledEnd(Math.abs(scrollHeight - clientHeight - scrollTop) < 5);
+  };
+
+  const handleRightColScrollEvent = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    setIsRightColScrolledEnd(Math.abs(scrollHeight - clientHeight - scrollTop) < 5);
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollRef.current) return;
     setIsDragging(true);
     setStartX(e.pageX - scrollRef.current.offsetLeft);
     setScrollLeft(scrollRef.current.scrollLeft);
+    setStartY(e.pageY - scrollRef.current.offsetTop);
+    setScrollTopPos(scrollRef.current.scrollTop);
   };
 
   const handleMouseLeave = () => {
@@ -183,8 +201,12 @@ export default function ContributionScores({ session }: { session?: any }) {
     if (!isDragging || !scrollRef.current) return;
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startX) * 2.5;
-    scrollRef.current.scrollLeft = scrollLeft - walk;
+    const walkX = (x - startX) * 2.5;
+    scrollRef.current.scrollLeft = scrollLeft - walkX;
+
+    const y = e.pageY - scrollRef.current.offsetTop;
+    const walkY = (y - startY) * 2.5;
+    scrollRef.current.scrollTop = scrollTopPos - walkY;
   };
 
   const filteredInterns = MOCK_INTERNS.filter(intern =>
@@ -216,7 +238,7 @@ export default function ContributionScores({ session }: { session?: any }) {
 
     // Add title
     doc.setFontSize(20);
-    doc.text('Contribution Analytics Report', 14, 22);
+    doc.text('Contribution Scores Report', 14, 22);
 
     doc.setFontSize(11);
     doc.text(`Generated on: ${format(new Date(), 'PPP')}`, 14, 30);
@@ -332,7 +354,7 @@ export default function ContributionScores({ session }: { session?: any }) {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
+            <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center">
               <Trophy className="mr-3 h-8 w-8 text-orange-500" />
               My Performance
             </h2>
@@ -591,13 +613,21 @@ export default function ContributionScores({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
+          <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             <Trophy className="mr-3 h-8 w-8 text-orange-500" />
-            Contribution Analytics
+            Contribution Scores
+            {isAdmin && (
+              <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold border-0">
+                Organization Monitoring
+              </Badge>
+            )}
           </h2>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
             Monitor intern performance, identify top contributors, and track productivity trends.
           </p>
+          {isAdmin && (
+            <p className="text-xs font-bold text-[#5B7CFF] mt-1">You are viewing organization-wide data in read-only mode.</p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <Button onClick={handleExportPDF} variant="outline" className="font-bold border-slate-200 dark:border-slate-800 rounded-xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-900">
@@ -676,8 +706,8 @@ export default function ContributionScores({ session }: { session?: any }) {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
         {/* Left Column - Main Table */}
-        <div className="xl:col-span-8 flex flex-col min-w-0">
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col flex-1">
+        <div className="xl:col-span-8 flex flex-col min-w-0 h-auto xl:h-[800px] relative">
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-full">
             <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Team Performance Overview</CardTitle>
@@ -694,12 +724,13 @@ export default function ContributionScores({ session }: { session?: any }) {
               </div>
             </CardHeader>
             <CardContent 
-              className={cn("p-0 overflow-auto flex-1 relative hide-scrollbar", isDragging ? "cursor-grabbing select-none" : "cursor-grab")}
+              className={cn("p-0 overflow-auto flex-1 relative", isDragging ? "cursor-grabbing select-none" : "cursor-grab")}
               ref={scrollRef}
               onMouseDown={handleMouseDown}
               onMouseLeave={handleMouseLeave}
               onMouseUp={handleMouseUp}
               onMouseMove={handleMouseMove}
+              onScroll={handleTableScrollEvent}
             >
               <table className="w-full whitespace-nowrap text-sm text-left relative">
                 <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold sticky top-0 z-20">
@@ -771,6 +802,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                         </Badge>
                       </td>
                       <td className="px-6 py-4 text-right">
+                        {isAdmin ? null : (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={e => e.stopPropagation()}>
@@ -784,6 +816,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                             <DropdownMenuItem className="text-rose-600 cursor-pointer" onClick={() => toast.success(`Performance flagged for ${intern.name}`)}><AlertTriangle className="mr-2 h-4 w-4" /> Flag Performance</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -791,10 +824,16 @@ export default function ContributionScores({ session }: { session?: any }) {
               </table>
             </CardContent>
           </Card>
+          {!isTableScrolledEnd && (
+            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white dark:from-slate-900 pointer-events-none flex items-end justify-center pb-2 z-10 rounded-b-2xl opacity-90">
+              <ChevronDown className="h-6 w-6 text-orange-500 animate-bounce drop-shadow-md" />
+            </div>
+          )}
         </div>
 
         {/* Right Column - Charts & Top Performers */}
-        <div className="xl:col-span-4 space-y-6 xl:sticky xl:top-24 h-fit">
+        <div className="xl:col-span-4 flex flex-col h-auto xl:h-[800px] relative">
+          <div className="flex flex-col space-y-6 overflow-y-auto pr-2 pb-10" onScroll={handleRightColScrollEvent}>
 
           {/* Score Distribution Donut */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
@@ -809,10 +848,11 @@ export default function ContributionScores({ session }: { session?: any }) {
                       data={distData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
+                      innerRadius={55}
+                      outerRadius={75}
                       paddingAngle={5}
                       dataKey="value"
+                      label={({ name, value }) => `${value}`}
                     >
                       {distData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -844,10 +884,10 @@ export default function ContributionScores({ session }: { session?: any }) {
             <CardContent className="p-5">
               <div className="h-[180px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={deptData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-slate-500 dark:text-slate-400" />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-slate-500 dark:text-slate-400" domain={[60, 100]} />
+                  <BarChart data={deptData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} domain={[60, 100]} />
                     <RechartsTooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px' }} />
                     <Bar dataKey="score" fill={COLORS.orange} radius={[4, 4, 0, 0]} barSize={30} />
                   </BarChart>
@@ -881,6 +921,12 @@ export default function ContributionScores({ session }: { session?: any }) {
               ))}
             </CardContent>
           </Card>
+          </div>
+          {!isRightColScrolledEnd && (
+            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#f8fafc] dark:from-[#0f172a] pointer-events-none flex items-end justify-center pb-2 z-10 rounded-b-2xl opacity-90 pr-2">
+              <ChevronDown className="h-6 w-6 text-orange-500 animate-bounce drop-shadow-md" />
+            </div>
+          )}
         </div>
       </div>
 

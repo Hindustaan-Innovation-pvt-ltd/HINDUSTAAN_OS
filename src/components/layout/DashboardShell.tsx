@@ -22,15 +22,18 @@ import {
   Settings,
   ChevronDown,
   User,
-  ChevronLeft,
   ChevronRight,
   LifeBuoy,
-  CalendarRange
+  CalendarRange,
+  PanelLeftClose,
+  PanelLeftOpen,
+  UserCircle, Shield, Sliders, Building, Lock, Link, BellRing, Megaphone, Mail, ShieldCheck, Activity
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
 import { GlobalSearch } from '../dashboard/GlobalSearch';
 import { NotificationBell } from '../dashboard/NotificationBell';
+import { EmployeeNotificationBell } from '../dashboard/EmployeeNotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,16 +56,16 @@ const employeeNavigation = [
   { name: 'Work Logs', icon: Clock },
   { name: 'Leave Management', icon: CalendarRange },
   { name: 'Daily Standup', icon: Mic },
-  { name: 'My Projects', icon: FolderKanban },
+  { name: 'Projects', icon: FolderKanban },
   { name: 'Milestones', icon: Flag },
-  { name: 'My Performance', icon: Trophy },
+  { name: 'Contribution Scores', icon: Trophy },
   { name: 'Settings', icon: Settings },
 ];
 
 const managerNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
   { name: 'Projects', icon: FolderKanban },
-  { name: 'Tasks', icon: CheckSquare },
+  { name: 'My Tasks', icon: CheckSquare },
   { name: 'Gantt Timeline', icon: CalendarDays },
   { name: 'Progress Tracker', icon: BarChart2 },
   { name: 'Work Logs', icon: Clock },
@@ -73,10 +76,63 @@ const managerNavigation = [
   { name: 'Settings', icon: Settings },
 ];
 
+const adminNavigationGroups = [
+  { name: 'Dashboard', icon: LayoutDashboard },
+  {
+    name: 'Organization Overview',
+    icon: Building,
+    items: [
+      { name: 'Projects', icon: FolderKanban },
+      { name: 'My Tasks', icon: CheckSquare },
+      { name: 'Team Members', icon: Users },
+      { name: 'Gantt Timeline', icon: CalendarDays },
+      { name: 'Progress Tracker', icon: BarChart2 },
+      { name: 'Contribution Scores', icon: Activity }
+    ]
+  },
+  {
+    name: 'User Management',
+    icon: Users,
+    items: [
+      { name: 'Employees', icon: User },
+      { name: 'Managers', icon: UserCircle },
+      { name: 'Roles & Permissions', icon: Shield },
+    ]
+  },
+  {
+    name: 'Workspace Settings',
+    icon: Settings,
+    items: [
+      { name: 'General', id: 'Workspace Settings - General', icon: Settings },
+      { name: 'Projects', id: 'Workspace Settings - Projects', icon: FolderKanban },
+      { name: 'Security & Access', id: 'Workspace Settings - Security & Access', icon: ShieldCheck },
+      { name: 'Appearance', id: 'Workspace Settings - Appearance', icon: Settings }
+    ]
+  },
+  {
+    name: 'Notifications',
+    icon: Bell,
+    badge: 3,
+    items: [
+      { name: 'System Notifications', icon: BellRing },
+      { name: 'Announcement Center', icon: Bell },
+      { name: 'Email Logs', icon: Mail },
+      { name: 'Delivery Channels', icon: Settings },
+    ]
+  },
+  {
+    name: 'Profile',
+    icon: User,
+    items: [
+      { name: 'My Profile', icon: UserCircle },
+    ]
+  }
+];
+
 
 import { useUser } from '@/context/UserContext';
 
-const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen, activeNavigation, onSignOut, sidebarWidth, startResizing, isMobile }: any) => {
+const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen, activeNavigation, onSignOut, sidebarWidth, startResizing, isMobile, toggleSidebar }: any) => {
   const { user } = useUser();
   const userName = user?.name || 'Loading...';
   const userInitials = userName !== 'Loading...' ? userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : '';
@@ -84,16 +140,22 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
   const avatarUrl = user?.avatar;
 
   const collapsed = !isMobile && sidebarWidth < 150;
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (groupName: string) => {
+    if (collapsed && !isMobile) {
+      toggleSidebar();
+    }
+    setOpenGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }));
+  };
 
   return (
     <div className="flex h-full flex-col bg-white dark:bg-slate-900 overflow-hidden relative">
         {/* Branding Badge */}
-        <div className={cn("flex shrink-0 items-center border-b border-slate-100 dark:border-[#5B7CFF]/20 py-4 relative", collapsed ? "justify-center px-0 h-[90px]" : "justify-between px-4 min-h-[90px]")}>
+        <div className={cn("flex shrink-0 items-center border-b border-slate-100 dark:border-[#5B7CFF]/20 py-4 relative", collapsed ? "justify-center px-0 h-[90px] flex-col gap-2" : "justify-between px-4 min-h-[90px]")}>
           <div className="flex items-center group cursor-pointer transition-all duration-300 hover:scale-[1.03]" onClick={() => onNavigate('Dashboard')}>
             {collapsed ? (
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#5B7CFF] to-[#A855F7] flex items-center justify-center text-white font-bold text-lg shadow-[0_0_15px_rgba(91,124,255,0.4)]">
-                P
-              </div>
+              <BrandLogo variant="minimized" />
             ) : (
               <BrandLogo variant="sidebar" />
             )}
@@ -102,7 +164,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
           {!isMobile && (
             <div 
               onMouseDown={startResizing}
-              className="absolute -right-[4px] top-0 bottom-0 h-screen w-[8px] cursor-col-resize z-50 flex items-center justify-center group"
+              className="absolute -right-[4px] top-0 bottom-0 h-screen w-[8px] cursor-col-resize z-40 flex items-center justify-center group"
             >
               <div className="h-16 w-[4px] rounded-full bg-[#5B7CFF]/50 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
@@ -122,63 +184,117 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
         <div className="flex flex-1 flex-col overflow-y-auto py-6 px-3 custom-scrollbar">
           <style>{`.custom-scrollbar::-webkit-scrollbar{width:4px;display:none}.custom-scrollbar:hover::-webkit-scrollbar{display:block}.custom-scrollbar::-webkit-scrollbar-thumb{background:rgba(91,124,255,0.3);border-radius:10px}`}</style>
           <nav className="flex-1 space-y-1">
-            <TooltipProvider delayDuration={0}>
-              {activeNavigation.map((item: { name: string, icon: any }) => {
-                const Icon = item.icon;
-                const isCurrent = currentView === item.name;
-                
-                const NavItem = (
-                  <button
-                    key={item.name}
-                    onClick={() => {
-                      onNavigate(item.name);
-                      if (isMobile) setSidebarOpen(false);
-                    }}
-                    className={cn(
-                      "group flex items-center font-bold rounded-xl transition-all duration-300 py-3 relative w-full",
-                      collapsed ? "justify-center px-0 h-12 mb-1" : "px-3",
-                      isCurrent
-                        ? "bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] text-white shadow-[0_0_15px_rgba(91,124,255,0.4)]"
-                        : "text-slate-600 dark:text-slate-400 hover:bg-[#5B7CFF]/10 dark:hover:bg-[#5B7CFF]/10 hover:text-[#5B7CFF] dark:hover:text-[#5B7CFF]"
-                    )}
-                  >
-                    <Icon
+              <TooltipProvider delayDuration={0}>
+                {activeNavigation.map((item: any) => {
+                  const Icon = item.icon;
+                  const hasSubItems = !!item.items;
+                  const isCurrent = currentView === item.name || (hasSubItems && item.items.some((sub: any) => currentView === sub.name));
+                  const isGroupOpen = openGroups[item.name];
+                  
+                  const NavItemContent = (
+                    <div
+                      onClick={() => {
+                        if (hasSubItems) {
+                          toggleGroup(item.name);
+                        } else {
+                          onNavigate(item.name);
+                          if (isMobile) setSidebarOpen(false);
+                        }
+                      }}
                       className={cn(
-                        "h-5 w-5 shrink-0 transition-colors duration-200",
-                        !collapsed && "mr-3",
-                        isCurrent ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-[#5B7CFF] dark:group-hover:text-[#5B7CFF]"
+                        "group flex items-center justify-between font-bold rounded-xl transition-all duration-300 py-3 relative w-full cursor-pointer",
+                        collapsed ? "justify-center px-0 h-12 mb-1" : "px-3",
+                        isCurrent && !hasSubItems
+                          ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-[0_0_15px_color-mix(in_srgb,var(--color-orange-500)_40%,transparent)]"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-orange-500/10 dark:hover:bg-orange-500/10 hover:text-orange-500 dark:hover:text-orange-500"
                       )}
-                      aria-hidden="true"
-                    />
-                    <AnimatePresence>
-                      {!collapsed && (
-                        <motion.span 
-                          initial={{ opacity: 0, width: 0 }}
-                          animate={{ opacity: 1, width: 'auto' }}
-                          exit={{ opacity: 0, width: 0 }}
-                          className="truncate text-sm whitespace-nowrap overflow-hidden"
-                        >
-                          {item.name}
-                        </motion.span>
+                    >
+                      <div className="flex items-center overflow-hidden">
+                        <Icon
+                          className={cn(
+                            "h-5 w-5 shrink-0 transition-colors duration-200",
+                            !collapsed && "mr-3",
+                            isCurrent && !hasSubItems ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-orange-500 dark:group-hover:text-orange-500"
+                          )}
+                          aria-hidden="true"
+                        />
+                        <AnimatePresence>
+                          {!collapsed && (
+                            <motion.span 
+                              initial={{ opacity: 0, width: 0 }}
+                              animate={{ opacity: 1, width: 'auto' }}
+                              exit={{ opacity: 0, width: 0 }}
+                              className="truncate text-sm whitespace-nowrap overflow-hidden"
+                            >
+                              {item.name}
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                      
+                      {!collapsed && hasSubItems && (
+                        <ChevronRight className={cn("h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200", isGroupOpen && "rotate-90")} />
                       )}
-                    </AnimatePresence>
-                  </button>
-                );
-
-                if (collapsed) {
-                  return (
-                    <Tooltip key={item.name}>
-                      <TooltipTrigger asChild>{NavItem}</TooltipTrigger>
-                      <TooltipContent side="right" sideOffset={16} className="bg-slate-900 text-white border-slate-800 font-medium">
-                        {item.name}
-                      </TooltipContent>
-                    </Tooltip>
+                      
+                      {item.badge && !collapsed && !hasSubItems && (
+                        <Badge className="ml-auto bg-rose-500 hover:bg-rose-600 text-white border-0">{item.badge}</Badge>
+                      )}
+                      {item.badge && collapsed && (
+                        <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500" />
+                      )}
+                    </div>
                   );
-                }
 
-                return NavItem;
-              })}
-            </TooltipProvider>
+                  return (
+                    <div key={item.name} className="w-full mb-1">
+                      {collapsed ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>{NavItemContent}</TooltipTrigger>
+                          <TooltipContent side="right" sideOffset={16} className="bg-slate-900 text-white border-slate-800 font-medium z-50">
+                            {item.name}
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        NavItemContent
+                      )}
+
+                      <AnimatePresence>
+                        {hasSubItems && isGroupOpen && !collapsed && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden ml-4 pl-4 border-l-2 border-slate-100 dark:border-slate-800 space-y-1 mt-1"
+                          >
+                            {item.items.map((subItem: any) => {
+                              const SubIcon = subItem.icon;
+                              const isSubCurrent = currentView === (subItem.id || subItem.name);
+                              return (
+                                <button
+                                  key={subItem.name}
+                                  onClick={() => {
+                                    onNavigate(subItem.id || subItem.name);
+                                    if (isMobile) setSidebarOpen(false);
+                                  }}
+                                  className={cn(
+                                    "flex items-center font-bold rounded-xl transition-all duration-300 py-2.5 px-3 w-full",
+                                    isSubCurrent
+                                      ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-[0_0_10px_color-mix(in_srgb,var(--color-orange-500)_30%,transparent)]"
+                                      : "text-slate-500 dark:text-slate-400 hover:text-orange-500 dark:hover:text-orange-500 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                  )}
+                                >
+                                  <SubIcon className={cn("h-4 w-4 mr-3 shrink-0", isSubCurrent ? "text-white" : "text-slate-400 group-hover:text-orange-500")} />
+                                  <span className="truncate text-[13px] whitespace-nowrap overflow-hidden">{subItem.name}</span>
+                                </button>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </TooltipProvider>
           </nav>
         </div>
 
@@ -221,14 +337,18 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
               sideOffset={12} 
               className="w-64 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-700/50 shadow-2xl rounded-[18px] p-2 animate-in fade-in zoom-in-95 duration-200"
             >
-              <DropdownMenuItem 
-                onClick={() => { onNavigate('My Profile'); setSidebarOpen(false); }}
-                className="cursor-pointer text-slate-700 dark:text-slate-200 focus:bg-slate-100 dark:focus:bg-slate-800/80 text-sm font-medium rounded-xl flex items-center py-2.5 transition-colors"
-              >
-                <User className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />
-                My Profile
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-slate-200/50 dark:bg-slate-700/50 my-1 -mx-2" />
+              {userRole !== 'admin' && onNavigate && (
+                <DropdownMenuItem 
+                  onClick={() => {
+                    onNavigate('My Profile');
+                    if (isMobile) setSidebarOpen(false);
+                  }}
+                  className="cursor-pointer text-slate-700 dark:text-slate-200 focus:bg-slate-50 dark:focus:bg-slate-800/50 text-sm font-medium rounded-xl flex items-center justify-between py-2.5 transition-colors mb-1"
+                >
+                  My Profile
+                  <User className="h-4 w-4 ml-2 text-slate-400" />
+                </DropdownMenuItem>
+              )}
               {onSignOut && (
                 <DropdownMenuItem 
                   onClick={onSignOut}
@@ -320,8 +440,26 @@ export default function DashboardShell({
     }
   }, [isMinimized]);
   
-  const { theme, toggleTheme } = useTheme();
+  const toggleSidebar = React.useCallback(() => {
+    setSidebarWidth(prev => {
+      if (prev < 150) {
+        onMinimizeChange(false);
+        return 280;
+      }
+      onMinimizeChange(true);
+      return 88;
+    });
+  }, [onMinimizeChange]);
+
+  const { theme, toggleTheme, accentColor } = useTheme();
   const isDark = theme === 'dark';
+
+  // Apply accent color to DOM
+  useEffect(() => {
+    const root = window.document.documentElement;
+    ['theme-orange', 'theme-blue', 'theme-emerald', 'theme-rose', 'theme-purple', 'theme-cosmic'].forEach(c => root.classList.remove(c));
+    root.classList.add(`theme-${accentColor}`);
+  }, [accentColor]);
 
   // Ensure sidebar open state resets on resize to desktop/tablet
   useEffect(() => {
@@ -334,7 +472,22 @@ export default function DashboardShell({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const activeNavigation = role === 'manager' ? managerNavigation : employeeNavigation;
+  const activeNavigation = role === 'admin' ? adminNavigationGroups : (role === 'manager' ? managerNavigation : employeeNavigation);
+
+  const getMainModuleName = () => {
+    for (const group of activeNavigation) {
+      if (group.name === currentView) return group.name;
+      const g = group as any;
+      if (g.items) {
+        for (const subItem of g.items) {
+          if (subItem.name === currentView || subItem.id === currentView) {
+            return group.name;
+          }
+        }
+      }
+    }
+    return currentView;
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-950 transition-colors duration-500">
@@ -343,9 +496,22 @@ export default function DashboardShell({
         initial={false}
         animate={{ width: sidebarWidth }}
         transition={isDragging ? { duration: 0 } : { duration: 0.3, ease: 'easeInOut' }}
-        className="hidden lg:flex inset-y-0 left-0 z-50 flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 shrink-0 relative select-none"
+        className="hidden lg:flex inset-y-0 left-0 z-40 flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 shrink-0 relative select-none"
       >
-        <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={sidebarWidth} startResizing={startResizing} isMobile={false} />
+        <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={sidebarWidth} startResizing={startResizing} isMobile={false} toggleSidebar={toggleSidebar} />
+        
+        {/* Toggle Button (Desktop) - Seamlessly attached outside */}
+        <button
+          onClick={toggleSidebar}
+          className="absolute -right-[28px] top-8 z-50 flex h-8 w-[28px] items-center justify-center rounded-r-md rounded-l-none border border-l-0 border-slate-200 dark:border-slate-700/60 bg-blue-50 dark:bg-[#0c1222] text-blue-600 dark:text-[#5B7CFF] hover:bg-blue-100 dark:hover:bg-[#151e32] shadow-sm cursor-pointer transition-all duration-200"
+          title={sidebarWidth < 150 ? "Expand Sidebar" : "Shrink Sidebar"}
+        >
+          {sidebarWidth < 150 ? (
+            <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+          )}
+        </button>
       </motion.div>
 
       {/* Main Context Body */}
@@ -368,7 +534,7 @@ export default function DashboardShell({
                   </button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-[280px] border-r border-slate-200 dark:border-[#5B7CFF]/20 flex flex-col">
-                  <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={280} startResizing={() => {}} isMobile={true} />
+                  <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={280} startResizing={() => {}} isMobile={true} toggleSidebar={toggleSidebar} />
                 </SheetContent>
               </Sheet>
 
@@ -380,7 +546,7 @@ export default function DashboardShell({
               {/* Greeting Desktop */}
               <div className="hidden lg:flex items-center">
                 <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  {currentView}
+                  {getMainModuleName()}
                 </h1>
               </div>
             </div>
@@ -413,7 +579,11 @@ export default function DashboardShell({
                 {isDark ? <Sun className="h-5 w-5 sm:h-6 sm:w-6" /> : <Moon className="h-5 w-5 sm:h-6 sm:w-6" />}
               </button>
 
-              <NotificationBell onNavigate={onNavigate} />
+              {role === 'admin' ? (
+                <NotificationBell onNavigate={onNavigate} />
+              ) : (
+                <EmployeeNotificationBell onNavigate={onNavigate} />
+              )}
             </div>
           </div>
 

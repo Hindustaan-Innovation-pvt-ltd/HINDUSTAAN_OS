@@ -5,6 +5,8 @@ import {
   FolderKanban, Users, Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { ProjectDatePicker } from '@/components/ui/project-date-picker';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -29,7 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { INITIAL_TASKS } from '@/data/mockData';
 import { mockWorkLogs } from '@/data/mockWorkLogs';
 import { TotalHoursModal } from '@/components/dashboard/worklogs/TotalHoursModal';
-import { format, subDays, startOfMonth, parseISO, isSameDay } from 'date-fns';
+import { format, subDays, startOfMonth, parseISO, isSameDay, startOfWeek, addDays } from 'date-fns';
 
 const ONLINE_TEAM_MEMBERS = [
   { id: 'u-1', name: 'Amanda Smith', initials: 'AS', role: 'Frontend Lead', task: 'Component Refactoring', project: 'Frontend Core', color: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
@@ -129,7 +131,8 @@ export default function WorkLogs({ session }: { session?: any }) {
       project: log.project,
       task: log.task,
       hours: log.hours,
-      status: log.status || 'Approved'
+      status: log.status || 'Approved',
+      source: (log as any).source
     }));
   });
 
@@ -238,6 +241,44 @@ export default function WorkLogs({ session }: { session?: any }) {
     const m = Math.floor((totalSeconds % 3600) / 60);
     const s = totalSeconds % 60;
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const weekStart = startOfWeek(todayDate, { weekStartsOn: 1 });
+  const weekDays = useMemo(() => Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i)), [weekStart]);
+
+  const heatmapData = useMemo(() => {
+    const data: Record<string, Record<string, number>> = {};
+    const usersToShow = currentUser.role === 'manager' 
+      ? Array.from(new Set(logs.map(l => l.name)))
+      : [currentUser.name];
+      
+    usersToShow.forEach(user => {
+      data[user] = {};
+      weekDays.forEach(day => {
+        data[user][format(day, 'yyyy-MM-dd')] = 0;
+      });
+    });
+
+    logs.forEach(log => {
+      if (!usersToShow.includes(log.name)) return;
+      const logDate = log.rawDate ? new Date(log.rawDate) : new Date(log.date);
+      if (isNaN(logDate.getTime())) return;
+      
+      const dateStr = format(logDate, 'yyyy-MM-dd');
+      if (data[log.name] && data[log.name][dateStr] !== undefined) {
+        data[log.name][dateStr] += Number(log.hours);
+      }
+    });
+    
+    return { users: usersToShow, data };
+  }, [logs, currentUser, weekDays]);
+
+  const getHeatmapColor = (hours: number) => {
+    if (hours === 0) return 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 shadow-inner';
+    if (hours <= 2) return 'bg-gradient-to-br from-emerald-200 to-emerald-300 dark:from-emerald-900/80 dark:to-emerald-800/80 border border-emerald-300/50 dark:border-emerald-700/50 text-emerald-900 dark:text-emerald-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]';
+    if (hours <= 5) return 'bg-gradient-to-br from-emerald-400 to-emerald-500 dark:from-emerald-700 dark:to-emerald-600 border border-emerald-400/50 dark:border-emerald-500/50 text-emerald-950 dark:text-emerald-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] shadow-emerald-500/20';
+    if (hours <= 8) return 'bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-500 border border-emerald-500/50 dark:border-emerald-400/50 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] shadow-emerald-500/30';
+    return 'bg-gradient-to-br from-emerald-600 to-emerald-700 dark:from-emerald-500 dark:to-emerald-400 border border-emerald-600/50 dark:border-emerald-300/50 text-white dark:text-emerald-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] shadow-emerald-500/40 ring-1 ring-emerald-400/50 dark:ring-emerald-300/50'; 
   };
 
   const userBaseLogs = useMemo(() => {
@@ -405,7 +446,7 @@ export default function WorkLogs({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-[#0F172A] dark:text-white">Work Logs</h2>
+          <h2 className="text-page-title tracking-tight text-[#0F172A] dark:text-white">Work Logs</h2>
           <p className="text-sm text-[#64748B] dark:text-slate-400 mt-1">Manage team timesheets and logged hours efficiently.</p>
         </div>
       </div>
@@ -463,6 +504,135 @@ export default function WorkLogs({ session }: { session?: any }) {
         </div>
       </div>
 
+      {/* Heatmap Section */}
+      <div className="relative bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-200/60 dark:border-slate-700/40 shadow-sm overflow-hidden mb-6 group">
+        {/* Glassy Orbs in Background */}
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 dark:bg-indigo-500/20 blur-[80px] rounded-full pointer-events-none transition-transform duration-1000 group-hover:scale-150" />
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-emerald-500/10 dark:bg-emerald-500/20 blur-[80px] rounded-full pointer-events-none transition-transform duration-1000 group-hover:scale-150" />
+
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center tracking-tight">
+              <div className="h-8 w-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mr-3 shadow-inner">
+                <Activity className="h-4 w-4" />
+              </div>
+              Weekly Activity Heatmap
+            </h3>
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-2 flex items-center">
+              <CalendarIcon className="h-3.5 w-3.5 mr-1.5 opacity-70" />
+              {format(weekStart, 'MMM d')} - {format(weekDays[6], 'MMM d, yyyy')}
+            </p>
+          </div>
+          
+          {/* Elegant Legend */}
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-2xl border border-slate-100 dark:border-slate-700/50 backdrop-blur-sm">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-2 ml-1">Less</span>
+            {[0, 2, 5, 8, 10].map((hours, i) => (
+              <div key={i} className={cn("w-4 h-4 rounded-md transition-all duration-300", getHeatmapColor(hours))} title={`${hours === 0 ? 0 : hours}+ hours`} />
+            ))}
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-2 mr-1">More</span>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 hide-scrollbar">
+          <div className="min-w-[700px]">
+            {/* Days Header */}
+            <div className="flex mb-4 relative z-10">
+              <div className="w-56 shrink-0"></div>
+              <div className="flex-1 grid grid-cols-7 gap-3">
+                {weekDays.map(day => {
+                  const isToday = isSameDay(day, new Date());
+                  return (
+                    <div key={day.toString()} className="flex flex-col items-center justify-center group/day">
+                      <span className={cn(
+                        "text-[10px] font-black uppercase tracking-wider mb-1 transition-colors",
+                        isToday ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"
+                      )}>
+                        {format(day, 'EEE')}
+                      </span>
+                      <span className={cn(
+                        "flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-all",
+                        isToday 
+                          ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30" 
+                          : "text-slate-700 dark:text-slate-300 group-hover/day:bg-slate-100 dark:group-hover/day:bg-slate-800"
+                      )}>
+                        {format(day, 'd')}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* Users Rows */}
+            <div className="space-y-3 relative z-10">
+              {heatmapData.users.map((user, rowIdx) => {
+                const totalWeekHours = weekDays.reduce((sum, day) => sum + (heatmapData.data[user][format(day, 'yyyy-MM-dd')] || 0), 0);
+                const memberData = ONLINE_TEAM_MEMBERS.find(m => m.name === user);
+                
+                return (
+                  <div 
+                    key={user} 
+                    className="flex items-center group/row animate-in slide-in-from-left-4 fade-in duration-500 fill-mode-both"
+                    style={{ animationDelay: `${rowIdx * 100}ms` }}
+                  >
+                    {/* User Info */}
+                    <div className="w-56 shrink-0 pr-6 flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-sm ring-2 ring-white dark:ring-slate-900 group-hover/row:scale-110 transition-transform",
+                          memberData?.color || "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        )}>
+                          {memberData?.initials || user.split(' ').map((n: string) => n[0]).join('')}
+                        </div>
+                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover/row:text-indigo-600 dark:group-hover/row:text-indigo-400 transition-colors truncate">
+                          {user}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-black text-slate-400 group-hover/row:text-indigo-500 transition-colors">
+                          {totalWeekHours.toFixed(1)}h
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Heatmap Cells */}
+                    <div className="flex-1 grid grid-cols-7 gap-3">
+                      {weekDays.map(day => {
+                        const dateStr = format(day, 'yyyy-MM-dd');
+                        const hours = heatmapData.data[user][dateStr] || 0;
+                        const isToday = isSameDay(day, new Date());
+                        
+                        return (
+                          <div 
+                            key={dateStr}
+                            title={`${hours.toFixed(1)} hours on ${format(day, 'MMM d')}`}
+                            className="relative group/cell aspect-square sm:aspect-auto sm:h-12 w-full rounded-xl"
+                          >
+                            <div className={cn(
+                              "absolute inset-0 rounded-xl transition-all duration-300 cursor-crosshair flex items-center justify-center",
+                              getHeatmapColor(hours),
+                              isToday && "ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900",
+                              "group-hover/cell:scale-[1.15] group-hover/cell:shadow-xl group-hover/cell:z-20"
+                            )}>
+                              {hours > 0 && (
+                                <span className="text-[10px] font-black opacity-0 group-hover/cell:opacity-100 transition-opacity drop-shadow-md">
+                                  {hours.toFixed(1)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {filtersCard}
 
       {/* Data Cards Section */}
@@ -476,13 +646,16 @@ export default function WorkLogs({ session }: { session?: any }) {
         </TabsList>
 
         {currentUser.role === 'manager' && activeTab === 'specific' && (
-          <div className="mb-6 flex items-center gap-3">
-            <label className="text-sm font-bold text-[#64748B] dark:text-slate-400">Select Date:</label>
-            <input 
-              type="date" 
-              value={selectedSpecificDate}
-              onChange={(e) => setSelectedSpecificDate(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-[#0F172A] dark:text-white outline-none focus:border-[#6366F1]"
+          <div className="mb-6 flex flex-col md:flex-row md:items-center gap-3 max-w-sm">
+            <label className="text-sm font-bold text-[#64748B] dark:text-slate-400 whitespace-nowrap">Select Date:</label>
+            <ProjectDatePicker
+              value={selectedSpecificDate ? (() => {
+                const d = new Date(selectedSpecificDate);
+                return isNaN(d.getTime()) ? undefined : d;
+              })() : undefined}
+              onChange={(date) => {
+                if (date) setSelectedSpecificDate(format(date, 'yyyy-MM-dd'));
+              }}
             />
           </div>
         )}
@@ -527,14 +700,25 @@ export default function WorkLogs({ session }: { session?: any }) {
                     <Clock className="h-3 w-3 mr-1.5" /> {log.hours.toFixed(1)}h
                   </Badge>
                   
-                  <Badge variant="outline" className={cn(
-                    "text-xs font-bold uppercase tracking-wider px-2.5 py-1",
-                    log.status === 'Approved' ? "bg-emerald-50 text-[#10B981] dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30" :
-                    log.status === 'Pending' ? "bg-amber-50 text-[#F59E0B] dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30" :
-                    "bg-rose-50 text-rose-600 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30"
-                  )}>
-                    {log.status}
-                  </Badge>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <Badge variant="outline" className={cn(
+                      "text-xs font-bold uppercase tracking-wider px-2.5 py-1",
+                      log.status === 'Approved' ? "bg-emerald-50 text-[#10B981] dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30" :
+                      log.status === 'Pending' ? "bg-amber-50 text-[#F59E0B] dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30" :
+                      "bg-rose-50 text-rose-600 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30"
+                    )}>
+                      {log.status}
+                    </Badge>
+
+                    {log.source === 'whatsapp' && (
+                      <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 flex items-center gap-1">
+                        <svg viewBox="0 0 24 24" className="w-3 h-3 fill-current" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+                        </svg>
+                        Source: WhatsApp
+                      </Badge>
+                    )}
+                  </div>
 
                   {currentUser.role === 'manager' && (
                     <DropdownMenu>

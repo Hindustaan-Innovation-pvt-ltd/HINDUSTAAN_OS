@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 // --- Types ---
-export type Role = 'manager' | 'intern';
-export type Priority = 'High' | 'Medium' | 'Normal' | 'Low';
+export type Role = 'manager' | 'intern' | 'admin';
+export type Priority = 'Critical' | 'High' | 'Medium' | 'Normal' | 'Low';
 export type Status = 'To Do' | 'In Progress' | 'In Review' | 'Done';
 
 export interface UserProfile {
@@ -83,9 +83,11 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
   if (!task || !editedTask) return null;
 
   const isManager = currentUser.role === 'manager';
+  const isAdmin = currentUser.role === 'admin';
   const canEditStatus = isManager || (currentUser.role === 'intern' && currentUser.id === task.assignee_id);
 
   const handleUpdateField = (field: keyof Task, value: any) => {
+    if (isAdmin) return;
     if (!isManager && field !== 'status') return; // Extra safety guard
     setEditedTask(prev => prev ? { ...prev, [field]: value } : null);
     if (onUpdateTask) {
@@ -137,6 +139,11 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
           <DialogDescription className="sr-only">View and edit task details.</DialogDescription>
           
           <div className="flex flex-col gap-2 pt-1 pr-4">
+            {isAdmin && (
+              <Badge variant="outline" className="w-max bg-blue-50/50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 font-bold px-2 py-0.5">
+                View Only
+              </Badge>
+            )}
             <div className="flex items-center space-x-2">
               <Tag className="h-4 w-4 text-slate-400 dark:text-slate-500" />
               {isManager ? (
@@ -160,7 +167,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                 placeholder="Task Title..."
               />
             ) : (
-              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white py-1">{editedTask.title}</h2>
+              <h2 className="text-page-title text-slate-900 dark:text-white py-1">{editedTask.title}</h2>
             )}
           </div>
         </DialogHeader>
@@ -183,7 +190,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                     value={editedTask.priority}
                     onChange={(e) => handleUpdateField('priority', e.target.value as Priority)}
                     className={cn(
-                      "appearance-none w-full pl-3 pr-8 py-2 rounded-lg text-sm font-semibold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all",
+                      "appearance-none w-full pl-3 pr-8 py-2 rounded-lg text-sm font-semibold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all dark:[color-scheme:dark]",
                       getPriorityStyles(editedTask.priority)
                     )}
                   >
@@ -192,7 +199,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                     <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Normal">Normal</option>
                     <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Low">Low</option>
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none opacity-50" />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-700 dark:text-slate-400" />
                 </div>
               ) : (
                 <div className="mt-1">
@@ -223,7 +230,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                         if (onUpdateTask) onUpdateTask(updated);
                       }
                     }}
-                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]"
                   >
                     {GLOBAL_TEAM_MEMBERS.map(member => (
                       <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={member.id} value={member.id}>{member.name}</option>
@@ -245,7 +252,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                   type="date"
                   value={editedTask.due_date ? new Date(editedTask.due_date).toISOString().split('T')[0] : ''}
                   onChange={(e) => handleUpdateField('due_date', e.target.value)} // Simplifying date format mapping for mockup
-                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:[color-scheme:dark]"
                 />
               ) : (
                 <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 inline-block">
@@ -264,13 +271,13 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                   <select 
                     value={editedTask.status}
                     onChange={(e) => handleStatusChange(e.target.value as Status)}
-                    className="appearance-none w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
+                    className="appearance-none w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]"
                   >
                     {STATUSES.map(s => (
                       <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={s} value={s}>{s}</option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none opacity-50" />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-700 dark:text-slate-400" />
                 </div>
               ) : (
                 <div className="mt-1">
@@ -356,7 +363,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                       <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{comment.author_name}</span>
                       <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">{comment.timestamp}</span>
                     </div>
-                    {comment.author_name === currentUser.name && editingCommentId !== comment.id && (
+                    {comment.author_name === currentUser.name && editingCommentId !== comment.id && !isAdmin && (
                       <button 
                         onClick={() => {
                           setEditingCommentId(comment.id);
@@ -408,27 +415,30 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
             </div>
 
             {/* Comment Input */}
-            <form onSubmit={submitComment} className="flex gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                {getInitials(currentUser.name || 'User')}
-              </div>
-              <div className="flex-1 flex bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/10 transition-all p-1 overflow-hidden shadow-sm">
-                <input 
-                  type="text" 
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="flex-1 bg-transparent border-none px-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
-                  placeholder="Write a comment or log an update..."
-                />
-                <Button 
-                  type="submit"
-                  disabled={!newComment.trim()}
-                  className="rounded-lg h-9 w-9 p-0"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </form>
+            {!isAdmin && (
+              <form onSubmit={submitComment} className="flex gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                  {getInitials(currentUser.name || 'User')}
+                </div>
+                <div className="flex-1 flex bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/10 transition-all p-1 overflow-hidden shadow-sm">
+                  <input 
+                    type="text" 
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="flex-1 bg-transparent border-none px-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
+                    placeholder="Write a comment or log an update..."
+                  />
+                  <Button 
+                    type="submit"
+                    disabled={!newComment.trim()}
+                    variant="ghost"
+                    className="rounded-lg h-9 w-9 p-0 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors group"
+                  >
+                    <Send className={cn("h-4 w-4 transition-colors", newComment.trim() ? "text-orange-600 dark:text-orange-500" : "text-slate-400 dark:text-slate-400")} />
+                  </Button>
+                </div>
+              </form>
+            )}
           </div>
 
         </div>

@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import { useTheme } from '@/context/ThemeContext';
 import { useProjects } from '@/context/ProjectContext';
+import { ProjectSelect } from '@/components/ui/project-select';
 
 export default function ProgressTracker({ session }: { session?: any }) {
   const { theme } = useTheme();
@@ -119,7 +120,14 @@ export default function ProgressTracker({ session }: { session?: any }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Progress Tracker</h2>
+            <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+              Progress Tracker
+              {session?.user?.user_metadata?.role === 'admin' && (
+                <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold border-0">
+                  Organization Monitoring
+                </Badge>
+              )}
+            </h2>
             {isAborted && (
               <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-200 border-transparent dark:bg-red-900/40 dark:text-red-400 font-bold uppercase tracking-wider text-[10px]">
                 Aborted
@@ -127,17 +135,16 @@ export default function ProgressTracker({ session }: { session?: any }) {
             )}
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Real-time metrics calculated from active project data.</p>
+          {session?.user?.user_metadata?.role === 'admin' && (
+            <p className="text-xs font-bold text-[#5B7CFF] mt-1">You are viewing organization-wide data in read-only mode.</p>
+          )}
         </div>
-        <div>
-          <select
+        <div className="w-full sm:w-64">
+          <ProjectSelect 
             value={activeProjectId}
-            onChange={(e) => setActiveProjectId(e.target.value)}
-            className="w-full sm:w-64 h-12 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-all font-bold text-sm shadow-sm"
-          >
-            {projects.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+            onChange={setActiveProjectId}
+            options={projects.map(p => ({ value: p.id, label: p.name }))}
+          />
         </div>
       </div>
 

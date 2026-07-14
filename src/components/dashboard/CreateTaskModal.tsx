@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Calendar, User, Tag, Clock, Target, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useWorkspace } from '@/context/WorkspaceContext';
 import type { Task, Priority } from './TaskDetailsModal';
 import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 
@@ -12,10 +13,11 @@ interface CreateTaskModalProps {
 }
 
 export default function CreateTaskModal({ isOpen, onClose, onCreateTask, currentUser }: CreateTaskModalProps) {
+  const { config } = useWorkspace();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [projectTag, setProjectTag] = useState('');
-  const [priority, setPriority] = useState<Priority | ''>('');
+  const [priority, setPriority] = useState<Priority | ''>((config.defaultPriority as Priority) || 'Medium');
   
   // Interns can only assign to themselves. Default to their ID if intern.
   const [assigneeId, setAssigneeId] = useState(currentUser?.role === 'intern' ? currentUser.id : '');
@@ -68,7 +70,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
       due_date: dueDate || new Date().toISOString().split('T')[0],
       milestone: milestone || undefined,
       created_at: new Date().toISOString(),
-      status: 'To Do'
+      status: (config.defaultTaskStatus as any) || 'To Do'
     };
 
     onCreateTask(newTask);
@@ -76,7 +78,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
     setTitle('');
     setDescription('');
     setProjectTag('');
-    setPriority('');
+    setPriority((config.defaultPriority as Priority) || 'Medium');
     setAssigneeId(currentUser?.role === 'intern' ? currentUser.id : '');
     setStartDate('');
     setDueDate('');
@@ -88,7 +90,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/60 overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Create New Task</h2>
+          <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">Create New Task</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:text-slate-500 transition-colors">
             <X className="h-5 w-5" />
           </button>
@@ -130,7 +132,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
                 required
                 value={priority}
                 onChange={e => setPriority(e.target.value as Priority)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]"
               >
                 <option className="bg-white dark:bg-slate-800" value="" disabled>Select Priority...</option>
                 <option className="bg-white dark:bg-slate-800" value="High">High</option>
@@ -148,7 +150,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
                 required={currentUser?.role === 'intern'}
                 value={assigneeId}
                 onChange={e => setAssigneeId(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]"
               >
                 {currentUser?.role === 'manager' && (
                   <option className="bg-white dark:bg-slate-800" value="">Unassigned</option>
@@ -180,7 +182,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
                 type="date"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:[color-scheme:dark]"
               />
             </div>
 
@@ -194,7 +196,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask, current
                 value={dueDate}
                 onChange={e => setDueDate(e.target.value)}
                 className={cn(
-                  "w-full bg-white dark:bg-slate-900 border text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-colors",
+                  "w-full bg-white dark:bg-slate-900 border text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-colors dark:[color-scheme:dark]",
                   isPastDue 
                     ? "border-amber-300 text-amber-700 dark:border-amber-700/50 dark:text-amber-500 focus:ring-amber-500/20 bg-amber-50/30 dark:bg-amber-900/10" 
                     : "border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-orange-500/20"

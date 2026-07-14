@@ -20,6 +20,7 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import {
   Tooltip,
   TooltipContent,
@@ -54,9 +55,32 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
 import { useNotifications } from '@/context/NotificationContext';
+import { PremiumTimePicker } from '@/components/ui/premium-time-picker';
+import { ProjectDatePicker } from '@/components/ui/project-date-picker';
 
 // Data Structures
 type EventType = 'deadline' | 'completed' | 'milestone' | 'leave' | 'meeting';
+
+const formatTimeForDisplay = (timeStr: string) => {
+  if (!timeStr) return '';
+  if (timeStr.includes('AM') || timeStr.includes('PM')) return timeStr;
+  const [h, m] = timeStr.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return timeStr;
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hours12 = h % 12 || 12;
+  return `${hours12.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`;
+};
+
+const to24HourFormat = (timeStr: string) => {
+  if (!timeStr) return '09:00';
+  if (!timeStr.includes('AM') && !timeStr.includes('PM')) return timeStr;
+  const [time, modifier] = timeStr.split(' ');
+  if (!time || !modifier) return '09:00';
+  let [hours, minutes] = time.split(':');
+  if (hours === '12') hours = '00';
+  if (modifier === 'PM') hours = String(parseInt(hours, 10) + 12);
+  return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+};
 
 interface ProjectEvent {
   id: string;
@@ -147,6 +171,12 @@ export function ProjectCalendarWidget() {
   const [eventToView, setEventToView] = useState<ProjectEvent | null>(null);
   const [eventToEdit, setEventToEdit] = useState<ProjectEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<ProjectEvent | null>(null);
+  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [scheduleTime, setScheduleTime] = useState('09:00 AM');
+  const [editTime, setEditTime] = useState('09:00 AM');
+  const [scheduleDate, setScheduleDate] = useState<Date>(new Date());
+  const [editDate, setEditDate] = useState<Date>(new Date());
   
   const { addNotification } = useNotifications();
 
@@ -205,21 +235,42 @@ export function ProjectCalendarWidget() {
       date: new Date(year, month - 1, day),
       type: type,
       title: title,
-      time: timeStr,
+      time: formatTimeForDisplay(timeStr),
       assignees: [{ name: 'Current User', initials: 'CU' }]
     };
 
-    setEvents(prev => {
-      const next = [...prev, newEvent];
-      localStorage.setItem('hindustaan_calendar_events', JSON.stringify(next));
-      window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: next } }));
-      return next;
-    });
+    const nextEvents = [...events, newEvent];
+    setEvents(nextEvents);
+    localStorage.setItem('hindustaan_calendar_events', JSON.stringify(nextEvents));
+    window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: nextEvents } }));
 
     toast.success(`${scheduleType === 'event' ? 'Event' : 'Meeting'} Scheduled Successfully`, {
       description: 'Your calendar has been updated with the new item.',
     });
     setIsScheduleOpen(false);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedEventIds.length === 0) return;
+    const nextEvents = events.filter(e => !selectedEventIds.includes(e.id));
+    setEvents(nextEvents);
+    localStorage.setItem('hindustaan_calendar_events', JSON.stringify(nextEvents));
+    window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: nextEvents } }));
+    toast.success(`Deleted ${selectedEventIds.length} events successfully.`);
+    setSelectedEventIds([]);
+  };
+
+  const handleSelectAll = () => {
+    if (upcomingEvents.length > 0 && selectedEventIds.length === upcomingEvents.length) {
+      setSelectedEventIds([]);
+    } else {
+      setSelectedEventIds(upcomingEvents.map(e => e.id));
+    }
+  };
+
+  const handleSelectEvent = (id: string, e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    setSelectedEventIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
   const getDayEvents = (day: Date) => {
@@ -270,9 +321,10 @@ export function ProjectCalendarWidget() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Start Date</Label>
+              <Label className="dark:text-slate-200 font-semibold">Start Date</Label>
               <Input 
                 type="date" 
+                className="dark:text-white dark:bg-slate-800/50 dark:border-slate-700 dark:[color-scheme:dark]"
                 defaultValue={format(startDate, 'yyyy-MM-dd')} 
                 onChange={(e) => {
                   const d = new Date(e.target.value);
@@ -284,9 +336,10 @@ export function ProjectCalendarWidget() {
               />
             </div>
             <div className="grid gap-2">
-              <Label>End Date</Label>
+              <Label className="dark:text-slate-200 font-semibold">End Date</Label>
               <Input 
                 type="date" 
+                className="dark:text-white dark:bg-slate-800/50 dark:border-slate-700 dark:[color-scheme:dark]"
                 defaultValue={format(endDate, 'yyyy-MM-dd')}
                 onChange={(e) => {
                   const d = new Date(e.target.value);
@@ -299,7 +352,7 @@ export function ProjectCalendarWidget() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => setIsSettingsOpen(false)}>Save changes</Button>
+            <Button onClick={() => setIsSettingsOpen(false)} className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-[#5B7CFF] dark:text-white dark:hover:bg-[#5B7CFF]/80 font-bold">Save changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -452,12 +505,71 @@ export function ProjectCalendarWidget() {
         <div className="p-4 sm:p-6 flex flex-col h-full bg-slate-50/30 dark:bg-slate-900/10 min-w-0 w-full overflow-hidden">
           <div className="flex-1 w-full">
             <div className="flex items-center justify-between mb-5">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center"><Clock className="mr-2 h-4 w-4 text-orange-500" /> Upcoming Events</h4>
-              <Button onClick={() => setIsAllEventsOpen(true)} variant="outline" size="sm" className="h-7 px-3 text-[10px] font-bold text-slate-600 dark:text-slate-300 rounded-full bg-white dark:bg-slate-900 shadow-sm hover:text-orange-600 dark:hover:text-orange-400 transition-all cursor-pointer">View History</Button>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center">
+                  <Clock className="mr-2 h-4 w-4 text-orange-500" /> Upcoming Events
+                </h4>
+              </div>
+              <div className="flex items-center gap-3">
+                {isSelectionMode && selectedEventIds.length > 0 && (
+                  <Button onClick={handleBulkDelete} size="sm" className="h-7 px-3 text-[10px] font-bold rounded-full shadow-sm bg-rose-500 hover:bg-rose-600 text-white dark:bg-rose-600 dark:hover:bg-rose-700 border-0">Delete ({selectedEventIds.length})</Button>
+                )}
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-full shadow-sm">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Select</span>
+                  <Switch 
+                    checked={isSelectionMode} 
+                    onCheckedChange={(checked) => {
+                      setIsSelectionMode(checked);
+                      if (!checked) setSelectedEventIds([]);
+                    }}
+                    size="sm"
+                    className="data-[state=checked]:bg-orange-500 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-800 dark:border dark:border-slate-600 [&>span]:bg-white"
+                  />
+                </div>
+                {!isSelectionMode && (
+                  <Button onClick={() => setIsAllEventsOpen(true)} variant="outline" size="sm" className="h-7 px-3 text-[10px] font-bold text-slate-600 dark:text-slate-300 rounded-full bg-white dark:bg-slate-900 shadow-sm hover:text-orange-600 dark:hover:text-orange-400 transition-all cursor-pointer">View History</Button>
+                )}
+              </div>
             </div>
+            
+            {isSelectionMode && upcomingEvents.length > 0 && (
+              <div className="flex justify-start mb-3 pl-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => {
+                    if (selectedEventIds.length === upcomingEvents.length) {
+                      setSelectedEventIds([]);
+                    } else {
+                      setSelectedEventIds(upcomingEvents.map(e => e.id));
+                    }
+                  }}
+                  className="h-7 text-[10px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full px-3"
+                >
+                  {upcomingEvents.length > 0 && selectedEventIds.length === upcomingEvents.length ? 'Deselect All' : 'Select All'}
+                </Button>
+              </div>
+            )}
+            
             <div className="space-y-3.5 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
               {upcomingEvents.length > 0 ? upcomingEvents.map((evt) => (
-                <div key={evt.id} onClick={() => setEventToView(evt)} className="group relative flex items-center gap-3.5 p-3 rounded-2xl bg-white dark:bg-slate-950/80 shadow-sm border border-slate-100 dark:border-slate-800/80 hover:border-orange-200 dark:hover:border-orange-900/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 pr-8 cursor-pointer">
+                <div 
+                  key={evt.id} 
+                  onClick={(e) => isSelectionMode ? handleSelectEvent(evt.id, e) : setEventToView(evt)} 
+                  className={cn(
+                    "group relative flex items-center gap-3.5 p-3 rounded-2xl bg-white dark:bg-slate-950/80 shadow-sm border hover:shadow-md transition-all duration-300 pr-8 cursor-pointer",
+                    isSelectionMode && selectedEventIds.includes(evt.id) ? "border-orange-500 dark:border-orange-500 shadow-orange-500/10" : "border-slate-100 dark:border-slate-800/80 hover:border-orange-200 dark:hover:border-orange-900/50 hover:-translate-y-0.5"
+                  )}
+                >
+                  {isSelectionMode && (
+                    <div className="pl-1 flex items-center h-full">
+                      {selectedEventIds.includes(evt.id) ? (
+                        <CheckCircle2 className="h-5 w-5 text-orange-500" />
+                      ) : (
+                        <div className="h-5 w-5 rounded-full border-2 border-slate-300 dark:border-slate-700 group-hover:border-orange-400 transition-colors" />
+                      )}
+                    </div>
+                  )}
                   <div className="flex flex-col items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/30 dark:to-orange-900/10 shrink-0 border border-orange-100/50 dark:border-orange-500/20 shadow-inner">
                     <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase leading-none mb-0.5 tracking-wider">{format(evt.date, 'MMM')}</span>
                     <span className="text-sm font-black text-orange-700 dark:text-orange-300 leading-none">{format(evt.date, 'dd')}</span>
@@ -472,7 +584,7 @@ export function ProjectCalendarWidget() {
                       {evt.time && (
                         <>
                           <span className="text-[10px] text-slate-300 dark:text-slate-700">•</span>
-                          <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 px-1.5 py-0.5 rounded leading-none">{evt.time}</span>
+                          <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 px-1.5 py-0.5 rounded leading-none">{formatTimeForDisplay(evt.time)}</span>
                         </>
                       )}
                     </div>
@@ -624,64 +736,56 @@ export function ProjectCalendarWidget() {
       </Sheet>
 
       <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
-              {scheduleType === 'event' ? <CalendarIcon className="mr-2 h-5 w-5 text-orange-500" /> : <Video className="mr-2 h-5 w-5 text-orange-500" />}
-              Schedule {scheduleType === 'event' ? 'New Event' : 'Team Meeting'}
-            </DialogTitle>
-            <DialogDescription className="text-slate-500 font-medium">
-              Add a new {scheduleType} to the project calendar. It will be visible to all assignees.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleScheduleSubmit} className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Title</Label>
-              <Input id="title" name="title" placeholder={scheduleType === 'event' ? "e.g. Q3 Roadmap Review" : "e.g. Weekly Standup Sync"} required className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500" />
+        <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden border-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] bg-white dark:bg-slate-950 rounded-3xl">
+          <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 px-6 py-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              {scheduleType === 'event' ? <CalendarIcon className="w-32 h-32 transform rotate-12 translate-x-4 -translate-y-4 text-white" /> : <Video className="w-32 h-32 transform rotate-12 translate-x-4 -translate-y-4 text-white" />}
+            </div>
+            <DialogHeader className="relative z-10 text-left">
+              <DialogTitle className="text-2xl font-black text-white flex items-center gap-3">
+                <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-md border border-white/20 shadow-inner">
+                  {scheduleType === 'event' ? <CalendarIcon className="h-6 w-6 text-white" /> : <Video className="h-6 w-6 text-white" />}
+                </div>
+                Schedule {scheduleType === 'event' ? 'New Event' : 'Team Meeting'}
+              </DialogTitle>
+              <DialogDescription className="text-white/80 font-medium text-sm mt-3 leading-relaxed">
+                Add a new {scheduleType} to the project calendar. It will be visible to all assignees.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          
+          <form onSubmit={handleScheduleSubmit} className="p-6 space-y-6">
+            <div className="space-y-2.5">
+              <Label htmlFor="title" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Title</Label>
+              <Input id="title" name="title" placeholder={scheduleType === 'event' ? "e.g. Q3 Roadmap Review" : "e.g. Weekly Standup Sync"} required className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 text-slate-900 dark:text-white transition-all duration-300 shadow-sm text-base font-semibold" />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2 relative">
-                <Label htmlFor="date" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</Label>
-                <div className="relative">
-                  <Input id="date" name="date" type="date" required className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500 pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
-                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-                </div>
+            <div className="grid grid-cols-2 gap-5">
+              <div className="space-y-2.5 relative">
+                <Label htmlFor="date" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</Label>
+                <ProjectDatePicker name="date" value={scheduleDate} onChange={(d) => d && setScheduleDate(d)} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 text-slate-900 dark:text-white transition-all duration-300 shadow-sm pl-4 font-semibold" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="time" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Time</Label>
-                <Select name="time" defaultValue="09:00 AM">
-                  <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500">
-                    <SelectValue placeholder="Select time" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800 max-h-[200px]">
-                    {Array.from({ length: 48 }).map((_, i) => {
-                      const hour24 = Math.floor(i / 2);
-                      const minute = i % 2 === 0 ? '00' : '30';
-                      const ampm = hour24 >= 12 ? 'PM' : 'AM';
-                      const hour12 = hour24 % 12 || 12;
-                      const timeStr = `${hour12.toString().padStart(2, '0')}:${minute} ${ampm}`;
-                      return (
-                        <SelectItem key={timeStr} value={timeStr}>
-                          {timeStr}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-2.5">
+                <Label htmlFor="time" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Time</Label>
+                <PremiumTimePicker name="time" value={scheduleTime} onChange={setScheduleTime} />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Type</Label>
-              <Input name="type" list="event-types" defaultValue={scheduleType === 'event' ? 'milestone' : 'sync'} className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500" placeholder="e.g. Milestone, Launch..." />
+            <div className="space-y-2.5">
+              <Label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Type</Label>
+              <div className="relative group">
+                <Input name="type" list="event-types" defaultValue={scheduleType === 'event' ? 'milestone' : 'sync'} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-500 hover:bg-white dark:hover:bg-slate-900 text-slate-900 dark:text-white transition-all duration-300 shadow-sm pl-12 font-semibold" placeholder="e.g. Milestone, Launch..." />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 pointer-events-none group-hover:scale-110 transition-transform">
+                  <Flag className="h-4 w-4 text-orange-500" />
+                </div>
+              </div>
             </div>
             
-            <DialogFooter className="pt-4 sm:justify-end">
-              <Button type="button" variant="outline" onClick={() => setIsScheduleOpen(false)} className="rounded-xl font-bold">
+            <DialogFooter className="pt-2 sm:justify-end gap-3">
+              <Button type="button" variant="ghost" onClick={() => setIsScheduleOpen(false)} className="rounded-xl font-bold h-12 px-6 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
                 Cancel
               </Button>
-              <Button type="submit" className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold">
+              <Button type="submit" className="rounded-xl h-12 px-8 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black shadow-[0_8px_20px_-8px_rgba(249,115,22,0.6)] hover:shadow-[0_12px_25px_-8px_rgba(249,115,22,0.8)] transition-all duration-300 hover:-translate-y-0.5 border-0">
                 Schedule {scheduleType === 'event' ? 'Event' : 'Meeting'}
               </Button>
             </DialogFooter>
@@ -699,7 +803,7 @@ export function ProjectCalendarWidget() {
                 Event History
               </DialogTitle>
               <DialogDescription className="text-slate-500 dark:text-slate-400 font-medium pt-1">
-                View all past and upcoming events, deadlines, and milestones.
+                View all past events, deadlines, and milestones from history.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -707,6 +811,7 @@ export function ProjectCalendarWidget() {
             <ScrollArea className="max-h-[50vh] pr-4">
               <div className="space-y-4">
                 {[...events]
+                  .filter(evt => isBefore(evt.date, startOfDay(today)))
                   .sort((a, b) => b.date.getTime() - a.date.getTime())
                   .map((evt) => {
                     const isPast = isBefore(evt.date, startOfDay(today));
@@ -795,15 +900,24 @@ export function ProjectCalendarWidget() {
       </Dialog>
 
       <Dialog open={!!eventToEdit} onOpenChange={(open) => !open && setEventToEdit(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
-              Edit Event
-            </DialogTitle>
-            <DialogDescription className="text-slate-500 font-medium">
-              Update event details. Please provide a reason for these changes to notify the team.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden border-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] bg-white dark:bg-slate-950 rounded-3xl">
+          <div className="bg-gradient-to-br from-indigo-500 via-indigo-600 to-blue-600 px-6 py-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              <CalendarIcon className="w-32 h-32 transform rotate-12 translate-x-4 -translate-y-4 text-white" />
+            </div>
+            <DialogHeader className="relative z-10 text-left">
+              <DialogTitle className="text-2xl font-black text-white flex items-center gap-3">
+                <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-md border border-white/20 shadow-inner">
+                  <Settings className="h-6 w-6 text-white" />
+                </div>
+                Edit Event Details
+              </DialogTitle>
+              <DialogDescription className="text-white/80 font-medium text-sm mt-3 leading-relaxed">
+                Update event details. Please provide a reason for these changes to notify the team.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          
           <form onSubmit={(e) => {
             e.preventDefault();
             const formData = new FormData(e.currentTarget);
@@ -818,7 +932,7 @@ export function ProjectCalendarWidget() {
             
             setEvents(events.map(ev => {
               if (ev.id === eventToEdit?.id) {
-                return { ...ev, title, time: timeStr, type, date: new Date(year, month - 1, day) };
+                return { ...ev, title, time: formatTimeForDisplay(timeStr), type, date: new Date(year, month - 1, day) };
               }
               return ev;
             }));
@@ -826,49 +940,45 @@ export function ProjectCalendarWidget() {
             pushNotification('Event Edited', `"${title}" updated. Reason: ${reason}`, 'warning');
             toast.success('Event Updated', { description: `Reason: ${reason}. Employees notified.` });
             setEventToEdit(null);
-          }}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-title" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Title</Label>
-                <Input id="edit-title" name="title" defaultValue={eventToEdit?.title} required className="rounded-xl" />
+          }} className="p-6 space-y-6">
+            <div className="space-y-2.5">
+              <Label htmlFor="edit-title" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Title</Label>
+              <Input id="edit-title" name="title" defaultValue={eventToEdit?.title} required className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm text-base font-semibold" />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-5">
+              <div className="space-y-2.5 relative">
+                <Label htmlFor="edit-date" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</Label>
+                <ProjectDatePicker name="date" value={editDate} onChange={(d) => d && setEditDate(d)} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-4 font-semibold" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-date" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</Label>
-                  <div className="relative">
-                    <Input id="edit-date" name="date" type="date" defaultValue={eventToEdit ? format(eventToEdit.date, 'yyyy-MM-dd') : ''} required className="rounded-xl pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
-                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-time" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Time</Label>
-                  <Select name="time" defaultValue={eventToEdit?.time || "09:00 AM"}>
-                    <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                    <SelectContent className="rounded-xl max-h-[200px]">
-                      {Array.from({ length: 48 }).map((_, i) => {
-                        const hour24 = Math.floor(i / 2);
-                        const minute = i % 2 === 0 ? '00' : '30';
-                        const ampm = hour24 >= 12 ? 'PM' : 'AM';
-                        const hour12 = hour24 % 12 || 12;
-                        const timeStr = `${hour12.toString().padStart(2, '0')}:${minute} ${ampm}`;
-                        return <SelectItem key={timeStr} value={timeStr}>{timeStr}</SelectItem>;
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Type</Label>
-                <Input name="type" list="event-types" defaultValue={eventToEdit?.type || 'milestone'} className="rounded-xl" placeholder="e.g. Deadline, Client Sync..." />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-reason" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-orange-600">Reason for Edit (Required)</Label>
-                <Textarea id="edit-reason" name="reason" required placeholder="e.g. Rescheduled due to client request..." className="rounded-xl border-orange-200 dark:border-orange-500/30 focus-visible:ring-orange-500" />
+              <div className="space-y-2.5">
+                <Label htmlFor="edit-time" className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Time</Label>
+                <PremiumTimePicker name="time" value={editTime} onChange={setEditTime} />
               </div>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setEventToEdit(null)} className="rounded-xl font-bold">Cancel</Button>
-              <Button type="submit" className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold">Save Changes</Button>
+
+            <div className="space-y-2.5">
+              <Label className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Type</Label>
+              <div className="relative group">
+                <Input name="type" list="event-types" defaultValue={eventToEdit?.type || 'milestone'} className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm pl-12 font-semibold" placeholder="e.g. Deadline, Client Sync..." />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 pointer-events-none group-hover:scale-110 transition-transform">
+                  <Flag className="h-4 w-4 text-indigo-500" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2.5">
+              <Label htmlFor="edit-reason" className="text-[11px] font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Reason for Edit (Required)</Label>
+              <Textarea id="edit-reason" name="reason" required placeholder="e.g. Rescheduled due to client request..." className="rounded-2xl bg-slate-50 dark:bg-slate-900/50 border-indigo-200 dark:border-indigo-500/30 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 hover:bg-white dark:hover:bg-slate-900 transition-all duration-300 shadow-sm min-h-[90px] pt-4 font-medium" />
+            </div>
+
+            <DialogFooter className="pt-2 sm:justify-end gap-3">
+              <Button type="button" variant="ghost" onClick={() => setEventToEdit(null)} className="rounded-xl font-bold h-12 px-6 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
+                Cancel
+              </Button>
+              <Button type="submit" className="rounded-xl h-12 px-8 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-black shadow-[0_8px_20px_-8px_rgba(99,102,241,0.6)] hover:shadow-[0_12px_25px_-8px_rgba(99,102,241,0.8)] transition-all duration-300 hover:-translate-y-0.5 border-0">
+                Save Changes
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

@@ -170,32 +170,41 @@ export default function TeamMembers() {
       {/* Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center">
+          <h2 className="text-page-title text-slate-900 dark:text-white flex items-center gap-2">
             <Users className="mr-2 h-6 w-6 text-orange-500" />
             Team Members
+            {currentUser?.role === 'admin' && (
+              <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold border-0">
+                Organization Monitoring
+              </Badge>
+            )}
           </h2>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
             Manage interns, onboarding, assignments, and performance.
           </p>
+          {currentUser?.role === 'admin' && (
+            <p className="text-xs font-bold text-[#5B7CFF] mt-1">You are viewing organization-wide data in read-only mode.</p>
+          )}
         </div>
         
-        <div className="flex items-center gap-3">
-          <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-            <DialogTrigger asChild>
-              <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-sm font-bold h-10">
-                <Plus className="mr-2 h-4 w-4" />
-                Invite Intern
-              </Button>
-            </DialogTrigger>
+        {currentUser?.role !== 'admin' && (
+          <div className="flex items-center gap-3">
+            <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+              <DialogTrigger asChild>
+                <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-sm font-bold h-10">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Invite Intern
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
               <DialogHeader>
                 <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Invite New Intern</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleInviteSubmit} className="space-y-6 pt-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500">Manager</label>
-                    <Input required defaultValue={currentUser?.role === 'manager' ? currentUser.name : "Aakash Gupta"} className="rounded-xl" />
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">First Name</label>
+                    <Input required placeholder="E.g. Aakash" className="rounded-xl" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Last Name</label>
@@ -230,6 +239,7 @@ export default function TeamMembers() {
             </DialogContent>
           </Dialog>
         </div>
+        )}
       </div>
 
       {/* KPI Stats */}
@@ -379,34 +389,36 @@ export default function TeamMembers() {
                     </CardDescription>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-orange-100 text-orange-600 hover:bg-orange-200 hover:text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 dark:hover:bg-orange-500/30 transition-all border-0 shadow-none" onClick={(e) => {
-                    e.stopPropagation();
-                    setReassignIntern(intern);
-                    setReassignMessage(`Hi ${intern.name.split(' ')[0]}, you are being moved from ${intern.project} to a new project.`);
-                    setNewProject('');
-                  }} title="Reassign Project">
-                    <ArrowRightLeft className="h-4 w-4" />
-                  </Button>
-                  <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-200 hover:text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 dark:hover:bg-emerald-500/30 transition-all border-0 shadow-none" onClick={(e) => {
-                    e.stopPropagation();
-                    setWhatsappIntern(intern);
-                    setWhatsappMessage(`Hi ${intern.name.split(' ')[0]}, `);
-                  }} title="Send WhatsApp">
-                    <MessageCircle className="h-4 w-4" />
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white transition-all border-0 shadow-none" onClick={(e) => e.stopPropagation()}>
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                      <DropdownMenuItem className="font-medium cursor-pointer"><CheckCircle2 className="mr-2 h-4 w-4" /> Assign Task</DropdownMenuItem>
-                      <DropdownMenuItem className="font-medium cursor-pointer text-rose-600 dark:text-rose-400"><Clock className="mr-2 h-4 w-4" /> Deactivate</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                {currentUser?.role !== 'admin' && (
+                  <div className="flex items-center gap-2">
+                    <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-orange-100 text-orange-600 hover:bg-orange-200 hover:text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 dark:hover:bg-orange-500/30 transition-all border-0 shadow-none" onClick={(e) => {
+                      e.stopPropagation();
+                      setReassignIntern(intern);
+                      setReassignMessage(`Hi ${intern.name.split(' ')[0]}, you are being moved from ${intern.project} to a new project.`);
+                      setNewProject('');
+                    }} title="Reassign Project">
+                      <ArrowRightLeft className="h-4 w-4" />
+                    </Button>
+                    <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-200 hover:text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 dark:hover:bg-emerald-500/30 transition-all border-0 shadow-none" onClick={(e) => {
+                      e.stopPropagation();
+                      setWhatsappIntern(intern);
+                      setWhatsappMessage(`Hi ${intern.name.split(' ')[0]}, `);
+                    }} title="Send WhatsApp">
+                      <MessageCircle className="h-4 w-4" />
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white transition-all border-0 shadow-none" onClick={(e) => e.stopPropagation()}>
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                        <DropdownMenuItem className="font-medium cursor-pointer"><CheckCircle2 className="mr-2 h-4 w-4" /> Assign Task</DropdownMenuItem>
+                        <DropdownMenuItem className="font-medium cursor-pointer text-rose-600 dark:text-rose-400"><Clock className="mr-2 h-4 w-4" /> Deactivate</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardContent className="p-5 flex-1 flex flex-col gap-4">
@@ -480,17 +492,19 @@ export default function TeamMembers() {
                       {selectedIntern.id}
                     </Badge>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="icon" variant="outline" className="rounded-full shadow-sm">
-                      <Mail className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                    </Button>
-                    <Button size="icon" className="rounded-full shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => {
-                      setWhatsappIntern(selectedIntern);
-                      setWhatsappMessage(`Hi ${selectedIntern.name.split(' ')[0]}, `);
-                    }}>
-                      <MessageCircle className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {currentUser?.role !== 'admin' && (
+                    <div className="flex gap-2">
+                      <Button size="icon" variant="outline" className="rounded-full shadow-sm">
+                        <Mail className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                      </Button>
+                      <Button size="icon" className="rounded-full shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => {
+                        setWhatsappIntern(selectedIntern);
+                        setWhatsappMessage(`Hi ${selectedIntern.name.split(' ')[0]}, `);
+                      }}>
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 
