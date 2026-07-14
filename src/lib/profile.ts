@@ -48,6 +48,8 @@ export const getProfileData = (user: User): ProfileData => {
       if (parsed && typeof parsed === 'object') {
         if (user.role === 'manager') {
           parsed.role = 'Manager';
+        } else if (user.role === 'admin') {
+          parsed.role = 'admin';
         }
         return {
           ...createDefaultProfile(user),
@@ -81,7 +83,7 @@ const createDefaultProfile = (user: User): ProfileData => {
     phone: user.phone || '',
     employeeId: user.id || `EMP${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
     department: user.department || 'Engineering',
-    role: user.role === 'manager' ? 'Manager' : 'Frontend Developer',
+    role: user.role === 'admin' ? 'admin' : user.role === 'manager' ? 'Manager' : 'Frontend Developer',
     avatar: localStorage.getItem(`userAvatar_${user.email.toLowerCase()}`) || '',
     manager: user.role === 'manager' ? 'VP of Engineering' : 'Aakash Gupta',
     employmentType: user.role === 'manager' ? 'Employee' : 'Intern',

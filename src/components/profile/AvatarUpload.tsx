@@ -168,7 +168,7 @@ export function AvatarUpload({ avatar, name, role, onAvatarChange, email }: Avat
 
       <div className="space-y-1 text-center sm:text-left">
         <h3 className="text-xl font-bold text-slate-900 dark:text-white">{name}</h3>
-        <p className="text-sm font-semibold text-slate-500">{role}</p>
+        {role && <p className="text-sm font-semibold text-slate-500">{role}</p>}
       </div>
     </div>
   );
