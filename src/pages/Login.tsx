@@ -74,16 +74,6 @@ export default function Login({
   const validateUser = () => {
     const users = getRegisteredUsers();
     const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    
-    if (isAdminLogin && email.toLowerCase() === 'admin@hindustaan.in') {
-      return {
-        id: 'ADM001',
-        name: 'admin',
-        email: 'admin@hindustaan.in',
-        password: 'admin@123',
-        role: 'admin',
-      } as any;
-    }
 
     if (!user) {
       toast.error('Access Denied', {
@@ -92,20 +82,11 @@ export default function Login({
       return null;
     }
     
-    if (isAdminLogin) {
-      if (email.toLowerCase() !== 'admin@hindustaan.in') {
-        toast.error('Unauthorized Access', {
-          description: 'Invalid administrator credentials.',
-        });
-        return null;
-      }
-      return user || {
-        id: 'ADM001',
-        name: 'admin',
-        email: 'admin@hindustaan.in',
-        password: 'admin@123',
-        role: 'admin',
-      } as any;
+    if (isAdminLogin && user.role !== 'admin') {
+      toast.error('Unauthorized Access', {
+        description: 'Invalid administrator credentials.',
+      });
+      return null;
     } else if (!isAdminLogin && user.role !== mockRole) {
       toast.error('Incorrect Access Type', {
         description: `Your account is registered as ${user.role.charAt(0).toUpperCase() + user.role.slice(1)}.\n\nPlease switch to ${user.role.charAt(0).toUpperCase() + user.role.slice(1)} Access.`,
@@ -129,34 +110,20 @@ export default function Login({
         return;
       }
       
-      if (isAdminLogin) {
-        if (email.toLowerCase() !== 'admin@hindustaan.in' || password !== 'admin@123') {
-          toast.error('Authentication Error', { description: 'Incorrect administrator credentials.' });
-          setLoading(false);
-          return;
-        }
-        // Force the user object for admin
-        const adminUser = {
-          id: 'ADM001',
-          name: 'admin',
-          email: 'admin@hindustaan.in',
-          role: 'admin',
-          accessToken: `mock-token-${Date.now()}`
-        };
-        localStorage.setItem('hindustaan_user', JSON.stringify(adminUser));
-        toast.success('Access granted.', { description: 'Initializing workspaces...' });
-        if (onMockLogin) {
-          onMockLogin('admin', email);
-        } else {
-          window.location.reload();
-        }
+      const user = loginUser(email, password, rememberMe);
+      if (!user) {
+        toast.error('Authentication Error', { description: 'Incorrect password or email.' });
+        setLoading(false);
         return;
       }
 
-      const user = loginUser(email, password, rememberMe);
-      if (!user) {
-        toast.error('Authentication Error', { description: 'Incorrect password.' });
-        setLoading(false);
+      if (isAdminLogin) {
+        toast.success('Access granted.', { description: 'Initializing workspaces...' });
+        if (onMockLogin) {
+          onMockLogin('admin', user.email);
+        } else {
+          window.location.reload();
+        }
         return;
       }
       
