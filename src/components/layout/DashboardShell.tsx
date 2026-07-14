@@ -336,6 +336,18 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
               sideOffset={12} 
               className="w-64 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-700/50 shadow-2xl rounded-[18px] p-2 animate-in fade-in zoom-in-95 duration-200"
             >
+              {userRole !== 'admin' && onNavigate && (
+                <DropdownMenuItem 
+                  onClick={() => {
+                    onNavigate('Profile');
+                    if (isMobile) setSidebarOpen(false);
+                  }}
+                  className="cursor-pointer text-slate-700 dark:text-slate-200 focus:bg-slate-50 dark:focus:bg-slate-800/50 text-sm font-medium rounded-xl flex items-center justify-between py-2.5 transition-colors mb-1"
+                >
+                  My Profile
+                  <User className="h-4 w-4 ml-2 text-slate-400" />
+                </DropdownMenuItem>
+              )}
               {onSignOut && (
                 <DropdownMenuItem 
                   onClick={onSignOut}
