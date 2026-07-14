@@ -249,8 +249,18 @@ export default function AnnouncementCenterModule() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      
+    <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+      {/* Header */}
+      <div>
+        <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+          <Megaphone className="h-8 w-8 text-indigo-500" />
+          Announcement Center
+        </h2>
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5 max-w-3xl">
+          Manage organization-wide announcements and broadcasts.
+        </p>
+      </div>
+
       {/* Analytics header cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
@@ -316,7 +326,7 @@ export default function AnnouncementCenterModule() {
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-start sm:justify-end">
             {/* Audience Filters */}
             <Select value={audienceFilter} onValueChange={setAudienceFilter}>
               <SelectTrigger className="w-[140px] h-10 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800">
@@ -394,7 +404,7 @@ export default function AnnouncementCenterModule() {
                   <div className="flex items-center gap-2 flex-wrap mb-2">
                     {priorityBadge}
                     {statusBadge}
-                    <Badge variant="outline" className="border-slate-200 dark:border-slate-800 text-[10px]">{ann.targetAudience}</Badge>
+                    <Badge variant="outline" className="border-slate-200 dark:border-slate-800 text-[10px] text-slate-600 dark:text-slate-400">{ann.targetAudience}</Badge>
                   </div>
                   <CardTitle className="text-base font-bold text-slate-900 dark:text-white leading-snug">{ann.title}</CardTitle>
                   <CardDescription className="flex items-center gap-2 text-xs font-semibold text-slate-400 mt-1">
@@ -523,8 +533,7 @@ export default function AnnouncementCenterModule() {
                 id="ann-textarea"
                 value={formDesc}
                 onChange={(e) => setFormDesc(e.target.value)}
-                placeholder="Write your announcement content here. Use HTML like <strong>bold</strong> or <em>italic</em>, or use the editor toolbar."
-                className="w-full h-32 p-3 text-sm rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/55 transition-all font-medium"
+                className="w-full h-32 p-3 text-sm rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/55 transition-all font-medium"
               />
             </div>
 

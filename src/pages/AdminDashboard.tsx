@@ -4,7 +4,7 @@ import {
   Plus, ExternalLink, Search, Edit2, ShieldAlert, Power, 
   Trash2, HelpCircle, CheckCircle2, X, Filter, UserPlus, Briefcase, Mail, Phone, ChevronRight,
   Calendar, Clock, MapPin, Laptop, Lock, Shield, MessageSquare, PlusCircle, Send, Globe, Award, ClipboardList, CheckSquare, FolderKanban,
-  User as UserIcon, CreditCard, Settings
+  User as UserIcon, CreditCard, Settings, Download
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -1329,83 +1329,48 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   </CardContent>
                 </Card>
 
-                {/* Recent Workspace Activity */}
-                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
-                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-                    <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Recent Workspace Activity</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="space-y-6">
-                      {activities.slice(0, 3).map((activity: any, i: number) => {
-                        let Icon = Activity;
-                        let color = 'text-[#5B7CFF]';
-                        let bg = 'bg-[#5B7CFF]/10';
 
-                        if (activity.type === 'project' || activity.type === 'assign') {
-                          Icon = ShieldCheck;
-                          color = 'text-emerald-500';
-                          bg = 'bg-emerald-500/10';
-                        } else if (activity.type === 'task' || activity.type === 'log') {
-                          Icon = Key;
-                          color = 'text-orange-500';
-                        }
-
-                        return (
-                          <div key={i} className="flex gap-4">
-                            <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${bg}`}>
-                              <Icon className={`h-5 w-5 ${color}`} />
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                                {activity.user} {activity.action} <span className="font-extrabold text-orange-600 dark:text-orange-400">{activity.target}</span>
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
 
-              <div className="space-y-6 col-span-1">
+              <div className="h-full col-span-1">
                 {/* Workspace Configuration Status */}
-                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm h-full flex flex-col">
                   <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
                     <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Workspace Status</CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6 space-y-5">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-                          <Server className="h-4 w-4 text-[#5B7CFF]" /> Storage Usage
+                  <CardContent className="p-6 flex-1 flex flex-col justify-between">
+                    <div className="space-y-8">
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                            <Server className="h-4 w-4 text-[#5B7CFF]" /> Storage Usage
+                          </div>
+                          <span className="text-xs font-bold text-slate-500">45%</span>
                         </div>
-                        <span className="text-xs font-bold text-slate-500">45%</span>
+                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] w-[45%]" />
+                        </div>
                       </div>
-                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] w-[45%]" />
-                      </div>
-                    </div>
 
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-                          <Users className="h-4 w-4 text-emerald-500" /> Seats Used
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                            <Users className="h-4 w-4 text-emerald-500" /> Seats Used
+                          </div>
+                          <span className="text-xs font-bold text-slate-500">136 / 150</span>
                         </div>
-                        <span className="text-xs font-bold text-slate-500">136 / 150</span>
-                      </div>
-                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 w-[90%]" />
+                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-emerald-500 w-[90%]" />
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/60">
+                    <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60 space-y-4">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-slate-550 dark:text-slate-400 font-medium">SSO Configuration</span>
                         <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">Active</Badge>
                       </div>
-                      <div className="flex items-center justify-between text-sm mt-3">
+                      <div className="flex items-center justify-between text-sm">
                         <span className="text-slate-550 dark:text-slate-400 font-medium">2FA Enforcement</span>
                         <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">Enabled</Badge>
                       </div>
@@ -1413,33 +1378,47 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   </CardContent>
                 </Card>
 
-                {/* Quick Actions */}
-                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
-                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-                    <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Quick Actions</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 space-y-2">
-                    {quickActions.map((action, idx) => {
-                      const IconComponent = action.icon;
-                      return (
-                        <Button 
-                          key={idx} 
-                          onClick={action.action}
-                          variant="ghost" 
-                          className="w-full justify-between h-12 text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent hover:bg-transparent hover:text-orange-500 dark:hover:text-orange-400 transition-colors group"
-                        >
-                          <span className="flex items-center gap-2">
-                            <IconComponent className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors" />
-                            {action.title}
-                          </span>
-                          <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors" />
-                        </Button>
-                      );
-                    })}
-                  </CardContent>
-                </Card>
               </div>
             </div>
+
+            {/* Recent Workspace Activity */}
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm animate-in fade-in duration-300">
+              <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+                <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Recent Workspace Activity</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {activities.slice(0, 6).map((activity: any, i: number) => {
+                    let Icon = Activity;
+                    let color = 'text-[#5B7CFF]';
+                    let bg = 'bg-[#5B7CFF]/10';
+
+                    if (activity.type === 'project' || activity.type === 'assign') {
+                      Icon = ShieldCheck;
+                      color = 'text-emerald-500';
+                      bg = 'bg-emerald-500/10';
+                    } else if (activity.type === 'task' || activity.type === 'log') {
+                      Icon = Key;
+                      color = 'text-orange-500';
+                    }
+
+                    return (
+                      <div key={i} className="flex gap-4 p-4 rounded-xl border border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${bg}`}>
+                          <Icon className={`h-5 w-5 ${color}`} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                            {activity.user} {activity.action} <span className="font-extrabold text-orange-600 dark:text-orange-400">{activity.target}</span>
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ) : (
           // CRUD Registry View
@@ -1463,7 +1442,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
                 {/* Filter Dropdowns */}
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-1.5 rounded-xl">
+                  <div className="flex flex-wrap items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-1.5 rounded-xl w-full sm:w-auto">
                     <Filter className="h-3.5 w-3.5 text-slate-400 ml-1.5" />
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1.5">Filters:</span>
                     

@@ -31,7 +31,7 @@ interface WorkspaceContextType {
 }
 
 const DEFAULT_CONFIG: WorkspaceConfig = {
-  workspaceName: 'Hindustaan OS',
+  workspaceName: 'Project OS',
   workspaceLogo: '',
   defaultTimezone: 'Asia/Kolkata',
   language: 'English',
@@ -63,7 +63,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       const saved = localStorage.getItem('workspace_config_v2');
       const legacy = localStorage.getItem('workspace_auth_config');
       const parsed = saved ? JSON.parse(saved) : (legacy ? JSON.parse(legacy) : {});
-      return { ...DEFAULT_CONFIG, ...parsed };
+      const merged = { ...DEFAULT_CONFIG, ...parsed };
+      if (merged.workspaceName === 'Hindustaan OS') {
+        merged.workspaceName = 'Project OS';
+      }
+      return merged;
     } catch (e) {
       console.error('Failed to parse workspace config:', e);
       return DEFAULT_CONFIG;

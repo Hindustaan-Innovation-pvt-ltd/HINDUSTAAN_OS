@@ -22,6 +22,9 @@ import ProfileEdit from './pages/ProfileEdit';
 import HelpSupport from '@/pages/HelpSupport';
 import LeaveManagement from './pages/LeaveManagement';
 import WorkspaceSettings from './pages/workspace/WorkspaceSettings';
+import EmailLogsModule from '@/components/workspace-settings/EmailLogsModule';
+import AnnouncementCenterModule from '@/components/workspace-settings/AnnouncementCenterModule';
+import SystemNotificationsModule from '@/components/workspace-settings/SystemNotificationsModule';
 import SecuritySettings from './pages/SecuritySettings';
 import Subscriptions from './pages/Subscriptions';
 // Supabase client removed for mock auth implementation
@@ -401,8 +404,11 @@ function App() {
                   {currentView === 'Contribution Scores' || currentView === 'My Performance' ? <ContributionScores session={session} /> : null}
                   {currentView === 'Leave Management' && <LeaveManagement session={session} />}
                   {currentView === 'Help & Support' && <HelpSupport session={session} />}
-                  {currentView === 'Workspace Settings' && <WorkspaceSettings onNavigate={handleNavigate} />}
-                  {currentView === 'Security Settings' && <SecuritySettings session={session} />}
+                  {(currentView === 'Workspace Settings - General' || currentView === 'Workspace Settings - Projects' || currentView === 'Workspace Settings - Appearance') && <WorkspaceSettings onNavigate={handleNavigate} currentView={currentView} />}
+                  {currentView === 'Workspace Settings - Security & Access' && <SecuritySettings session={session} />}
+                  {currentView === 'Email Logs' && <EmailLogsModule />}
+                  {currentView === 'Announcement Center' && <AnnouncementCenterModule />}
+                  {currentView === 'System Notifications' && <SystemNotificationsModule />}
 
                   {currentView === 'Subscription Management' && (
                     <Subscriptions session={session} onBack={() => handleNavigate('Dashboard')} />
@@ -413,8 +419,9 @@ function App() {
                     'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
                     'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Edit Profile', 'Team Members',
                     'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
-                    'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support', 'Security Settings',
-                    'Workspace Settings', 'Subscription Management', 'Employees', 'Managers', 'Roles & Permissions'
+                    'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support', 'Workspace Settings - Security & Access',
+                    'Workspace Settings - General', 'Workspace Settings - Projects', 'Workspace Settings - Appearance', 'Subscription Management', 'Employees', 'Managers', 'Roles & Permissions',
+                    'Email Logs', 'Announcement Center', 'System Notifications'
                   ].includes(currentView) && (
                       <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
                         <p>Module "{currentView}" is under construction.</p>

@@ -231,8 +231,18 @@ export default function EmailLogsModule() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      
+    <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+      {/* Header */}
+      <div>
+        <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+          <Mail className="h-8 w-8 text-indigo-500" />
+          Email Logs
+        </h2>
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5 max-w-3xl">
+          View email history and delivery records.
+        </p>
+      </div>
+
       {/* Analytics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
@@ -328,7 +338,7 @@ export default function EmailLogsModule() {
             </span>
 
             {/* Status Filter buttons */}
-            <div className="flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-900/50 p-1">
+            <div className="flex flex-wrap items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-900/50 p-1">
               {['all', 'success', 'failed', 'pending'].map((status) => (
                 <button
                   key={status}
@@ -336,7 +346,7 @@ export default function EmailLogsModule() {
                   className={`px-3 py-1 text-xs font-bold rounded-md capitalize transition-all ${
                     statusFilter === status 
                       ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' 
-                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-300'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-white hover:shadow-sm dark:hover:bg-slate-800/40 dark:hover:text-white'
                   }`}
                 >
                   {status}

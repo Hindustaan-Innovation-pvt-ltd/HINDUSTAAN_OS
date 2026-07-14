@@ -33,9 +33,8 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
                   type="radio" 
                   name="themeMode" 
                   value="light" 
-                  checked={themeMode === 'light'}
+                  checked={data.themeMode === 'light'}
                   onChange={() => {
-                    setThemeMode('light');
                     updateField('themeMode', 'light');
                   }}
                   className="sr-only peer" 
@@ -60,9 +59,8 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
                   type="radio" 
                   name="themeMode" 
                   value="dark"
-                  checked={themeMode === 'dark'}
+                  checked={data.themeMode === 'dark'}
                   onChange={() => {
-                    setThemeMode('dark');
                     updateField('themeMode', 'dark');
                   }}
                   className="sr-only peer" 
@@ -87,9 +85,8 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
                   type="radio" 
                   name="themeMode" 
                   value="system"
-                  checked={themeMode === 'system'}
+                  checked={data.themeMode === 'system'}
                   onChange={() => {
-                    setThemeMode('system');
                     updateField('themeMode', 'system');
                   }}
                   className="sr-only peer" 
@@ -136,7 +133,6 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
                 style={{ backgroundColor: color.hex }}
                 onClick={() => {
                   updateField('accentColor', color.id);
-                  setAccentColor(color.id as any);
                 }}
                 aria-label={`Select accent color ${color.id}`}
               >

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Shield, Key, Fingerprint, Lock, Unlock, Smartphone, MapPin, Search, AlertTriangle, LogOut, CheckCircle2, MonitorSmartphone, Clock, Activity, Users, Settings2, Globe, Building2 } from 'lucide-react';
+import { Shield, Key, Fingerprint, Lock, Unlock, Smartphone, MapPin, Search, AlertTriangle, LogOut, CheckCircle2, MonitorSmartphone, Clock, Activity, Users, Settings2, Globe, Building2, Download, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
@@ -82,11 +82,11 @@ export default function SecuritySettings({ session }: { session?: any }) {
       {/* Header */}
       <div>
         <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-          <Shield className="h-8 w-8 text-indigo-500" />
-          Security Settings
+          <Settings className="h-8 w-8 text-indigo-500" />
+          Workspace Settings
         </h2>
         <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5 max-w-3xl">
-          Configure organization-wide security policies, access controls, monitoring, and authentication rules.
+          Manage workspace configuration and organizational preferences.
         </p>
       </div>
 
@@ -489,12 +489,17 @@ export default function SecuritySettings({ session }: { session?: any }) {
           {/* 6. Security Audit Logs */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex-1">
             <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/20">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Search className="h-5 w-5 text-indigo-500" />
                   <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Audit Logs</CardTitle>
                 </div>
-                <Button variant="ghost" size="sm" className="h-8 text-xs font-bold">View All</Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="h-8 text-xs font-bold rounded-xl border-slate-200 dark:border-slate-800 flex items-center gap-1.5" onClick={() => toast.success('Audit logs exported successfully.')}>
+                    <Download className="h-3.5 w-3.5" /> Export CSV
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-8 text-xs font-bold" onClick={() => toast.info('Loading full audit history...')}>View All</Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-5">
