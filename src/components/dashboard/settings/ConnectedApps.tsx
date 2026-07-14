@@ -125,7 +125,7 @@ export function ConnectedApps() {
                   <span className="text-xs font-semibold text-slate-500">Current Workspace</span>
                   <span className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-[#A259FF]" />
-                    Hindustaan OS Design Team
+                    Project OS Design Team
                   </span>
                 </div>
               </div>
