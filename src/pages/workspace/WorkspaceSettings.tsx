@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Settings, ArrowLeft, Sliders, FolderKanban, Shield, Bell, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkspace } from '@/context/WorkspaceContext';
-
+import { useTheme } from '@/context/ThemeContext';
 import GeneralTab from '@/components/workspace-settings/GeneralTab';
 import ProjectsTab from '@/components/workspace-settings/ProjectsTab';
 import SecurityTab from '@/components/workspace-settings/SecurityTab';
@@ -24,6 +24,7 @@ export default function WorkspaceSettings({ onNavigate }: { onNavigate?: (view: 
   const [isSaving, setIsSaving] = useState(false);
   
   const { config, updateConfig } = useWorkspace();
+  const { setThemeMode, setAccentColor } = useTheme();
   const [formData, setFormData] = useState(config);
 
   const hasUnsavedChanges = JSON.stringify(formData) !== JSON.stringify(config);
@@ -45,6 +46,14 @@ export default function WorkspaceSettings({ onNavigate }: { onNavigate?: (view: 
     setTimeout(() => {
       setIsSaving(false);
       updateConfig(formData);
+      
+      // Apply theme changes globally if they were modified
+      if (formData.themeMode) {
+        setThemeMode(formData.themeMode as any);
+      }
+      if (formData.accentColor) {
+        setAccentColor(formData.accentColor as any);
+      }
       
       toast.success('Workspace settings saved successfully');
     }, 1000);
@@ -82,6 +91,17 @@ export default function WorkspaceSettings({ onNavigate }: { onNavigate?: (view: 
         <div className="flex items-center gap-3">
           {hasUnsavedChanges && (
             <span className="text-xs font-medium text-amber-600 dark:text-amber-500 hidden sm:inline-block bg-amber-100 dark:bg-amber-500/10 px-2 py-1 rounded-md">Unsaved changes</span>
+          )}
+          {hasUnsavedChanges && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setFormData(config)}
+              disabled={isSaving}
+              className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+            >
+              Discard
+            </Button>
           )}
           <Button 
             size="sm"
