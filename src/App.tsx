@@ -31,6 +31,7 @@ import DeliveryChannelsModule from '@/components/workspace-settings/DeliveryChan
 import SecuritySettings from './pages/SecuritySettings';
 import Subscriptions from './pages/Subscriptions';
 // Supabase client removed for mock auth implementation
+import { logoutUser } from './lib/auth';
 
 import { ThemeProvider } from '@/context/ThemeContext';
 import { ProjectProvider } from '@/context/ProjectContext';
@@ -172,7 +173,7 @@ function App() {
   return (
     <ThemeProvider>
       <NotificationProvider>
-        <ProjectProvider>
+        <ProjectProvider key={session?.user?.email || 'guest'}>
           <UserProvider key={session?.user?.email || 'guest'}>
             <TooltipProvider>
               {!session ? (
@@ -230,7 +231,7 @@ function App() {
                   role={session.user?.user_metadata?.role || 'employee'}
                   isMinimized={isSidebarMinimized}
                   onMinimizeChange={setIsSidebarMinimized}
-                  onSignOut={() => {
+                  onSignOut={async () => {
                     console.log('[onSignOut] Logout initiated');
                     try {
                       // 1. Calculate and save work log for current session before clearing
@@ -366,6 +367,11 @@ function App() {
                       console.error('[onSignOut] Fatal error during work log recording:', err);
                     }
 
+                    try {
+                      await logoutUser();
+                    } catch (e) {
+                      console.error('Logout failed:', e);
+                    }
                     localStorage.removeItem('hindustaan_user');
                     sessionStorage.removeItem('hindustaan_user');
                     window.history.pushState({}, '', '/');

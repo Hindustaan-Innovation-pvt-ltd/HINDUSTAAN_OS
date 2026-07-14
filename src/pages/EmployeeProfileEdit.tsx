@@ -4,19 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, updateProfileOnBackend } from '@/lib/auth';
 import { getProfileData, saveProfileData, type ProfileData } from '@/lib/profile';
 import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext';
 import { 
   User, Mail, Phone, Shield, Briefcase, Calendar, MapPin, 
-  Globe, Building, Clock, Camera, ArrowLeft
+  Globe, Building, Clock, Camera, ArrowLeft, Loader2
 } from 'lucide-react';
 import { AvatarUpload } from '@/components/profile/AvatarUpload';
 
 export default function EmployeeProfileEdit({ session, onNavigate }: { session?: any, onNavigate: (view: string) => void }) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const { updateUser } = useUser();
+  const [isSaving, setIsSaving] = useState(false);
   
   // Form States
   const [name, setName] = useState('');
@@ -50,9 +51,7 @@ export default function EmployeeProfileEdit({ session, onNavigate }: { session?:
     }
   }, []);
 
-
-
-  const handleSave = () => {
+  const handleSave = async () => {
     const user = getCurrentUser();
     if (!user || !profile) {
       toast.error('Authentication Error', { description: 'Please log in again.' });
@@ -84,7 +83,7 @@ export default function EmployeeProfileEdit({ session, onNavigate }: { session?:
       avatar: avatar
     };
 
-    // Save profile data
+    // Save profile data locally (skills, emergencyContact, bios)
     saveProfileData(user.email, updatedProfile);
 
     // Save active user session details update
@@ -97,9 +96,9 @@ export default function EmployeeProfileEdit({ session, onNavigate }: { session?:
     localStorage.setItem('hindustaan_user', JSON.stringify(sessionUser));
 
     // Update global avatar in localStorage and dispatch event for header/sidebar updates
-    if (avatar) {
+    if (avatar && !avatar.startsWith('http')) {
       localStorage.setItem(`userAvatar_${user.email.toLowerCase()}`, avatar);
-    } else {
+    } else if (!avatar) {
       localStorage.removeItem(`userAvatar_${user.email.toLowerCase()}`);
     }
     window.dispatchEvent(new Event('avatar-updated'));
@@ -111,7 +110,23 @@ export default function EmployeeProfileEdit({ session, onNavigate }: { session?:
       avatar: avatar || null
     });
 
-    toast.success('Profile Updated Successfully', { description: 'Your profile changes have been persisted.' });
+    // Save to backend DB
+    if (user.id) {
+      setIsSaving(true);
+      try {
+        await updateProfileOnBackend(user.id, {
+          name: name.trim(),
+          department: department || undefined,
+        });
+        toast.success('Profile Saved', { description: 'Your changes have been synced to the server.' });
+      } catch (err: any) {
+        toast.warning('Saved locally', { description: err.message || 'Could not sync to server.' });
+      } finally {
+        setIsSaving(false);
+      }
+    } else {
+      toast.success('Profile Updated Successfully');
+    }
     
     // Navigate back to view profile
     onNavigate('My Profile');
@@ -338,10 +353,15 @@ export default function EmployeeProfileEdit({ session, onNavigate }: { session?:
             </Button>
             <Button 
               type="button"
+              disabled={isSaving}
               onClick={handleSave} 
-              className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 shadow-sm shadow-orange-500/10"
+              className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 shadow-sm shadow-orange-500/10 flex items-center gap-2"
             >
-              Save Changes
+              {isSaving ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </CardFooter>
         </Card>

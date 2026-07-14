@@ -7,7 +7,6 @@ interface UserState {
   avatar: string | null;
   department: string;
   email: string;
-  id?: string;
 }
 
 interface UserContextType {
@@ -43,8 +42,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       role: storedRole || defaultRole,
       avatar: storedAvatar,
       department: storedDepartment || authUser?.department || 'Engineering',
-      email: defaultEmail,
-      id: authUser?.id
+      email: defaultEmail
     });
 
     const handleAvatarUpdate = () => {

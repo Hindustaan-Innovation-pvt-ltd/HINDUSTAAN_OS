@@ -41,30 +41,37 @@ const PROFILE_KEY_PREFIX = 'hindustaan_profile_';
 export const getProfileData = (user: User): ProfileData => {
   const key = PROFILE_KEY_PREFIX + user.email.toLowerCase();
   const saved = localStorage.getItem(key);
+  const localData: Partial<ProfileData> = {};
+
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      // Safeguard in case fields are missing
       if (parsed && typeof parsed === 'object') {
-        if (user.role === 'manager') {
-          parsed.role = 'Manager';
-        } else if (user.role === 'admin') {
-          parsed.role = 'admin';
-        }
-        return {
-          ...createDefaultProfile(user),
-          ...parsed
-        };
+        Object.assign(localData, parsed);
       }
     } catch (e) {
       console.error('Error parsing profile data, resetting to default', e);
     }
   }
 
-  // Create and save default profile
   const defaultProfile = createDefaultProfile(user);
-  localStorage.setItem(key, JSON.stringify(defaultProfile));
-  return defaultProfile;
+
+  // Backend-sourced fields override the default — use what came from login session
+  const merged: ProfileData = {
+    ...defaultProfile,
+    ...localData,
+    // Always trust backend-sourced fields from the stored session
+    name: user.name || defaultProfile.name,
+    email: user.email,
+    department: user.department || localData.department || defaultProfile.department,
+    employeeId: user.empId || localData.employeeId || defaultProfile.employeeId,
+    role: user.role === 'manager' ? 'Manager' : user.role === 'admin' ? 'Administrator' : (localData.role || defaultProfile.role),
+    // avatarUrl from backend takes priority over locally-stored base64
+    avatar: user.avatarUrl || localData.avatar || defaultProfile.avatar,
+    phone: user.phone || localData.phone || defaultProfile.phone,
+  };
+
+  return merged;
 };
 
 export const saveProfileData = (email: string, data: ProfileData) => {
@@ -83,7 +90,7 @@ const createDefaultProfile = (user: User): ProfileData => {
     phone: user.phone || '',
     employeeId: user.id || `EMP${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
     department: user.department || 'Engineering',
-    role: user.role === 'admin' ? 'admin' : user.role === 'manager' ? 'Manager' : 'Frontend Developer',
+    role: user.role === 'manager' ? 'Manager' : 'Frontend Developer',
     avatar: localStorage.getItem(`userAvatar_${user.email.toLowerCase()}`) || '',
     manager: user.role === 'manager' ? 'VP of Engineering' : 'Aakash Gupta',
     employmentType: user.role === 'manager' ? 'Employee' : 'Intern',

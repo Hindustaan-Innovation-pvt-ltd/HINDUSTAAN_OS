@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { 
   Bell, Check, Trash2, Settings, ExternalLink, FileText, Clock, 
-  UserPlus, Calendar, Target, AlertTriangle, Video, CheckSquare, ShieldAlert, X
+  UserPlus, Calendar, Target, AlertTriangle, Video, CheckSquare, ShieldAlert 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -28,8 +27,6 @@ export function NotificationCenter() {
   const [activeTab, setActiveTab] = useState('All');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
-  const [activeCommentId, setActiveCommentId] = useState<number | null>(null);
-  const [commentText, setCommentText] = useState('');
 
   const handleApproveExtension = (notification: any) => {
     const { taskId, days, taskTitle, employeeName } = notification.metadata || {};
@@ -169,113 +166,6 @@ export function NotificationCenter() {
     toast.info('Extension Rejected', {
       description: `Rejection sent for "${taskTitle}".`
     });
-  };
-
-  const handleApproveLeave = (notification: any, actionType: 'approve_leave' | 'reject_leave') => {
-    const requestId = notification.metadata?.requestId || 1; // Default to 1 if not provided for mock
-    
-    // Update leave request status
-    const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_data') || '[]');
-    let employeeNotifReq: any = null;
-    const updatedLeaves = allLeaves.map((l: any) => {
-      if (l.id === requestId) {
-        employeeNotifReq = l;
-        return { ...l, status: actionType === 'approve_leave' ? 'Approved' : 'Rejected', hrNotified: true, processedAt: Date.now() };
-      }
-      return l;
-    });
-    localStorage.setItem('hindustaan_leave_data', JSON.stringify(updatedLeaves));
-    window.dispatchEvent(new Event('leave-data-updated'));
-
-    if (employeeNotifReq) {
-      const savedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
-      let empNotifs = savedEmpNotifs && savedEmpNotifs !== 'null' ? JSON.parse(savedEmpNotifs) : [];
-      const newEmpNotification = {
-        id: Date.now(),
-        category: 'Leave Management',
-        icon: actionType === 'approve_leave' ? '✅' : '❌',
-        title: actionType === 'approve_leave' ? 'Leave Approved' : 'Leave Rejected',
-        message: `Manager ${actionType === 'approve_leave' ? 'approved' : 'rejected'} your leave request for ${employeeNotifReq.start}`,
-        time: 'Just now',
-        unread: true,
-        group: 'Today',
-        metadata: {
-          type: 'leave_status_update',
-          date: employeeNotifReq.start,
-          employeeName: employeeNotifReq.employee,
-          requestId: employeeNotifReq.id
-        }
-      };
-      localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifs]));
-      window.dispatchEvent(new Event('employee-notifications-updated'));
-    }
-
-    // Update notification message and clear actions
-    setNotifications(prev => prev.map(n => {
-      if (n.id === notification.id) {
-        return {
-          ...n,
-          unread: false,
-          message: `${actionType === 'approve_leave' ? 'Approved' : 'Rejected'}: ${notification.message}`,
-          actions: undefined
-        };
-      }
-      return n;
-    }));
-
-    toast.success(`Leave Request ${actionType === 'approve_leave' ? 'Approved' : 'Rejected'}`);
-  };
-
-  const submitCommentLeave = (notification: any) => {
-    if (!commentText.trim()) return;
-    const requestId = notification.metadata?.requestId || 1;
-    
-    const existing = JSON.parse(localStorage.getItem('hindustaan_leave_comments') || '[]');
-    existing.push({
-      id: Date.now().toString(),
-      leaveId: requestId,
-      managerId: 'manager-1',
-      managerName: "Manager",
-      comment: commentText,
-      edited: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
-    localStorage.setItem('hindustaan_leave_comments', JSON.stringify(existing));
-
-    const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_requests') || '[]');
-    const req = allLeaves.find((l: any) => l.id === requestId);
-    if (req) {
-      const savedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
-      let empNotifs = savedEmpNotifs && savedEmpNotifs !== 'null' ? JSON.parse(savedEmpNotifs) : [];
-      const newEmpNotification = {
-        id: Date.now(),
-        category: 'Leave Management',
-        icon: '💬',
-        title: 'Manager Commented',
-        message: `💬 Manager commented:\n"${commentText}"`,
-        time: 'Just now',
-        unread: true,
-        group: 'Today',
-        metadata: {
-          type: 'leave_commented',
-          date: req.start,
-          employeeName: req.employee,
-          requestId: req.id
-        }
-      };
-      localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifs]));
-      window.dispatchEvent(new Event('employee-notifications-updated'));
-    }
-    toast.success("Comment added successfully");
-    markAsRead(notification.id);
-    setActiveCommentId(null);
-    setCommentText('');
-  };
-
-  const handleCommentLeave = (notification: any) => {
-    setActiveCommentId(notification.id);
-    setCommentText('');
   };
 
   const MOCK_TASK = {
@@ -453,60 +343,36 @@ export function NotificationCenter() {
                             )}
 
                             {notification.actions && (
-                              activeCommentId === notification.id ? (
-                                <div className="mt-3 flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                                  <Input 
-                                    value={commentText}
-                                    onChange={(e) => setCommentText(e.target.value)}
-                                    placeholder="Type your comment..."
-                                    style={{ fontSize: '11px' }}
-                                    className="h-8 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 px-3 py-0 focus-visible:ring-1 focus-visible:ring-orange-500"
-                                    autoFocus
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') { e.preventDefault(); submitCommentLeave(notification); }
-                                    }}
-                                  />
-                                  <Button size="sm" onClick={() => submitCommentLeave(notification)} className="h-8 px-3 bg-orange-600 hover:bg-orange-700 text-xs font-bold text-white shrink-0">Send</Button>
-                                  <Button size="sm" variant="ghost" onClick={() => { setActiveCommentId(null); setCommentText(''); }} className="h-8 px-2 text-slate-500 hover:text-slate-700 shrink-0"><X className="h-4 w-4" /></Button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2 mt-3">
-                                  {notification.actions.map((action: any, i: number) => (
-                                    <Button 
-                                      key={i}
-                                      variant={action.primary ? "default" : "outline"}
-                                      size="sm"
-                                      className={cn(
-                                        "h-7 text-xs font-bold rounded-lg px-3",
-                                        action.primary ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200" : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
-                                      )}
-                                      onClick={(e) => { 
-                                        e.stopPropagation(); 
-                                        if (action.actionType === 'approve_extension') {
-                                          handleApproveExtension(notification);
-                                        } else if (action.actionType === 'reject_extension') {
-                                          handleRejectExtension(notification);
-                                        } else if (action.actionType === 'approve_leave' || (action.label === 'Approve' && notification.title === 'Leave Request')) {
-                                          handleApproveLeave(notification, 'approve_leave');
-                                        } else if (action.actionType === 'reject_leave' || (action.label === 'Reject' && notification.title === 'Leave Request')) {
-                                          handleApproveLeave(notification, 'reject_leave');
-                                        } else if (action.actionType === 'comment_leave' || (action.label === 'Comment' && notification.title === 'Leave Request')) {
-                                          handleCommentLeave(notification);
+                              <div className="flex items-center gap-2 mt-3">
+                                {notification.actions.map((action: any, i: number) => (
+                                  <Button 
+                                    key={i}
+                                    variant={action.primary ? "default" : "outline"}
+                                    size="sm"
+                                    className={cn(
+                                      "h-7 text-xs font-bold rounded-lg px-3",
+                                      action.primary ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200" : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
+                                    )}
+                                    onClick={(e) => { 
+                                      e.stopPropagation(); 
+                                      if (action.actionType === 'approve_extension') {
+                                        handleApproveExtension(notification);
+                                      } else if (action.actionType === 'reject_extension') {
+                                        handleRejectExtension(notification);
+                                      } else {
+                                        if (action.label === 'View Task') {
+                                          setSelectedTask(MOCK_TASK);
                                         } else {
-                                          if (action.label === 'View Task') {
-                                            setSelectedTask(MOCK_TASK);
-                                          } else {
-                                            toast.success(`Action "${action.label}" executed successfully!`);
-                                          }
-                                          markAsRead(notification.id); 
+                                          toast.success(`Action "${action.label}" executed successfully!`);
                                         }
-                                      }}
-                                    >
-                                      {action.label}
-                                    </Button>
-                                  ))}
-                                </div>
-                              )
+                                        markAsRead(notification.id); 
+                                      }
+                                    }}
+                                  >
+                                    {action.label}
+                                  </Button>
+                                ))}
+                              </div>
                             )}
                           </div>
                         </div>

@@ -43,7 +43,7 @@ export default function HelpSupport({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
-          <h2 className="text-page-title tracking-tight text-[#0F172A] dark:text-white flex items-center gap-2">
+          <h2 className="text-2xl font-bold tracking-tight text-[#0F172A] dark:text-white flex items-center gap-2">
             <LifeBuoy className="h-6 w-6 text-indigo-500" />
             Help & Support
           </h2>

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type ThemeMode = 'light' | 'dark' | 'system';
-type AccentColor = 'orange' | 'blue' | 'emerald' | 'rose' | 'purple' | 'cosmic';
+type AccentColor = 'orange' | 'blue' | 'emerald' | 'rose' | 'purple';
 
 interface ThemeContextType {
   theme: 'light' | 'dark'; // Computed actual theme
@@ -18,32 +18,19 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const getUserKey = () => {
-  try {
-    const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
-    if (userStr) {
-      return JSON.parse(userStr).email || 'guest';
-    }
-  } catch (e) {}
-  return 'guest';
-};
-
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const userKey = getUserKey();
-
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
-    const val = localStorage.getItem(`themeMode_${userKey}`) as ThemeMode;
-    return (val === 'system' ? 'dark' : val) || 'dark';
+    return (localStorage.getItem('themeMode') as ThemeMode) || 'dark';
   });
 
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
   const [accentColor, setAccentColor] = useState<AccentColor>(() => {
-    return (localStorage.getItem(`accentColor_${userKey}`) as AccentColor) || 'cosmic';
+    return (localStorage.getItem('accentColor') as AccentColor) || 'orange';
   });
 
   const [compactMode, setCompactMode] = useState<boolean>(() => {
-    return localStorage.getItem(`compactMode_${userKey}`) === 'true';
+    return localStorage.getItem('compactMode') === 'true';
   });
 
   // Calculate actual theme based on mode and system preference
@@ -73,13 +60,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else {
       root.classList.remove('dark');
     }
-    localStorage.setItem(`themeMode_${userKey}`, themeMode);
-  }, [theme, themeMode, userKey]);
+    localStorage.setItem('themeMode', themeMode);
+  }, [theme, themeMode]);
 
   // Apply Accent Color to DOM
   useEffect(() => {
-    localStorage.setItem(`accentColor_${userKey}`, accentColor);
-  }, [accentColor, userKey]);
+    const root = window.document.documentElement;
+    ['theme-orange', 'theme-blue', 'theme-emerald', 'theme-rose', 'theme-purple'].forEach(c => root.classList.remove(c));
+    root.classList.add(`theme-${accentColor}`);
+    localStorage.setItem('accentColor', accentColor);
+  }, [accentColor]);
 
   // Apply Compact Mode to DOM
   useEffect(() => {
@@ -89,8 +79,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else {
       root.classList.remove('compact-mode');
     }
-    localStorage.setItem(`compactMode_${userKey}`, String(compactMode));
-  }, [compactMode, userKey]);
+    localStorage.setItem('compactMode', String(compactMode));
+  }, [compactMode]);
 
   const toggleTheme = () => {
     setThemeMode((prev) => (prev === 'light' ? 'dark' : 'light'));

@@ -12,21 +12,26 @@ export function ProjectLogo({ size = 'large', className, ...props }: ProjectLogo
       "bg-transparent border-none p-0 shadow-none w-full",
       className
     )}>
-      {/* 
-        Overflow-hidden wrapper crops the transparent padding from the neon logo.
-        The image is scaled to 220% so the visible graphic fills the container.
-      */}
-      <div className={cn(
-        "relative flex items-center justify-center overflow-hidden",
-        size === 'large' ? "w-[260px] h-[90px]" : "w-[190px] h-[60px]"
-      )}>
-        <img
-          src="/new-brand-logo.png"
-          alt="Project OS"
-          className="h-[220%] w-[220%] max-w-none object-contain transition-all duration-300 drop-shadow-[0_0_12px_rgba(0,200,255,0.35)]"
-          {...props}
-        />
-      </div>
+      {/* Light Mode Logo */}
+      <img
+        src="/project-os-logo.png"
+        alt="Project OS"
+        className={cn(
+          size === 'large' ? "project-logo" : "sidebar-logo",
+          "transition-all duration-300 transform scale-[1.3] dark:scale-[1.4] block dark:hidden drop-shadow-[0_0_12px_rgba(125,145,255,0.35)]"
+        )}
+        {...props}
+      />
+      {/* Dark Mode Logo */}
+      <img
+        src="/project-os-logo-dark.png"
+        alt="Project OS"
+        className={cn(
+          size === 'large' ? "project-logo" : "sidebar-logo",
+          "transition-all duration-300 transform scale-[1.3] dark:scale-[1.4] hidden dark:block drop-shadow-[0_0_12px_rgba(125,145,255,0.35)]"
+        )}
+        {...props}
+      />
     </div>
   );
 }

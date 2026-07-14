@@ -8,7 +8,7 @@ export default function AboutUs() {
       
       {/* Header */}
       <div>
-        <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">System Documentation</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">System Documentation</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Corporate Overview & Platform Specifications.</p>
       </div>
 
@@ -58,7 +58,7 @@ export default function AboutUs() {
                   <MonitorSmartphone className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">About Project OS</h3>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">About Hindustaan OS</h3>
                   <div className="flex items-center text-xs font-semibold text-blue-600 dark:text-blue-400 mt-1 uppercase tracking-wider">
                     Internal Workforce Productivity Platform (v1.0)
                   </div>
@@ -68,7 +68,7 @@ export default function AboutUs() {
               <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 tracking-wide">A Single, Synchronized Source of Truth</h4>
               
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">
-                Project OS is the internal operating system custom-engineered to streamline how our teams execute, plan, and analyze daily operations. Purpose-built for high-speed, fast-moving product teams, Project OS replaces fragmented manual updates and lossy documentation with a single, synchronized source of truth. By seamlessly unifying task boards, milestone tracking engines, and granular work logs via web and integrated WhatsApp API layers, it enables developers and managers to maximize accountability and deliver clean output tracking daily.
+                Hindustaan OS is the internal operating system custom-engineered to streamline how our teams execute, plan, and analyze daily operations. Purpose-built for high-speed, fast-moving product teams, Hindustaan OS replaces fragmented manual updates and lossy documentation with a single, synchronized source of truth. By seamlessly unifying task boards, milestone tracking engines, and granular work logs via web and integrated WhatsApp API layers, it enables developers and managers to maximize accountability and deliver clean output tracking daily.
               </p>
             </div>
           </div>

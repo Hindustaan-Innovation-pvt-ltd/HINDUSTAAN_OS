@@ -7,7 +7,6 @@ export type NotificationType = 'task' | 'success' | 'alert' | 'warning' | 'info'
 export interface NotificationAction {
   label: string;
   primary: boolean;
-  actionType?: string;
 }
 
 export interface NotificationItem {
@@ -123,9 +122,8 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     unread: false,
     group: 'Yesterday',
     actions: [
-      { label: 'Approve', primary: true, actionType: 'approve_leave' },
-      { label: 'Reject', primary: false, actionType: 'reject_leave' },
-      { label: 'Comment', primary: false, actionType: 'comment_leave' }
+      { label: 'Approve', primary: true },
+      { label: 'Reject', primary: false }
     ]
   },
   {

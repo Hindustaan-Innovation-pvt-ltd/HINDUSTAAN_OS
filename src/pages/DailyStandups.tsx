@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
 import { Mic, Video, CheckCircle2, AlertCircle, MessageSquare, Clock, Calendar, CheckSquare, Edit3, Sparkles, TrendingUp, AlertTriangle, Flame, Percent, Search, Trash2, MessageCircle, Users, Briefcase, Send, Check, ChevronDown, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -9,12 +8,11 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { ProjectDatePicker } from '@/components/ui/project-date-picker';
-import { ProjectSelect } from '@/components/ui/project-select';
 import { useTheme } from '@/context/ThemeContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useNotifications } from '@/context/NotificationContext';
 import { getCurrentUser } from '@/lib/auth';
+import api from '@/lib/api';
 
 const WhatsappIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -127,20 +125,6 @@ const MOCK_HISTORY = [
   }
 ];
 
-export const parseStandupCommand = (command: string) => {
-  if (!command.trim().startsWith('/standup')) {
-    return { isValid: false, yesterday: '', today: '', blockers: '' };
-  }
-  const body = command.trim().replace(/^\/standup\s*/, '');
-  const parts = body.split('|').map(p => p.trim());
-  return {
-    yesterday: parts[0] || '',
-    today: parts[1] || '',
-    blockers: parts[2] || '',
-    isValid: parts.length === 3
-  };
-};
-
 export default function DailyStandups({ session }: { session?: any }) {
   const { addNotification } = useNotifications();
   const currentUser = getCurrentUser();
@@ -162,6 +146,59 @@ export default function DailyStandups({ session }: { session?: any }) {
     const saved = localStorage.getItem('hindustaan_standup_history');
     return (saved && saved !== 'null') ? JSON.parse(saved) : MOCK_HISTORY;
   });
+
+  // Fetch real standups from backend on mount
+  useEffect(() => {
+    const fetchStandups = async () => {
+      try {
+        const user = getCurrentUser();
+        if (!user?.id) return;
+        if (user.role === 'manager' || user.role === 'admin') {
+          // Manager: get team overview
+          const res = await api.get('/standups/manager/sync');
+          if (res.data?.success && res.data.data?.teamStandups) {
+            const mapped = res.data.data.teamStandups.map((s: any) => ({
+              id: s.id,
+              user: s.user?.name || 'Unknown',
+              initials: (s.user?.name || 'U').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+              role: s.user?.designation || 'Team Member',
+              status: s.submitted ? 'Submitted' : 'Pending',
+              yesterday: s.standup?.done || '',
+              today: s.standup?.doing || '',
+              blockers: s.standup?.blocked || 'None.',
+              time: s.standup?.submittedAt ? new Date(s.standup.submittedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : ''
+            }));
+            setStandups(mapped);
+            localStorage.setItem('hindustaan_standups', JSON.stringify(mapped));
+          }
+        } else {
+          // Intern: get own standups
+          const res = await api.get(`/standups?userId=${user.id}&limit=50`);
+          if (res.data?.success) {
+            const mapped = res.data.data.map((s: any) => ({
+              id: s.id,
+              user: user.name,
+              initials: user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+              role: user.designation || 'Developer',
+              status: 'Submitted',
+              yesterday: s.done || '',
+              today: s.doing || '',
+              blockers: s.blocked || 'None.',
+              time: new Date(s.submittedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+              dateGroup: new Date(s.date).toDateString() === new Date().toDateString() ? 'Today' : 'Earlier'
+            }));
+            setHistory(mapped);
+            localStorage.setItem('hindustaan_standup_history', JSON.stringify(mapped));
+          }
+        }
+      } catch (err) {
+        // Silently fall back to localStorage data
+        console.warn('Standup fetch failed, using cached data:', err);
+      }
+    };
+    fetchStandups();
+  }, []);
+
 
   const [standupSettings, setStandupSettings] = useState(() => {
     const saved = localStorage.getItem('projectos-standup-settings');
@@ -247,9 +284,7 @@ export default function DailyStandups({ session }: { session?: any }) {
   
   const [empExpanded, setEmpExpanded] = useState(false);
   const [mgrExpanded, setMgrExpanded] = useState(false);
-  const [quickCommand, setQuickCommand] = useState('');
 
-  const activeSpeechFieldRef = React.useRef<'yesterday' | 'today' | 'blockers' | 'notes' | null>(null);
   const [activeSpeechField, setActiveSpeechField] = useState<'yesterday' | 'today' | 'blockers' | 'notes' | null>(null);
   const recognitionRef = React.useRef<any>(null);
 
@@ -428,11 +463,12 @@ export default function DailyStandups({ session }: { session?: any }) {
     window.dispatchEvent(new Event('employee-notifications-updated'));
   };
 
-  const handleUpdateSubmit = () => {
+  const handleUpdateSubmit = async () => {
     if (!formData.yesterday || !formData.today) {
       toast.error('Please fill in your updates for yesterday and today.');
       return;
     }
+    const user = getCurrentUser();
     const initials = currentUserName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
     const newStandup = {
       id: `s-${Date.now()}`,
@@ -446,18 +482,28 @@ export default function DailyStandups({ session }: { session?: any }) {
       time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
     };
 
+    // Update local state immediately (optimistic)
     setStandups([newStandup, ...standups.filter((s) => s.user !== currentUserName)]);
-
-    // Also add to the top of standup history
-    const historyEntry = {
-      ...newStandup,
-      dateGroup: 'Today'
-    };
+    const historyEntry = { ...newStandup, dateGroup: 'Today' };
     setHistory(prev => [historyEntry, ...prev]);
 
-    // Add to employee's own notification panel
-    pushEmployeeStandupNotification('Standup Updated', `Your daily standup update was submitted successfully at ${newStandup.time}.`);
+    // Submit to backend
+    if (user?.id) {
+      try {
+        await api.post('/standups', {
+          userId: user.id,
+          date: new Date().toISOString(),
+          done: formData.yesterday,
+          doing: formData.today,
+          blocked: formData.blockers || '',
+          source: 'app'
+        });
+      } catch (err: any) {
+        console.warn('Standup save to backend failed:', err.response?.data?.message || err.message);
+      }
+    }
 
+    pushEmployeeStandupNotification('Standup Updated', `Your daily standup update was submitted successfully at ${newStandup.time}.`);
     addNotification({
       type: 'success',
       category: 'Team',
@@ -469,46 +515,6 @@ export default function DailyStandups({ session }: { session?: any }) {
     toast.success('Standup Update Submitted!');
     setIsModalOpen(false);
     setFormData({ yesterday: '', today: '', blockers: '', notes: '' });
-  };
-
-  const handleDirectCommandSubmit = (parsed: any) => {
-    if (!parsed.yesterday || !parsed.today) {
-      toast.warning('Empty sections detected. Continuing anyway.');
-    }
-    
-    const initials = currentUserName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
-    const newStandup = {
-      id: `s-${Date.now()}`,
-      user: currentUserName,
-      initials,
-      role: role === 'manager' ? 'Product Manager' : 'Developer',
-      status: 'Submitted',
-      yesterday: parsed.yesterday,
-      today: parsed.today,
-      blockers: parsed.blockers || 'None.',
-      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-      originalCommand: quickCommand
-    };
-
-    setStandups([newStandup, ...standups.filter((s) => s.user !== currentUserName)]);
-
-    const historyEntry = {
-      ...newStandup,
-      dateGroup: 'Today'
-    };
-    setHistory(prev => [historyEntry, ...prev]);
-    pushEmployeeStandupNotification('Standup Submitted', `Your daily standup was submitted via command at ${newStandup.time}.`);
-
-    addNotification({
-      type: 'success',
-      category: 'Team',
-      icon: '📝',
-      title: 'Standup Submitted',
-      message: `${currentUserName} submitted their daily standup via command.`,
-      group: 'Today',
-    });
-    toast.success('Standup Update Submitted via Command!');
-    setQuickCommand('');
   };
 
   const handleExtensionSubmit = () => {
@@ -681,9 +687,10 @@ export default function DailyStandups({ session }: { session?: any }) {
     ? history.filter(s => s && s.user && s.user.toLowerCase().includes(firstName)).slice(0, 3)
     : standups;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.yesterday || !formData.today) return;
+    const user = getCurrentUser();
     
     const newStandup = {
       id: `s-${Date.now()}`,
@@ -697,15 +704,30 @@ export default function DailyStandups({ session }: { session?: any }) {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     
-    // Add the new standup to the top of active standups list (slides older ones right)
+    // Update local state optimistically
     setStandups(prev => [newStandup, ...prev.filter(s => s.user !== currentUserName)]);
-
-    // Also add to the top of standup history
-    const historyEntry = {
-      ...newStandup,
-      dateGroup: 'Today'
-    };
+    const historyEntry = { ...newStandup, dateGroup: 'Today' };
     setHistory(prev => [historyEntry, ...prev]);
+
+    // Submit to backend
+    if (user?.id) {
+      try {
+        await api.post('/standups', {
+          userId: user.id,
+          date: new Date().toISOString(),
+          done: formData.yesterday,
+          doing: formData.today,
+          blocked: formData.blockers || '',
+          source: 'app'
+        });
+        toast.success('Standup Submitted!', { description: 'Your standup has been saved to the server.' });
+      } catch (err: any) {
+        console.warn('Standup save to backend failed:', err.response?.data?.message || err.message);
+        toast.success('Standup saved locally.', { description: 'Could not sync to server.' });
+      }
+    } else {
+      toast.success('Standup submitted!');
+    }
 
     // Add to employee's own notification panel
     pushEmployeeStandupNotification('Standup Submitted', `Your daily standup was submitted successfully at ${newStandup.time}.`);
@@ -796,7 +818,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               >
                 &larr; Back
               </Button>
-              <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">Standup History</h2>
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Standup History</h2>
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 pl-10">
               Overview of all past async standups submitted by the team.
@@ -807,17 +829,13 @@ export default function DailyStandups({ session }: { session?: any }) {
         {/* Search & Filter */}
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
           {role !== 'manager' ? (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto max-w-xs">
-              <span className="text-xs font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">Search by Date:</span>
-              <ProjectDatePicker
-                value={historyDateFilter ? (() => {
-                  const d = new Date(historyDateFilter);
-                  return isNaN(d.getTime()) ? undefined : d;
-                })() : undefined}
-                onChange={(date) => {
-                  if (date) setHistoryDateFilter(format(date, 'yyyy-MM-dd'));
-                  else setHistoryDateFilter('');
-                }}
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <span className="text-xs font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider">Search by Date:</span>
+              <input
+                type="date"
+                value={historyDateFilter}
+                onChange={(e) => setHistoryDateFilter(e.target.value)}
+                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none text-[#0F172A] dark:text-white focus:ring-2 focus:ring-orange-500/50 [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:cursor-pointer dark:[&::-webkit-calendar-picker-indicator]:invert dark:[&::-webkit-calendar-picker-indicator]:opacity-80 dark:[&::-webkit-calendar-picker-indicator]:hover:opacity-100"
               />
               {historyDateFilter && (
                 <Button 
@@ -992,7 +1010,7 @@ export default function DailyStandups({ session }: { session?: any }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white">Daily Standups</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Daily Standups</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {role !== 'manager' 
               ? 'Review your logged daily standup report for today.' 
@@ -1029,7 +1047,7 @@ export default function DailyStandups({ session }: { session?: any }) {
         </div>
       </div>
 
-      {/* Stats Row */}
+      {/* Stats & History Row */}
       <div className="flex flex-row justify-between items-center w-full mb-8 gap-4">
         <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm w-fit">
           <div className="px-4 py-2 flex items-center gap-2">
@@ -1043,25 +1061,12 @@ export default function DailyStandups({ session }: { session?: any }) {
           <div className="px-4 py-2 flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-amber-500" />
             <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{role === 'manager' ? 'Missing Standups' : 'Pending'}</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pending</p>
               <p className="text-lg font-black text-slate-900 dark:text-white leading-none">{pendingCount}</p>
             </div>
           </div>
-          {role === 'manager' && (
-            <>
-              <div className="w-px h-8 bg-slate-200 dark:bg-slate-800" />
-              <div className="px-4 py-2 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-rose-500" />
-                <div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Blocked Employees</p>
-                  <p className="text-lg font-black text-slate-900 dark:text-white leading-none">
-                    {displayStandups.filter(s => s.blockers && s.blockers !== 'None.' && s.blockers.trim() !== '').length}
-                  </p>
-                </div>
-              </div>
-            </>
-          )}
         </div>
+
       </div>
 
       {/* Standup Grid */}
@@ -1100,25 +1105,16 @@ export default function DailyStandups({ session }: { session?: any }) {
               {standup.status === 'Submitted' ? (
                 <>
                   <div>
-                    <h4 className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                      <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 border-0 text-[9px] px-1.5 py-0">Done</Badge>
-                      Yesterday
-                    </h4>
+                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Yesterday</h4>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{standup.yesterday}</p>
                   </div>
                   <div>
-                    <h4 className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                      <Badge className="bg-blue-500 text-white hover:bg-blue-600 border-0 text-[9px] px-1.5 py-0">Doing</Badge>
-                      Today
-                    </h4>
+                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Today</h4>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{standup.today}</p>
                   </div>
                   {standup.blockers && standup.blockers !== 'None.' && (
                     <div className="bg-rose-50 dark:bg-rose-950/30 p-3 rounded-xl border border-rose-100 dark:border-rose-900/50 mt-auto">
-                      <h4 className="flex items-center gap-2 text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-2">
-                        <Badge className="bg-rose-500 text-white hover:bg-rose-600 border-0 text-[9px] px-1.5 py-0">Blocked</Badge>
-                        Blockers
-                      </h4>
+                      <h4 className="text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-1">Blockers</h4>
                       <p className="text-sm font-medium text-rose-700 dark:text-rose-400">{standup.blockers}</p>
                     </div>
                   )}
@@ -1549,46 +1545,8 @@ export default function DailyStandups({ session }: { session?: any }) {
               What did you work on, and what's next?
             </p>
           </DialogHeader>
-            <div className="p-6 space-y-6">
-              {/* WhatsApp Quick Paste */}
-              {role !== 'employee' && (
-                <div className="space-y-2 pb-4 border-b border-slate-100 dark:border-slate-800">
-                  <label className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-500 flex items-center">
-                    <span className="mr-1.5 text-sm">⚡</span> Paste WhatsApp Command
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="/standup done | doing | blocked"
-                      value={quickCommand}
-                      onChange={(e) => setQuickCommand(e.target.value)}
-                      className="flex-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 rounded-xl px-3 text-sm font-mono text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-slate-400"
-                    />
-                    <Button 
-                      type="button"
-                      onClick={() => {
-                        const parsed = parseStandupCommand(quickCommand);
-                        if (parsed.isValid || quickCommand.includes('/standup')) {
-                          setFormData({
-                            yesterday: parsed.yesterday,
-                            today: parsed.today,
-                            blockers: parsed.blockers,
-                            notes: ''
-                          });
-                          toast.success("Command parsed! Fields auto-filled.");
-                        } else {
-                          toast.error("Invalid command format.");
-                        }
-                      }}
-                      className="h-10 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 font-bold"
-                    >
-                      Parse
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
+          <div className="p-6 space-y-6">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
                 <Button 
@@ -1703,15 +1661,18 @@ export default function DailyStandups({ session }: { session?: any }) {
               <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Select Task / Milestone</label>
               {upcomingDeadlines.length > 0 ? (
                 <div className="relative">
-                  <ProjectSelect
+                  <select
                     value={selectedTaskId}
-                    onChange={setSelectedTaskId}
-                    placeholder="Select task..."
-                    options={upcomingDeadlines.map((t: any) => ({
-                      value: t.id,
-                      label: `${t.title} (Due: ${new Date(t.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`
-                    }))}
-                  />
+                    onChange={(e) => setSelectedTaskId(e.target.value)}
+                    className="w-full h-11 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 font-medium text-sm appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled className="text-slate-400 dark:bg-slate-900">Select task...</option>
+                    {upcomingDeadlines.map((t: any) => (
+                      <option key={t.id} value={t.id} className="dark:bg-slate-900">
+                        {t.title} (Due: {new Date(t.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               ) : (
                 <div className="p-3 text-center text-xs text-rose-500 font-bold bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-100 dark:border-rose-900/30">

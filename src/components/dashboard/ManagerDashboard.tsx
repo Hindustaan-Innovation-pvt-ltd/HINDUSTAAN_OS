@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Component } from 'react';
+import api from '@/lib/api';
 
 class ManagerErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
   constructor(props: any) {
@@ -12,7 +13,7 @@ class ManagerErrorBoundary extends Component<{ children: React.ReactNode }, { ha
     if (this.state.hasError) {
       return (
         <div className="p-10 m-10 bg-rose-50 border border-rose-200 rounded-xl overflow-auto text-rose-900">
-          <h2 className="text-page-title mb-4">Dashboard Crash Detected</h2>
+          <h2 className="text-xl font-bold mb-4">Dashboard Crash Detected</h2>
           <pre className="text-xs font-mono whitespace-pre-wrap">{this.state.error?.stack || this.state.error?.toString()}</pre>
         </div>
       );
@@ -152,6 +153,51 @@ function ManagerDashboardInner() {
       return INITIAL_TASKS;
     }
   });
+
+  // Live dashboard stats from backend
+  const [dashboardStats, setDashboardStats] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const res = await api.get('/dashboard');
+        if (res.data?.success) {
+          const data = res.data.data;
+          setDashboardStats(data);
+          // Hydrate activity feed from real backend data
+          if (data.activityFeed && data.activityFeed.length > 0) {
+            setActivityFeed(data.activityFeed);
+          }
+          // Hydrate blockers from standup blocker list
+          if (data.blockersList && data.blockersList.length > 0) {
+            const mappedBlockers = data.blockersList.map((b: any, i: number) => ({
+              id: b.id,
+              user: b.userName,
+              initials: b.initials,
+              avatarColor: i % 2 === 0
+                ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+              priority: 'Blocker',
+              priorityColor: i % 2 === 0
+                ? 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border-rose-200 dark:border-rose-500/20'
+                : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
+              bgColor: i % 2 === 0 ? 'bg-rose-50/50 dark:bg-rose-500/5' : 'bg-amber-50/50 dark:bg-amber-500/5',
+              borderColor: i % 2 === 0 ? 'border-rose-100 dark:border-rose-900/50' : 'border-amber-100 dark:border-amber-900/50',
+              textColor: i % 2 === 0 ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400',
+              hoverBgColor: i % 2 === 0 ? 'hover:bg-rose-100 dark:hover:bg-rose-500/20' : 'hover:bg-amber-100 dark:hover:bg-amber-500/20',
+              hoverTextColor: i % 2 === 0 ? 'hover:text-rose-700' : 'hover:text-amber-700',
+              message: b.blockerText
+            }));
+            setBlockers(mappedBlockers);
+          }
+        }
+      } catch (err) {
+        console.warn('Manager dashboard fetch failed, using local data:', err);
+      }
+    };
+    fetchDashboard();
+  }, []);
+
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -309,11 +355,11 @@ function ManagerDashboardInner() {
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-page-title font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
             {greeting}, {userName} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
           <p className="text-orange-500 font-medium tracking-wide mt-1 break-words whitespace-normal">
-            {((contextUser?.role || currentUser?.role || "manager").charAt(0).toUpperCase() + (contextUser?.role || currentUser?.role || "manager").slice(1))}
+            {currentUser?.designation || "Product Manager"}
           </p>
           <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-2 font-medium break-words whitespace-normal">
             Manage projects, monitor team performance, and track progress from one place.
@@ -333,7 +379,7 @@ function ManagerDashboardInner() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">Active</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{(projects || []).length}</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.totalProjectsCount ?? (projects || []).length}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Total Projects</p>
             </div>
           </CardContent>
@@ -348,7 +394,7 @@ function ManagerDashboardInner() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">All time</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{(projects || []).reduce((acc: number, p: any) => acc + (p.tasks?.length || 0), 0)}</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.totalTasksCount ?? (projects || []).reduce((acc: number, p: any) => acc + (p.tasks?.length || 0), 0)}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Total Tasks</p>
             </div>
           </CardContent>
@@ -363,7 +409,7 @@ function ManagerDashboardInner() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10">High Pri</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dueTodayTasksCount}</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.dueTodayTasksCount ?? dueTodayTasksCount}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tasks Due Today</p>
             </div>
           </CardContent>
@@ -381,7 +427,7 @@ function ManagerDashboardInner() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">100% On</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">30</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.activeInternsCount ?? 30}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Active Interns</p>
             </div>
           </CardContent>
@@ -396,7 +442,7 @@ function ManagerDashboardInner() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10">Sync at 11</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">6</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.pendingStandupsCount ?? 6}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Pending Standups</p>
             </div>
           </CardContent>
@@ -411,7 +457,7 @@ function ManagerDashboardInner() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">+4.2%</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">92%</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats ? `${dashboardStats.teamProductivity}%` : '92%'}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Team Productivity</p>
             </div>
           </CardContent>

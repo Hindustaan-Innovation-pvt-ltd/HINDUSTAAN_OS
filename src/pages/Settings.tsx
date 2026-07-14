@@ -1,9 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ProjectTimeSelect } from '@/components/ui/project-time-select';
 import { Button } from '@/components/ui/button';
-import { useNotifications } from '@/context/NotificationContext';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -12,17 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   User, Shield, Bell, Palette, Link as LinkIcon, Database, Globe, HelpCircle, 
   Download, MonitorSmartphone, CheckCircle2, Moon, Sun, Monitor, ChevronLeft, Clock,
-  Eye, EyeOff, QrCode, Smartphone, Laptop, AlertTriangle, X
+  Eye, EyeOff, QrCode, Smartphone, Laptop, AlertTriangle, X, Save, Loader2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { ConnectedApps } from '../components/dashboard/settings/ConnectedApps';
 import { Progress } from "@/components/ui/progress";
 import { useTheme } from '../context/ThemeContext';
-import { updatePassword } from '@/lib/auth';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 
 const SETTINGS_SECTIONS = [
   { id: 'security', label: 'Account & Security', description: 'Manage your password and security preferences.', icon: Shield },
@@ -36,7 +33,7 @@ const SETTINGS_SECTIONS = [
 ];
 
 export default function Settings({ session }: { session: any }) {
-  const { theme, toggleTheme, accentColor, setAccentColor, compactMode, setCompactMode } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const role = session?.user?.user_metadata?.role || 'intern';
   
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -245,30 +242,33 @@ export default function Settings({ session }: { session: any }) {
     return { label: 'Strong', color: 'bg-emerald-500', width: '100%' };
   };
 
-  const handleUpdatePassword = () => {
+  const handleUpdatePassword = async () => {
     if (!currentPassword) return toast.error('Current password required.');
     if (newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
-      return toast.error('Password does not meet requirements.');
+      return toast.error('Password must be 8+ chars with uppercase, lowercase, and a number.');
     }
     if (newPassword !== confirmPassword) return toast.error('Passwords do not match.');
 
     setIsUpdatingPassword(true);
-    setTimeout(() => {
-      setIsUpdatingPassword(false);
-      
-      const userEmail = session?.user?.email || (role === 'manager' ? 'manager1@hindustaan.in' : 'employee1@hindustaan.in');
-      const result = updatePassword(userEmail, currentPassword, newPassword);
-      
-      if (result.success) {
-        toast.success(result.message);
+    try {
+      const res = await api.post('/settings/change-password', {
+        oldPassword: currentPassword,
+        newPassword
+      });
+      if (res.data?.success) {
+        toast.success('Password updated successfully!', { description: 'Your new password is now active.' });
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
-        localStorage.setItem('passwordUpdated', Date.now().toString());
       } else {
-        toast.error('Authentication Error', { description: result.message });
+        toast.error('Password update failed.', { description: res.data?.message || 'Unknown error' });
       }
-    }, 1500);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'Server error.';
+      toast.error('Failed to update password.', { description: msg });
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   const handleEnable2FA = () => {
@@ -342,8 +342,26 @@ export default function Settings({ session }: { session: any }) {
 
   const saveStandupSettings = () => {
     localStorage.setItem('projectos-standup-settings', JSON.stringify(standupSettings));
-    toast.success('Standup preferences updated.');
+    toast.success('Standup preferences saved.', {
+      description: 'Your settings will apply on next standup reminder.'
+    });
   };
+
+  const saveNotificationSettings = () => {
+    localStorage.setItem('hindustaan_notification_toggles', JSON.stringify(toggles));
+    toast.success('Notification preferences saved.', {
+      description: 'Your notification settings have been updated.'
+    });
+  };
+
+  // Load persisted notification settings on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('hindustaan_notification_toggles');
+    if (saved) {
+      try { setToggles(JSON.parse(saved)); } catch {}
+    }
+  }, []);
+
 
   const renderContent = () => {
     switch(activeTab) {
@@ -351,7 +369,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-page-title text-slate-900 dark:text-white">Standup Settings</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Standup Settings</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize how Daily Standups work for you {role === 'manager' && 'and your team'}.</p>
             </div>
             
@@ -401,20 +419,16 @@ export default function Settings({ session }: { session: any }) {
                     <Switch checked={standupSettings.reminderEnabled} onCheckedChange={() => handleStandupToggle('reminderEnabled')} />
                   </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Reminder Time</label>
-                        {!standupSettings.reminderEnabled ? (
-                           <Input disabled value={standupSettings.reminderTime} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold" />
-                        ) : (
-                           <ProjectTimeSelect value={standupSettings.reminderTime} onChange={(v) => handleStandupSelect('reminderTime', v)} />
-                        )}
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Submission Deadline</label>
-                        <ProjectTimeSelect value={standupSettings.deadline} onChange={(v) => handleStandupSelect('deadline', v)} />
-                      </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Reminder Time</label>
+                      <Input type="time" value={standupSettings.reminderTime} onChange={(e) => handleStandupSelect('reminderTime', e.target.value)} disabled={!standupSettings.reminderEnabled} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold" />
                     </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Submission Deadline</label>
+                      <Input type="time" value={standupSettings.deadline} onChange={(e) => handleStandupSelect('deadline', e.target.value)} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 font-semibold" />
+                    </div>
+                  </div>
                 </div>
 
 
@@ -479,7 +493,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-page-title text-slate-900 dark:text-white">Account & Security</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Account & Security</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage your password and security preferences.</p>
             </div>
             
@@ -528,8 +542,12 @@ export default function Settings({ session }: { session: any }) {
                     </button>
                   </div>
                 </div>
-                <Button disabled={isUpdatingPassword} onClick={handleUpdatePassword} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold mt-2">
-                  {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+                <Button disabled={isUpdatingPassword} onClick={handleUpdatePassword} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold mt-2 gap-2">
+                  {isUpdatingPassword ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Updating...</>
+                  ) : (
+                    <><Save className="h-4 w-4" /> Update Password</>
+                  )}
                 </Button>
               </CardContent>
             </Card>
@@ -582,8 +600,8 @@ export default function Settings({ session }: { session: any }) {
                   <DialogDescription className="text-slate-500">Scan this QR code with your authenticator app.</DialogDescription>
                 </DialogHeader>
                 <div className="py-4 flex flex-col items-center gap-6">
-                  <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-100 dark:border-slate-700 shadow-sm">
-                    <QrCode className="w-32 h-32 text-slate-900 dark:text-white" />
+                  <div className="p-4 bg-white rounded-xl border-2 border-slate-100 shadow-sm">
+                    <QrCode className="w-32 h-32 text-slate-900" />
                   </div>
                   <div className="w-full space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center block">Secret Key</label>
@@ -635,7 +653,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-page-title text-slate-900 dark:text-white">Notification Preferences</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Notification Preferences</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Control how and when you receive alerts.</p>
             </div>
             
@@ -691,13 +709,19 @@ export default function Settings({ session }: { session: any }) {
                 </div>
               </div>
             </Card>
+
+            <div className="flex justify-end mt-6">
+              <Button onClick={saveNotificationSettings} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold gap-2">
+                <Save className="h-4 w-4" /> Save Preferences
+              </Button>
+            </div>
           </div>
         );
       case 'appearance':
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-page-title text-slate-900 dark:text-white">Appearance</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Appearance</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize how the application looks on your device.</p>
             </div>
             
@@ -705,7 +729,7 @@ export default function Settings({ session }: { session: any }) {
               <CardContent className="p-6 space-y-6">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Theme Preferences</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <button 
                       onClick={() => theme !== 'light' && toggleTheme()}
                       className={cn(
@@ -727,62 +751,36 @@ export default function Settings({ session }: { session: any }) {
                       <Moon className={cn("h-8 w-8", theme === 'dark' ? "text-orange-600" : "text-slate-400")} />
                       <span className={cn("text-sm font-bold", theme === 'dark' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Dark Theme</span>
                     </button>
+
+                    <button 
+                      className={cn(
+                        "flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      <Monitor className="h-8 w-8 text-slate-400" />
+                      <span className="text-sm font-bold text-slate-600 dark:text-slate-400">System Theme</span>
+                    </button>
                   </div>
                 </div>
 
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Accent Color</h3>
-                  <TooltipProvider>
-                    <div className="flex items-center gap-3">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button onClick={() => setAccentColor('cosmic')} className={cn("h-8 w-8 rounded-full bg-[#5B7CFF] ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'cosmic' && "ring-[#5B7CFF]/30 scale-110")}></button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Default View</p></TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button onClick={() => setAccentColor('orange')} className={cn("h-8 w-8 rounded-full bg-orange-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'orange' && "ring-orange-500/30 scale-110")}></button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Orange</p></TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button onClick={() => setAccentColor('blue')} className={cn("h-8 w-8 rounded-full bg-blue-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'blue' && "ring-blue-500/30 scale-110")}></button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Blue</p></TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button onClick={() => setAccentColor('emerald')} className={cn("h-8 w-8 rounded-full bg-emerald-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'emerald' && "ring-emerald-500/30 scale-110")}></button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Emerald</p></TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button onClick={() => setAccentColor('rose')} className={cn("h-8 w-8 rounded-full bg-rose-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'rose' && "ring-rose-500/30 scale-110")}></button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Rose</p></TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button onClick={() => setAccentColor('purple')} className={cn("h-8 w-8 rounded-full bg-purple-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'purple' && "ring-purple-500/30 scale-110")}></button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-slate-800 text-white dark:bg-white dark:text-slate-900 border-none shadow-xl px-3 py-1.5 text-xs rounded-md"><p>Purple</p></TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </TooltipProvider>
+                  <div className="flex items-center gap-3">
+                    <button className="h-8 w-8 rounded-full bg-orange-500 ring-4 ring-orange-500/20"></button>
+                    <button className="h-8 w-8 rounded-full bg-blue-500 hover:scale-110 transition-transform"></button>
+                    <button className="h-8 w-8 rounded-full bg-emerald-500 hover:scale-110 transition-transform"></button>
+                    <button className="h-8 w-8 rounded-full bg-rose-500 hover:scale-110 transition-transform"></button>
+                    <button className="h-8 w-8 rounded-full bg-purple-500 hover:scale-110 transition-transform"></button>
+                  </div>
                 </div>
 
-                {role === 'admin' && (
-                  <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">Compact Mode</h3>
-                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Reduce spacing to fit more content on screen.</p>
-                    </div>
-                    <Switch checked={compactMode} onCheckedChange={(checked) => setCompactMode(checked)} />
+                <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Compact Mode</h3>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Reduce spacing to fit more content on screen.</p>
                   </div>
-                )}
+                  <Switch checked={toggles.compactMode} onCheckedChange={() => handleToggle('compactMode')} />
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -797,7 +795,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-page-title text-slate-900 dark:text-white">Data & Storage</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Data & Storage</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage local cache and export your data.</p>
             </div>
 
@@ -831,7 +829,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-page-title text-slate-900 dark:text-white">Language & Region</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Language & Region</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize your localization settings.</p>
             </div>
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
@@ -880,7 +878,7 @@ export default function Settings({ session }: { session: any }) {
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-              <h2 className="text-page-title text-slate-900 dark:text-white">Help & Support</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Help & Support</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Get assistance and read documentation.</p>
             </div>
             
@@ -892,7 +890,7 @@ export default function Settings({ session }: { session: any }) {
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 dark:text-white">FAQ</h3>
-                    <p className="text-sm font-medium text-slate-500 mt-1">Find answers to common questions about Project OS.</p>
+                    <p className="text-sm font-medium text-slate-500 mt-1">Find answers to common questions about Hindustaan OS.</p>
                   </div>
                 </CardContent>
               </Card>
@@ -945,7 +943,7 @@ export default function Settings({ session }: { session: any }) {
       {!activeTab ? (
         <div className="space-y-6">
           <div>
-            <h1 className="text-page-title tracking-tight text-slate-900 dark:text-white">Settings Overview</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Settings Overview</h1>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">Manage your account preferences and application configuration.</p>
           </div>
           
