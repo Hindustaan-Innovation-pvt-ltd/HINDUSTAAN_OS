@@ -81,7 +81,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-              <User className="h-8 w-8 text-indigo-500" />
+              <User className="h-8 w-8 text-orange-500" />
               Admin Profile
             </h2>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
@@ -98,7 +98,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
             
             {/* 1. Profile Header */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-500 to-purple-600"></div>
               
               <CardContent className="p-6 pt-8 flex flex-col items-center text-center relative">
                 <button
@@ -112,7 +112,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                 <div className="relative">
                   <Avatar className="h-28 w-28 border-4 border-slate-50 dark:border-slate-900 shadow-md">
                     {profile.avatar && <AvatarImage src={profile.avatar} />}
-                    <AvatarFallback className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-3xl font-black">
+                    <AvatarFallback className="bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 text-3xl font-black">
                       {profile.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
@@ -121,11 +121,11 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
 
                 <div className="flex items-center gap-2 mt-4">
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white">{profile.name}</h3>
-                  <ShieldCheck className="h-5 w-5 text-indigo-500" />
+                  <ShieldCheck className="h-5 w-5 text-orange-500" />
                 </div>
                 
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap justify-center">
-                  <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/20 dark:text-indigo-400 border-0 font-bold uppercase tracking-wider text-[10px]">Super Admin</Badge>
+                  <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-500/20 dark:text-orange-400 border-0 font-bold uppercase tracking-wider text-[10px]">Super Admin</Badge>
                 </div>
 
                 <div className="w-full border-t border-slate-100 dark:border-slate-800/80 mt-6 pt-4 text-left space-y-3">
@@ -141,10 +141,10 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
               <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60 flex flex-row items-center justify-between">
                 <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
-                  <User className="mr-2.5 h-5 w-5 text-indigo-500" />
+                  <User className="mr-2.5 h-5 w-5 text-orange-500" />
                   Personal Information
                 </CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => onNavigate('Edit Profile')} className="text-xs font-bold text-indigo-600 hover:text-indigo-700 -my-2">
+                <Button variant="ghost" size="sm" onClick={() => onNavigate('Edit Profile')} className="text-xs font-bold text-orange-600 hover:text-orange-700 -my-2">
                   Edit Details
                 </Button>
               </CardHeader>
@@ -208,7 +208,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
               <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60">
                 <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
-                  <Briefcase className="mr-2.5 h-5 w-5 text-indigo-500" />
+                  <Briefcase className="mr-2.5 h-5 w-5 text-orange-500" />
                   Professional Information
                 </CardTitle>
               </CardHeader>
@@ -230,11 +230,11 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                 
                 <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-100 dark:border-slate-800">
                   <div className="text-center border-r border-slate-100 dark:border-slate-800">
-                    <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">124</p>
+                    <p className="text-2xl font-black text-orange-600 dark:text-orange-400">124</p>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Employees Managed</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">12</p>
+                    <p className="text-2xl font-black text-orange-600 dark:text-orange-400">12</p>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Managers Managed</p>
                   </div>
                 </div>
@@ -245,7 +245,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
               <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60">
                 <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
-                  <Activity className="mr-2.5 h-5 w-5 text-indigo-500" />
+                  <Activity className="mr-2.5 h-5 w-5 text-orange-500" />
                   Recent Admin Activity
                 </CardTitle>
               </CardHeader>
@@ -253,7 +253,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                 <div className="space-y-6 relative before:absolute before:inset-0 before:ml-4 md:before:mx-0 md:before:ml-4 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 dark:before:via-slate-800 before:to-transparent">
                   {[
                     { id: 1, action: 'Created Manager Account', desc: 'Added account for "Amit Verma"', time: '2 hours ago', icon: <Users className="h-4 w-4 text-emerald-500" />, badge: 'User Action' },
-                    { id: 2, action: 'Updated Workspace Settings', desc: 'Enabled SSO login for the organization', time: 'Yesterday', icon: <Settings className="h-4 w-4 text-indigo-500" />, badge: 'Config' },
+                    { id: 2, action: 'Updated Workspace Settings', desc: 'Enabled SSO login for the organization', time: 'Yesterday', icon: <Settings className="h-4 w-4 text-orange-500" />, badge: 'Config' },
                     { id: 3, action: 'Sent Announcement', desc: '"Q3 Performance Review Schedule"', time: '2 days ago', icon: <Mail className="h-4 w-4 text-blue-500" />, badge: 'Communication' },
                     { id: 4, action: 'Modified Roles', desc: 'Granted elevated permissions to HR Team', time: 'Last week', icon: <ShieldCheck className="h-4 w-4 text-purple-500" />, badge: 'Access' },
                   ].map((log) => (
@@ -296,7 +296,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                   value={currentPassword} 
                   onChange={e => setCurrentPassword(e.target.value)} 
                   placeholder="••••••••" 
-                  className="rounded-xl bg-slate-900/60 border-slate-800 text-white pr-10 focus:ring-indigo-500/50" 
+                  className="rounded-xl bg-slate-900/60 border-slate-800 text-white pr-10 focus:ring-orange-500/50" 
                 />
                 <button 
                   type="button" 
@@ -316,7 +316,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                   value={newPassword} 
                   onChange={e => setNewPassword(e.target.value)} 
                   placeholder="••••••••" 
-                  className="rounded-xl bg-slate-900/60 border-slate-800 text-white pr-10 focus:ring-indigo-500/50" 
+                  className="rounded-xl bg-slate-900/60 border-slate-800 text-white pr-10 focus:ring-orange-500/50" 
                 />
                 <button 
                   type="button" 
@@ -336,7 +336,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                   value={confirmPassword} 
                   onChange={e => setConfirmPassword(e.target.value)} 
                   placeholder="••••••••" 
-                  className="rounded-xl bg-slate-900/60 border-slate-800 text-white pr-10 focus:ring-indigo-500/50" 
+                  className="rounded-xl bg-slate-900/60 border-slate-800 text-white pr-10 focus:ring-orange-500/50" 
                 />
                 <button 
                   type="button" 
@@ -352,7 +352,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
             <Button 
               disabled={isUpdatingPassword} 
               onClick={handleUpdatePassword} 
-              className="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold px-6 py-2 shadow-[0_0_15px_rgba(99,102,241,0.4)] disabled:opacity-50"
+              className="rounded-xl bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white font-bold px-6 py-2 shadow-[0_0_15px_rgba(249,115,22,0.4)] disabled:opacity-50"
             >
               {isUpdatingPassword ? 'Updating...' : 'Update Password'}
             </Button>
