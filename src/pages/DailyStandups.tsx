@@ -1551,40 +1551,42 @@ export default function DailyStandups({ session }: { session?: any }) {
           </DialogHeader>
             <div className="p-6 space-y-6">
               {/* WhatsApp Quick Paste */}
-              <div className="space-y-2 pb-4 border-b border-slate-100 dark:border-slate-800">
-                <label className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-500 flex items-center">
-                  <span className="mr-1.5 text-sm">⚡</span> Paste WhatsApp Command
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="/standup done | doing | blocked"
-                    value={quickCommand}
-                    onChange={(e) => setQuickCommand(e.target.value)}
-                    className="flex-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 rounded-xl px-3 text-sm font-mono text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-slate-400"
-                  />
-                  <Button 
-                    type="button"
-                    onClick={() => {
-                      const parsed = parseStandupCommand(quickCommand);
-                      if (parsed.isValid || quickCommand.includes('/standup')) {
-                        setFormData({
-                          yesterday: parsed.yesterday,
-                          today: parsed.today,
-                          blockers: parsed.blockers,
-                          notes: ''
-                        });
-                        toast.success("Command parsed! Fields auto-filled.");
-                      } else {
-                        toast.error("Invalid command format.");
-                      }
-                    }}
-                    className="h-10 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 font-bold"
-                  >
-                    Parse
-                  </Button>
+              {role !== 'employee' && (
+                <div className="space-y-2 pb-4 border-b border-slate-100 dark:border-slate-800">
+                  <label className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-500 flex items-center">
+                    <span className="mr-1.5 text-sm">⚡</span> Paste WhatsApp Command
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="/standup done | doing | blocked"
+                      value={quickCommand}
+                      onChange={(e) => setQuickCommand(e.target.value)}
+                      className="flex-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 rounded-xl px-3 text-sm font-mono text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-slate-400"
+                    />
+                    <Button 
+                      type="button"
+                      onClick={() => {
+                        const parsed = parseStandupCommand(quickCommand);
+                        if (parsed.isValid || quickCommand.includes('/standup')) {
+                          setFormData({
+                            yesterday: parsed.yesterday,
+                            today: parsed.today,
+                            blockers: parsed.blockers,
+                            notes: ''
+                          });
+                          toast.success("Command parsed! Fields auto-filled.");
+                        } else {
+                          toast.error("Invalid command format.");
+                        }
+                      }}
+                      className="h-10 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 font-bold"
+                    >
+                      Parse
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="space-y-2">
               <div className="flex items-center justify-between">

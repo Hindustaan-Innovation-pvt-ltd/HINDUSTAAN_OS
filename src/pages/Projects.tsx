@@ -162,7 +162,7 @@ export default function Projects({ session }: { session?: any }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-page-title tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-            Project Timeline
+            Projects - Project timeline
             {role === 'admin' && (
               <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold border-0">
                 Organization Monitoring

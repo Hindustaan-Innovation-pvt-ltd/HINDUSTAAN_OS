@@ -52,20 +52,20 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 const employeeNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
-  { name: 'My Tasks', icon: CheckSquare },
+  { name: 'My Tasks - Kanban Board', icon: CheckSquare },
   { name: 'Work Logs', icon: Clock },
   { name: 'Leave Management', icon: CalendarRange },
   { name: 'Daily Standup', icon: Mic },
-  { name: 'My Projects', icon: FolderKanban },
+  { name: 'Projects - Project timeline', icon: FolderKanban },
   { name: 'Milestones', icon: Flag },
-  { name: 'My Performance', icon: Trophy },
+  { name: 'Contribution Scores', icon: Trophy },
   { name: 'Settings', icon: Settings },
 ];
 
 const managerNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
-  { name: 'Projects', icon: FolderKanban },
-  { name: 'Tasks', icon: CheckSquare },
+  { name: 'Projects - Project timeline', icon: FolderKanban },
+  { name: 'My Tasks - Kanban Board', icon: CheckSquare },
   { name: 'Gantt Timeline', icon: CalendarDays },
   { name: 'Progress Tracker', icon: BarChart2 },
   { name: 'Work Logs', icon: Clock },
@@ -82,8 +82,8 @@ const adminNavigationGroups = [
     name: 'Organization Overview',
     icon: Building,
     items: [
-      { name: 'Projects', icon: FolderKanban },
-      { name: 'Tasks', icon: CheckSquare },
+      { name: 'Projects - Project timeline', icon: FolderKanban },
+      { name: 'My Tasks - Kanban Board', icon: CheckSquare },
       { name: 'Team Members', icon: Users },
       { name: 'Gantt Timeline', icon: CalendarDays },
       { name: 'Progress Tracker', icon: BarChart2 },
@@ -454,13 +454,12 @@ export default function DashboardShell({
   const { theme, toggleTheme, accentColor } = useTheme();
   const isDark = theme === 'dark';
 
-  // Apply accent color based on user role
+  // Apply accent color to DOM
   useEffect(() => {
     const root = window.document.documentElement;
-    const activeColor = role === 'admin' ? accentColor : 'cosmic';
     ['theme-orange', 'theme-blue', 'theme-emerald', 'theme-rose', 'theme-purple', 'theme-cosmic'].forEach(c => root.classList.remove(c));
-    root.classList.add(`theme-${activeColor}`);
-  }, [role, accentColor]);
+    root.classList.add(`theme-${accentColor}`);
+  }, [accentColor]);
 
   // Ensure sidebar open state resets on resize to desktop/tablet
   useEffect(() => {

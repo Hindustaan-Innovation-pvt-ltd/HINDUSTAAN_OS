@@ -238,7 +238,7 @@ export default function ContributionScores({ session }: { session?: any }) {
 
     // Add title
     doc.setFontSize(20);
-    doc.text('Contribution Analytics Report', 14, 22);
+    doc.text('Contribution Scores Report', 14, 22);
 
     doc.setFontSize(11);
     doc.text(`Generated on: ${format(new Date(), 'PPP')}`, 14, 30);
@@ -615,7 +615,7 @@ export default function ContributionScores({ session }: { session?: any }) {
         <div>
           <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             <Trophy className="mr-3 h-8 w-8 text-orange-500" />
-            Contribution Analytics
+            Contribution Scores
             {isAdmin && (
               <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold border-0">
                 Organization Monitoring

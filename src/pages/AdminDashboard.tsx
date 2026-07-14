@@ -1790,7 +1790,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
                   />
                 </div>
-              </div>
+            </div>
             </div>
 
             <DialogFooter className="p-6 border-t border-slate-100 dark:border-slate-850 gap-2 shrink-0">

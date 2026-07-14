@@ -383,12 +383,12 @@ function App() {
                   {currentView === 'Roles & Permissions' && (
                     <RolesAndPermissions />
                   )}
-                  {(currentView === 'Tasks' || currentView === 'My Tasks') && (
+                  {(currentView === 'Tasks' || currentView === 'My Tasks' || currentView === 'My Tasks - Kanban Board') && (
                     <TaskBoard session={session} isSidebarMinimized={isSidebarMinimized} />
                   )}
                   {currentView === 'Time Tracking' && <TimeAndStandup session={session} />}
                   {currentView === 'Milestones' && <Milestones session={session} />}
-                  {(currentView === 'Projects' || currentView === 'My Projects') && <Projects session={session} />}
+                  {(currentView === 'Projects' || currentView === 'My Projects' || currentView === 'Projects - Project timeline') && <Projects session={session} />}
                   {currentView === 'About Us' && <AboutUs />}
                   {currentView === 'Settings' && <Settings session={session} />}
                   {currentView === 'My Profile' && (
@@ -428,8 +428,8 @@ function App() {
 
                   {/* Fallback for anything else */}
                   {![
-                    'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
-                    'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Edit Profile', 'Team Members',
+                    'Dashboard', 'Tasks', 'My Tasks', 'My Tasks - Kanban Board', 'Time Tracking', 'Milestones',
+                    'Projects', 'My Projects', 'Projects - Project timeline', 'About Us', 'Settings', 'My Profile', 'Edit Profile', 'Team Members',
                     'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
                     'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support', 'Workspace Settings - Security & Access',
                     'Workspace Settings - General', 'Workspace Settings - Projects', 'Workspace Settings - Appearance', 'Subscription Management', 'Employees', 'Managers', 'Roles & Permissions',

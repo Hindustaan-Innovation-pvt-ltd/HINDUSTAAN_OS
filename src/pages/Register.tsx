@@ -21,6 +21,7 @@ const registerSchema = z.object({
   designation: z.string().optional(),
   department: z.string(),
   employeeId: z.string().optional(),
+  managerId: z.string().optional(),
   phone: z.string().optional(),
   termsAccepted: z.boolean().refine(val => val === true, "You must accept the terms")
 }).refine((data) => data.password === data.confirmPassword, {
@@ -40,6 +41,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
       designation: 'Frontend Developer',
       department: 'Engineering',
       employeeId: '',
+      managerId: '',
       phone: '',
       termsAccepted: false
     }
@@ -228,45 +230,100 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                 </div>
             </div>
 
-            {/* Dynamic Designation for Employee */}
+            {/* Employee: Emp ID | Designation on same line */}
             {selectedRole === 'employee' && (
-              <div className="space-y-0.5">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Designation / Specialization</label>
-                <Controller
-                  name="designation"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 h-[36px] px-4 text-sm text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200">
-                        <SelectValue placeholder="Select designation" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl">
-                        <SelectItem value="Frontend Developer">Frontend Developer</SelectItem>
-                        <SelectItem value="Backend Developer">Backend Developer</SelectItem>
-                        <SelectItem value="Product Manager">Product Manager</SelectItem>
-                        <SelectItem value="App Developer">App Developer</SelectItem>
-                        <SelectItem value="Graphic Designer">Graphic Designer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-0.5">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Employee ID</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                      <Hash className="h-4 w-4" />
+                    </div>
+                    <input
+                      type="text"
+                      {...register("employeeId")}
+                      className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-orange-500 dark:focus:border-purple-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200"
+                      placeholder="E.g. EMP001"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-0.5">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Designation</label>
+                  <Controller
+                    name="designation"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-2 h-[36px] px-4 text-sm text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200">
+                          <SelectValue placeholder="Select designation" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl">
+                          <SelectItem value="Frontend Developer">Frontend Developer</SelectItem>
+                          <SelectItem value="Backend Developer">Backend Developer</SelectItem>
+                          <SelectItem value="Product Manager">Product Manager</SelectItem>
+                          <SelectItem value="App Developer">App Developer</SelectItem>
+                          <SelectItem value="Graphic Designer">Graphic Designer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
               </div>
             )}
 
-            <div className="space-y-0.5">
-              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Phone</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                  <Phone className="h-4 w-4" />
+            {/* Manager: Manager ID | Phone on same line */}
+            {selectedRole === 'manager' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-0.5">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Manager ID</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                      <Hash className="h-4 w-4" />
+                    </div>
+                    <input
+                      type="text"
+                      {...register("managerId")}
+                      className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-orange-500 dark:focus:border-purple-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200"
+                      placeholder="E.g. MGR001"
+                    />
+                  </div>
                 </div>
-                <input
-                  type="tel"
-                  {...register("phone")}
-                  className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-orange-500 dark:focus:border-purple-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200"
-                  placeholder="+91..."
-                />
+
+                <div className="space-y-0.5">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Phone</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                      <Phone className="h-4 w-4" />
+                    </div>
+                    <input
+                      type="tel"
+                      {...register("phone")}
+                      className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-orange-500 dark:focus:border-purple-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200"
+                      placeholder="+91..."
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Phone for employee role (standalone) */}
+            {selectedRole === 'employee' && (
+              <div className="space-y-0.5">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Phone</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="tel"
+                    {...register("phone")}
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-orange-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-800/50 py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-orange-500 dark:focus:border-purple-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-purple-500/20 transition-all duration-200"
+                    placeholder="+91..."
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {/* Password */}
