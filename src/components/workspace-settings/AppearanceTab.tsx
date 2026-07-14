@@ -8,7 +8,8 @@ const ACCENT_COLORS = [
   { id: 'blue', hex: '#3B82F6' },
   { id: 'emerald', hex: '#10B981' },
   { id: 'rose', hex: '#F43F5E' },
-  { id: 'purple', hex: '#A855F7' }
+  { id: 'purple', hex: '#A855F7' },
+  { id: 'cosmic', hex: '#5B7CFF' }
 ];
 
 export default function AppearanceTab({ data, updateField }: { data: any, updateField: (key: string, value: any) => void }) {
