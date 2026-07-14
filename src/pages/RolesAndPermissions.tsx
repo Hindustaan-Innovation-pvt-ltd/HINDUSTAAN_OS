@@ -190,7 +190,7 @@ export default function RolesAndPermissions() {
         {/* Roles List Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {roles.map((r, idx) => (
-            <Card key={idx} className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm relative overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
+            <Card key={idx} className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm relative overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
               <CardContent className="p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0 border", r.color)}>

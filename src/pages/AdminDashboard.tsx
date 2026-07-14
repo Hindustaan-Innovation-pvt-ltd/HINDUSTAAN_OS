@@ -1218,7 +1218,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
           <div className="space-y-6">
             {/* Stats Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
                     <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -1230,7 +1230,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-75 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-75 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-[#5B7CFF]/10 flex items-center justify-center shrink-0">
                     <ShieldCheck className="h-5 w-5 text-[#5B7CFF]" />
@@ -1242,7 +1242,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-100 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-100 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center shrink-0">
                     <FolderKanban className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -1254,7 +1254,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-125 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-125 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-cyan-50 dark:bg-cyan-500/10 flex items-center justify-center shrink-0">
                     <Activity className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
@@ -1266,7 +1266,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-150 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-150 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-teal-50 dark:bg-teal-500/10 flex items-center justify-center shrink-0">
                     <Award className="h-5 w-5 text-teal-600 dark:text-teal-400" />
@@ -1278,7 +1278,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-200 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-200 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
                     <BellRing className="h-5 w-5 text-amber-600 dark:text-amber-400" />
