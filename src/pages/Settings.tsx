@@ -741,14 +741,46 @@ export default function Settings({ session }: { session: any }) {
 
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Accent Color</h3>
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => setAccentColor('cosmic')} className={cn("h-8 w-8 rounded-full bg-[#5B7CFF] hover:scale-110 transition-transform", accentColor === 'cosmic' && "ring-4 ring-[#5B7CFF]/20")}></button>
-                    <button onClick={() => setAccentColor('orange')} className={cn("h-8 w-8 rounded-full bg-orange-500 hover:scale-110 transition-transform", accentColor === 'orange' && "ring-4 ring-orange-500/20")}></button>
-                    <button onClick={() => setAccentColor('blue')} className={cn("h-8 w-8 rounded-full bg-blue-500 hover:scale-110 transition-transform", accentColor === 'blue' && "ring-4 ring-blue-500/20")}></button>
-                    <button onClick={() => setAccentColor('emerald')} className={cn("h-8 w-8 rounded-full bg-emerald-500 hover:scale-110 transition-transform", accentColor === 'emerald' && "ring-4 ring-emerald-500/20")}></button>
-                    <button onClick={() => setAccentColor('rose')} className={cn("h-8 w-8 rounded-full bg-rose-500 hover:scale-110 transition-transform", accentColor === 'rose' && "ring-4 ring-rose-500/20")}></button>
-                    <button onClick={() => setAccentColor('purple')} className={cn("h-8 w-8 rounded-full bg-purple-500 hover:scale-110 transition-transform", accentColor === 'purple' && "ring-4 ring-purple-500/20")}></button>
-                  </div>
+                  <TooltipProvider>
+                    <div className="flex items-center gap-3">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => setAccentColor('cosmic')} className={cn("h-8 w-8 rounded-full bg-[#5B7CFF] ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'cosmic' && "ring-[#5B7CFF]/30 scale-110")}></button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Default View</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => setAccentColor('orange')} className={cn("h-8 w-8 rounded-full bg-orange-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'orange' && "ring-orange-500/30 scale-110")}></button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Orange</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => setAccentColor('blue')} className={cn("h-8 w-8 rounded-full bg-blue-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'blue' && "ring-blue-500/30 scale-110")}></button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Blue</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => setAccentColor('emerald')} className={cn("h-8 w-8 rounded-full bg-emerald-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'emerald' && "ring-emerald-500/30 scale-110")}></button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Emerald</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => setAccentColor('rose')} className={cn("h-8 w-8 rounded-full bg-rose-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'rose' && "ring-rose-500/30 scale-110")}></button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Rose</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => setAccentColor('purple')} className={cn("h-8 w-8 rounded-full bg-purple-500 ring-4 ring-transparent hover:scale-110 transition-all", accentColor === 'purple' && "ring-purple-500/30 scale-110")}></button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Purple</p></TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TooltipProvider>
                 </div>
 
                 {role !== 'employee' && (
