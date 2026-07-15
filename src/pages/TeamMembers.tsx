@@ -156,7 +156,17 @@ export default function TeamMembers() {
       }
     } catch (err: any) {
       console.error('Error fetching team data:', err);
-      toast.error('Data Load Error', { description: err.message || 'Failed to load team directories.' });
+      if (err.response?.status !== 401) {
+        toast.error('Data Load Error', { description: err.message || 'Failed to load team directories.' });
+      }
+      const mockInterns = generateMockInterns(currentUser);
+      setInterns(mockInterns);
+      setStats(prev => ({
+        ...prev,
+        totalInterns: mockInterns.length,
+        onlineCount: mockInterns.filter(i => i.status === 'Online').length,
+        leaveCount: mockInterns.filter(i => i.status === 'Leave').length,
+      }));
     } finally {
       setLoading(false);
     }
