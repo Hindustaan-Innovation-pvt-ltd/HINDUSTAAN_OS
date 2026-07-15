@@ -141,7 +141,7 @@ export const updatePassword = (
  */
 export const updateProfileOnBackend = async (
   userId: string,
-  fields: { name?: string; department?: string; designation?: string; avatarUrl?: string }
+  fields: { name?: string; department?: string; designation?: string; avatarUrl?: string; phoneWa?: string }
 ): Promise<User | null> => {
   try {
     const response = await api.put(`/auth/profile/${userId}`, fields);
@@ -157,6 +157,7 @@ export const updateProfileOnBackend = async (
           designation: dbUser.designation ?? current.designation,
           avatarUrl: dbUser.avatarUrl ?? current.avatarUrl,
           empId: dbUser.empId ?? current.empId,
+          phone: dbUser.phoneWa ?? current.phone,
         };
         const key = 'hindustaan_user';
         if (localStorage.getItem(key)) {
@@ -171,6 +172,41 @@ export const updateProfileOnBackend = async (
   } catch (err: any) {
     console.error('Failed to update profile on backend:', err);
     throw new Error(err.response?.data?.message || err.message || 'Profile update failed');
+  }
+};
+
+/**
+ * Calls GET /api/auth/profile/:userId to fetch profile details and updates local session details.
+ */
+export const fetchProfileFromBackend = async (userId: string): Promise<User | null> => {
+  try {
+    const response = await api.get(`/auth/profile/${userId}`);
+    if (response.data?.success) {
+      const dbUser = response.data.user;
+      const current = getCurrentUser();
+      if (current) {
+        const updated: User = {
+          ...current,
+          name: dbUser.name ?? current.name,
+          department: dbUser.department ?? current.department,
+          designation: dbUser.designation ?? current.designation,
+          avatarUrl: dbUser.avatarUrl ?? current.avatarUrl,
+          empId: dbUser.empId ?? current.empId,
+          phone: dbUser.phoneWa ?? current.phone,
+        };
+        const key = 'hindustaan_user';
+        if (localStorage.getItem(key)) {
+          localStorage.setItem(key, JSON.stringify(updated));
+        } else {
+          sessionStorage.setItem(key, JSON.stringify(updated));
+        }
+        return updated;
+      }
+    }
+    return null;
+  } catch (err: any) {
+    console.error('Failed to fetch profile from backend:', err);
+    return null;
   }
 };
 
