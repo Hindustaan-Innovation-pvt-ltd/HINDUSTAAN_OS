@@ -15,7 +15,7 @@ export function ConnectedApps() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
+
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Connected Apps</h2>
@@ -25,7 +25,7 @@ export function ConnectedApps() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        
+
         {/* WhatsApp Integration Card */}
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col transition-all hover:shadow-md">
           <CardHeader className="flex flex-row items-start justify-between pb-4">
@@ -42,7 +42,7 @@ export function ConnectedApps() {
               {waConnected ? 'Connected' : 'Disconnected'}
             </Badge>
           </CardHeader>
-          
+
           <CardContent className="flex-1">
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
@@ -63,7 +63,7 @@ export function ConnectedApps() {
                   <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">99.8%</span>
                 </div>
               </div>
-              
+
               <div className="pt-2">
                 <span className="text-xs font-semibold text-slate-500 block mb-2">Supported Files</span>
                 <div className="flex flex-wrap gap-2">
@@ -76,7 +76,7 @@ export function ConnectedApps() {
               </div>
             </div>
           </CardContent>
-          
+
           <CardFooter className="pt-4 border-t border-slate-100 dark:border-slate-800/60 flex gap-3">
             <Button 
               variant="default" 
@@ -109,7 +109,7 @@ export function ConnectedApps() {
               {fjConnected ? 'Connected' : 'Disconnected'}
             </Badge>
           </CardHeader>
-          
+
           <CardContent className="flex-1">
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60">
@@ -129,7 +129,7 @@ export function ConnectedApps() {
                   </span>
                 </div>
               </div>
-              
+
               <div className="pt-2">
                 <span className="text-xs font-semibold text-slate-500 block mb-2">Recent Boards</span>
                 <div className="flex flex-col gap-2">
@@ -146,7 +146,7 @@ export function ConnectedApps() {
               </div>
             </div>
           </CardContent>
-          
+
           <CardFooter className="pt-4 border-t border-slate-100 dark:border-slate-800/60 flex gap-3">
             <Button 
               variant="default" 
