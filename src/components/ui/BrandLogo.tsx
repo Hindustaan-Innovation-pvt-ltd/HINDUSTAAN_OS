@@ -2,12 +2,13 @@ import React from 'react';
 import { cn } from "@/lib/utils";
 
 interface BrandLogoProps {
-  variant?: 'auth' | 'sidebar';
+  variant?: 'auth' | 'sidebar' | 'minimized';
   className?: string;
 }
 
 export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', className }) => {
   const isAuth = variant === 'auth';
+  const isMinimized = variant === 'minimized';
   
   return (
     <div className={cn(

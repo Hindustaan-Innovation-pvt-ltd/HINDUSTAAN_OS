@@ -12,6 +12,8 @@ export interface User {
   dateJoined?: string;
   avatarUrl?: string;
   empId?: string;
+  isActive?: boolean;
+  reportingManager?: string;
 }
 
 const LOCAL_SESSION_KEY = 'hindustaan_user';
