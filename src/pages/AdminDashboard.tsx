@@ -436,7 +436,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     setUsersList(fresh);
   };
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim() || !formEmail.trim()) {
       toast.error('Name and Email are required.');
@@ -464,7 +464,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
       reportingManager: showOnlyRole === 'manager' ? 'None' : formManager
     };
 
-    const success = registerUser(newUser);
+    const success = await registerUser(newUser);
     if (success) {
       toast.success(`User "${formName}" created successfully!`);
       setIsCreateOpen(false);

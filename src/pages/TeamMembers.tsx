@@ -177,7 +177,7 @@ export default function TeamMembers() {
     const matchesSearch = searchTerm === '' || 
       intern.name.toLowerCase().includes(searchLower) ||
       intern.email.toLowerCase().includes(searchLower) ||
-      intern.skills.some(skill => skill.toLowerCase().includes(searchLower));
+      intern.skills.some((skill: string) => skill.toLowerCase().includes(searchLower));
     
     // Department Filter
     let matchesDept = false;
@@ -592,7 +592,7 @@ export default function TeamMembers() {
                       </div>
                       
                       <div className="flex flex-wrap gap-1.5 mt-auto">
-                        {intern.skills.map(skill => (
+                        {intern.skills.map((skill: string) => (
                           <Badge key={skill} variant="secondary" className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border-0 rounded text-[10px] px-1.5">
                             {skill}
                           </Badge>
@@ -687,7 +687,7 @@ export default function TeamMembers() {
                 <div className="absolute -bottom-10 left-6">
                   <Avatar className="h-24 w-24 border-4 border-white dark:border-slate-950 shadow-md">
                     <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-3xl font-black text-slate-900 dark:text-white">
-                      {selectedIntern.name.split(' ').map(n => n[0]).join('')}
+                      {selectedIntern.name.split(' ').map((n: string) => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
                 </div>
