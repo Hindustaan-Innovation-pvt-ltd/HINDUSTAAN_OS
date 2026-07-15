@@ -88,7 +88,7 @@ const mapBackendLeave = (l: any) => {
 
 export default function LeaveManagement({ session }: { session: any }) {
   const role = session?.user?.user_metadata?.role || 'manager';
-  const isManager = role === 'manager';
+  const isManager = role === 'manager' || role === 'admin';
 
   const [activeTab, setActiveTab] = useState(isManager ? 'requests' : 'apply');
   const [leaveData, setLeaveData] = useState<any[]>([]);
