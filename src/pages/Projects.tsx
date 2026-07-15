@@ -36,7 +36,7 @@ export default function Projects({ session }: { session?: any }) {
   
   const role = session?.user?.user_metadata?.role || 'intern';
   
-  const baseProjects = role === 'manager' ? projects : [projects[0]];
+  const baseProjects = (role === 'manager' ? projects : [projects[0]]).filter(Boolean);
 
   const handleSaveProject = () => {
     if (!newProject.name) return;
