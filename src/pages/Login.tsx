@@ -94,35 +94,28 @@ export default function Login({
     setLoading(true);
     
     try {
+      // Connect to backend via loginUser
+      const user = await loginUser(email, password, rememberMe);
+      if (!user) {
+        toast.error('Authentication Error', { description: 'Login failed.' });
+        setLoading(false);
+        return;
+      }
+
       if (isAdminLogin) {
-        if (email.toLowerCase() !== 'admin@hindustaan.in' || password !== 'admin@123') {
-          toast.error('Authentication Error', { description: 'Incorrect administrator credentials.' });
+        if (user.role !== 'admin') {
+          toast.error('Incorrect Access Type', {
+            description: 'This screen is restricted to administrators.',
+          });
           setLoading(false);
           return;
         }
-        // Force the user object for admin
-        const adminUser = {
-          id: 'ADM001',
-          name: 'admin',
-          email: 'admin@hindustaan.in',
-          role: 'admin',
-          accessToken: `mock-token-${Date.now()}`
-        };
-        localStorage.setItem('hindustaan_user', JSON.stringify(adminUser));
         toast.success('Access granted.', { description: 'Initializing workspaces...' });
         if (onMockLogin) {
           onMockLogin('admin', email);
         } else {
           window.location.reload();
         }
-        return;
-      }
-
-      // Connect to backend via loginUser
-      const user = await loginUser(email, password, rememberMe);
-      if (!user) {
-        toast.error('Authentication Error', { description: 'Login failed.' });
-        setLoading(false);
         return;
       }
       

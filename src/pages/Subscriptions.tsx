@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 
 export default function Subscriptions({ session, onBack }: { session: any, onBack?: () => void }) {
   const [currentPlan, setCurrentPlan] = useState<'Standard' | 'Pro Enterprise' | 'Ultimate'>('Pro Enterprise');
@@ -18,6 +19,23 @@ export default function Subscriptions({ session, onBack }: { session: any, onBac
   const seatsUsed = 136;
   const maxSeats = currentPlan === 'Standard' ? 50 : currentPlan === 'Pro Enterprise' ? 150 : 500;
   const maxStorage = currentPlan === 'Standard' ? 100 : currentPlan === 'Pro Enterprise' ? 500 : 2000;
+
+  const fetchSubscription = async () => {
+    try {
+      const res = await api.get('/subscription');
+      if (res.data?.success && res.data.data) {
+        const sub = res.data.data;
+        setCurrentPlan(sub.planName);
+        setBillingCycle(sub.billingCycle);
+      }
+    } catch (e) {
+      console.error("Failed to load subscription details:", e);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchSubscription();
+  }, []);
 
   const plans = [
     {
@@ -75,23 +93,36 @@ export default function Subscriptions({ session, onBack }: { session: any, onBac
     }
   ];
 
-  const handleUpdatePlan = (planId: 'Standard' | 'Pro Enterprise' | 'Ultimate') => {
+  const handleUpdatePlan = async (planId: 'Standard' | 'Pro Enterprise' | 'Ultimate') => {
     if (planId === currentPlan) {
       toast.info(`You are already subscribed to the ${planId} plan.`);
       return;
     }
 
+    const planObj = plans.find(p => p.id === planId);
+    if (!planObj) return;
+
     setIsUpdating(planId);
     toast.loading(`Processing subscription update to ${planId}...`);
 
-    setTimeout(() => {
-      setIsUpdating(null);
+    try {
+      const price = billingCycle === 'annually' ? planObj.priceAnnually : planObj.priceMonthly;
+      const res = await api.post('/subscription/upgrade', {
+        planName: planId,
+        price,
+        billingCycle
+      });
+      if (res.data?.success) {
+        toast.dismiss();
+        setCurrentPlan(planId);
+        toast.success(`Successfully updated subscription to ${planId}!`);
+      }
+    } catch (err: any) {
       toast.dismiss();
-      setCurrentPlan(planId);
-      toast.success(`Successfully updated subscription to ${planId}!`);
-      // Update local storage representation
-      localStorage.setItem('hindustaan_subscription_plan', planId);
-    }, 1500);
+      toast.error('Subscription update failed', { description: err.response?.data?.message || err.message });
+    } finally {
+      setIsUpdating(null);
+    }
   };
 
   return (

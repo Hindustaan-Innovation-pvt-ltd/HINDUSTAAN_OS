@@ -37,13 +37,13 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import { ProjectProvider } from '@/context/ProjectContext';
 import { UserProvider } from '@/context/UserContext';
 import { NotificationProvider } from '@/context/NotificationContext';
+import { WorkspaceProvider } from '@/context/WorkspaceContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { GLOBAL_LOGS } from '@/data/mockData';
 import { mockWorkLogs } from '@/data/mockWorkLogs';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 
-import { WorkspaceProvider } from '@/context/WorkspaceContext';
 
 function App() {
   const [session, setSession] = useState<any>(null);
@@ -176,9 +176,10 @@ function App() {
     <ThemeProvider>
       <WorkspaceProvider>
       <NotificationProvider>
-        <ProjectProvider key={session?.user?.email || 'guest'}>
-          <UserProvider key={session?.user?.email || 'guest'}>
-            <TooltipProvider>
+        <WorkspaceProvider>
+          <ProjectProvider key={session?.user?.email || 'guest'}>
+            <UserProvider key={session?.user?.email || 'guest'}>
+              <TooltipProvider>
               {!session ? (
                 window.location.pathname === '/admin/login' ? (
                   <Login
@@ -451,9 +452,10 @@ function App() {
                 </DashboardShell>
               )}
               <Toaster position="top-right" duration={4000} richColors closeButton expand />
-            </TooltipProvider>
-          </UserProvider>
-        </ProjectProvider>
+              </TooltipProvider>
+            </UserProvider>
+          </ProjectProvider>
+        </WorkspaceProvider>
       </NotificationProvider>
       </WorkspaceProvider>
     </ThemeProvider>

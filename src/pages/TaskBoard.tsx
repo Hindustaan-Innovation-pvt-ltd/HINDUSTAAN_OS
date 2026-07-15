@@ -299,7 +299,8 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
         desc: updatedTask.description,
         priority: backendPriority,
         status: backendStatus,
-        dueDate: updatedTask.due_date ? new Date(updatedTask.due_date) : undefined
+        dueDate: updatedTask.due_date ? new Date(updatedTask.due_date) : undefined,
+        assigneeId: updatedTask.assignee_id || undefined
       });
       toast.success('Task updated successfully');
     } catch (e: any) {
