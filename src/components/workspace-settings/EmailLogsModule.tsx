@@ -10,6 +10,7 @@ import {
   FileSpreadsheet, Filter, X, ChevronLeft, ChevronRight, Calendar, AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 
 export interface EmailLog {
   id: string;
@@ -93,23 +94,56 @@ const INITIAL_EMAIL_LOGS: EmailLog[] = [
 ];
 
 export default function EmailLogsModule() {
-  const [logs, setLogs] = useState<EmailLog[]>(() => {
-    const saved = localStorage.getItem('projectos_email_logs');
-    return saved ? JSON.parse(saved) : INITIAL_EMAIL_LOGS;
-  });
+  const [logs, setLogs] = useState<EmailLog[]>([]);
+  const [loading, setLoading] = useState(false);
 
+  // Filter and Pagination State
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [dateRangeFilter, setDateRangeFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedLog, setSelectedLog] = useState<EmailLog | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    localStorage.setItem('projectos_email_logs', JSON.stringify(logs));
-  }, [logs]);
+  const fetchLogs = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/notifications/email-logs');
+      if (res.data?.success) {
+        // Map backend sentDate schema to frontend sentDate format
+        const mapped = (res.data.data || []).map((log: any) => ({
+          id: log.id,
+          recipient: log.recipient,
+          subject: log.subject,
+          type: log.type,
+          status: log.status,
+          sentBy: log.sentBy,
+          sentDate: log.sentDate ? log.sentDate.replace('T', ' ').slice(0, 16) : new Date().toISOString().replace('T', ' ').slice(0, 16),
+          deliveryStatus: log.deliveryStatus,
+          body: log.body
+        }));
+        setLogs(mapped);
+      }
+    } catch (e) {
+      console.error("Failed to fetch email logs:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Analytics Calculations
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchLogs();
+    setIsRefreshing(false);
+    toast.success('Email logs updated.', { description: 'Fetched latest logs from gateway.' });
+  };// Analytics Calculations
   const totalSent = logs.length;
   const failedCount = logs.filter(l => l.status === 'Failed').length;
   const pendingCount = logs.filter(l => l.status === 'Pending').length;
