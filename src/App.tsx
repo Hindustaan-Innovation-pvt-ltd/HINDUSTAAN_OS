@@ -44,7 +44,6 @@ import { GLOBAL_LOGS } from '@/data/mockData';
 import { mockWorkLogs } from '@/data/mockWorkLogs';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 
-import { WorkspaceProvider } from '@/context/WorkspaceContext';
 
 function App() {
   const [session, setSession] = useState<any>(null);
