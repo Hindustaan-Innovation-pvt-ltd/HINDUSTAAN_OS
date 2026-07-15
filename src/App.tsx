@@ -43,6 +43,8 @@ import { GLOBAL_LOGS } from '@/data/mockData';
 import { mockWorkLogs } from '@/data/mockWorkLogs';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 
+import { WorkspaceProvider } from '@/context/WorkspaceContext';
+
 function App() {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -172,6 +174,7 @@ function App() {
 
   return (
     <ThemeProvider>
+      <WorkspaceProvider>
       <NotificationProvider>
         <ProjectProvider key={session?.user?.email || 'guest'}>
           <UserProvider key={session?.user?.email || 'guest'}>
@@ -452,6 +455,7 @@ function App() {
           </UserProvider>
         </ProjectProvider>
       </NotificationProvider>
+      </WorkspaceProvider>
     </ThemeProvider>
   );
 }

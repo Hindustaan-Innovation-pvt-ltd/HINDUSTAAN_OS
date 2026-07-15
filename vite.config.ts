@@ -13,8 +13,9 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: "https://hindustaan-os-backend.onrender.com",
         changeOrigin: true,
+        secure: false,
       },
     },
   },
