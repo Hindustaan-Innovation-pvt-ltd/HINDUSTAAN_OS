@@ -23,6 +23,7 @@ const GANTT_TASKS = [
 import { GLOBAL_PROJECTS } from '@/data/mockData';
 import { useProjects } from '@/context/ProjectContext';
 import { useNotifications } from '@/context/NotificationContext';
+import api from '@/lib/api';
 
 export default function Projects({ session }: { session?: any }) {
   const { addNotification } = useNotifications();
@@ -31,12 +32,28 @@ export default function Projects({ session }: { session?: any }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<any>(null);
-  const [newProject, setNewProject] = useState({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium', tasks: [] as any[] });
+  const [newProject, setNewProject] = useState({ name: '', manager: '', managerId: '', deadline: '', budget: '', priority: 'Medium', tasks: [] as any[] });
+  const [leads, setLeads] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        const res = await api.get('/team/profiles');
+        if (res.data?.success) {
+          const list = res.data.data.filter((m: any) => m.role === 'manager' || m.role === 'admin');
+          setLeads(list);
+        }
+      } catch (err) {
+        console.error("Failed to fetch leads:", err);
+      }
+    };
+    fetchLeads();
+  }, []);
   const [selectedWeekDate, setSelectedWeekDate] = useState<Date>(new Date());
   
   const role = session?.user?.user_metadata?.role || 'intern';
   
-  const baseProjects = (role === 'manager' ? projects : [projects[0]]).filter(Boolean);
+  const baseProjects = (role === 'manager' || role === 'admin' ? projects : [projects[0]]).filter(Boolean);
 
   const handleSaveProject = () => {
     if (!newProject.name) return;
@@ -45,6 +62,7 @@ export default function Projects({ session }: { session?: any }) {
       updateProject(editingProjectId, {
         name: newProject.name,
         manager: newProject.manager,
+        managerId: newProject.managerId,
         deadline: newProject.deadline,
         tasks: newProject.tasks,
         budget: newProject.budget ? (newProject.budget.toString().startsWith('$') ? newProject.budget : `$${newProject.budget}`) : 'TBD'
@@ -67,10 +85,10 @@ export default function Projects({ session }: { session?: any }) {
         iconColor: randomColor.iconColor,
         strokeColor: randomColor.strokeColor,
         manager: newProject.manager || 'Unassigned',
+        managerId: newProject.managerId || '',
         deadline: newProject.deadline || 'TBD',
-        budget: newProject.budget ? `$${newProject.budget}` : 'TBD'
+        budget: newProject.budget ? (newProject.budget.toString().startsWith('$') ? newProject.budget : `$${newProject.budget}`) : 'TBD'
       };
-      
       
       addProject(project);
       addNotification({
@@ -85,7 +103,7 @@ export default function Projects({ session }: { session?: any }) {
     
     setIsModalOpen(false);
     setEditingProjectId(null);
-    setNewProject({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium', tasks: [] });
+    setNewProject({ name: '', manager: '', managerId: '', deadline: '', budget: '', priority: 'Medium', tasks: [] });
   };
 
   const startOfCurrentWeek = startOfWeek(selectedWeekDate, { weekStartsOn: 1 });
@@ -163,7 +181,7 @@ export default function Projects({ session }: { session?: any }) {
         {role === 'manager' && (
           <button onClick={() => {
             setEditingProjectId(null);
-            setNewProject({ name: '', manager: 'Amanda S.', deadline: '', budget: '', priority: 'Medium', tasks: [] });
+            setNewProject({ name: '', manager: '', managerId: '', deadline: '', budget: '', priority: 'Medium', tasks: [] });
             setIsModalOpen(true);
           }} className="flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 shrink-0">
             <Plus className="h-4 w-4 mr-1.5" /> New Project
@@ -249,7 +267,7 @@ export default function Projects({ session }: { session?: any }) {
                         {project.status}
                       </Badge>
                       
-                      {role === 'manager' && (
+                      {(role === 'manager' || role === 'admin') && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button className="h-6 w-6 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors outline-none focus:ring-2 focus:ring-orange-500/50 backdrop-blur-sm">
@@ -262,7 +280,8 @@ export default function Projects({ session }: { session?: any }) {
                               setNewProject({
                                 name: project.name,
                                 manager: project.manager,
-                                deadline: project.deadline && project.deadline !== 'TBD' ? project.deadline : '',
+                                managerId: project.managerId || '',
+                                deadline: project.endDate || '',
                                 budget: project.budget && project.budget !== 'TBD' ? project.budget.replace('$', '') : '',
                                 priority: 'Medium',
                                 tasks: project.tasks || []
@@ -549,13 +568,21 @@ export default function Projects({ session }: { session?: any }) {
                   <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Project Lead</label>
                   <div className="relative">
                     <select
-                      value={newProject.manager}
-                      onChange={(e) => setNewProject({ ...newProject, manager: e.target.value })}
+                      value={newProject.managerId || ''}
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        const selectedLead = leads.find(l => l.id === selectedId);
+                        setNewProject({
+                          ...newProject,
+                          managerId: selectedId,
+                          manager: selectedLead ? selectedLead.name : 'Unassigned'
+                        });
+                      }}
                       className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all appearance-none cursor-pointer"
                     >
-                      <option value="Unassigned">Unassigned</option>
-                      {GLOBAL_TEAM_MEMBERS.map(member => (
-                        <option key={member.id} value={member.name}>{member.name}</option>
+                      <option value="">Unassigned</option>
+                      {leads.map(lead => (
+                        <option key={lead.id} value={lead.id}>{lead.name}</option>
                       ))}
                     </select>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
@@ -693,7 +720,7 @@ export default function Projects({ session }: { session?: any }) {
               <button 
                 className="flex-1 h-12 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-md shadow-orange-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
                 onClick={handleSaveProject}
-                disabled={!newProject.name.trim()}
+                disabled={newProject.name.trim().length < 3}
               >
                 {editingProjectId ? 'Save Changes' : 'Launch Project'}
               </button>

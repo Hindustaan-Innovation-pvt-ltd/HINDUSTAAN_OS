@@ -9,6 +9,7 @@ import { getRegisteredUsers, getCurrentUser } from '@/lib/auth';
 import type { User } from '@/lib/auth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import api from '@/lib/api';
 
 interface RoleHistoryItem {
   id: string;
@@ -33,10 +34,19 @@ export default function RolesAndPermissions() {
   const adminUser = getCurrentUser();
   const adminName = adminUser?.name || 'System Admin';
 
+  const fetchUsers = async () => {
+    try {
+      const res = await api.get('/admin/users?page=1&limit=200');
+      if (res.data?.success) {
+        setUsersList(res.data.data.users || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch users:", e);
+    }
+  };
+
   useEffect(() => {
-    // Load users
-    const users = getRegisteredUsers();
-    setUsersList(users);
+    fetchUsers();
 
     // Load History from localStorage
     const savedHistory = localStorage.getItem('hindustaan_role_history');
@@ -69,7 +79,7 @@ export default function RolesAndPermissions() {
     }
   }, []);
 
-  const handleAssignRole = (e: React.FormEvent) => {
+  const handleAssignRole = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUserId) {
       toast.error('Please select a user first.');
@@ -87,46 +97,42 @@ export default function RolesAndPermissions() {
     }
 
     const prevRole = targetUser.role;
-    if (prevRole === newRole.toLowerCase()) {
+    const mappedRole = newRole.toLowerCase() === 'employee' ? 'intern' : newRole.toLowerCase();
+    if (prevRole === mappedRole) {
       toast.info('The user is already assigned this role.');
       return;
     }
 
-    // 1. Update User in localStorage hindustaan_users
-    const allUsers = getRegisteredUsers();
-    const updatedUsers = allUsers.map(u => {
-      if (u.email.toLowerCase() === targetUser.email.toLowerCase()) {
-        return { ...u, role: newRole.toLowerCase() as any };
+    try {
+      const res = await api.put(`/auth/profile/${selectedUserId}`, { role: mappedRole });
+      if (res.data?.success) {
+        toast.success(`Successfully assigned role "${newRole}" to ${targetUser.name}!`);
+        
+        // Log locally to history list
+        const newHistoryRecord: RoleHistoryItem = {
+          id: `role-hist-${Date.now()}`,
+          userName: targetUser.name,
+          userEmail: targetUser.email,
+          prevRole: prevRole,
+          newRole: newRole.toLowerCase(),
+          changedBy: adminName,
+          timestamp: new Date().toISOString()
+        };
+        const updatedHistory = [newHistoryRecord, ...historyList];
+        localStorage.setItem('hindustaan_role_history', JSON.stringify(updatedHistory));
+        setHistoryList(updatedHistory);
+        
+        fetchUsers();
+
+        // Reset Form fields
+        setSelectedUserId('');
+        setSearchTerm('');
+        setNewRole('');
+        setIsDropdownOpen(false);
       }
-      return u;
-    });
-    localStorage.setItem('hindustaan_users', JSON.stringify(updatedUsers));
-
-    // 2. Create History Record
-    const newHistoryRecord: RoleHistoryItem = {
-      id: `role-hist-${Date.now()}`,
-      userName: targetUser.name,
-      userEmail: targetUser.email,
-      prevRole: prevRole,
-      newRole: newRole.toLowerCase(),
-      changedBy: adminName,
-      timestamp: new Date().toISOString()
-    };
-
-    const updatedHistory = [newHistoryRecord, ...historyList];
-    localStorage.setItem('hindustaan_role_history', JSON.stringify(updatedHistory));
-
-    // 3. Update component states
-    setUsersList(updatedUsers);
-    setHistoryList(updatedHistory);
-    
-    toast.success(`Successfully assigned role "${newRole}" to ${targetUser.name}!`);
-
-    // Reset Form fields
-    setSelectedUserId('');
-    setSearchTerm('');
-    setNewRole('');
-    setIsDropdownOpen(false);
+    } catch (err: any) {
+      toast.error("Role assignment failed", { description: err.response?.data?.message || err.message });
+    }
   };
 
   const handleCancel = () => {

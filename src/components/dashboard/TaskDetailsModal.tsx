@@ -48,7 +48,7 @@ interface TaskDetailsModalProps {
 
 const STATUSES: Status[] = ['To Do', 'In Progress', 'In Review', 'Done'];
 
-import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
+import api from '@/lib/api';
 
 export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, onUpdateTask }: TaskDetailsModalProps) {
   const [editedTask, setEditedTask] = useState<Task | null>(null);
@@ -56,6 +56,21 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
   const [newComment, setNewComment] = useState('');
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchTeam = async () => {
+      try {
+        const res = await api.get('/team/profiles');
+        if (res.data?.success) {
+          setTeamMembers(res.data.data || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch team members:', err);
+      }
+    };
+    fetchTeam();
+  }, []);
 
   const handleSaveEditComment = (commentId: string) => {
     if (!editingText.trim()) return;
@@ -216,7 +231,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                   <select
                     value={editedTask.assignee_id}
                     onChange={(e) => {
-                      const selected = GLOBAL_TEAM_MEMBERS.find(u => u.id === e.target.value);
+                      const selected = teamMembers.find(u => u.id === e.target.value);
                       if (selected) {
                         const updated = { ...editedTask, assignee_id: selected.id, assignee_name: selected.name } as Task;
                         setEditedTask(updated);
@@ -225,7 +240,8 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                     }}
                     className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
                   >
-                    {GLOBAL_TEAM_MEMBERS.map(member => (
+                    <option value="">Unassigned</option>
+                    {teamMembers.map(member => (
                       <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={member.id} value={member.id}>{member.name}</option>
                     ))}
                   </select>

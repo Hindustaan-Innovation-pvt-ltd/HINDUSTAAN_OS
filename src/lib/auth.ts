@@ -4,7 +4,7 @@ export interface User {
   id?: string;
   name: string;
   email: string;
-  role: 'manager' | 'employee' | 'admin';
+  role: 'manager' | 'employee' | 'admin' | 'intern';
   designation?: string;
   department?: string;
   phone?: string;
@@ -13,6 +13,7 @@ export interface User {
   avatarUrl?: string;
   empId?: string;
   isActive?: boolean;
+  isApproved?: boolean;
   reportingManager?: string;
 }
 

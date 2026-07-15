@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import api from '@/lib/api';
 
 export interface WorkspaceConfig {
   workspaceName: string;
@@ -23,6 +24,11 @@ export interface WorkspaceConfig {
   pushNotifications: boolean;
   themeMode: string;
   accentColor: string;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPass?: string;
+  whatsappWebhook?: string;
 }
 
 interface WorkspaceContextType {
@@ -77,12 +83,63 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     }
   });
 
-  const updateConfig = (newConfig: Partial<WorkspaceConfig>) => {
+  const fetchWorkspaceSettings = async () => {
+    try {
+      const res = await api.get('/settings/workspace');
+      if (res.data?.success && res.data.data) {
+        const d = res.data.data;
+        setConfig(prev => ({
+          ...prev,
+          workspaceName: d.companyName || prev.workspaceName,
+          supportEmail: d.supportEmail || prev.supportEmail,
+          themeMode: d.primaryTheme || prev.themeMode,
+          smtpHost: d.smtpHost || '',
+          smtpPort: d.smtpPort || undefined,
+          smtpUser: d.smtpUser || '',
+          smtpPass: d.smtpPass || '',
+          whatsappWebhook: d.whatsappWebhook || '',
+        }));
+      }
+    } catch (e) {
+      console.error("Failed to load workspace settings from backend:", e);
+    }
+  };
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
+    if (userStr) {
+      fetchWorkspaceSettings();
+    }
+  }, []);
+
+  const updateConfig = async (newConfig: Partial<WorkspaceConfig>) => {
     setConfig(prev => {
       const updated = { ...prev, ...newConfig };
       localStorage.setItem('workspace_config_v2', JSON.stringify(updated));
       return updated;
     });
+
+    try {
+      if ('workspaceName' in newConfig || 'supportEmail' in newConfig || 'themeMode' in newConfig) {
+        await api.put('/settings/workspace', {
+          companyName: newConfig.workspaceName,
+          supportEmail: newConfig.supportEmail,
+          primaryTheme: newConfig.themeMode
+        });
+      }
+      const hasChannels = 'smtpHost' in newConfig || 'smtpPort' in newConfig || 'smtpUser' in newConfig || 'smtpPass' in newConfig || 'whatsappWebhook' in newConfig;
+      if (hasChannels) {
+        await api.put('/settings/workspace/channels', {
+          smtpHost: newConfig.smtpHost || null,
+          smtpPort: newConfig.smtpPort ? parseInt(newConfig.smtpPort as any, 10) : null,
+          smtpUser: newConfig.smtpUser || null,
+          smtpPass: newConfig.smtpPass || null,
+          whatsappWebhook: newConfig.whatsappWebhook || null
+        });
+      }
+    } catch (e) {
+      console.error("Failed to save workspace settings to backend:", e);
+    }
   };
 
   return (

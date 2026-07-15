@@ -15,10 +15,17 @@ import type { User } from '@/lib/auth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { GLOBAL_ACTIVITY_FEED, GLOBAL_NOTIFICATIONS, GLOBAL_LOGS, GLOBAL_PROJECTS, INITIAL_TASKS } from '@/data/mockData';
+import api from '@/lib/api';
 
 export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'employee' | 'manager' }) {
   // User Management State
   const [usersList, setUsersList] = useState<User[]>([]);
+  const [adminStats, setAdminStats] = useState({
+    totalEmployees: 0,
+    activeTasks: 0,
+    dbSize: '0 B',
+    health: 'Healthy'
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [deptFilter, setDeptFilter] = useState<string>('All');
@@ -31,7 +38,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   // Form Fields for Create/Edit
   const [formName, setFormName] = useState('');
   const [formEmail, setFormEmail] = useState('');
-  const [formRole, setFormRole] = useState<'employee' | 'manager' | 'admin'>('employee');
+  const [formRole, setFormRole] = useState<'employee' | 'manager' | 'admin' | 'intern'>('employee');
   const [formDept, setFormDept] = useState('Engineering');
   const [formDesig, setFormDesig] = useState('');
   const [formPhone, setFormPhone] = useState('');
@@ -348,36 +355,31 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     }
   }, [showOnlyRole]);
 
+  const fetchAdminStats = async () => {
+    try {
+      const res = await api.get('/admin/stats');
+      if (res.data?.success) {
+        setAdminStats(res.data.data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchAdminUsers = async () => {
+    try {
+      const res = await api.get('/admin/users?page=1&limit=100');
+      if (res.data?.success) {
+        setUsersList(res.data.data.users || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
-    // Load registered users on mount
-    setUsersList(getRegisteredUsers());
-
-    // Listen for storage changes
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'hindustaan_users' && e.newValue) setUsersList(JSON.parse(e.newValue));
-      if (e.key === 'hindustaan_activity_feed' && e.newValue) setActivities(JSON.parse(e.newValue));
-      if (e.key === 'hindustaan_notifications' && e.newValue) setNotifications(JSON.parse(e.newValue));
-    };
-    
-    const handleLocalUpdate = (e: CustomEvent) => {
-      if (e.detail.key === 'hindustaan_users') {
-        setUsersList(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : getRegisteredUsers());
-      }
-      if (e.detail.key === 'hindustaan_activity_feed') {
-        setActivities(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_ACTIVITY_FEED);
-      }
-      if (e.detail.key === 'hindustaan_notifications') {
-        setNotifications(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_NOTIFICATIONS);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    };
+    fetchAdminStats();
+    fetchAdminUsers();
   }, []);
 
   const navigateToView = (view: string) => {
@@ -432,8 +434,8 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   ];
 
   const refreshUsers = () => {
-    const fresh = getRegisteredUsers();
-    setUsersList(fresh);
+    fetchAdminUsers();
+    fetchAdminStats();
   };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
@@ -522,21 +524,30 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     refreshUsers();
   };
 
-  const toggleUserActive = (user: User) => {
-    const allUsers = getRegisteredUsers();
-    const updated = allUsers.map(u => {
-      if (u.email.toLowerCase() === user.email.toLowerCase()) {
-        const nextState = u.isActive === undefined ? false : !u.isActive;
-        toast.success(`Account for "${u.name}" has been ${nextState ? 'activated' : 'deactivated'}.`);
-        return { ...u, isActive: nextState };
+  const toggleUserActive = async (user: User) => {
+    if (!user.id) return;
+    try {
+      const res = await api.delete(`/admin/users/${user.id}`);
+      if (res.data?.success) {
+        toast.success(`Account for "${user.name}" has been deactivated successfully!`);
+        refreshUsers();
       }
-      return u;
-    });
-    localStorage.setItem('hindustaan_users', JSON.stringify(updated));
-    window.dispatchEvent(new CustomEvent('local-storage-update', {
-      detail: { key: 'hindustaan_users', value: JSON.stringify(updated) }
-    }));
-    refreshUsers();
+    } catch (e: any) {
+      toast.error("Failed to deactivate account", { description: e.response?.data?.message || e.message });
+    }
+  };
+
+  const handleApproveUser = async (user: User) => {
+    if (!user.id) return;
+    try {
+      const res = await api.post(`/auth/approve/${user.id}`, { empId: user.empId || undefined });
+      if (res.data?.success || res.status === 200) {
+        toast.success(`Account for "${user.name}" has been approved successfully!`);
+        refreshUsers();
+      }
+    } catch (e: any) {
+      toast.error("Failed to approve account", { description: e.response?.data?.message || e.message });
+    }
   };
 
   const openEditModal = (user: User) => {
@@ -584,7 +595,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
   // Filters & Calculations
   const activeUsersCount = usersList.filter(u => u.isActive !== false).length;
-  const totalEmployeesCount = usersList.filter(u => u.role === 'employee').length;
+  const totalEmployeesCount = usersList.filter(u => u.role === 'employee' || u.role === 'intern').length;
   const totalManagersCount = usersList.filter(u => u.role === 'manager').length;
   const activeManagersList = usersList.filter(u => u.role === 'manager' && u.isActive !== false);
   const pendingNotifications = notifications.filter((n: any) => n.unread).length;
@@ -603,12 +614,13 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (u.id && u.id.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesRole = u.role === showOnlyRole;
+    const matchesRole = u.role === showOnlyRole || (showOnlyRole === 'employee' && u.role === 'intern');
     const matchesDept = deptFilter === 'All' || u.department === deptFilter;
     const isActive = u.isActive !== false;
     const matchesStatus = statusFilter === 'All' || 
-      (statusFilter === 'Active' && isActive) || 
-      (statusFilter === 'Inactive' && !isActive);
+      (statusFilter === 'Active' && isActive && u.isApproved !== false) || 
+      (statusFilter === 'Inactive' && !isActive) ||
+      (statusFilter === 'Pending' && u.isApproved === false);
 
     return matchesSearch && matchesRole && matchesDept && matchesStatus;
   });
@@ -662,7 +674,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   { id: 'associated', label: 'Associated Data', icon: ClipboardList },
                   { id: 'notes', label: 'Internal Notes', icon: MessageSquare }
                 ].filter(tab => {
-                  if (selectedDetailUser.role === 'employee' || selectedDetailUser.role === 'manager') {
+                  if (selectedDetailUser.role === 'employee' || selectedDetailUser.role === 'intern' || selectedDetailUser.role === 'manager') {
                     return tab.id !== 'associated' && tab.id !== 'notes';
                   }
                   return true;
@@ -1406,6 +1418,14 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                         <span className="text-slate-550 dark:text-slate-400 font-medium">2FA Enforcement</span>
                         <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">Enabled</Badge>
                       </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-550 dark:text-slate-400 font-medium">Database Size</span>
+                        <span className="font-extrabold text-slate-800 dark:text-slate-200">{adminStats.dbSize}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-550 dark:text-slate-400 font-medium">System Health</span>
+                        <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">{adminStats.health}</Badge>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -1499,6 +1519,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                       <option value="All">All Statuses</option>
                       <option value="Active">Active</option>
                       <option value="Inactive">Deactivated</option>
+                      <option value="Pending">Pending Approval</option>
                     </select>
                   </div>
 
@@ -1604,17 +1625,34 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                             </Badge>
                           </td>
                           <td className="px-6 py-4">
-                            <Badge className={cn(
-                              "font-bold py-0.5 rounded",
-                              isActive 
-                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 hover:bg-emerald-100/50" 
-                                : "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 hover:bg-rose-100/50"
-                            )}>
-                              {isActive ? 'Active' : 'Deactivated'}
-                            </Badge>
+                            {u.isApproved === false ? (
+                              <Badge className="bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 font-bold py-0.5 rounded">
+                                Pending Approval
+                              </Badge>
+                            ) : (
+                              <Badge className={cn(
+                                "font-bold py-0.5 rounded",
+                                isActive 
+                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 hover:bg-emerald-100/50" 
+                                  : "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 hover:bg-rose-100/50"
+                              )}>
+                                {isActive ? 'Active' : 'Deactivated'}
+                              </Badge>
+                            )}
                           </td>
                           <td className="px-6 py-4 text-right actions-cell">
                             <div className="flex items-center justify-end gap-2.5">
+                              {u.isApproved === false && (
+                                <Button
+                                  onClick={() => handleApproveUser(u)}
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-lg border-slate-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 dark:text-emerald-400 dark:border-emerald-950/60 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-300"
+                                  title="Approve Account"
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
                               <Button 
                                 onClick={() => openEditModal(u)}
                                 variant="outline" 

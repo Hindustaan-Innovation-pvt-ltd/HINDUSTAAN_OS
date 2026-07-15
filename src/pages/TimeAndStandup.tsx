@@ -9,6 +9,8 @@ import {
   Send 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import api from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function TimeAndStandup({ session }: { session?: any }) {
   const role = session?.user?.user_metadata?.role || 'intern';
@@ -26,38 +28,114 @@ export default function TimeAndStandup({ session }: { session?: any }) {
   const [selectedTask, setSelectedTask] = useState('');
   const [hoursWorked, setHoursWorked] = useState('');
   const [workNote, setWorkNote] = useState('');
-  const [cumulativeHours, setCumulativeHours] = useState(6.5); // Mock starting hours for today
   
-  const handleStandupSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert('Standup submitted successfully!');
-    setYesterday('');
-    setToday('');
-    setBlockers('');
-  };
-
-  const handleTimeSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const hrs = parseFloat(hoursWorked) || 0;
-    setCumulativeHours(prev => prev + hrs);
-    setHoursWorked('');
-    setWorkNote('');
-    setSelectedTask('');
-    alert('Time logged successfully!');
-  };
-
-  const exceedsCap = (cumulativeHours + (parseFloat(hoursWorked) || 0)) > 10;
-
-  // Mock Calendar Heatmap Data
-  const weeklyLog = [
-    { day: 'Mon', hours: 8 },
-    { day: 'Tue', hours: 9.5 },
-    { day: 'Wed', hours: 4 },
-    { day: 'Thu', hours: cumulativeHours },
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [weeklyLog, setWeeklyLog] = useState([
+    { day: 'Mon', hours: 0 },
+    { day: 'Tue', hours: 0 },
+    { day: 'Wed', hours: 0 },
+    { day: 'Thu', hours: 0 },
     { day: 'Fri', hours: 0 },
     { day: 'Sat', hours: 0 },
     { day: 'Sun', hours: 0 },
-  ];
+  ]);
+  const [cumulativeHours, setCumulativeHours] = useState(0);
+
+  const fetchAssignedTasks = async () => {
+    try {
+      const res = await api.get('/tasks');
+      if (res.data?.success) {
+        setTasks(res.data.data || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchWeeklyLogs = async () => {
+    try {
+      const res = await api.get('/worklogs');
+      if (res.data?.success) {
+        const logs = res.data.data || [];
+        
+        const todayStr = new Date().toISOString().split('T')[0];
+        const todayHours = logs
+          .filter((l: any) => l.date && l.date.split('T')[0] === todayStr)
+          .reduce((acc: number, curr: any) => acc + (curr.hours || 0), 0);
+        setCumulativeHours(todayHours);
+
+        const daysMap: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 0: 0 };
+        logs.forEach((log: any) => {
+          const d = new Date(log.date);
+          const dayOfWeek = d.getDay();
+          daysMap[dayOfWeek] = (daysMap[dayOfWeek] || 0) + (log.hours || 0);
+        });
+
+        setWeeklyLog([
+          { day: 'Mon', hours: daysMap[1] || 0 },
+          { day: 'Tue', hours: daysMap[2] || 0 },
+          { day: 'Wed', hours: daysMap[3] || 0 },
+          { day: 'Thu', hours: daysMap[4] || 0 },
+          { day: 'Fri', hours: daysMap[5] || 0 },
+          { day: 'Sat', hours: daysMap[6] || 0 },
+          { day: 'Sun', hours: daysMap[0] || 0 },
+        ]);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  React.useEffect(() => {
+    if (role === 'intern') {
+      fetchAssignedTasks();
+      fetchWeeklyLogs();
+    }
+  }, [role]);
+
+  const handleStandupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await api.post('/standups', {
+        done: yesterday,
+        doing: today,
+        blocked: blockers.trim() || 'None.',
+        source: 'app'
+      });
+      if (res.data?.success) {
+        toast.success("Standup submitted successfully!");
+        setYesterday('');
+        setToday('');
+        setBlockers('');
+      }
+    } catch (err: any) {
+      toast.error("Failed to submit standup", { description: err.response?.data?.message || err.message });
+    }
+  };
+
+  const handleTimeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await api.post('/worklogs', {
+        taskId: selectedTask,
+        date: new Date().toISOString(),
+        hours: parseFloat(hoursWorked),
+        note: workNote,
+        source: 'app'
+      });
+      if (res.data?.success) {
+        toast.success("Time logged successfully!");
+        setHoursWorked('');
+        setWorkNote('');
+        setSelectedTask('');
+        fetchWeeklyLogs();
+      }
+    } catch (err: any) {
+      toast.error("Failed to log time", { description: err.response?.data?.message || err.message });
+    }
+  };
+
+  const exceedsCap = (cumulativeHours + (parseFloat(hoursWorked) || 0)) > 10;
 
   // Mock Manager Data
   const TEAM_SUBMISSIONS = [
@@ -283,9 +361,11 @@ export default function TimeAndStandup({ session }: { session?: any }) {
                   className="w-full rounded-xl border border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/30 p-3 text-sm text-slate-900 dark:text-white focus:border-orange-500 focus:bg-white dark:bg-slate-900 focus:outline-none focus:ring-4 focus:ring-orange-500/10 cursor-pointer"
                 >
                   <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="" disabled>Select a task...</option>
-                  <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="t-1">Design Authentication Split Screen</option>
-                  <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="t-2">Configure Supabase RLS Policies</option>
-                  <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="t-3">Implement Kanban Drag-and-Drop</option>
+                  {tasks.map(task => (
+                    <option key={task.id} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value={task.id}>
+                      {task.title}
+                    </option>
+                  ))}
                 </select>
               </div>
               
