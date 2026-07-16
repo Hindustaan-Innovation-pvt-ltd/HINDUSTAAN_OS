@@ -12,39 +12,30 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', class
   
   return (
     <div className={cn(
-      "flex items-center bg-transparent border-none shadow-none", 
+      "flex items-center bg-transparent border-none shadow-none select-none", 
       isAuth ? "flex-col items-center text-center" : "flex-row",
       className
     )}>
-      {/* 
-        Image wrapper with light drop-shadow/mix-blend for canvas sanitization.
-        This allows the white circle in the PNG to pop cleanly on both light and dark themes 
-      */}
       <div className="relative flex items-center justify-center drop-shadow-md dark:drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]">
         <img 
           src="/project-os-logo-new.png" 
           alt="Project OS Logo" 
           className={cn(
             "object-contain transition-all duration-200",
-            isAuth ? "h-32 w-32" : "h-9 w-9"
+            isAuth ? "h-24 w-auto max-w-[250px]" : "h-9 w-auto max-w-[150px]"
           )}
         />
       </div>
-      
-      <h1 className={cn(
-        "tracking-tight text-slate-900 dark:text-white",
-        isAuth ? "text-3xl md:text-4xl font-extrabold mt-3 flex flex-col items-center" : "text-lg ml-2 flex items-center font-bold"
-      )}>
-        {isAuth ? (
-          <>
-            Project <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-extrabold block">OS</span>
-          </>
-        ) : (
-          <>
-            Project <span className="bg-gradient-to-r from-purple-500 to-cyan-400 bg-clip-text text-transparent font-extrabold ml-1.5">OS</span>
-          </>
-        )}
-      </h1>
+      {!isMinimized && (
+        <span className={cn(
+          "font-black tracking-tight font-sans transition-all duration-200 whitespace-nowrap",
+          isAuth 
+            ? "text-3xl mt-3 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-600 to-green-600 dark:from-orange-400 dark:via-orange-500 dark:to-green-500 drop-shadow-sm" 
+            : "text-xl ml-3 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-600 to-green-600 dark:from-orange-400 dark:via-orange-500 dark:to-green-500 drop-shadow-sm"
+        )}>
+          Project OS
+        </span>
+      )}
     </div>
   );
 };

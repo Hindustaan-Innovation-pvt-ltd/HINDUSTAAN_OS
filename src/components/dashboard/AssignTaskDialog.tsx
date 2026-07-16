@@ -48,7 +48,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { INITIAL_TASKS } from '@/data/mockData';
+import { INITIAL_TASKS, GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 import api from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -61,7 +61,6 @@ const PROJECTS = [
   { id: 'p5', name: 'Email Notifications System' },
 ];
 
-import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 const MILESTONES = [
   { id: 'm1', name: 'Alpha Release' },
   { id: 'm2', name: 'Beta Testing' },
@@ -125,11 +124,42 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
     },
   });
 
+  const activeProjects = dbProjects.length > 0 ? dbProjects : PROJECTS;
+  const activeTeamMembers = teamMembers.length > 0 ? teamMembers : GLOBAL_TEAM_MEMBERS;
+
   const onSubmit = async (values: z.infer<typeof assignTaskSchema>) => {
     setLoading(true);
+    
     const loggedIn = getCurrentUser();
-    const assignee = teamMembers.find(i => i.id === values.assigneeId);
-    const project = dbProjects.find(p => p.id === values.projectId);
+    const assignee = activeTeamMembers.find(i => i.id === values.assigneeId);
+    const project = activeProjects.find(p => p.id === values.projectId);
+    
+    const newTask = {
+      id: `t-${Date.now()}`,
+      title: values.title,
+      description: values.description || '',
+      project_tag: project ? project.name : 'General',
+      assignee_name: assignee ? assignee.name : 'Unassigned',
+      assignee_id: values.assigneeId,
+      priority: (values.priority || 'Normal') as 'High' | 'Normal' | 'Low',
+      due_date: values.dueDate ? format(values.dueDate, 'MMM dd, yyyy') : 'No Date',
+      status: (values.status || 'To Do') as 'To Do' | 'In Progress' | 'In Review' | 'Done',
+    };
+
+    const saved = localStorage.getItem('hindustaan_tasks_list');
+    const existingTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
+    const updatedTasks = [newTask, ...existingTasks];
+    
+    localStorage.setItem('hindustaan_tasks_list', JSON.stringify(updatedTasks));
+    
+    // Dispatch local StorageEvent for real-time tab updates
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'hindustaan_tasks_list',
+      newValue: JSON.stringify(updatedTasks)
+    }));
+
+    // Log Activity
+    logActivity('Manager', 'assigned task to', assignee ? assignee.name : 'Unknown', 'assign');
 
     // Save to backend database
     try {
@@ -147,34 +177,16 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
 
       if (res.data?.success) {
         toast.success('Task created and assigned successfully on server!');
-        // Update local cache for immediate feedback
-        const newTask = {
-          id: res.data.data?.id || `t-${Date.now()}`,
-          title: values.title,
-          description: values.description || '',
-          project_tag: project ? project.name : 'General',
-          assignee_name: assignee ? assignee.name : 'Unassigned',
-          assignee_id: values.assigneeId,
-          priority: (values.priority || 'Normal') as any,
-          due_date: values.dueDate ? format(values.dueDate, 'yyyy-MM-dd') : 'No Date',
-          status: (values.status || 'To Do') as any,
-        };
-
-        const saved = localStorage.getItem('hindustaan_tasks_list');
-        const existingTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
-        const updatedTasks = [newTask, ...existingTasks];
-        localStorage.setItem('hindustaan_tasks_list', JSON.stringify(updatedTasks));
-        
-        window.dispatchEvent(new StorageEvent('storage', {
-          key: 'hindustaan_tasks_list',
-          newValue: JSON.stringify(updatedTasks)
-        }));
       }
     } catch (err: any) {
       console.error(err);
       toast.error('Could not save task to database', { description: err.response?.data?.message || err.message });
     } finally {
       setLoading(false);
+      toast.success('Task assigned successfully.', {
+        description: `Amanda assigned '${values.title}' to ${assignee?.name || 'Unassigned'}.`
+      });
+      
       form.reset();
       onOpenChange(false);
     }
@@ -224,7 +236,7 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl">
-                          {dbProjects.map(project => (
+                          {activeProjects.map(project => (
                             <SelectItem key={project.id} value={project.id} className="font-medium">{project.name}</SelectItem>
                           ))}
                         </SelectContent>
@@ -278,10 +290,10 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
                                   <div className="flex items-center gap-2">
                                     <Avatar className="h-5 w-5">
                                       <AvatarFallback className="text-[9px] bg-orange-100 text-orange-700">
-                                        {teamMembers.find(i => i.id === field.value)?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                                        {activeTeamMembers.find(i => i.id === field.value)?.initials || activeTeamMembers.find(i => i.id === field.value)?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                                       </AvatarFallback>
                                     </Avatar>
-                                    <span>{teamMembers.find(i => i.id === field.value)?.name}</span>
+                                    <span>{activeTeamMembers.find(i => i.id === field.value)?.name}</span>
                                   </div>
                                 )
                                 : "Select intern..."}
@@ -295,7 +307,7 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
                             <CommandList>
                               <CommandEmpty>No intern found.</CommandEmpty>
                               <CommandGroup>
-                                {teamMembers.map((intern) => (
+                                {activeTeamMembers.map((intern) => (
                                   <CommandItem
                                     value={intern.name}
                                     key={intern.id}
@@ -314,12 +326,12 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
                                     />
                                     <Avatar className="h-6 w-6">
                                       <AvatarFallback className="text-[10px] bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                                        {intern.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                                        {intern.initials || intern.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                                       </AvatarFallback>
                                     </Avatar>
                                     <div className="flex flex-col">
                                       <span>{intern.name}</span>
-                                      <span className="text-xs text-slate-500">{intern.designation || 'Intern'}</span>
+                                      <span className="text-xs text-slate-500">{intern.designation || intern.role || 'Intern'}</span>
                                     </div>
                                   </CommandItem>
                                 ))}
