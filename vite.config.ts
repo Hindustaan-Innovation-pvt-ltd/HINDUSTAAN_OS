@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
   // Proxy target from .env, fallback to localhost:5000
-  const proxyTarget = env.VITE_PROXY_TARGET || 'http://localhost:5000';
+  const proxyTarget = env.VITE_PROXY_TARGET || 'http://localhost:3000';
 
   return {
     plugins: [react(), tailwindcss()],
