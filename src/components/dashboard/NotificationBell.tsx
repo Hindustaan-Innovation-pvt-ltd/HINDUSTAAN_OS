@@ -1,301 +1,518 @@
-import React, { useState, useEffect } from 'react';
-import { Bell, Check, Trash2 } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
+import React, { useState } from 'react';
+import { 
+  Bell, Check, Trash2, Settings, ExternalLink, FileText, Clock, 
+  UserPlus, Calendar, Target, AlertTriangle, Video, CheckSquare, ShieldAlert, X
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUser } from '@/context/UserContext';
-import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { cn, getRelativeTime } from '@/lib/utils';
+import TaskDetailsModal from './TaskDetailsModal';
+import { useNotifications } from '@/context/NotificationContext';
 
-interface NotificationItem {
-  id: number;
-  category: string;
-  icon: string;
-  title: string;
-  message: string;
-  time: string;
-  unread: boolean;
-  group: string;
-  metadata?: {
-    requestId?: number;
-    type?: string;
-    employee?: string;
-    date?: string;
-  };
-}
-
-const DEFAULT_MANAGER_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 1689360000000 + 1,
-    category: 'Leave Management',
-    icon: '📅',
-    title: 'New Leave Request',
-    message: 'Tanvy Pandey applied for leave on July 15',
-    time: '2 minutes ago',
-    unread: true,
-    group: 'Today',
-    metadata: {
-      requestId: 1,
-      type: 'leave_request',
-      employee: 'Tanvy Pandey',
-      date: '2026-07-15'
-    }
-  },
-  {
-    id: 1689360000000 + 2,
-    category: 'Tasks',
-    icon: '📋',
-    title: 'Task Assigned',
-    message: 'Rahul Sharma assigned Authentication Module to Tanvy.',
-    time: '1 hour ago',
-    unread: true,
-    group: 'Today'
-  },
-  {
-    id: 1689360000000 + 3,
-    category: 'Standups',
-    icon: '📝',
-    title: 'Standup Submitted',
-    message: 'Priya Patel submitted her daily standup.',
-    time: 'Yesterday',
-    unread: false,
-    group: 'Yesterday'
-  }
-];
-
-const DEFAULT_EMPLOYEE_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 1689360000000 + 4,
-    category: 'Leave Management',
-    icon: '✅',
-    title: 'Leave Approved',
-    message: 'Manager approved your leave request for July 15',
-    time: 'Just now',
-    unread: true,
-    group: 'Today',
-    metadata: {
-      type: 'leave_approved',
-      date: '2026-07-15'
-    }
-  },
-  {
-    id: 1689360000000 + 5,
-    category: 'Leave Management',
-    icon: '💬',
-    title: 'Leave Commented',
-    message: 'Manager commented on your leave request',
-    time: '5 mins ago',
-    unread: true,
-    group: 'Today',
-    metadata: {
-      type: 'leave_commented',
-      date: '2026-07-15'
-    }
-  },
-  {
-    id: 1689360000000 + 6,
-    category: 'Tasks',
-    icon: '📋',
-    title: 'New Task Assigned',
-    message: 'You have been assigned: Dashboard Analytics UI. Due Tomorrow',
-    time: '2 hours ago',
-    unread: false,
-    group: 'Today'
-  }
-];
-
-interface NotificationBellProps {
+export interface NotificationBellProps {
   onNavigate?: (view: string) => void;
 }
 
-export function NotificationBell({ onNavigate }: NotificationBellProps) {
-  const { user } = useUser();
-  const role = user?.role || 'employee';
-  const isManager = role === 'manager';
+export function NotificationBell({ onNavigate }: NotificationBellProps = {}) {
+  const { notifications, markAsRead: contextMarkAsRead, clearAll: contextClearAll, setNotifications } = useNotifications();
+  const [activeTab, setActiveTab] = useState('All');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [activeCommentId, setActiveCommentId] = useState<number | null>(null);
+  const [commentText, setCommentText] = useState('');
 
-  const storageKey = isManager ? 'hindustaan_notifications' : 'hindustaan_employee_notifications';
-  const defaultNotifications = isManager ? DEFAULT_MANAGER_NOTIFICATIONS : DEFAULT_EMPLOYEE_NOTIFICATIONS;
-
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-
-  // Load and synchronize state
-  const loadNotifications = () => {
-    const saved = localStorage.getItem(storageKey);
-    if (saved && saved !== 'null') {
-      try {
-        setNotifications(JSON.parse(saved));
-      } catch (e) {
-        console.error('Error parsing notifications', e);
-        setNotifications(defaultNotifications);
-      }
-    } else {
-      localStorage.setItem(storageKey, JSON.stringify(defaultNotifications));
-      setNotifications(defaultNotifications);
+  const handleApproveExtension = (notification: any) => {
+    const { taskId, days, taskTitle, employeeName } = notification.metadata || {};
+    if (!taskId || !days) {
+      toast.error('Invalid extension request data.');
+      return;
     }
+
+    // 1. Extend task due date in local storage
+    const savedTasks = localStorage.getItem('hindustaan_tasks_list');
+    if (savedTasks) {
+      try {
+        const tasks = JSON.parse(savedTasks);
+        let taskFound = false;
+        let originalDueDate = '';
+        let extendedDueDate = '';
+        const updatedTasks = tasks.map((t: any) => {
+          if (t.id === taskId || String(t.id) === String(taskId)) {
+            taskFound = true;
+            const current = new Date(t.due_date);
+            if (!isNaN(current.getTime())) {
+              originalDueDate = t.due_date; // save original before updating
+              current.setDate(current.getDate() + Number(days));
+              // Format back to YYYY-MM-DD
+              const year = current.getFullYear();
+              const month = String(current.getMonth() + 1).padStart(2, '0');
+              const day = String(current.getDate()).padStart(2, '0');
+              extendedDueDate = `${year}-${month}-${day}`;
+              t.due_date = extendedDueDate;
+            }
+          }
+          return t;
+        });
+        if (taskFound) {
+          localStorage.setItem('hindustaan_tasks_list', JSON.stringify(updatedTasks));
+          window.dispatchEvent(new Event('tasks-updated'));
+
+          // Also record the approved extension so the employee can see both dates
+          const savedExtensions = localStorage.getItem('hindustaan_approved_extensions');
+          let approvedExtensions: any[] = [];
+          if (savedExtensions) {
+            try { approvedExtensions = JSON.parse(savedExtensions); } catch (e) { /* noop */ }
+          }
+          // Remove previous extension record for same task if exists, then add fresh one
+          approvedExtensions = approvedExtensions.filter((ex: any) => String(ex.taskId) !== String(taskId));
+          approvedExtensions.push({ taskId: String(taskId), originalDueDate, extendedDueDate, days: Number(days), approvedAt: Date.now() });
+          localStorage.setItem('hindustaan_approved_extensions', JSON.stringify(approvedExtensions));
+          window.dispatchEvent(new Event('extensions-updated'));
+        }
+      } catch (e) {
+        console.error('Error updating task list', e);
+      }
+    }
+
+    // 2. Add notification to employee notification list
+    const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
+    let empNotifications = [];
+    if (savedEmpNotifications && savedEmpNotifications !== 'null') {
+      try {
+        empNotifications = JSON.parse(savedEmpNotifications);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    const newEmpNotification = {
+      id: Date.now(),
+      category: 'Tasks',
+      icon: '✅',
+      title: 'Extension Request Approved',
+      message: `Your request for a ${days}-day extension on "${taskTitle}" has been approved.`,
+      time: 'Just now',
+      unread: true,
+      group: 'Today',
+      priority: 'Success'
+    };
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
+    window.dispatchEvent(new Event('employee-notifications-updated'));
+
+    // 3. Update notification message and clear actions
+    setNotifications(prev => prev.map(n => {
+      if (n.id === notification.id) {
+        return {
+          ...n,
+          unread: false,
+          message: `Approved: Extended deadline of "${taskTitle}" by ${days} days for ${employeeName}.`,
+          actions: undefined
+        };
+      }
+      return n;
+    }));
+
+    toast.success('Extension Approved!', {
+      description: `Extended "${taskTitle}" by ${days} days.`
+    });
   };
 
-  useEffect(() => {
-    loadNotifications();
+  const handleRejectExtension = (notification: any) => {
+    const { taskTitle, employeeName } = notification.metadata || {};
 
-    const handleSync = () => {
-      loadNotifications();
+    // 1. Add notification to employee notification list
+    const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
+    let empNotifications = [];
+    if (savedEmpNotifications && savedEmpNotifications !== 'null') {
+      try {
+        empNotifications = JSON.parse(savedEmpNotifications);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    const newEmpNotification = {
+      id: Date.now(),
+      category: 'Tasks',
+      icon: '❌',
+      title: 'Extension Request Rejected',
+      message: `Your request for an extension on "${taskTitle}" has been rejected.`,
+      time: 'Just now',
+      unread: true,
+      group: 'Today',
+      priority: 'Critical'
     };
+    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
+    window.dispatchEvent(new Event('employee-notifications-updated'));
 
-    window.addEventListener('notifications-updated', handleSync);
-    window.addEventListener('employee-notifications-updated', handleSync);
-    window.addEventListener('storage', handleSync);
+    // 2. Update notification message and clear actions
+    setNotifications(prev => prev.map(n => {
+      if (n.id === notification.id) {
+        return {
+          ...n,
+          unread: false,
+          message: `Rejected: Extension request for "${taskTitle}" by ${employeeName}.`,
+          actions: undefined
+        };
+      }
+      return n;
+    }));
 
-    return () => {
-      window.removeEventListener('notifications-updated', handleSync);
-      window.removeEventListener('employee-notifications-updated', handleSync);
-      window.removeEventListener('storage', handleSync);
-    };
-  }, [role, storageKey]);
+    toast.info('Extension Rejected', {
+      description: `Rejection sent for "${taskTitle}".`
+    });
+  };
 
-  const saveNotifications = (newNotifs: NotificationItem[]) => {
-    setNotifications(newNotifs);
-    localStorage.setItem(storageKey, JSON.stringify(newNotifs));
-    // Dispatch global events to notify context/other components
-    window.dispatchEvent(new Event(isManager ? 'notifications-updated' : 'employee-notifications-updated'));
+  const handleApproveLeave = (notification: any, actionType: 'approve_leave' | 'reject_leave') => {
+    const requestId = notification.metadata?.requestId || 1; // Default to 1 if not provided for mock
+    
+    // Update leave request status
+    const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_data') || '[]');
+    let employeeNotifReq: any = null;
+    const updatedLeaves = allLeaves.map((l: any) => {
+      if (l.id === requestId) {
+        employeeNotifReq = l;
+        return { ...l, status: actionType === 'approve_leave' ? 'Approved' : 'Rejected', hrNotified: true, processedAt: Date.now() };
+      }
+      return l;
+    });
+    localStorage.setItem('hindustaan_leave_data', JSON.stringify(updatedLeaves));
+    window.dispatchEvent(new Event('leave-data-updated'));
+
+    if (employeeNotifReq) {
+      const savedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
+      let empNotifs = savedEmpNotifs && savedEmpNotifs !== 'null' ? JSON.parse(savedEmpNotifs) : [];
+      const newEmpNotification = {
+        id: Date.now(),
+        category: 'Leave Management',
+        icon: actionType === 'approve_leave' ? '✅' : '❌',
+        title: actionType === 'approve_leave' ? 'Leave Approved' : 'Leave Rejected',
+        message: `Manager ${actionType === 'approve_leave' ? 'approved' : 'rejected'} your leave request for ${employeeNotifReq.start}`,
+        time: 'Just now',
+        unread: true,
+        group: 'Today',
+        metadata: {
+          type: 'leave_status_update',
+          date: employeeNotifReq.start,
+          employeeName: employeeNotifReq.employee,
+          requestId: employeeNotifReq.id
+        }
+      };
+      localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifs]));
+      window.dispatchEvent(new Event('employee-notifications-updated'));
+    }
+
+    // Update notification message and clear actions
+    setNotifications(prev => prev.map(n => {
+      if (n.id === notification.id) {
+        return {
+          ...n,
+          unread: false,
+          message: `${actionType === 'approve_leave' ? 'Approved' : 'Rejected'}: ${notification.message}`,
+          actions: undefined
+        };
+      }
+      return n;
+    }));
+
+    toast.success(`Leave Request ${actionType === 'approve_leave' ? 'Approved' : 'Rejected'}`);
+  };
+
+  const submitCommentLeave = (notification: any) => {
+    if (!commentText.trim()) return;
+    const requestId = notification.metadata?.requestId || 1;
+    
+    const existing = JSON.parse(localStorage.getItem('hindustaan_leave_comments') || '[]');
+    existing.push({
+      id: Date.now().toString(),
+      leaveId: requestId,
+      managerId: 'manager-1',
+      managerName: "Manager",
+      comment: commentText,
+      edited: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+    localStorage.setItem('hindustaan_leave_comments', JSON.stringify(existing));
+
+    const allLeaves = JSON.parse(localStorage.getItem('hindustaan_leave_requests') || '[]');
+    const req = allLeaves.find((l: any) => l.id === requestId);
+    if (req) {
+      const savedEmpNotifs = localStorage.getItem('hindustaan_employee_notifications');
+      let empNotifs = savedEmpNotifs && savedEmpNotifs !== 'null' ? JSON.parse(savedEmpNotifs) : [];
+      const newEmpNotification = {
+        id: Date.now(),
+        category: 'Leave Management',
+        icon: '💬',
+        title: 'Manager Commented',
+        message: `💬 Manager commented:\n"${commentText}"`,
+        time: 'Just now',
+        unread: true,
+        group: 'Today',
+        metadata: {
+          type: 'leave_commented',
+          date: req.start,
+          employeeName: req.employee,
+          requestId: req.id
+        }
+      };
+      localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifs]));
+      window.dispatchEvent(new Event('employee-notifications-updated'));
+    }
+    toast.success("Comment added successfully");
+    markAsRead(notification.id);
+    setActiveCommentId(null);
+    setCommentText('');
+  };
+
+  const handleCommentLeave = (notification: any) => {
+    setActiveCommentId(notification.id);
+    setCommentText('');
+  };
+
+  const MOCK_TASK = {
+    id: 'nt-1',
+    title: 'Authentication Module',
+    description: 'Implement secure login and registration flow with JWT.',
+    project_tag: 'Frontend Core',
+    assignee_name: 'Tanvy',
+    assignee_id: 'u-4',
+    priority: 'High',
+    due_date: 'Oct 12, 2026',
+    status: 'To Do',
   };
 
   const unreadCount = notifications.filter(n => n.unread).length;
 
-  const markAllAsRead = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const updated = notifications.map(n => ({ ...n, unread: false }));
-    saveNotifications(updated);
-    toast.success('All notifications marked as read');
+  const markAllAsRead = () => {
+    setNotifications((prev: any) => prev.map((n: any) => ({ ...n, unread: false })));
   };
 
-  const handleClearAll = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    saveNotifications([]);
-    toast.success('Notifications cleared');
+  const markAsRead = (id: number) => {
+    contextMarkAsRead(id);
   };
 
-  const handleNotificationClick = (notification: NotificationItem) => {
-    // 1. Mark as read immediately
-    const updated = notifications.map(n => n.id === notification.id ? { ...n, unread: false } : n);
-    saveNotifications(updated);
-
-    // 2. Perform cross-role routing and state changes
-    if (isManager) {
-      if (notification.metadata?.requestId) {
-        localStorage.setItem('selected_leave_request_id', String(notification.metadata.requestId));
-      }
-      // Route manager to /manager/leave-management
-      window.history.pushState({}, '', '/manager/leave-management');
-      window.dispatchEvent(new Event('popstate'));
-      if (onNavigate) {
-        onNavigate('Leave Management');
-      }
-    } else {
-      // Route employee to /employee/leave
-      window.history.pushState({}, '', '/employee/leave');
-      window.dispatchEvent(new Event('popstate'));
-      if (onNavigate) {
-        onNavigate('Leave Management');
-      }
-    }
+  const clearAll = () => {
+    contextClearAll();
   };
+
+  const filteredNotifications = activeTab === 'All' 
+    ? notifications 
+    : notifications.filter(n => n.category === activeTab);
 
   // Group notifications
-  const grouped = notifications.reduce((acc, curr) => {
-    const groupName = curr.group || 'Today';
-    if (!acc[groupName]) acc[groupName] = [];
-    acc[groupName].push(curr);
+  const grouped = filteredNotifications.reduce((acc, curr) => {
+    if (!acc[curr.group]) acc[curr.group] = [];
+    acc[curr.group].push(curr);
     return acc;
-  }, {} as Record<string, NotificationItem[]>);
+  }, {} as Record<string, typeof notifications>);
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
+    <>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <button 
           type="button" 
-          className="relative -m-2.5 p-2.5 text-slate-400 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-400 transition-colors duration-200 outline-none cursor-pointer"
+          className="-m-2.5 p-2.5 text-slate-400 hover:text-slate-500 dark:text-slate-500 dark:hover:text-slate-400 relative transition-colors duration-200 outline-none"
         >
           <span className="sr-only">View notifications</span>
           <Bell className="h-6 w-6" aria-hidden="true" />
           {unreadCount > 0 && (
-            <span className="absolute top-2 right-2 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#050816]">
+            <span className="absolute top-2 right-2 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
             </span>
           )}
         </button>
-      </PopoverTrigger>
-      
-      <PopoverContent 
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent 
         align="end" 
-        sideOffset={8}
-        className="w-80 p-2 bg-slate-900/95 border-slate-800 rounded-xl shadow-2xl text-white backdrop-blur-md z-[1000] border origin-top-right animate-in fade-in-50 zoom-in-95 duration-200"
+        className={cn(
+          "p-0 bg-white dark:bg-slate-900 shadow-xl overflow-hidden z-[9999] flex flex-col",
+          // Desktop (>1024px)
+          "lg:w-[420px] lg:rounded-2xl lg:border lg:border-slate-200 lg:dark:border-slate-800 lg:h-auto lg:max-h-[85vh]",
+          // Tablet (768px-1024px)
+          "md:max-lg:!fixed md:max-lg:!top-3 md:max-lg:!right-3 md:max-lg:!bottom-3 md:max-lg:w-[360px] md:max-lg:h-[calc(100vh-24px)] md:max-lg:rounded-2xl md:max-lg:!translate-x-0 md:max-lg:!translate-y-0",
+          // Mobile (<768px)
+          "max-md:!fixed max-md:!top-0 max-md:!right-0 max-md:!bottom-0 max-md:w-[min(92vw,380px)] max-md:h-[100dvh] max-md:rounded-l-[24px] max-md:rounded-r-none max-md:!translate-x-0 max-md:!translate-y-0 max-md:border-y-0 max-md:border-r-0 max-md:border-l max-md:shadow-[0_20px_60px_rgba(0,0,0,0.45)]",
+          // Dark mode exact match styling requested
+          "dark:bg-[linear-gradient(180deg,rgba(15,18,40,0.98),rgba(10,12,30,0.98))] dark:border-[rgba(120,120,255,0.15)]",
+          // Animation overrides for slide in
+          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+          "max-md:data-[state=open]:slide-in-from-right-full max-md:data-[state=closed]:slide-out-to-right-full max-md:transition-transform max-md:duration-300"
+        )}
       >
-        <div className="flex items-center justify-between px-3 py-2 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-sm">Notifications</span>
-            {unreadCount > 0 && (
-              <Badge className="bg-rose-500 text-white border-0 font-bold px-1.5 py-0 text-[10px]">
-                {unreadCount}
-              </Badge>
-            )}
+        {/* Mobile Backdrop Overlay Hack (render inside the portal but positioned outside) */}
+        <div className="md:hidden fixed inset-0 -z-10 bg-black/55 backdrop-blur-[6px] w-[100vw] h-[100vh] -translate-x-full pointer-events-none" />
+
+        {/* Header */}
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-slate-900 dark:text-white">Notifications</h3>
+              {unreadCount > 0 && (
+                <Badge className="bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 border-0 font-bold px-1.5 py-0">
+                  {unreadCount} new
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={markAllAsRead}
+                className="text-xs font-bold text-slate-500 hover:text-orange-600 dark:text-slate-400 dark:hover:text-orange-400 transition-colors flex items-center gap-1"
+              >
+                <Check className="h-3 w-3" />
+                Mark all read
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={markAllAsRead}
-              className="text-[10px] font-bold text-slate-400 hover:text-white transition-colors flex items-center gap-0.5"
-            >
-              <Check className="h-3 w-3" />
-              All Read
-            </button>
-          </div>
+
+          <Tabs defaultValue="All" onValueChange={setActiveTab}>
+            <TabsList className="h-8 w-full bg-slate-200/50 dark:bg-slate-800 p-0.5 grid grid-cols-5 gap-1 rounded-lg">
+              {['All', 'Tasks', 'Projects', 'Team', 'System'].map(tab => (
+                <TabsTrigger 
+                  key={tab} 
+                  value={tab}
+                  className="text-[10px] font-bold rounded-md px-1 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-orange-600 dark:data-[state=active]:text-orange-400 data-[state=active]:shadow-sm"
+                >
+                  {tab}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
 
-        <ScrollArea className="max-h-[350px] overflow-y-auto pr-1">
-          {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-slate-500">
-              <Bell className="h-8 w-8 mb-2 opacity-30" />
-              <p className="text-xs font-semibold">No notifications</p>
+        {/* Scrollable Content */}
+        <ScrollArea className="flex-1 overflow-y-auto max-h-[100vh] pb-[env(safe-area-inset-bottom)]">
+          {filteredNotifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[300px] text-slate-400">
+              <Bell className="h-8 w-8 mb-3 opacity-20" />
+              <p className="text-sm font-medium">No notifications found.</p>
             </div>
           ) : (
-            <div className="space-y-3 py-2">
+            <div className="p-2 space-y-4">
               {['Today', 'Yesterday', 'Earlier'].map(groupName => {
                 const groupItems = grouped[groupName];
                 if (!groupItems || groupItems.length === 0) return null;
-                
+
                 return (
                   <div key={groupName} className="space-y-1">
-                    <div className="px-3 py-1 flex items-center">
-                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{groupName}</span>
+                    <div className="px-3 py-1.5 flex items-center sticky top-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur z-10">
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{groupName}</span>
                     </div>
-                    {groupItems.map((notification) => (
+                    {groupItems.map((notification: any) => (
                       <div 
                         key={notification.id}
-                        onClick={() => handleNotificationClick(notification)}
+                        onClick={() => markAsRead(notification.id)}
                         className={cn(
-                          "relative mx-1 p-2 rounded-lg transition-all hover:bg-slate-800/80 group cursor-pointer flex gap-3",
-                          notification.unread ? "bg-slate-800/40" : ""
+                          "relative p-3 rounded-xl transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 group cursor-pointer",
+                          notification.unread ? "bg-orange-50/50 dark:bg-orange-900/10" : ""
                         )}
                       >
                         {notification.unread && (
-                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-rose-500 rounded-r-full" />
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-orange-500 rounded-r-full" />
                         )}
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs">
-                          {notification.icon}
-                        </div>
-                        <div className="flex-1 space-y-0.5 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className={cn(
-                              "text-xs font-bold truncate text-slate-100",
-                              notification.unread ? "text-white" : "text-slate-300"
-                            )}>
-                              {notification.title}
-                            </p>
-                            <span className="text-[8px] font-semibold text-slate-500 whitespace-nowrap shrink-0">{notification.time}</span>
+                        <div className="flex gap-3">
+                          <div className={cn(
+                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base",
+                            notification.unread 
+                              ? "bg-indigo-500/10 dark:bg-[#6366F1]/12 border-l-2 border-l-indigo-500 dark:border-l-purple-500 shadow-sm" 
+                              : "bg-slate-100 dark:bg-slate-800/50 grayscale opacity-70"
+                          )}>
+                            {notification.icon}
                           </div>
-                          <p className="text-[11px] font-medium text-slate-400 leading-snug break-words">
-                            {notification.message}
-                          </p>
+                          <div className="flex-1 space-y-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className={cn(
+                                "text-sm font-bold truncate",
+                                notification.unread ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-300"
+                              )}>
+                                {notification.title}
+                              </p>
+                              <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap shrink-0">{getRelativeTime(notification.timestamp || (notification.id > 1000000 ? notification.id : notification.time))}</span>
+                            </div>
+                            <p className={cn(
+                              "text-xs font-medium leading-relaxed",
+                              notification.unread ? "text-slate-600 dark:text-slate-300" : "text-slate-500 dark:text-slate-400"
+                            )}>
+                              {notification.message}
+                            </p>
+
+                            {notification.priority && (
+                              <Badge variant="outline" className="mt-1 text-[9px] border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-900/20 font-bold uppercase tracking-wider">
+                                Priority: {notification.priority}
+                              </Badge>
+                            )}
+
+                            {notification.actions && (
+                              activeCommentId === notification.id ? (
+                                <div className="mt-3 flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                  <Input 
+                                    value={commentText}
+                                    onChange={(e) => setCommentText(e.target.value)}
+                                    placeholder="Type your comment..."
+                                    style={{ fontSize: '11px' }}
+                                    className="h-8 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 px-3 py-0 focus-visible:ring-1 focus-visible:ring-orange-500"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') { e.preventDefault(); submitCommentLeave(notification); }
+                                    }}
+                                  />
+                                  <Button size="sm" onClick={() => submitCommentLeave(notification)} className="h-8 px-3 bg-orange-600 hover:bg-orange-700 text-xs font-bold text-white shrink-0">Send</Button>
+                                  <Button size="sm" variant="ghost" onClick={() => { setActiveCommentId(null); setCommentText(''); }} className="h-8 px-2 text-slate-500 hover:text-slate-700 shrink-0"><X className="h-4 w-4" /></Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 mt-3">
+                                  {notification.actions.map((action: any, i: number) => (
+                                    <Button 
+                                      key={i}
+                                      variant={action.primary ? "default" : "outline"}
+                                      size="sm"
+                                      className={cn(
+                                        "h-7 text-xs font-bold rounded-lg px-3",
+                                        action.primary ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200" : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
+                                      )}
+                                      onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        if (action.actionType === 'approve_extension') {
+                                          handleApproveExtension(notification);
+                                        } else if (action.actionType === 'reject_extension') {
+                                          handleRejectExtension(notification);
+                                        } else if (action.actionType === 'approve_leave' || (action.label === 'Approve' && notification.title === 'Leave Request')) {
+                                          handleApproveLeave(notification, 'approve_leave');
+                                        } else if (action.actionType === 'reject_leave' || (action.label === 'Reject' && notification.title === 'Leave Request')) {
+                                          handleApproveLeave(notification, 'reject_leave');
+                                        } else if (action.actionType === 'comment_leave' || (action.label === 'Comment' && notification.title === 'Leave Request')) {
+                                          handleCommentLeave(notification);
+                                        } else {
+                                          if (action.label === 'View Task') {
+                                            setSelectedTask(MOCK_TASK);
+                                          } else {
+                                            toast.success(`Action "${action.label}" executed successfully!`);
+                                          }
+                                          markAsRead(notification.id); 
+                                        }
+                                      }}
+                                    >
+                                      {action.label}
+                                    </Button>
+                                  ))}
+                                </div>
+                              )
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -306,19 +523,64 @@ export function NotificationBell({ onNavigate }: NotificationBellProps) {
           )}
         </ScrollArea>
 
-        {notifications.length > 0 && (
-          <div className="p-1 border-t border-slate-800 flex justify-end">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleClearAll} 
-              className="h-7 text-[10px] font-bold text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg w-full flex items-center justify-center gap-1"
-            >
-              <Trash2 className="h-3 w-3" /> Clear All
-            </Button>
+        {/* Footer Actions */}
+        <div className="p-2 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50 grid grid-cols-3 gap-1">
+          <Button variant="ghost" size="sm" onClick={() => toast.info('Navigating to all notifications...')} className="h-8 text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-lg">
+            <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> View All
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => { clearAll(); toast.success('Notifications cleared'); }} className="h-8 text-[11px] font-bold text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg">
+            <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Clear
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setIsSettingsOpen(true)} className="h-8 text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-lg">
+            <Settings className="mr-1.5 h-3.5 w-3.5" /> Settings
+          </Button>
+        </div>
+
+      </DropdownMenuContent>
+    </DropdownMenu>
+
+    {/* Settings Dialog */}
+    <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+      <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Notification Settings</DialogTitle>
+          <DialogDescription className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Manage how you receive alerts and updates.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label className="text-sm font-bold text-slate-900 dark:text-white">Push Notifications</Label>
+              <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Receive alerts inside the app.</p>
+            </div>
+            <Switch defaultChecked onCheckedChange={(checked) => toast.success(`Push notifications ${checked ? 'enabled' : 'disabled'}`)} />
           </div>
-        )}
-      </PopoverContent>
-    </Popover>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label className="text-sm font-bold text-slate-900 dark:text-white">Email Digests</Label>
+              <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Receive daily summary emails.</p>
+            </div>
+            <Switch defaultChecked onCheckedChange={(checked) => toast.success(`Email digests ${checked ? 'enabled' : 'disabled'}`)} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label className="text-sm font-bold text-slate-900 dark:text-white">Mention Alerts</Label>
+              <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Notify me when someone mentions me.</p>
+            </div>
+            <Switch defaultChecked onCheckedChange={(checked) => toast.success(`Mention alerts ${checked ? 'enabled' : 'disabled'}`)} />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Task Details Modal */}
+    <TaskDetailsModal 
+      task={selectedTask}
+      currentUser={{ id: 'manager-1', role: 'manager', name: 'Admin User' }}
+      isOpen={!!selectedTask}
+      onClose={() => setSelectedTask(null)}
+    />
+    </>
   );
 }

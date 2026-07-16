@@ -262,7 +262,7 @@ export function EmployeeNotificationBell({ onNavigate }: NotificationBellProps) 
     existing.push({
       id: Date.now().toString(),
       leaveId: requestId,
-      managerId: user?.email || 'manager-1',
+      managerId: (user as any)?.id || 'manager-1',
       managerName: user?.name || "Manager",
       comment: commentText,
       edited: false,

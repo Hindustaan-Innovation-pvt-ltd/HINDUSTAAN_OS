@@ -65,7 +65,14 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const { projects } = useProjects();
   
   // Extract dynamic tasks from central task list (TaskBoard source)
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>(() => {
+    const saved = localStorage.getItem('hindustaan_tasks_list');
+    const allTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
+    return allTasks.filter((t: any) => 
+      t.assignee_name === currentUserName || 
+      (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
+    );
+  });
 
   const fetchInternTasks = async () => {
     try {
@@ -105,23 +112,48 @@ export default function InternDashboard({ session }: InternDashboardProps) {
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'hindustaan_tasks_list' || e.key === 'local-storage-update') {
+      if (e.key === 'hindustaan_tasks_list' && e.newValue) {
+        const allTasks = JSON.parse(e.newValue);
+        setTasks(allTasks.filter((t: any) => 
+          t.assignee_name === currentUserName || 
+          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
+        ));
+        fetchInternTasks();
+      } else if (e.key === 'local-storage-update') {
         fetchInternTasks();
       }
     };
     
     const handleLocalUpdate = (e: CustomEvent) => {
       if (e.detail.key === 'hindustaan_tasks_list') {
+        const allTasks = typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : INITIAL_TASKS;
+        setTasks(allTasks.filter((t: any) => 
+          t.assignee_name === currentUserName || 
+          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
+        ));
         fetchInternTasks();
+      }
+    };
+
+    const handleTasksUpdatedEvent = () => {
+      const saved = localStorage.getItem('hindustaan_tasks_list');
+      if (saved) {
+        const allTasks = JSON.parse(saved);
+        setTasks(allTasks.filter((t: any) => 
+          t.assignee_name === currentUserName || 
+          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
+        ));
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
+    window.addEventListener('tasks-updated', handleTasksUpdatedEvent);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
+      window.removeEventListener('tasks-updated', handleTasksUpdatedEvent);
     };
   }, [currentUserName]);
 
@@ -464,7 +496,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-page-title font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
             {greeting}, {currentUserName} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
           <p className="text-base sm:text-lg font-medium text-orange-600 dark:text-orange-400 mt-1 break-words whitespace-normal">
