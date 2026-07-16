@@ -25,4 +25,4 @@ dist-ssr
 
 # Environment and Config Files
 .env
-vite.config.ts
+
