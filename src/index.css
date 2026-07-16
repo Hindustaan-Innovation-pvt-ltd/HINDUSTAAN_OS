@@ -49,6 +49,20 @@
 }
 
 /* Accent Colors Overrides (Mapped from Tailwind variables) */
+.theme-orange {
+  --color-orange-50: #fff7ed;
+  --color-orange-100: #ffedd5;
+  --color-orange-200: #fed7aa;
+  --color-orange-300: #fdba74;
+  --color-orange-400: #fb923c;
+  --color-orange-500: #f97316;
+  --color-orange-600: #ea580c;
+  --color-orange-700: #c2410c;
+  --color-orange-800: #9a3412;
+  --color-orange-900: #7c2d12;
+  --color-orange-950: #431407;
+}
+
 .theme-blue {
   --color-orange-50: var(--color-blue-50);
   --color-orange-100: var(--color-blue-100);
@@ -117,6 +131,7 @@ html.compact-mode {
   --color-slate-800: #12182F;
   --color-slate-700: #1A223F;
   
+  /* NEON COSMIC BASE COLORS (Default View) */
   --color-orange-400: #00D4FF; 
   --color-orange-500: #5B7CFF; 
   --color-orange-600: #A855F7; 
@@ -148,19 +163,19 @@ body.dark {
   box-shadow: 0 0 25px 0 rgba(91, 124, 255, 0.25) !important;
 }
 
-/* Button Gradients */
+/* Premium Button Gradients (Adapts to Accent Color) */
 .dark .bg-orange-600,
 .dark .hover\:bg-orange-700:hover {
-  background: linear-gradient(135deg, #5B7CFF, #A855F7) !important;
+  background: linear-gradient(135deg, var(--color-orange-500), var(--color-orange-700)) !important;
   border: none !important;
-  box-shadow: 0 4px 15px rgba(91, 124, 255, 0.4) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
   transition: all 0.3s ease !important;
   color: white !important;
 }
 
 .dark .bg-orange-600:hover {
-  background: linear-gradient(135deg, #6b89ff, #b56cf8) !important;
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.6) !important;
+  background: linear-gradient(135deg, var(--color-orange-400), var(--color-orange-600)) !important;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5) !important;
   transform: translateY(-1px) !important;
 }
 

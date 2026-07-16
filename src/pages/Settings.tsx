@@ -33,7 +33,7 @@ const SETTINGS_SECTIONS = [
 ];
 
 export default function Settings({ session }: { session: any }) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, accentColor, setAccentColor } = useTheme();
   const role = session?.user?.user_metadata?.role || 'intern';
   
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -766,11 +766,12 @@ export default function Settings({ session }: { session: any }) {
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Accent Color</h3>
                   <div className="flex items-center gap-3">
-                    <button className="h-8 w-8 rounded-full bg-orange-500 ring-4 ring-orange-500/20"></button>
-                    <button className="h-8 w-8 rounded-full bg-blue-500 hover:scale-110 transition-transform"></button>
-                    <button className="h-8 w-8 rounded-full bg-emerald-500 hover:scale-110 transition-transform"></button>
-                    <button className="h-8 w-8 rounded-full bg-rose-500 hover:scale-110 transition-transform"></button>
-                    <button className="h-8 w-8 rounded-full bg-purple-500 hover:scale-110 transition-transform"></button>
+                    <button onClick={() => setAccentColor('default')} className={cn("h-8 w-8 rounded-full bg-gradient-to-br from-[#5B7CFF] to-[#A855F7] transition-transform flex items-center justify-center", accentColor === 'default' ? "ring-4 ring-[#8833D7]/30" : "hover:scale-110")}>{accentColor === 'default' && <div className="h-2 w-2 rounded-full bg-white" />}</button>
+                    <button onClick={() => setAccentColor('orange')} className={cn("h-8 w-8 rounded-full bg-orange-500 transition-transform flex items-center justify-center", accentColor === 'orange' ? "ring-4 ring-orange-500/20" : "hover:scale-110")}>{accentColor === 'orange' && <div className="h-2 w-2 rounded-full bg-white" />}</button>
+                    <button onClick={() => setAccentColor('blue')} className={cn("h-8 w-8 rounded-full bg-blue-500 transition-transform flex items-center justify-center", accentColor === 'blue' ? "ring-4 ring-blue-500/20" : "hover:scale-110")}>{accentColor === 'blue' && <div className="h-2 w-2 rounded-full bg-white" />}</button>
+                    <button onClick={() => setAccentColor('emerald')} className={cn("h-8 w-8 rounded-full bg-emerald-500 transition-transform flex items-center justify-center", accentColor === 'emerald' ? "ring-4 ring-emerald-500/20" : "hover:scale-110")}>{accentColor === 'emerald' && <div className="h-2 w-2 rounded-full bg-white" />}</button>
+                    <button onClick={() => setAccentColor('rose')} className={cn("h-8 w-8 rounded-full bg-rose-500 transition-transform flex items-center justify-center", accentColor === 'rose' ? "ring-4 ring-rose-500/20" : "hover:scale-110")}>{accentColor === 'rose' && <div className="h-2 w-2 rounded-full bg-white" />}</button>
+                    <button onClick={() => setAccentColor('purple')} className={cn("h-8 w-8 rounded-full bg-purple-500 transition-transform flex items-center justify-center", accentColor === 'purple' ? "ring-4 ring-purple-500/20" : "hover:scale-110")}>{accentColor === 'purple' && <div className="h-2 w-2 rounded-full bg-white" />}</button>
                   </div>
                 </div>
 

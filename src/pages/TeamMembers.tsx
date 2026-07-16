@@ -86,6 +86,8 @@ export default function TeamMembers() {
   const [newProject, setNewProject] = useState('');
   const [whatsappIntern, setWhatsappIntern] = useState<any | null>(null);
   const [whatsappMessage, setWhatsappMessage] = useState('');
+  const [deactivatingIntern, setDeactivatingIntern] = useState<any | null>(null);
+  const [isDeactivatingSubmit, setIsDeactivatingSubmit] = useState(false);
 
   const mapBackendMember = (m: any) => {
     const depts = ['Frontend', 'Backend', 'AI/ML', 'UI/UX'];
@@ -292,6 +294,28 @@ export default function TeamMembers() {
       });
     } finally {
       setIsApprovingSubmit(false);
+    }
+  };
+
+  const handleConfirmDeactivate = async () => {
+    if (!deactivatingIntern) return;
+    setIsDeactivatingSubmit(true);
+    try {
+      const response = await api.post(`/team/${deactivatingIntern.id}/deactivate`);
+      if (response.data?.success) {
+        toast.success('Account Deactivated', {
+          description: response.data.message || `${deactivatingIntern.name} has been deactivated successfully.`
+        });
+        setDeactivatingIntern(null);
+        await fetchData();
+      }
+    } catch (err: any) {
+      console.error('Error deactivating user:', err);
+      toast.error('Deactivation Failed', {
+        description: err.response?.data?.message || err.message || 'An error occurred during deactivation.'
+      });
+    } finally {
+      setIsDeactivatingSubmit(false);
     }
   };
 
@@ -563,7 +587,15 @@ export default function TeamMembers() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48 rounded-xl">
                               <DropdownMenuItem className="font-medium cursor-pointer"><CheckCircle2 className="mr-2 h-4 w-4" /> Assign Task</DropdownMenuItem>
-                              <DropdownMenuItem className="font-medium cursor-pointer text-rose-600 dark:text-rose-400"><Clock className="mr-2 h-4 w-4" /> Deactivate</DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="font-medium cursor-pointer text-rose-600 dark:text-rose-400"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeactivatingIntern(intern);
+                                }}
+                              >
+                                <Clock className="mr-2 h-4 w-4" /> Deactivate
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -911,6 +943,52 @@ export default function TeamMembers() {
               <Button type="submit" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">Send via WhatsApp</Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deactivate Intern Dialog */}
+      <Dialog open={!!deactivatingIntern} onOpenChange={(open) => !open && setDeactivatingIntern(null)}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+              <Clock className="mr-2 h-5 w-5 text-rose-500" />
+              Deactivate Intern Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Are you sure you want to deactivate <span className="font-semibold text-slate-900 dark:text-white">{deactivatingIntern?.name}</span>?
+            </p>
+            <p className="text-xs text-rose-500 dark:text-rose-400 font-medium">
+              This will disable their account and remove them from the active team list.
+            </p>
+          </div>
+          <DialogFooter className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => setDeactivatingIntern(null)} 
+              className="rounded-xl font-bold"
+              disabled={isDeactivatingSubmit}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleConfirmDeactivate}
+              className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold"
+              disabled={isDeactivatingSubmit}
+            >
+              {isDeactivatingSubmit ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deactivating...
+                </>
+              ) : (
+                "Confirm & Deactivate"
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
