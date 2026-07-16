@@ -149,9 +149,8 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
         }
       }
     } catch (e: any) {
-      console.warn('Backend unavailable or failed to load Kanban tasks. Falling back to local storage.', e.message);
-      const savedTasks = localStorage.getItem('hindustaan_tasks_list');
-      setTasks(savedTasks ? JSON.parse(savedTasks) : INITIAL_TASKS as any);
+      console.warn('Backend unavailable or failed to load Kanban tasks.', e.message);
+      setTasks([]);
     } finally {
       setLoading(false);
     }

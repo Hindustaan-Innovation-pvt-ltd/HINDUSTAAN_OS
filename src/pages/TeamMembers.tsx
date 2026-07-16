@@ -23,37 +23,7 @@ import { toast } from 'sonner';
 import { getCurrentUser, type User } from '@/lib/auth';
 import api from '@/lib/api';
 
-// Generate 30 realistic mock interns
-const generateMockInterns = (currentUser?: User | null) => {
-  const depts = ['Frontend', 'Backend', 'AI/ML', 'UI/UX'];
-  const roles = ['Frontend Developer Intern', 'Backend Developer Intern', 'AI Researcher Intern', 'Product Design Intern'];
-  const projects = ['Dashboard UI Revamp', 'Supabase Migration', 'Predictive Model V2', 'Onboarding Flow'];
-  const statuses = ['Online', 'Busy', 'Offline', 'Leave'];
-  
-  const defaultEmployeeName = currentUser?.role === 'employee' ? currentUser.name : "Tanvy Pandey";
-  const defaultManagerName = currentUser?.role === 'manager' ? currentUser.name : "Aakash Gupta";
-
-  return Array.from({ length: 30 }).map((_, i) => ({
-    id: `INT-2026-${(i + 1).toString().padStart(3, '0')}`,
-    name: i === 0 ? defaultEmployeeName : `Intern Member ${i + 1}`,
-    email: i === 0 ? (currentUser?.role === 'employee' ? currentUser.email : "tanvy.pandey@hindustaan.in") : `intern${i+1}@hindustaan.in`,
-    phone: "+91 9876543210",
-    college: "IIT Delhi",
-    degree: "B.Tech Computer Science",
-    role: roles[i % roles.length],
-    department: depts[i % depts.length],
-    manager: defaultManagerName,
-    project: projects[i % projects.length],
-    score: Math.floor(Math.random() * (100 - 65 + 1)) + 65,
-    attendance: Math.floor(Math.random() * (100 - 80 + 1)) + 80,
-    currentTask: i % 3 === 0 ? "Building Team Members UI" : "Writing API Endpoints",
-    hoursLogged: Math.floor(Math.random() * (45 - 20 + 1)) + 20,
-    status: statuses[Math.floor(Math.random() * statuses.length)],
-    joiningDate: "June 1, 2026",
-    expectedEndDate: "Sept 1, 2026",
-    skills: ["React", "TypeScript", "Tailwind CSS", "Node.js"].slice(0, (i % 3) + 2),
-  }));
-};
+// Removed generateMockInterns as we only use API now
 
 export default function TeamMembers() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -161,13 +131,12 @@ export default function TeamMembers() {
       if (err.response?.status !== 401) {
         toast.error('Data Load Error', { description: err.message || 'Failed to load team directories.' });
       }
-      const mockInterns = generateMockInterns(currentUser);
-      setInterns(mockInterns);
+      setInterns([]);
       setStats(prev => ({
         ...prev,
-        totalInterns: mockInterns.length,
-        onlineCount: mockInterns.filter(i => i.status === 'Online').length,
-        leaveCount: mockInterns.filter(i => i.status === 'Leave').length,
+        totalInterns: 0,
+        onlineCount: 0,
+        leaveCount: 0
       }));
     } finally {
       setLoading(false);

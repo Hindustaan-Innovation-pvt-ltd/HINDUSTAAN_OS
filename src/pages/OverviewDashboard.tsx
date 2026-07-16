@@ -31,48 +31,7 @@ const VELOCITY_DATA = [
   { name: 'Sun', completed: 50, inProgress: 12, overdue: 1 },
 ];
 
-const UPCOMING_DEADLINES_MOCK = [
-  {
-    id: '1',
-    project: 'UI Design System',
-    task: 'Finalize Authentication Components',
-    dueDate: 'Oct 14, 2026',
-    daysLeft: 2,
-    color: 'bg-orange-50 dark:bg-orange-500/100',
-    bgColor: 'bg-orange-50 dark:bg-orange-500/10',
-    textColor: 'text-orange-700 dark:text-orange-300',
-  },
-  {
-    id: '2',
-    project: 'Backend Infrastructure',
-    task: 'Supabase RLS Implementation',
-    dueDate: 'Oct 16, 2026',
-    daysLeft: 4,
-    color: 'bg-amber-500',
-    bgColor: 'bg-amber-50',
-    textColor: 'text-amber-700 dark:text-amber-300',
-  },
-  {
-    id: '3',
-    project: 'User Research Report',
-    task: 'Q3 Cohort Analysis Synthesis',
-    dueDate: 'Oct 17, 2026',
-    daysLeft: 5,
-    color: 'bg-emerald-50 dark:bg-emerald-500/100',
-    bgColor: 'bg-emerald-50 dark:bg-emerald-500/10',
-    textColor: 'text-emerald-700 dark:text-emerald-300',
-  },
-  {
-    id: '4',
-    project: 'Marketing Assets',
-    task: 'Sprint Demo Deck Presentation',
-    dueDate: 'Oct 19, 2026',
-    daysLeft: 7,
-    color: 'bg-rose-50 dark:bg-rose-500/100',
-    bgColor: 'bg-rose-50 dark:bg-rose-500/10',
-    textColor: 'text-rose-700 dark:text-rose-300',
-  },
-];
+const UPCOMING_DEADLINES_MOCK: any[] = [];
 
 // --- Custom Recharts Tooltip ---
 

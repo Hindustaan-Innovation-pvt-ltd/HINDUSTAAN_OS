@@ -12,15 +12,8 @@ import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 // --- Mock Data ---
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-const GANTT_TASKS = [
-  { id: '1', name: 'Authentication Pipeline', start: 0, duration: 3, color: 'bg-emerald-500 dark:bg-emerald-600', assignee: 'Amanda S.' },
-  { id: '2', name: 'Dashboard UI Revamp', start: 2, duration: 4, color: 'bg-blue-500 dark:bg-blue-600', assignee: 'Priya P.' },
-  { id: '3', name: 'Supabase Migration', start: 0, duration: 5, color: 'bg-purple-500 dark:bg-purple-600', assignee: 'Rahul S.' },
-  { id: '4', name: 'User Testing', start: 4, duration: 2, color: 'bg-amber-500 dark:bg-amber-600', assignee: 'Priya P.' },
-  { id: '5', name: 'Marketing Launch', start: 5, duration: 2, color: 'bg-rose-500 dark:bg-rose-600', assignee: 'Rohan G.' }
-];
+const GANTT_TASKS: any[] = [];
 
-import { GLOBAL_PROJECTS } from '@/data/mockData';
 import { useProjects } from '@/context/ProjectContext';
 import { useNotifications } from '@/context/NotificationContext';
 import api from '@/lib/api';

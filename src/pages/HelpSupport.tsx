@@ -9,26 +9,13 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const mockFAQs = [
-  { id: 1, question: "How do I submit daily work logs?", answer: "Navigate to Work Logs -> Add Entry -> Select project and hours.", category: "Work Logs" },
-  { id: 2, question: "How do managers approve logs?", answer: "Managers can review pending logs under Team Work Logs.", category: "Manager Actions" },
-  { id: 3, question: "How can I change my password?", answer: "Go to Settings -> Account Security -> Change Password.", category: "Security" },
-];
+const mockFAQs: any[] = [];
 
-const mockDocs = [
-  { id: 1, title: "Creating Projects", desc: "Learn how to create and assign projects.", category: "Projects", icon: FolderKanban },
-  { id: 2, title: "Logging Hours", desc: "Best practices for accurate timesheets.", category: "Work Logs", icon: Clock },
-  { id: 3, title: "Using Standups", desc: "How to automate your daily standups.", category: "Getting Started", icon: MessageCircle },
-];
+const mockDocs: any[] = [];
 
-const mockTickets = [
-  { id: 'T-1001', subject: 'Unable to upload work logs', status: 'Open', priority: 'High', date: '2026-07-10' },
-  { id: 'T-1002', subject: 'Need access to Design project', status: 'In Progress', priority: 'Medium', date: '2026-07-09' },
-];
+const mockTickets: any[] = [];
 
-const mockBugs = [
-  { id: 'B-2001', title: 'Crash on submit', module: 'Work Logs', status: 'Open', severity: 'High', date: '2026-07-10' },
-];
+const mockBugs: any[] = [];
 
 export default function HelpSupport({ session }: { session?: any }) {
   const [activeTab, setActiveTab] = useState('dashboard');

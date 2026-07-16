@@ -64,8 +64,7 @@ interface ActiveSessionWidgetProps {
 }
 
 function ActiveSessionWidget({ secondsElapsed, formatTime, currentUser }: ActiveSessionWidgetProps) {
-  const savedTasksStr = localStorage.getItem('hindustaan_tasks_list');
-  const allTasks = savedTasksStr ? JSON.parse(savedTasksStr) : INITIAL_TASKS;
+  const allTasks: any[] = [];
   const inProgressTask = allTasks.find((t: any) =>
     (t.assignee_id === currentUser.id ||
      t.assignee_name?.toLowerCase().includes(currentUser.name.split(' ')[0].toLowerCase())) &&
@@ -118,22 +117,7 @@ export default function WorkLogs({ session }: { session?: any }) {
   const todayDate = new Date();
   const todayStr = format(todayDate, 'yyyy-MM-dd');
   
-  const [logs, setLogs] = useState<any[]>(() => {
-    const saved = localStorage.getItem('work_logs_list_v4');
-    if (saved) return JSON.parse(saved);
-    
-    return mockWorkLogs.map(log => ({
-      id: log.id,
-      name: log.employeeName,
-      initials: log.avatarInitials,
-      date: log.formattedDate,
-      rawDate: log.date,
-      project: log.project,
-      task: log.task,
-      hours: log.hours,
-      status: log.status || 'Approved'
-    }));
-  });
+  const [logs, setLogs] = useState<any[]>([]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -147,13 +131,6 @@ export default function WorkLogs({ session }: { session?: any }) {
   const [isTotalHoursModalOpen, setIsTotalHoursModalOpen] = useState(false);
 
   const isMounted = React.useRef(false);
-  useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true;
-      return;
-    }
-    localStorage.setItem('work_logs_list_v4', JSON.stringify(logs));
-  }, [logs]);
 
   // Fetch real work logs from backend on mount
   useEffect(() => {
@@ -174,7 +151,6 @@ export default function WorkLogs({ session }: { session?: any }) {
             status: 'Approved' // default since backend doesn't have approval status
           }));
           setLogs(mapped);
-          localStorage.setItem('work_logs_list_v4', JSON.stringify(mapped));
         }
       } catch (err) {
         console.warn('WorkLogs fetch failed, using cached data:', err);

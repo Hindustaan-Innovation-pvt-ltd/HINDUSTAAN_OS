@@ -138,23 +138,7 @@ export default function TimeAndStandup({ session }: { session?: any }) {
   const exceedsCap = (cumulativeHours + (parseFloat(hoursWorked) || 0)) > 10;
 
   // Mock Manager Data
-  const TEAM_SUBMISSIONS = [
-    {
-      id: '1', name: 'Amanda Smith', role: 'Frontend Intern',
-      standup: { yesterday: 'Built the new Kanban UI components.', today: 'Integrating dark mode fixes.', blockers: 'Figma API token expired and waiting for renewal.' },
-      logs: [{ task: 'Landing Page', hours: 3.5 }, { task: 'Navbar', hours: 3 }]
-    },
-    {
-      id: '2', name: 'Rahul Sharma', role: 'Backend Intern',
-      standup: { yesterday: 'Configured Supabase schemas.', today: 'Writing RLS policies.', blockers: 'None.' },
-      logs: [{ task: 'API Integration', hours: 8 }]
-    },
-    {
-      id: '3', name: 'Priya Patel', role: 'UX Intern',
-      standup: { yesterday: 'User testing sessions.', today: 'Consolidating feedback report.', blockers: 'Waiting on video recordings to process.' },
-      logs: [{ task: 'User Interviews', hours: 4 }, { task: 'Data Entry', hours: 2 }]
-    }
-  ];
+  const TEAM_SUBMISSIONS: any[] = [];
 
   if (role === 'manager') {
     return (
