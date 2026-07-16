@@ -149,11 +149,9 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
         }
       }
     } catch (e: any) {
-      console.error('Failed to load Kanban tasks:', e);
-      if (e.response?.status !== 401) {
-        toast.error('Kanban Error', { description: e.message || 'Failed to load task board.' });
-      }
-      setTasks(INITIAL_TASKS as any);
+      console.warn('Backend unavailable or failed to load Kanban tasks. Falling back to local storage.', e.message);
+      const savedTasks = localStorage.getItem('hindustaan_tasks_list');
+      setTasks(savedTasks ? JSON.parse(savedTasks) : INITIAL_TASKS as any);
     } finally {
       setLoading(false);
     }
