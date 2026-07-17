@@ -550,9 +550,6 @@ export default function ContributionScores({ session }: { session?: any }) {
               </div>
               <div className="flex items-end gap-2 mt-4">
                 <span className="text-4xl font-black text-slate-900 dark:text-white">{metrics.overallScore}%</span>
-                <span className="flex items-center text-xs font-bold text-emerald-600 mb-1">
-                  <TrendingUp className="h-3 w-3 mr-0.5" /> +6%
-                </span>
               </div>
             </CardContent>
           </Card>
