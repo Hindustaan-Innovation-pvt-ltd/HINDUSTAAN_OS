@@ -137,8 +137,24 @@ export default function TimeAndStandup({ session }: { session?: any }) {
 
   const exceedsCap = (cumulativeHours + (parseFloat(hoursWorked) || 0)) > 10;
 
-  // Mock Manager Data
-  const TEAM_SUBMISSIONS: any[] = [];
+  interface LogItem {
+    task: string;
+    hours: number;
+  }
+
+  interface TeamSubmission {
+    id: string | number;
+    name: string;
+    role: string;
+    standup: {
+      yesterday: string;
+      today: string;
+      blockers: string;
+    };
+    logs: LogItem[];
+  }
+
+  const TEAM_SUBMISSIONS: TeamSubmission[] = [];
 
   if (role === 'manager') {
     return (
