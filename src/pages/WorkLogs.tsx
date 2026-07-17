@@ -29,7 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { INITIAL_TASKS } from '@/data/mockData';
 import { mockWorkLogs } from '@/data/mockWorkLogs';
 import { TotalHoursModal } from '@/components/dashboard/worklogs/TotalHoursModal';
-import { format, subDays, startOfMonth, parseISO, isSameDay } from 'date-fns';
+import { format, subDays, startOfMonth, parseISO, isSameDay, startOfWeek, addDays } from 'date-fns';
 import api from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -244,6 +244,44 @@ export default function WorkLogs({ session }: { session?: any }) {
     const m = Math.floor((totalSeconds % 3600) / 60);
     const s = totalSeconds % 60;
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const weekStart = startOfWeek(todayDate, { weekStartsOn: 1 });
+  const weekDays = useMemo(() => Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i)), [weekStart]);
+
+  const heatmapData = useMemo(() => {
+    const data: Record<string, Record<string, number>> = {};
+    const usersToShow = currentUser.role === 'manager' 
+      ? Array.from(new Set(logs.map(l => l.name)))
+      : [currentUser.name];
+      
+    usersToShow.forEach(user => {
+      data[user] = {};
+      weekDays.forEach(day => {
+        data[user][format(day, 'yyyy-MM-dd')] = 0;
+      });
+    });
+
+    logs.forEach(log => {
+      if (!usersToShow.includes(log.name)) return;
+      const logDate = log.rawDate ? new Date(log.rawDate) : new Date(log.date);
+      if (isNaN(logDate.getTime())) return;
+      
+      const dateStr = format(logDate, 'yyyy-MM-dd');
+      if (data[log.name] && data[log.name][dateStr] !== undefined) {
+        data[log.name][dateStr] += Number(log.hours);
+      }
+    });
+    
+    return { users: usersToShow, data };
+  }, [logs, currentUser, weekDays]);
+
+  const getHeatmapColor = (hours: number) => {
+    if (hours === 0) return 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 shadow-inner';
+    if (hours <= 2) return 'bg-gradient-to-br from-emerald-200 to-emerald-300 dark:from-emerald-900/80 dark:to-emerald-800/80 border border-emerald-300/50 dark:border-emerald-700/50 text-emerald-900 dark:text-emerald-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]';
+    if (hours <= 5) return 'bg-gradient-to-br from-emerald-400 to-emerald-500 dark:from-emerald-700 dark:to-emerald-600 border border-emerald-400/50 dark:border-emerald-500/50 text-emerald-950 dark:text-emerald-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] shadow-emerald-500/20';
+    if (hours <= 8) return 'bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-500 border border-emerald-500/50 dark:border-emerald-400/50 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] shadow-emerald-500/30';
+    return 'bg-gradient-to-br from-emerald-600 to-emerald-700 dark:from-emerald-500 dark:to-emerald-400 border border-emerald-600/50 dark:border-emerald-300/50 text-white dark:text-emerald-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] shadow-emerald-500/40 ring-1 ring-emerald-400/50 dark:ring-emerald-300/50'; 
   };
 
   const userBaseLogs = useMemo(() => {
@@ -473,6 +511,135 @@ export default function WorkLogs({ session }: { session?: any }) {
               : (Object.values(activeSessions).filter((s: any) => s.isOnline).length || ONLINE_TEAM_MEMBERS.length)
             }
           </p>
+        </div>
+      </div>
+
+      {/* Heatmap Section */}
+      <div className="relative bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-200/60 dark:border-slate-700/40 shadow-sm overflow-hidden mb-6 group">
+        {/* Glassy Orbs in Background */}
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 dark:bg-indigo-500/20 blur-[80px] rounded-full pointer-events-none transition-transform duration-1000 group-hover:scale-150" />
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-emerald-500/10 dark:bg-emerald-500/20 blur-[80px] rounded-full pointer-events-none transition-transform duration-1000 group-hover:scale-150" />
+
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center tracking-tight">
+              <div className="h-8 w-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mr-3 shadow-inner">
+                <Activity className="h-4 w-4" />
+              </div>
+              Weekly Activity Heatmap
+            </h3>
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-2 flex items-center">
+              <CalendarIcon className="h-3.5 w-3.5 mr-1.5 opacity-70" />
+              {format(weekStart, 'MMM d')} - {format(weekDays[6], 'MMM d, yyyy')}
+            </p>
+          </div>
+          
+          {/* Elegant Legend */}
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-2xl border border-slate-100 dark:border-slate-700/50 backdrop-blur-sm">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-2 ml-1">Less</span>
+            {[0, 2, 5, 8, 10].map((hours, i) => (
+              <div key={i} className={cn("w-4 h-4 rounded-md transition-all duration-300", getHeatmapColor(hours))} title={`${hours === 0 ? 0 : hours}+ hours`} />
+            ))}
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-2 mr-1">More</span>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 hide-scrollbar">
+          <div className="min-w-[700px]">
+            {/* Days Header */}
+            <div className="flex mb-4 relative z-10">
+              <div className="w-56 shrink-0"></div>
+              <div className="flex-1 grid grid-cols-7 gap-3">
+                {weekDays.map(day => {
+                  const isToday = isSameDay(day, new Date());
+                  return (
+                    <div key={day.toString()} className="flex flex-col items-center justify-center group/day">
+                      <span className={cn(
+                        "text-[10px] font-black uppercase tracking-wider mb-1 transition-colors",
+                        isToday ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"
+                      )}>
+                        {format(day, 'EEE')}
+                      </span>
+                      <span className={cn(
+                        "flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-all",
+                        isToday 
+                          ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30" 
+                          : "text-slate-700 dark:text-slate-300 group-hover/day:bg-slate-100 dark:group-hover/day:bg-slate-800"
+                      )}>
+                        {format(day, 'd')}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* Users Rows */}
+            <div className="space-y-3 relative z-10">
+              {heatmapData.users.map((user, rowIdx) => {
+                const totalWeekHours = weekDays.reduce((sum, day) => sum + (heatmapData.data[user][format(day, 'yyyy-MM-dd')] || 0), 0);
+                const memberData = ONLINE_TEAM_MEMBERS.find(m => m.name === user);
+                
+                return (
+                  <div 
+                    key={user} 
+                    className="flex items-center group/row animate-in slide-in-from-left-4 fade-in duration-500 fill-mode-both"
+                    style={{ animationDelay: `${rowIdx * 100}ms` }}
+                  >
+                    {/* User Info */}
+                    <div className="w-56 shrink-0 pr-6 flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-sm ring-2 ring-white dark:ring-slate-900 group-hover/row:scale-110 transition-transform",
+                          memberData?.color || "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        )}>
+                          {memberData?.initials || user.split(' ').map((n: string) => n[0]).join('')}
+                        </div>
+                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover/row:text-indigo-600 dark:group-hover/row:text-indigo-400 transition-colors truncate">
+                          {user}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-black text-slate-400 group-hover/row:text-indigo-500 transition-colors">
+                          {totalWeekHours.toFixed(1)}h
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Heatmap Cells */}
+                    <div className="flex-1 grid grid-cols-7 gap-3">
+                      {weekDays.map(day => {
+                        const dateStr = format(day, 'yyyy-MM-dd');
+                        const hours = heatmapData.data[user][dateStr] || 0;
+                        const isToday = isSameDay(day, new Date());
+                        
+                        return (
+                          <div 
+                            key={dateStr}
+                            title={`${hours.toFixed(1)} hours on ${format(day, 'MMM d')}`}
+                            className="relative group/cell aspect-square sm:aspect-auto sm:h-12 w-full rounded-xl"
+                          >
+                            <div className={cn(
+                              "absolute inset-0 rounded-xl transition-all duration-300 cursor-crosshair flex items-center justify-center",
+                              getHeatmapColor(hours),
+                              isToday && "ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900",
+                              "group-hover/cell:scale-[1.15] group-hover/cell:shadow-xl group-hover/cell:z-20"
+                            )}>
+                              {hours > 0 && (
+                                <span className="text-[10px] font-black opacity-0 group-hover/cell:opacity-100 transition-opacity drop-shadow-md">
+                                  {hours.toFixed(1)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
