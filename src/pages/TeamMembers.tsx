@@ -311,7 +311,7 @@ export default function TeamMembers() {
                 Invite Intern
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a]">
+            <DialogContent className="sm:max-w-[600px] rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl">
               <DialogHeader>
                 <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Invite New Intern</DialogTitle>
               </DialogHeader>
@@ -393,10 +393,10 @@ export default function TeamMembers() {
         <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as any)} className="w-full space-y-6">
           {currentUser?.role === 'manager' && (
             <TabsList className="bg-slate-100 dark:bg-slate-900 rounded-xl p-1 gap-2 self-start w-fit">
-              <TabsTrigger value="active" className="rounded-lg font-bold px-4 py-2">
+              <TabsTrigger value="active" className="rounded-lg font-bold px-4 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white text-slate-600 dark:text-slate-400">
                 Active Directory
               </TabsTrigger>
-              <TabsTrigger value="pending" className="rounded-lg font-bold px-4 py-2 relative">
+              <TabsTrigger value="pending" className="rounded-lg font-bold px-4 py-2 relative data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white text-slate-600 dark:text-slate-400">
                 Pending Approvals
                 {pendingApprovals.length > 0 && (
                   <span className="ml-2 px-1.5 py-0.5 text-[10px] font-black bg-orange-500 text-white rounded-full">
