@@ -103,6 +103,43 @@ const COLORS = {
   orange: '#f97316' // orange-500
 };
 
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-md text-white p-4 rounded-xl border border-slate-700/50 shadow-xl space-y-2 text-xs min-w-[220px]">
+        <p className="font-bold text-slate-200 text-sm border-b border-slate-700 pb-1">{data.name}</p>
+        <p className="text-orange-400 font-extrabold text-base flex justify-between">
+          <span>Weekly Score:</span>
+          <span>{data.score}%</span>
+        </p>
+        <div className="space-y-1.5 pt-1 text-[11px] text-slate-400 font-semibold">
+          <div className="flex justify-between items-center">
+            <span>📈 Tasks ({data.tasks}% × 35%)</span>
+            <span className="text-slate-200 font-bold">{Math.round(data.tasks * 0.35)}%</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span>⏱️ Work Logs ({data.logs}% × 25%)</span>
+            <span className="text-slate-200 font-bold">{Math.round(data.logs * 0.25)}%</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span>💬 Standups ({data.standups}% × 20%)</span>
+            <span className="text-slate-200 font-bold">{Math.round(data.standups * 0.20)}%</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span>🏁 Milestones ({data.milestones}% × 20%)</span>
+            <span className="text-slate-200 font-bold">{Math.round(data.milestones * 0.20)}%</span>
+          </div>
+        </div>
+        <p className="text-[10px] text-slate-500 border-t border-slate-800/80 pt-1.5 leading-tight">
+          Score = Tasks(35%) + Logs(25%) + Standups(20%) + Milestones(20%)
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function ContributionScores({ session }: { session?: any }) {
   const { projects } = useProjects();
   const currentUser = getCurrentUser();
@@ -154,50 +191,155 @@ export default function ContributionScores({ session }: { session?: any }) {
       setLoadingMetrics(true);
       const nameToCheck = currentUserName;
 
-      // 1. Fetch Tasks
+      // 1. Fetch Tasks (API + localStorage)
       const tasksRes = await api.get('/tasks?limit=1000');
-      let myTasks: any[] = [];
+      let apiTasks: any[] = [];
       if (tasksRes.data?.success && Array.isArray(tasksRes.data.data)) {
-        myTasks = tasksRes.data.data.filter((t: any) =>
+        apiTasks = tasksRes.data.data.filter((t: any) =>
           t.assigneeId === currentUserId ||
-          t.assignee?.name === nameToCheck ||
+          (t.assignee?.name && t.assignee.name.toLowerCase() === nameToCheck.toLowerCase()) ||
           (t.assignee?.name && nameToCheck.toLowerCase().includes(t.assignee.name.split(' ')[0].toLowerCase()))
         );
       }
-      // 1. Calculate Tasks Completed
-      const tasksCompleted = myTasks.filter((t: any) => t.status === 'done' || t.status === 'completed').length;
-      const totalTasks = myTasks.length;
+
+      // Also get from localStorage
+      const savedTasksStr = localStorage.getItem('hindustaan_tasks');
+      let localTasks: any[] = [];
+      if (savedTasksStr) {
+        try {
+          const parsed = JSON.parse(savedTasksStr);
+          if (Array.isArray(parsed)) {
+            localTasks = parsed.filter((t: any) => 
+              t.assignee_id === currentUserId ||
+              t.assignee_name?.toLowerCase() === nameToCheck.toLowerCase() || 
+              (nameToCheck.toLowerCase().includes(nameToCheck.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(nameToCheck.split(' ')[0].toLowerCase()))
+            );
+          }
+        } catch (e) {
+          console.error('Error parsing local tasks:', e);
+        }
+      }
+
+      // Merge tasks by id/title to avoid duplication
+      const mergedTasksMap = new Map();
+      localTasks.forEach(t => {
+        const idKey = t.id || t.title;
+        mergedTasksMap.set(idKey, {
+          id: t.id,
+          title: t.title,
+          status: t.status?.toLowerCase(),
+          dueDate: t.dueDate || t.due_date
+        });
+      });
+      apiTasks.forEach(t => {
+        const idKey = t.id || t.title;
+        mergedTasksMap.set(idKey, {
+          id: t.id,
+          title: t.title,
+          status: t.status?.toLowerCase(),
+          dueDate: t.dueDate || t.due_date
+        });
+      });
+      
+      const combinedTasks = Array.from(mergedTasksMap.values());
+      const tasksCompleted = combinedTasks.filter((t: any) => t.status === 'done' || t.status === 'completed').length;
+      const totalTasks = combinedTasks.length;
       const taskPercent = totalTasks > 0 ? Math.round((tasksCompleted / totalTasks) * 100) : 0;
 
-      // 2. Fetch Work Logs
+      // 2. Fetch Work Logs (API + localStorage)
       const logsRes = await api.get('/worklogs');
-      let myLogs: any[] = [];
+      let apiLogs: any[] = [];
       if (logsRes.data?.success && Array.isArray(logsRes.data.data)) {
-        myLogs = logsRes.data.data.filter((l: any) =>
+        apiLogs = logsRes.data.data.filter((l: any) =>
           l.userId === currentUserId ||
-          l.user?.name === nameToCheck ||
+          (l.user?.name && l.user.name.toLowerCase() === nameToCheck.toLowerCase()) ||
           (l.user?.name && nameToCheck.toLowerCase().includes(l.user.name.split(' ')[0].toLowerCase()))
         );
       }
-      const hoursLogged = myLogs.reduce((sum: number, l: any) => sum + (parseFloat(l.hours) || 0), 0);
-      const targetHours = 40;
+
+      const savedLogsStr = localStorage.getItem('work_logs_list');
+      let localLogs: any[] = [];
+      if (savedLogsStr) {
+        try {
+          const parsed = JSON.parse(savedLogsStr);
+          if (Array.isArray(parsed)) {
+            localLogs = parsed.filter((log: any) => 
+              log.name?.toLowerCase() === nameToCheck.toLowerCase() ||
+              (nameToCheck.toLowerCase().includes(nameToCheck.split(' ')[0].toLowerCase()) && log.name?.toLowerCase().includes(nameToCheck.split(' ')[0].toLowerCase()))
+            );
+          }
+        } catch (e) {
+          console.error('Error parsing local logs:', e);
+        }
+      }
+
+      // Merge and sum logs
+      const combinedLogs = [...localLogs];
+      apiLogs.forEach((al: any) => {
+        const isDuplicate = localLogs.some((ll: any) => 
+          ll.hours === parseFloat(al.hours) && 
+          (ll.date === al.date || new Date(ll.rawDate || ll.date).toDateString() === new Date(al.rawDate || al.date).toDateString())
+        );
+        if (!isDuplicate) {
+          combinedLogs.push({
+            hours: parseFloat(al.hours) || 0,
+            date: al.date || al.rawDate,
+            rawDate: al.rawDate || al.date
+          });
+        }
+      });
+      const hoursLogged = combinedLogs.reduce((sum: number, l: any) => sum + (parseFloat(l.hours) || 0), 0);
+      const targetHours = 48; // 6 days * 8 hours/day
       const logPercent = targetHours > 0 ? Math.min(100, Math.round((hoursLogged / targetHours) * 100)) : 0;
 
-      // 3. Fetch Standups
+      // 3. Fetch Standups (API + localStorage)
       const standupsRes = await api.get(`/standups?userId=${currentUserId}&limit=100`);
-      let myStandups: any[] = [];
+      let apiStandups: any[] = [];
       if (standupsRes.data?.success && Array.isArray(standupsRes.data.data)) {
-        myStandups = standupsRes.data.data;
+        apiStandups = standupsRes.data.data;
       }
-      const submittedStandups = myStandups.filter((s: any) => s.done || s.yesterday || s.today).length;
-      const totalStandupDays = 5;
+      
+      const savedStandupsStr = localStorage.getItem('hindustaan_standup_history');
+      let localStandups: any[] = [];
+      if (savedStandupsStr) {
+        try {
+          const parsed = JSON.parse(savedStandupsStr);
+          if (Array.isArray(parsed)) {
+            localStandups = parsed;
+          }
+        } catch (e) {
+          console.error('Error parsing local standup history:', e);
+        }
+      }
+
+      const mergedStandupsMap = new Map();
+      localStandups.forEach((s: any) => {
+        const dateKey = s.dateGroup === 'Today' ? new Date().toDateString() : (s.time + s.yesterday);
+        mergedStandupsMap.set(s.id || dateKey, {
+          id: s.id,
+          done: s.yesterday || s.today || true,
+          date: s.dateGroup === 'Today' ? new Date().toISOString() : s.rawDate || new Date().toISOString()
+        });
+      });
+      apiStandups.forEach((s: any) => {
+        const dateKey = new Date(s.date || s.submittedAt).toDateString();
+        mergedStandupsMap.set(s.id || dateKey, {
+          id: s.id,
+          done: s.done || s.doing || true,
+          date: s.date || s.submittedAt
+        });
+      });
+
+      const combinedStandups = Array.from(mergedStandupsMap.values());
+      const submittedStandups = combinedStandups.length;
+      const totalStandupDays = 6; // Monday to Saturday
       const standupPercent = Math.min(100, Math.round((submittedStandups / totalStandupDays) * 100));
 
       // 4. Calculate Milestones from project context
       const myProjects = projects.filter(p =>
         p.tasks?.some((t: any) => 
           t.assignee_id === currentUserId || 
-          t.assignee_name === nameToCheck ||
+          (t.assignee_name && t.assignee_name.toLowerCase() === nameToCheck.toLowerCase()) ||
           (t.assignee_name && nameToCheck.toLowerCase().includes(t.assignee_name.split(' ')[0].toLowerCase()))
         )
       );
@@ -209,7 +351,23 @@ export default function ContributionScores({ session }: { session?: any }) {
       // 5. Overall score
       const overallScore = Math.round((taskPercent * 0.35) + (logPercent * 0.25) + (standupPercent * 0.20) + (milestonePercent * 0.20));
 
-      // 6. Compute weekly trend (past 4 weeks)
+      // 6. Compute weekly trend (past 4 weeks) - pre-parsed for computational efficiency
+      const parsedLogs = combinedLogs.map(l => ({
+        hours: parseFloat(l.hours) || 0,
+        timeMs: new Date(l.date || l.rawDate).getTime()
+      }));
+      const parsedTasks = combinedTasks.map(t => ({
+        status: t.status,
+        timeMs: t.dueDate ? new Date(t.dueDate).getTime() : null
+      }));
+      const parsedStandups = combinedStandups.map(s => ({
+        timeMs: s.date ? new Date(s.date).getTime() : null
+      }));
+      const parsedMilestones = myMilestones.map(m => ({
+        status: m.status,
+        timeMs: (m.dueDate || m.date) ? new Date(m.dueDate || m.date).getTime() : null
+      }));
+
       const weeklyTrendData = [];
       for (let i = 3; i >= 0; i--) {
         const now = new Date();
@@ -217,35 +375,25 @@ export default function ContributionScores({ session }: { session?: any }) {
         start.setHours(0, 0, 0, 0);
         const end = new Date(start.getTime() + (7 * 24 * 60 * 60 * 1000));
 
+        const startMs = start.getTime();
+        const endMs = end.getTime();
+
         // Logs in this week
-        const weekLogs = myLogs.filter(l => {
-          const d = new Date(l.date || l.rawDate);
-          return d >= start && d < end;
-        });
-        const weekHours = weekLogs.reduce((sum: number, l: any) => sum + (parseFloat(l.hours) || 0), 0);
-        const weekLogPercent = Math.min(100, Math.round((weekHours / 10) * 100));
+        const weekHours = parsedLogs
+          .filter(l => l.timeMs >= startMs && l.timeMs < endMs)
+          .reduce((sum, l) => sum + l.hours, 0);
+        const weekLogPercent = Math.min(100, Math.round((weekHours / 48) * 100));
 
         // Tasks due/completed in this week
-        const weekTasks = myTasks.filter(t => {
-          if (!t.dueDate) return false;
-          const d = new Date(t.dueDate);
-          return d >= start && d < end;
-        });
+        const weekTasks = parsedTasks.filter(t => t.timeMs !== null && t.timeMs >= startMs && t.timeMs < endMs);
         const weekCompleted = weekTasks.filter(t => t.status === 'done' || t.status === 'completed').length;
         const weekTaskPercent = weekTasks.length > 0 ? Math.round((weekCompleted / weekTasks.length) * 100) : 0;
 
         // Standups in this week
-        const weekStandupsCount = myStandups.filter(s => {
-          const d = new Date(s.date || s.submittedAt);
-          return d >= start && d < end;
-        }).length;
-        const weekStandupPercent = Math.min(100, Math.round((weekStandupsCount / 5) * 100));
+        const weekStandupsCount = parsedStandups.filter(s => s.timeMs !== null && s.timeMs >= startMs && s.timeMs < endMs).length;
+        const weekStandupPercent = Math.min(100, Math.round((weekStandupsCount / 6) * 100));
 
-        const weekMilestones = myMilestones.filter(m => {
-          if (!m.dueDate && !m.date) return false;
-          const d = new Date(m.dueDate || m.date);
-          return d >= start && d < end;
-        });
+        const weekMilestones = parsedMilestones.filter(m => m.timeMs !== null && m.timeMs >= startMs && m.timeMs < endMs);
         const weekMilestonesCompleted = weekMilestones.filter(m => m.status === 'completed' || m.status === 'done').length;
         const weekMilestonePercent = weekMilestones.length > 0 ? Math.round((weekMilestonesCompleted / weekMilestones.length) * 100) : 0;
 
@@ -253,7 +401,11 @@ export default function ContributionScores({ session }: { session?: any }) {
 
         weeklyTrendData.push({
           name: `Week ${4 - i}`,
-          score: weekScore
+          score: weekScore,
+          tasks: weekTaskPercent,
+          logs: weekLogPercent,
+          standups: weekStandupPercent,
+          milestones: weekMilestonePercent
         });
       }
 
@@ -507,7 +659,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} className="text-slate-500" />
                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} className="text-slate-500" domain={[0, 100]} />
-                        <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                        <RechartsTooltip content={<CustomTooltip />} />
                         <Area type="monotone" dataKey="score" stroke={COLORS.orange} strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -567,13 +719,14 @@ export default function ContributionScores({ session }: { session?: any }) {
               </CardHeader>
               <CardContent className="p-5 pt-2 space-y-3 text-xs font-medium text-slate-600 dark:text-slate-400">
                 <p className="font-bold text-slate-800 dark:text-slate-200">
-                  Overall Score = (Tasks Completed % × 40%) + (Work Logs % × 35%) + (Milestones % × 25%)
+                  Overall Score = (Tasks Completed % × 35%) + (Work Logs % × 25%) + (Standups % × 20%) + (Milestones % × 20%)
                 </p>
                 <Separator className="bg-amber-200/30 dark:bg-amber-800/30" />
                 <div className="space-y-1.5">
-                  <p>📈 <span className="font-bold text-slate-800 dark:text-slate-200">Tasks Completed (40%):</span> Completed tasks relative to total assigned tasks.</p>
-                  <p>⏱️ <span className="font-bold text-slate-800 dark:text-slate-200">Work Logs (35%):</span> Hours logged relative to the target goal of 40 hours per week.</p>
-                  <p>🏁 <span className="font-bold text-slate-800 dark:text-slate-200">Milestones (25%):</span> Percentage of project milestones completed on time.</p>
+                  <p>📈 <span className="font-bold text-slate-800 dark:text-slate-200">Tasks Completed (35%):</span> Completed tasks relative to total assigned tasks.</p>
+                  <p>⏱️ <span className="font-bold text-slate-800 dark:text-slate-200">Work Logs (25%):</span> Hours logged relative to the target goal of 48 hours per week (8 hours/day × 6 days).</p>
+                  <p>💬 <span className="font-bold text-slate-800 dark:text-slate-200">Standups (20%):</span> Daily standup submission participation rate (out of 6 working days, Monday to Saturday).</p>
+                  <p>🏁 <span className="font-bold text-slate-800 dark:text-slate-200">Milestones (20%):</span> Percentage of project milestones completed on time.</p>
                 </div>
               </CardContent>
             </Card>

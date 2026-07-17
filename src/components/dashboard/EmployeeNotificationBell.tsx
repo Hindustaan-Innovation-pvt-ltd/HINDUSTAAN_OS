@@ -325,7 +325,7 @@ export function EmployeeNotificationBell({ onNavigate }: NotificationBellProps =
                                     size="sm" 
                                     variant={action.primary ? "default" : "outline"}
                                     className={cn("h-6 text-[10px] px-2 py-0", action.primary ? "bg-orange-600 hover:bg-orange-700 text-white" : "border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300")}
-                                    onClick={(e) => handleActionClick(e, notification, action.actionType)}
+                                    onClick={(e) => handleActionClick(e, notification, action.actionType || '')}
                                   >
                                     {action.label}
                                   </Button>
