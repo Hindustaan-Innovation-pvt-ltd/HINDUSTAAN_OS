@@ -196,6 +196,10 @@ function ManagerDashboardInner() {
       }
     };
     fetchDashboard();
+    
+    // Poll every 5 seconds for real-time updates
+    const intervalId = setInterval(fetchDashboard, 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
 
