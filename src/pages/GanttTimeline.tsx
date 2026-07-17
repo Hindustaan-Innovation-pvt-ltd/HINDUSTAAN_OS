@@ -81,8 +81,17 @@ const mapGlobalProjectsToGantt = (globalProjects: any[], currentDate: Date): Pro
 };
 
 export default function GanttTimeline({ session }: { session?: any }) {
-  const { projects: globalProjects, addProject } = useProjects();
+  const { projects: globalProjects, addProject, refreshProjects } = useProjects();
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  // Real-time update every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshProjects();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [refreshProjects]);
+
   const [collapsedProjects, setCollapsedProjects] = useState<Record<string, boolean>>({});
   
   const projects = useMemo(() => mapGlobalProjectsToGantt(globalProjects, currentDate), [globalProjects, currentDate]);

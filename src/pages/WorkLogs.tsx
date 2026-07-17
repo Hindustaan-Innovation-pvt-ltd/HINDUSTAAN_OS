@@ -303,7 +303,7 @@ export default function WorkLogs({ session }: { session?: any }) {
     });
     
     return { users: usersToShow, data };
-  }, [logs, currentUser, weekDays]);
+  }, [logs, currentUser, weekDays, teamMembers]);
 
   const getHeatmapColor = (hours: number) => {
     if (hours === 0) return 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 shadow-inner';

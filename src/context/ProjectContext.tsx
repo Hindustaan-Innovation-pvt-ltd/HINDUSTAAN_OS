@@ -72,7 +72,8 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         assignee_name: t.assignee?.name || 'Unassigned',
         assignee_id: t.assigneeId || 'unassigned',
         priority: t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
-        due_date: t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : ''
+        due_date: t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : '',
+        start_date: t.startDate ? new Date(t.startDate).toISOString().split('T')[0] : ''
       }))
     };
   };
