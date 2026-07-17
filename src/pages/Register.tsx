@@ -89,7 +89,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
   };
 
   return (
-    <div className="relative flex min-h-screen w-full overflow-y-auto overflow-x-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-500 font-sans">
+    <div className="relative flex min-h-screen lg:h-screen lg:max-h-screen w-full overflow-y-auto lg:overflow-hidden overflow-x-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-500 font-sans">
       {/* Background Ornaments */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
       <div className="fixed -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-orange-500/20 dark:bg-orange-600/20 blur-[120px] pointer-events-none transition-colors duration-500"></div>
@@ -105,7 +105,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
         {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
       </button>
 
-      <div className="relative z-10 flex w-full min-h-screen">
+      <div className="relative z-10 flex w-full min-h-screen lg:h-screen lg:min-h-0 lg:max-h-screen lg:overflow-hidden">
         
         {/* Left Section - Branding (Hidden on Mobile) */}
         <div className="hidden lg:flex flex-col justify-center w-[45%] xl:w-[50%] p-12 xl:p-24 border-r border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-sm z-10">
@@ -137,25 +137,25 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
         </div>
 
         {/* Right Section - Register Form */}
-        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 w-full lg:w-[55%] xl:w-[50%] z-10 py-16">
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-2 xl:p-12 w-full lg:w-[55%] xl:w-[50%] z-10 py-16 lg:py-2 lg:h-screen lg:overflow-hidden">
           <div className="w-full max-w-md">
-            <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-8">
+            <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 lg:p-5 lg:py-2.5 xl:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-8">
           
-          <div className="flex flex-col items-center text-center mb-4">
+          <div className="flex flex-col items-center text-center mb-4 lg:mb-1.5">
             <div className="hover:scale-[1.03] transition-all duration-300">
               <BrandLogo variant="auth" />
             </div>
-            <div className="mt-2 flex flex-col items-center">
+            <div className="mt-2 lg:mt-1 flex flex-col items-center">
               <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                 Create Account
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 mt-4">
-            {/* Full Name */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 lg:space-y-1.5 mt-4 lg:mt-1">
+             {/* Full Name */}
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Full Name</label>
+              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-0">Full Name</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                   <User className="h-4 w-4" />
@@ -163,7 +163,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                 <input
                   type="text"
                   {...register("name")}
-                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.name ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10 dark:focus:ring-orange-500/20")}
+                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 lg:py-1 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.name ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10 dark:focus:ring-orange-500/20")}
                   placeholder="Enter your full name"
                 />
               </div>
@@ -172,7 +172,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
 
             {/* Email Address */}
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Email Address</label>
+              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-0">Email Address</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                   <Mail className="h-4 w-4" />
@@ -180,17 +180,17 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                 <input
                   type="email"
                   {...register("email")}
-                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10 dark:focus:ring-orange-500/20")}
+                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 lg:py-1 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10 dark:focus:ring-orange-500/20")}
                   placeholder="name@hindustaan.in"
                 />
               </div>
               {errors.email && <p className="text-[10px] text-red-500 font-medium flex items-center mt-1"><AlertCircle className="w-3 h-3 mr-1"/>{errors.email.message}</p>}
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
                 {/* Role */}
                 <div className="space-y-1">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Role</label>
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-0">Role</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors z-10">
                     <Briefcase className="h-4 w-4" />
@@ -200,7 +200,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                       control={control}
                       render={({ field }) => (
                         <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className="w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 h-[42px] pl-11 pr-4 text-sm text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20">
+                          <SelectTrigger className="w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-1 h-[42px] lg:h-[34px] pl-11 pr-4 text-sm text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20">
                             <SelectValue placeholder="Select role" />
                           </SelectTrigger>
                           <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl">
@@ -215,14 +215,14 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
 
                 {/* Department */}
                 <div className="space-y-1">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Department</label>
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-0">Department</label>
                 <div className="relative group">
                     <Controller
                       name="department"
                       control={control}
                       render={({ field }) => (
                         <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className="w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 h-[42px] px-4 text-sm text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20">
+                          <SelectTrigger className="w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-1 h-[42px] lg:h-[34px] px-4 text-sm text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20">
                             <SelectValue placeholder="Select department" />
                           </SelectTrigger>
                           <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl">
@@ -239,16 +239,16 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                 </div>
             </div>
 
-            {/* Dynamic Designation for Employee */}
+             {/* Dynamic Designation for Employee */}
             {selectedRole === 'employee' && (
               <div className="space-y-1">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Designation / Specialization</label>
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-0">Designation / Specialization</label>
                 <Controller
                   name="designation"
                   control={control}
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 h-[42px] px-4 text-sm text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10">
+                      <SelectTrigger className="w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-1 h-[42px] lg:h-[34px] px-4 text-sm text-slate-900 dark:text-white focus:ring-4 focus:ring-orange-500/10">
                         <SelectValue placeholder="Select designation" />
                       </SelectTrigger>
                       <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl">
@@ -265,7 +265,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
             )}
 
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Phone</label>
+              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-0">Phone</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                   <Phone className="h-4 w-4" />
@@ -273,17 +273,17 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                 <input
                   type="tel"
                   {...register("phone")}
-                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.phone ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
+                  className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 lg:py-1 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.phone ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
                   placeholder="9876543210"
                 />
               </div>
               {errors.phone && <p className="text-[10px] text-red-500 font-medium flex items-center mt-1"><AlertCircle className="w-3 h-3 mr-1"/>{errors.phone.message}</p>}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {/* Password */}
                 <div className="space-y-1">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Password</label>
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-0">Password</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                     <KeyRound className="h-4 w-4" />
@@ -291,7 +291,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                      <input
                     type={showPassword ? "text" : "password"}
                     {...register("password")}
-                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
+                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 lg:py-1 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
                     placeholder="••••••••"
                     />
                     <button
@@ -311,7 +311,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
 
                 {/* Confirm Password */}
                 <div className="space-y-1">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Confirm Password</label>
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-0">Confirm Password</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                     <KeyRound className="h-4 w-4" />
@@ -319,7 +319,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                     <input
                     type={showConfirmPassword ? "text" : "password"}
                     {...register("confirmPassword")}
-                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
+                    className={cn("block w-full rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 py-2.5 lg:py-1 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 transition-all duration-200", errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700/50 focus:border-orange-500 focus:ring-orange-500/10")}
                     placeholder="••••••••"
                     />
                     <button
@@ -340,7 +340,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
 
             {/* Terms and Conditions */}
             <div className="flex flex-col space-y-1">
-              <div className="flex items-center space-x-2 pt-0.5">
+              <div className="flex items-center space-x-2 pt-0.5 lg:pt-0">
                 <input
                   type="checkbox"
                   id="terms"
@@ -351,14 +351,14 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
                   I accept the <span onClick={() => setShowTerms(true)} className="text-orange-600 hover:underline cursor-pointer">Terms & Conditions</span>
                 </label>
               </div>
-              {errors.termsAccepted && <p className="text-[10px] text-red-500 font-medium flex items-center"><AlertCircle className="w-3 h-3 mr-1"/>{errors.termsAccepted.message}</p>}
+              {errors.termsAccepted && <p className="text-[10px] text-red-500 font-medium flex items-center mt-1"><AlertCircle className="w-3 h-3 mr-1"/>{errors.termsAccepted.message}</p>}
             </div>
 
             <div>
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative flex w-full justify-center items-center space-x-2 rounded-xl bg-gradient-to-r from-orange-500 to-green-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-green-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:opacity-70 disabled:hover:scale-100 transition-all duration-200 ease-out"
+                className="group relative flex w-full justify-center items-center space-x-2 rounded-xl bg-gradient-to-r from-orange-500 to-green-600 px-4 py-2.5 lg:py-1.5 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-green-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:opacity-70 disabled:hover:scale-100 transition-all duration-200 ease-out"
               >
                 {loading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -371,7 +371,7 @@ export default function Register({ onNavigateToLogin }: { onNavigateToLogin: (em
               </button>
             </div>
             
-            <div className="text-center pt-3 pb-1">
+            <div className="text-center pt-3 pb-1 lg:pt-1 lg:pb-0">
               <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Already have an account? </span>
               <button 
                 type="button" 
