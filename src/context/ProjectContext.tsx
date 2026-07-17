@@ -192,7 +192,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       const res = await api.post('/milestones', {
         name,
         projectId,
-        dueDate: dueDate ? new Date(dueDate) : undefined,
+        dueDate: dueDate || null,
         status: 'pending'
       });
       if (res.data?.success) {

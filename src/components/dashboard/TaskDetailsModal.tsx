@@ -57,6 +57,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
     const fetchTeam = async () => {
@@ -81,8 +82,10 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
   // Sync internal state when a new task is opened
   useEffect(() => {
-    if (task) {
+    if (isOpen && task) {
       setEditedTask({ ...task });
+      setNewComment('');
+      setHasChanges(false);
       // Mock comments load
       setComments([
         {
@@ -93,28 +96,31 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
         }
       ]);
     }
-  }, [task]);
+  }, [task, isOpen]);
 
-  if (!task || !editedTask) return null;
+  if (!editedTask) return null;
 
   const isManager = currentUser.role === 'manager';
   const isAdmin = currentUser.role === 'admin';
-  const canEditStatus = isManager || (currentUser.role === 'intern' && currentUser.id === task.assignee_id);
+  const canEditStatus = isManager || (currentUser.role === 'intern' && currentUser.id === task?.assignee_id);
 
   const handleUpdateField = (field: keyof Task, value: any) => {
     if (isAdmin) return;
     if (!isManager && field !== 'status') return; // Extra safety guard
     setEditedTask(prev => prev ? { ...prev, [field]: value } : null);
-    if (onUpdateTask) {
-      onUpdateTask({ ...editedTask, [field]: value });
-    }
+    setHasChanges(true);
   };
 
   const handleStatusChange = (newStatus: Status) => {
     if (!canEditStatus) return;
     setEditedTask(prev => prev ? { ...prev, status: newStatus } : null);
-    if (onUpdateTask) {
-      onUpdateTask({ ...editedTask, status: newStatus });
+    setHasChanges(true);
+  };
+
+  const handleSaveChanges = () => {
+    if (onUpdateTask && editedTask && hasChanges) {
+      onUpdateTask(editedTask);
+      setHasChanges(false);
     }
   };
 
@@ -244,13 +250,15 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                       if (selected) {
                         const updated = { ...editedTask, assignee_id: selected.id, assignee_name: selected.name } as Task;
                         setEditedTask(updated);
-                        if (onUpdateTask) onUpdateTask(updated);
+                        setHasChanges(true);
                       }
                     }}
                     className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]"
                   >
                     <option value="">Unassigned</option>
-                    {teamMembers.map(member => (
+                    {teamMembers
+                      .filter(member => member.role !== 'manager' && member.role !== 'admin')
+                      .map(member => (
                       <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={member.id} value={member.id}>{member.name}</option>
                     ))}
                   </select>
@@ -460,6 +468,19 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
           </div>
 
         </div>
+
+        {/* Save Changes Footer */}
+        {(isManager || canEditStatus) && hasChanges && (
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/30 flex justify-end shrink-0">
+            <Button 
+              onClick={handleSaveChanges} 
+              className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 shadow-md transition-all hover:-translate-y-0.5 active:translate-y-0"
+            >
+              Save Changes
+            </Button>
+          </div>
+        )}
+
       </DialogContent>
     </Dialog>
   );
