@@ -118,12 +118,14 @@ export default function WorkLogs({ session }: { session?: any }) {
   const todayStr = format(todayDate, 'yyyy-MM-dd');
   
   const [logs, setLogs] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [projectFilter, setProjectFilter] = useState('All');
   const [employeeFilter, setEmployeeFilter] = useState('All');
   const [dateFilter, setDateFilter] = useState<Date | undefined>(new Date());
+  const [heatmapDate, setHeatmapDate] = useState<Date>(todayDate);
   const [activeTab, setActiveTab] = useState('all');
   const [selectedSpecificDate, setSelectedSpecificDate] = useState<string>(todayStr);
 
@@ -161,6 +163,23 @@ export default function WorkLogs({ session }: { session?: any }) {
 
   const role = session?.user?.user_metadata?.role || 'manager';
   const email = session?.user?.email || 'user@hindustaan.in';
+
+  useEffect(() => {
+    const fetchTeam = async () => {
+      if (role === 'manager' || role === 'admin') {
+        try {
+          const res = await api.get('/team/profiles');
+          if (res.data?.success) {
+            // Include only employees/interns, exclude admin and manager
+            setTeamMembers(res.data.data.filter((u: any) => u.role !== 'admin' && u.role !== 'manager' && u.name !== 'Admin User'));
+          }
+        } catch (err) {
+          console.warn('Failed to fetch team profiles:', err);
+        }
+      }
+    };
+    fetchTeam();
+  }, [role]);
   
   let currentUserId = 'manager-1';
   let currentUserName = 'Admin User';
@@ -246,14 +265,24 @@ export default function WorkLogs({ session }: { session?: any }) {
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const weekStart = startOfWeek(todayDate, { weekStartsOn: 1 });
+  const weekStart = startOfWeek(heatmapDate, { weekStartsOn: 1 });
   const weekDays = useMemo(() => Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i)), [weekStart]);
 
   const heatmapData = useMemo(() => {
     const data: Record<string, Record<string, number>> = {};
-    const usersToShow = currentUser.role === 'manager' 
-      ? Array.from(new Set(logs.map(l => l.name)))
-      : [currentUser.name];
+    let usersToShow: string[] = [];
+
+    if (currentUser.role === 'manager') {
+      if (teamMembers.length > 0) {
+        usersToShow = Array.from(new Set(teamMembers.map(m => m.name)));
+      } else {
+        usersToShow = Array.from(new Set(logs.map(l => l.name)));
+      }
+      // Strictly filter out admin and current manager
+      usersToShow = usersToShow.filter(name => name !== 'Admin User' && name !== currentUser.name);
+    } else {
+      usersToShow = [currentUser.name];
+    }
       
     usersToShow.forEach(user => {
       data[user] = {};
@@ -528,10 +557,24 @@ export default function WorkLogs({ session }: { session?: any }) {
               </div>
               Weekly Activity Heatmap
             </h3>
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-2 flex items-center">
-              <CalendarIcon className="h-3.5 w-3.5 mr-1.5 opacity-70" />
-              {format(weekStart, 'MMM d')} - {format(weekDays[6], 'MMM d, yyyy')}
-            </p>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-2 flex items-center hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none cursor-pointer">
+                  <CalendarIcon className="h-3.5 w-3.5 mr-1.5 opacity-70" />
+                  {format(weekStart, 'MMM d')} - {format(weekDays[6], 'MMM d, yyyy')}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={heatmapDate}
+                  onSelect={(date) => {
+                    if (date) setHeatmapDate(date);
+                  }}
+                  className="bg-white dark:bg-slate-900 text-[#0F172A] dark:text-white rounded-2xl p-3"
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           
           {/* Elegant Legend */}
@@ -575,7 +618,7 @@ export default function WorkLogs({ session }: { session?: any }) {
             </div>
             
             {/* Users Rows */}
-            <div className="space-y-3 relative z-10">
+            <div className="space-y-3 relative z-10 max-h-[220px] overflow-y-auto pr-2 hide-scrollbar">
               {heatmapData.users.map((user, rowIdx) => {
                 const totalWeekHours = weekDays.reduce((sum, day) => sum + (heatmapData.data[user][format(day, 'yyyy-MM-dd')] || 0), 0);
                 const memberData = ONLINE_TEAM_MEMBERS.find(m => m.name === user);

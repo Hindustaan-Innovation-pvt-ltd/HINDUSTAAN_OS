@@ -605,7 +605,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
                 // if (visibleTasks.length === 0 && project.tasks.length > 0) return null;
 
                 return (
-                  <div key={project.id} className="group relative z-10 mb-6 border-y border-slate-200/60 dark:border-slate-700/40 bg-slate-50/20 dark:bg-slate-900/10 shadow-[0_4px_20px_rgba(0,0,0,0.02)] backdrop-blur-sm rounded-r-2xl mr-4 overflow-hidden">
+                  <div key={project.id} className="group relative z-10 mb-6 border-y border-slate-200/60 dark:border-slate-700/40 bg-slate-50/20 dark:bg-slate-900/10 shadow-[0_4px_20px_rgba(0,0,0,0.02)] backdrop-blur-sm rounded-r-2xl mr-4">
                     {/* Project Row */}
                     <div className="flex items-stretch border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer bg-white/60 dark:bg-slate-950/40" onClick={() => toggleProject(project.id)}>
                       <div className="w-72 shrink-0 p-3 pl-4 border-r border-slate-200/50 dark:border-slate-800/50 sticky left-0 z-30 transition-colors flex items-center justify-between shadow-[4px_0_12px_rgba(0,0,0,0.02)] bg-white/95 dark:bg-slate-950/95 backdrop-blur-md">
@@ -665,8 +665,8 @@ export default function GanttTimeline({ session }: { session?: any }) {
                                           task.status === 'pending' && "opacity-40 hover:opacity-60"
                                         )}
                                       style={{
-                                        left: `${visibleStart * 48 + 4}px`, 
-                                        width: `${visibleDuration * 48 - 8}px`
+                                        left: `calc(${visibleStart * 3}rem + 4px)`, 
+                                        width: `calc(${visibleDuration * 3}rem - 8px)`
                                       }}
                                     >
                                       {task.status === 'on-track' && (
@@ -707,8 +707,8 @@ export default function GanttTimeline({ session }: { session?: any }) {
                                     <div 
                                       className="absolute top-3 h-8 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform z-20"
                                       style={{
-                                        left: `${visibleStart * 48}px`, 
-                                        width: `48px`
+                                        left: `${visibleStart * 3}rem`, 
+                                        width: `3rem`
                                       }}
                                     >
                                       <div className="w-5 h-5 transform rotate-45 bg-amber-500 border-2 border-amber-600 shadow-md flex items-center justify-center" />
