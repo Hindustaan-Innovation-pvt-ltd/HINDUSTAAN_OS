@@ -28,7 +28,7 @@ export interface NotificationBellProps {
 }
 
 export function NotificationBell({ onNavigate }: NotificationBellProps = {}) {
-  const { notifications, markAsRead: contextMarkAsRead, clearAll: contextClearAll, setNotifications } = useNotifications();
+  const { notifications, markAsRead: contextMarkAsRead, clearAll: contextClearAll, clearNotification: contextClearNotification, setNotifications } = useNotifications();
   const [activeTab, setActiveTab] = useState('All');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -308,6 +308,10 @@ export function NotificationBell({ onNavigate }: NotificationBellProps = {}) {
     contextClearAll();
   };
 
+  const clearNotification = (id: string | number) => {
+    contextClearNotification(id);
+  };
+
   const filteredNotifications = activeTab === 'All' 
     ? notifications 
     : notifications.filter(n => n.category === activeTab);
@@ -434,14 +438,23 @@ export function NotificationBell({ onNavigate }: NotificationBellProps = {}) {
                             {notification.icon}
                           </div>
                           <div className="flex-1 space-y-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className={cn(
-                                "text-sm font-bold truncate",
-                                notification.unread ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-300"
-                              )}>
+                            <div className="flex justify-between items-start mb-1">
+                              <span className="text-[13px] font-black text-slate-900 dark:text-white truncate pr-2">
                                 {notification.title}
-                              </p>
-                              <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap shrink-0">{getRelativeTime(notification.timestamp || (notification.id > 1000000 ? notification.id : notification.time))}</span>
+                              </span>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">{getRelativeTime(notification.timestamp || (notification.id > 1000000 ? notification.id : notification.time))}</span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    clearNotification(notification.id);
+                                    toast.success('Notification cleared');
+                                  }}
+                                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
                             </div>
                             <p className={cn(
                               "text-xs font-medium leading-relaxed",

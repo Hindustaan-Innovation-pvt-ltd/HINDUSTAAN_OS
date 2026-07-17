@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, isToday, isSameMonth, addDays, subMonths, addMonths, differenceInDays, isWeekend, setMonth, setYear } from 'date-fns';
 import { useProjects } from '@/context/ProjectContext';
+import api from '@/lib/api';
 
 type ProjectTask = {
   id: string;
@@ -123,6 +124,22 @@ export default function GanttTimeline({ session }: { session?: any }) {
   const [newProjectMembers, setNewProjectMembers] = useState<string[]>([]);
   const [newProjectColor, setNewProjectColor] = useState('bg-orange-500');
 
+  const [dbMembers, setDbMembers] = useState<any[]>([]);
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const res = await api.get('/team/profiles');
+        if (res.data?.success) {
+          const employees = res.data.data.filter((p: any) => p.role === 'intern' || p.role === 'employee');
+          setDbMembers(employees);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchMembers();
+  }, []);
+
   // Filter State
   const [filters, setFilters] = useState({
     showCompleted: true,
@@ -167,10 +184,13 @@ export default function GanttTimeline({ session }: { session?: any }) {
   const handleAddProject = () => {
     if (!newProjectName || !newProjectManager) return;
     
+    const selectedManager = dbMembers.find(m => m.name === newProjectManager);
+    
     addProject({
       id: `p-${Date.now()}`,
       name: newProjectName,
       manager: newProjectManager,
+      managerId: selectedManager?.id,
       color: newProjectColor,
       tasks: [],
       members: newProjectMembers,
@@ -366,7 +386,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
                       <SelectValue placeholder="Select a team leader" />
                     </SelectTrigger>
                     <SelectContent position="popper" className="rounded-xl border-slate-200 dark:border-slate-800 shadow-xl max-h-[220px] overflow-y-auto scrollbar-hide">
-                      {GLOBAL_TEAM_MEMBERS.map(m => m.name).map((emp, i) => {
+                      {dbMembers.map(m => m.name).map((emp, i) => {
                         const colors = ['bg-orange-100 text-orange-700', 'bg-emerald-100 text-emerald-700', 'bg-rose-100 text-rose-700', 'bg-blue-100 text-blue-700', 'bg-purple-100 text-purple-700'];
                         const colorClass = colors[i % colors.length];
                         return (
@@ -413,7 +433,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
                     </PopoverTrigger>
                     <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1.5 rounded-xl border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-slate-950" align="start">
                       <div className="flex flex-col max-h-[220px] overflow-y-auto scrollbar-hide">
-                        {GLOBAL_TEAM_MEMBERS.map(m => m.name).filter(m => m !== newProjectManager).map((member) => (
+                        {dbMembers.map(m => m.name).filter(m => m !== newProjectManager).map((member) => (
                           <div
                             key={member}
                             onClick={() => {

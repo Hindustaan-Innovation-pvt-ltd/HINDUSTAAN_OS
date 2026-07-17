@@ -365,7 +365,9 @@ export const fetchProfileFromBackend = async (userId: string): Promise<User | nu
     }
     return null;
   } catch (err: any) {
-    console.error('Failed to fetch profile from backend:', err);
+    if (err?.response?.status !== 404) {
+      console.error('Failed to fetch profile from backend:', err);
+    }
     return null;
   }
 };

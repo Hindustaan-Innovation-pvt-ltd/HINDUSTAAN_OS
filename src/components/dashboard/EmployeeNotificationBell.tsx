@@ -8,184 +8,47 @@ import { Input } from '@/components/ui/input';
 import { useUser } from '@/context/UserContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-interface NotificationItem {
-  id: number;
-  category: string;
-  icon: string;
-  title: string;
-  message: string;
-  time: string;
-  unread: boolean;
-  group: string;
-  metadata?: {
-    requestId?: number;
-    type?: string;
-    employee?: string;
-    date?: string;
-  };
-  actions?: { label: string; primary?: boolean; actionType: string }[];
-  richContent?: boolean;
-  details?: any;
-}
-
-const DEFAULT_MANAGER_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 1689360000000 + 1,
-    category: 'Leave Management',
-    icon: '≡ƒôà',
-    title: 'New Leave Request',
-    message: 'Tanvy Pandey applied for leave on July 15',
-    time: '2 minutes ago',
-    unread: true,
-    group: 'Today',
-    metadata: {
-      requestId: 1,
-      type: 'leave_request',
-      employee: 'Tanvy Pandey',
-      date: '2026-07-15'
-    },
-    actions: [
-      { label: 'Approve', primary: true, actionType: 'approve_leave' },
-      { label: 'Reject', actionType: 'reject_leave' },
-      { label: 'Comment', actionType: 'comment_leave' }
-    ]
-  },
-  {
-    id: 1689360000000 + 2,
-    category: 'Tasks',
-    icon: '≡ƒôï',
-    title: 'Task Assigned',
-    message: 'Rahul Sharma assigned Authentication Module to Tanvy.',
-    time: '1 hour ago',
-    unread: true,
-    group: 'Today'
-  },
-  {
-    id: 1689360000000 + 3,
-    category: 'Standups',
-    icon: '≡ƒô¥',
-    title: 'Standup Submitted',
-    message: 'Priya Patel submitted her daily standup.',
-    time: 'Yesterday',
-    unread: false,
-    group: 'Yesterday'
-  }
-];
-
-const DEFAULT_EMPLOYEE_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 1689360000000 + 4,
-    category: 'Leave Management',
-    icon: 'Γ£à',
-    title: 'Leave Approved',
-    message: 'Manager approved your leave request for July 15',
-    time: 'Just now',
-    unread: true,
-    group: 'Today',
-    metadata: {
-      type: 'leave_approved',
-      date: '2026-07-15'
-    }
-  },
-  {
-    id: 1689360000000 + 5,
-    category: 'Leave Management',
-    icon: '≡ƒÆ¼',
-    title: 'Leave Commented',
-    message: 'Manager commented on your leave request',
-    time: '5 mins ago',
-    unread: true,
-    group: 'Today',
-    metadata: {
-      type: 'leave_commented',
-      date: '2026-07-15'
-    }
-  },
-  {
-    id: 1689360000000 + 6,
-    category: 'Tasks',
-    icon: '≡ƒôï',
-    title: 'New Task Assigned',
-    message: 'You have been assigned: Dashboard Analytics UI. Due Tomorrow',
-    time: '2 hours ago',
-    unread: false,
-    group: 'Today'
-  }
-];
+import { useNotifications } from '@/context/NotificationContext';
+import type { NotificationItem } from '@/context/NotificationContext';
 
 interface NotificationBellProps {
   onNavigate?: (view: string) => void;
 }
 
-export function EmployeeNotificationBell({ onNavigate }: NotificationBellProps) {
+export function EmployeeNotificationBell({ onNavigate }: NotificationBellProps = {}) {
+  const { notifications, markAsRead, clearAll, clearNotification } = useNotifications();
   const { user } = useUser();
   const role = user?.role || 'employee';
   const isManager = role === 'manager';
 
-  const storageKey = isManager ? 'hindustaan_notifications' : 'hindustaan_employee_notifications';
-  const defaultNotifications = isManager ? DEFAULT_MANAGER_NOTIFICATIONS : DEFAULT_EMPLOYEE_NOTIFICATIONS;
-
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [activeCommentId, setActiveCommentId] = useState<number | null>(null);
+  const [activeCommentId, setActiveCommentId] = useState<string | number | null>(null);
   const [commentText, setCommentText] = useState('');
 
-  // Load and synchronize state
-  const loadNotifications = () => {
-    const saved = localStorage.getItem(storageKey);
-    if (saved && saved !== 'null') {
-      try {
-        setNotifications(JSON.parse(saved));
-      } catch (e) {
-        console.error('Error parsing notifications', e);
-        setNotifications(defaultNotifications);
-      }
-    } else {
-      localStorage.setItem(storageKey, JSON.stringify(defaultNotifications));
-      setNotifications(defaultNotifications);
-    }
-  };
-
-  useEffect(() => {
-    loadNotifications();
-
-    const handleSync = () => {
-      loadNotifications();
-    };
-
-    window.addEventListener('notifications-updated', handleSync);
-    window.addEventListener('employee-notifications-updated', handleSync);
-    window.addEventListener('storage', handleSync);
-
-    return () => {
-      window.removeEventListener('notifications-updated', handleSync);
-      window.removeEventListener('employee-notifications-updated', handleSync);
-      window.removeEventListener('storage', handleSync);
-    };
-  }, [role, storageKey]);
-
-  const saveNotifications = (newNotifs: NotificationItem[]) => {
-    setNotifications(newNotifs);
-    localStorage.setItem(storageKey, JSON.stringify(newNotifs));
-    // Dispatch global events to notify context/other components
-    window.dispatchEvent(new Event(isManager ? 'notifications-updated' : 'employee-notifications-updated'));
-  };
-
   const currentUserName = user?.name || "Tanvy Pandey";
-  const visibleNotifications = isManager ? notifications : notifications.filter(n => !n.metadata?.employee || n.metadata.employee === currentUserName);
+  // The backend API should handle filtering for the user.
+  const visibleNotifications = notifications;
   const unreadCount = visibleNotifications.filter(n => n.unread).length;
 
   const markAllAsRead = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const updated = notifications.map(n => ({ ...n, unread: false }));
-    saveNotifications(updated);
+    visibleNotifications.forEach(n => {
+      if (n.unread) {
+        markAsRead(n.id);
+      }
+    });
     toast.success('All notifications marked as read');
   };
 
   const handleClearAll = (e: React.MouseEvent) => {
     e.stopPropagation();
-    saveNotifications([]);
-    toast.success('Notifications cleared');
+    clearAll();
+    toast.success('All notifications cleared');
+  };
+
+  const handleDelete = (e: React.MouseEvent, id: string | number) => {
+    e.stopPropagation();
+    clearNotification(id);
+    toast.success('Notification cleared');
   };
 
   const handleActionClick = (e: React.MouseEvent, notification: NotificationItem, actionType: string) => {
@@ -237,13 +100,7 @@ export function EmployeeNotificationBell({ onNavigate }: NotificationBellProps) 
         window.dispatchEvent(new Event('employee-notifications-updated'));
       }
 
-      const updatedNotifs = notifications.map(n => {
-        if (n.id === notification.id) {
-          return { ...n, unread: false, actions: [] };
-        }
-        return n;
-      });
-      saveNotifications(updatedNotifs);
+      markAsRead(notification.id);
       
       toast.success(actionType === 'approve_leave' ? "Leave request approved" : "Leave request rejected");
       return;
@@ -297,13 +154,7 @@ export function EmployeeNotificationBell({ onNavigate }: NotificationBellProps) 
     }
     
     // Mark as read and clear comment actions
-    const updatedNotifs = notifications.map(n => {
-      if (n.id === notification.id) {
-        return { ...n, unread: false, actions: [] };
-      }
-      return n;
-    });
-    saveNotifications(updatedNotifs);
+    markAsRead(notification.id);
 
     toast.success("Comment added successfully");
     setActiveCommentId(null);
@@ -312,8 +163,7 @@ export function EmployeeNotificationBell({ onNavigate }: NotificationBellProps) 
 
   const handleNotificationClick = (notification: NotificationItem) => {
     // 1. Mark as read immediately
-    const updated = notifications.map(n => n.id === notification.id ? { ...n, unread: false } : n);
-    saveNotifications(updated);
+    markAsRead(notification.id);
 
     // 2. Perform cross-role routing and state changes
     let targetPath = '';
@@ -429,13 +279,23 @@ export function EmployeeNotificationBell({ onNavigate }: NotificationBellProps) 
                         </div>
                         <div className="flex-1 space-y-0.5 min-w-0">
                           <div className="flex items-center justify-between gap-2">
-                            <p className={cn(
-                              "text-xs font-bold truncate",
-                              notification.unread ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-300"
-                            )}>
-                              {notification.title}
-                            </p>
-                            <span className="text-[8px] font-semibold text-slate-500 whitespace-nowrap shrink-0">{notification.time}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className={cn(
+                                "text-xs font-bold truncate",
+                                notification.unread ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-300"
+                              )}>
+                                {notification.title}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-[8px] font-semibold text-slate-500 whitespace-nowrap">{notification.time}</span>
+                              <button
+                                onClick={(e) => handleDelete(e, notification.id)}
+                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
                           </div>
                           <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-snug break-words whitespace-pre-wrap">
                             {notification.message}
