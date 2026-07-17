@@ -1,4 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useProjects } from '@/context/ProjectContext';
+import api from '@/lib/api';
+import { getCurrentUser } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -101,10 +104,13 @@ const COLORS = {
 };
 
 export default function ContributionScores({ session }: { session?: any }) {
-  const role = session?.user?.user_metadata?.role || 'intern';
-  const email = session?.user?.email || 'user@hindustaan.in';
+  const { projects } = useProjects();
+  const currentUser = getCurrentUser();
+  const currentUserId = currentUser?.id || 'u-4';
+  const role = session?.user?.user_metadata?.role || currentUser?.role || 'intern';
+  const email = session?.user?.email || currentUser?.email || 'user@hindustaan.in';
 
-  let currentUserName = 'Tanvy Pandey';
+  let currentUserName = currentUser?.name || 'Tanvy Pandey';
   if (email.toLowerCase().includes('amanda')) currentUserName = 'Amanda Smith';
   else if (email.toLowerCase().includes('rahul')) currentUserName = 'Rahul Sharma';
   else if (email.toLowerCase().includes('priya')) currentUserName = 'Priya Patel';
@@ -112,6 +118,176 @@ export default function ContributionScores({ session }: { session?: any }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const [metrics, setMetrics] = useState<any>({
+    overallScore: 0,
+    tasksCompleted: 0,
+    totalTasks: 0,
+    taskPercent: 0,
+    hoursLogged: 0,
+    targetHours: 40,
+    logPercent: 0,
+    submittedStandups: 0,
+    totalStandupDays: 5,
+    standupPercent: 0,
+    milestonesAchieved: 0,
+    totalMilestones: 0,
+    milestonePercent: 0,
+    weeklyTrendData: [
+      { name: 'Week 1', score: 0 },
+      { name: 'Week 2', score: 0 },
+      { name: 'Week 3', score: 0 },
+      { name: 'Week 4', score: 0 },
+    ],
+    scoreBreakdownData: [
+      { name: 'Tasks Completed', value: 35, fill: COLORS.excellent },
+      { name: 'Work Logs', value: 25, fill: COLORS.good },
+      { name: 'Standups', value: 20, fill: COLORS.orange },
+      { name: 'Milestones', value: 20, fill: '#8b5cf6' },
+    ]
+  });
+
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
+
+  const fetchMetrics = async () => {
+    try {
+      setLoadingMetrics(true);
+      const nameToCheck = currentUserName;
+
+      // 1. Fetch Tasks
+      const tasksRes = await api.get('/tasks?limit=1000');
+      let myTasks: any[] = [];
+      if (tasksRes.data?.success && Array.isArray(tasksRes.data.data)) {
+        myTasks = tasksRes.data.data.filter((t: any) =>
+          t.assigneeId === currentUserId ||
+          t.assignee?.name === nameToCheck ||
+          (t.assignee?.name && nameToCheck.toLowerCase().includes(t.assignee.name.split(' ')[0].toLowerCase()))
+        );
+      }
+      // 1. Calculate Tasks Completed
+      const tasksCompleted = myTasks.filter((t: any) => t.status === 'done' || t.status === 'completed').length;
+      const totalTasks = myTasks.length;
+      const taskPercent = totalTasks > 0 ? Math.round((tasksCompleted / totalTasks) * 100) : 0;
+
+      // 2. Fetch Work Logs
+      const logsRes = await api.get('/worklogs');
+      let myLogs: any[] = [];
+      if (logsRes.data?.success && Array.isArray(logsRes.data.data)) {
+        myLogs = logsRes.data.data.filter((l: any) =>
+          l.userId === currentUserId ||
+          l.user?.name === nameToCheck ||
+          (l.user?.name && nameToCheck.toLowerCase().includes(l.user.name.split(' ')[0].toLowerCase()))
+        );
+      }
+      const hoursLogged = myLogs.reduce((sum: number, l: any) => sum + (parseFloat(l.hours) || 0), 0);
+      const targetHours = 40;
+      const logPercent = targetHours > 0 ? Math.min(100, Math.round((hoursLogged / targetHours) * 100)) : 0;
+
+      // 3. Fetch Standups
+      const standupsRes = await api.get(`/standups?userId=${currentUserId}&limit=100`);
+      let myStandups: any[] = [];
+      if (standupsRes.data?.success && Array.isArray(standupsRes.data.data)) {
+        myStandups = standupsRes.data.data;
+      }
+      const submittedStandups = myStandups.filter((s: any) => s.done || s.yesterday || s.today).length;
+      const totalStandupDays = 5;
+      const standupPercent = Math.min(100, Math.round((submittedStandups / totalStandupDays) * 100));
+
+      // 4. Calculate Milestones from project context
+      const myProjects = projects.filter(p =>
+        p.tasks?.some((t: any) => 
+          t.assignee_id === currentUserId || 
+          t.assignee_name === nameToCheck ||
+          (t.assignee_name && nameToCheck.toLowerCase().includes(t.assignee_name.split(' ')[0].toLowerCase()))
+        )
+      );
+      const myMilestones = myProjects.flatMap(p => p.milestones || []);
+      const milestonesAchieved = myMilestones.filter((m: any) => m.status === 'completed' || m.status === 'done').length;
+      const totalMilestones = myMilestones.length;
+      const milestonePercent = totalMilestones > 0 ? Math.round((milestonesAchieved / totalMilestones) * 100) : 0;
+
+      // 5. Overall score
+      const overallScore = Math.round((taskPercent * 0.35) + (logPercent * 0.25) + (standupPercent * 0.20) + (milestonePercent * 0.20));
+
+      // 6. Compute weekly trend (past 4 weeks)
+      const weeklyTrendData = [];
+      for (let i = 3; i >= 0; i--) {
+        const now = new Date();
+        const start = new Date(now.getTime() - ((i + 1) * 7 * 24 * 60 * 60 * 1000));
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(start.getTime() + (7 * 24 * 60 * 60 * 1000));
+
+        // Logs in this week
+        const weekLogs = myLogs.filter(l => {
+          const d = new Date(l.date || l.rawDate);
+          return d >= start && d < end;
+        });
+        const weekHours = weekLogs.reduce((sum: number, l: any) => sum + (parseFloat(l.hours) || 0), 0);
+        const weekLogPercent = Math.min(100, Math.round((weekHours / 10) * 100));
+
+        // Tasks due/completed in this week
+        const weekTasks = myTasks.filter(t => {
+          if (!t.dueDate) return false;
+          const d = new Date(t.dueDate);
+          return d >= start && d < end;
+        });
+        const weekCompleted = weekTasks.filter(t => t.status === 'done' || t.status === 'completed').length;
+        const weekTaskPercent = weekTasks.length > 0 ? Math.round((weekCompleted / weekTasks.length) * 100) : 0;
+
+        // Standups in this week
+        const weekStandupsCount = myStandups.filter(s => {
+          const d = new Date(s.date || s.submittedAt);
+          return d >= start && d < end;
+        }).length;
+        const weekStandupPercent = Math.min(100, Math.round((weekStandupsCount / 5) * 100));
+
+        const weekMilestones = myMilestones.filter(m => {
+          if (!m.dueDate && !m.date) return false;
+          const d = new Date(m.dueDate || m.date);
+          return d >= start && d < end;
+        });
+        const weekMilestonesCompleted = weekMilestones.filter(m => m.status === 'completed' || m.status === 'done').length;
+        const weekMilestonePercent = weekMilestones.length > 0 ? Math.round((weekMilestonesCompleted / weekMilestones.length) * 100) : 0;
+
+        const weekScore = Math.round((weekTaskPercent * 0.35) + (weekLogPercent * 0.25) + (weekStandupPercent * 0.20) + (weekMilestonePercent * 0.20));
+
+        weeklyTrendData.push({
+          name: `Week ${4 - i}`,
+          score: weekScore
+        });
+      }
+
+      setMetrics({
+        overallScore,
+        tasksCompleted,
+        totalTasks,
+        taskPercent,
+        hoursLogged,
+        targetHours,
+        logPercent,
+        submittedStandups,
+        totalStandupDays,
+        standupPercent,
+        milestonesAchieved,
+        totalMilestones,
+        milestonePercent,
+        weeklyTrendData,
+        scoreBreakdownData: [
+          { name: 'Tasks Completed', value: 35, fill: COLORS.excellent },
+          { name: 'Work Logs', value: 25, fill: COLORS.good },
+          { name: 'Standups', value: 20, fill: COLORS.orange },
+          { name: 'Milestones', value: 20, fill: '#8b5cf6' },
+        ]
+      });    } catch (e) {
+      console.error('Error fetching contribution metrics:', e);
+    } finally {
+      setLoadingMetrics(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMetrics();
+  }, [currentUserId, currentUserName, projects, isRefreshing]);
 
   const filteredInterns = MOCK_INTERNS.filter(intern =>
     intern.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -139,15 +315,11 @@ export default function ContributionScores({ session }: { session?: any }) {
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
-
-    // Add title
     doc.setFontSize(20);
     doc.text('Contribution Analytics Report', 14, 22);
-
     doc.setFontSize(11);
     doc.text(`Generated on: ${format(new Date(), 'PPP')}`, 14, 30);
 
-    // Create table data
     const tableData = filteredInterns.map((intern, idx) => [
       `#${idx + 1}`,
       intern.name,
@@ -162,114 +334,251 @@ export default function ContributionScores({ session }: { session?: any }) {
       head: [['Rank', 'Intern', 'Department', 'Score', 'Trend', 'Status']],
       body: tableData,
       theme: 'grid',
-      headStyles: { fillColor: [249, 115, 22] }, // orange-500
+      headStyles: { fillColor: [249, 115, 22] },
     });
 
     doc.save(`Team_Contribution_Scores_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
-  if (role === 'intern') {
-    const myData = MOCK_INTERNS.find(i => i.name === currentUserName) || MOCK_INTERNS[0];
+  if (role === 'intern' || role === 'employee') {
     return (
-      <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
-        <div>
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
-            <Trophy className="mr-3 h-8 w-8 text-orange-500" />
-            My Performance
-          </h2>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
-            Your detailed contribution score and performance breakdown.
-          </p>
+      <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center">
+              <Trophy className="mr-3 h-8 w-8 text-orange-500" />
+              My Performance
+            </h2>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5">
+              Your detailed contribution score, milestones, and weekly progress.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm font-bold justify-start text-left", !date && "text-slate-500")}>
+                  <Calendar className="mr-2 h-4 w-4 text-slate-400" />
+                  {date ? format(date, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate as any}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Button onClick={handleRefresh} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-sm font-bold">
+              <RefreshCw className={cn("mr-2 h-4 w-4", isRefreshing && "animate-spin")} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
-        <Card className="rounded-3xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white dark:bg-slate-950">
-          <div className="p-6 md:p-10 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-              <div className="flex gap-5 items-center">
-                <Avatar className="h-20 w-20 border-4 border-white dark:border-slate-900 shadow-md">
-                  <AvatarFallback className="bg-orange-100 text-orange-600 font-bold text-2xl">
-                    {myData.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="text-3xl font-black text-slate-900 dark:text-white">{myData.name}</h3>
-                  <p className="text-base font-bold text-slate-500">{myData.department} Intern</p>
-                </div>
-              </div>
+        {/* KPI Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-5">
+          {/* Overall Score Card */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+            <div className="absolute right-0 top-0 h-full w-1/2 opacity-10 pointer-events-none">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={metrics.weeklyTrendData}>
+                  <Area type="monotone" dataKey="score" stroke={COLORS.orange} fill={COLORS.orange} strokeWidth={4} />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
-          </div>
+            <CardContent className="p-5 relative z-10">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/40 text-orange-600">
+                  <Trophy className="h-5 w-5" />
+                </div>
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Overall Score</span>
+              </div>
+              <div className="flex items-end gap-2 mt-4">
+                <span className="text-4xl font-black text-slate-900 dark:text-white">{metrics.overallScore}%</span>
+                <span className="flex items-center text-xs font-bold text-emerald-600 mb-1">
+                  <TrendingUp className="h-3 w-3 mr-0.5" /> +6%
+                </span>
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="p-6 md:p-10 space-y-10">
-            {/* Final Score Radial */}
-            <div className="flex flex-col items-center justify-center p-8 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-slate-800">
-              <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Final Contribution Score</p>
-              <div className="h-64 w-64 relative">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadialBarChart innerRadius="80%" outerRadius="100%" data={[{ value: myData.score, fill: COLORS.orange }]} startAngle={90} endAngle={-270}>
-                    <RadialBar background={{ fill: 'var(--color-slate-200)' }} dataKey="value" cornerRadius={20} />
+          {/* Tasks Completed Card */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tasks Completed</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">{metrics.tasksCompleted} <span className="text-sm font-bold text-slate-500">/ {metrics.totalTasks}</span></p>
+                <p className="text-xs font-bold text-slate-400 mt-1">{metrics.taskPercent}% completion rate</p>
+              </div>
+              <div className="h-12 w-12 shrink-0 relative flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
+                  <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: metrics.taskPercent, fill: COLORS.excellent }]} startAngle={90} endAngle={-270}>
+                    <RadialBar background={{ fill: 'var(--color-slate-100)' }} dataKey="value" cornerRadius={10} />
                   </RadialBarChart>
                 </ResponsiveContainer>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-7xl font-black text-slate-900 dark:text-white">{myData.score}</span>
-                  <span className="text-base font-bold text-slate-500 mt-1">/ 100</span>
-                </div>
+                <Target className="h-4 w-4 relative z-10" style={{ color: COLORS.excellent }} />
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="space-y-6">
-              <h4 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">Formula Breakdown</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="flex flex-col items-center justify-center p-6 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-blue-500/50 transition-colors text-center">
-                  <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 mb-4">
-                    <Target className="h-8 w-8" />
-                  </div>
-                  <p className="text-base font-bold text-slate-900 dark:text-white">Task Performance</p>
-                  <p className="text-xs font-semibold text-slate-500 mb-4">40% Weightage</p>
-                  <div className="mt-auto">
-                    <span className="text-3xl font-black text-slate-900 dark:text-white">{myData.taskScore}</span>
-                    <span className="text-sm font-bold text-slate-500"> / 40</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-center justify-center p-6 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-emerald-500/50 transition-colors text-center">
-                  <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 mb-4">
-                    <Clock className="h-8 w-8" />
-                  </div>
-                  <p className="text-base font-bold text-slate-900 dark:text-white">Work Log Consistency</p>
-                  <p className="text-xs font-semibold text-slate-500 mb-4">35% Weightage</p>
-                  <div className="mt-auto">
-                    <span className="text-3xl font-black text-slate-900 dark:text-white">{myData.logScore}</span>
-                    <span className="text-sm font-bold text-slate-500"> / 35</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-center justify-center p-6 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-purple-500/50 transition-colors text-center">
-                  <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 mb-4">
-                    <Mic className="h-8 w-8" />
-                  </div>
-                  <p className="text-base font-bold text-slate-900 dark:text-white">Standup Completion</p>
-                  <p className="text-xs font-semibold text-slate-500 mb-4">25% Weightage</p>
-                  <div className="mt-auto">
-                    <span className="text-3xl font-black text-slate-900 dark:text-white">{myData.standupScore}</span>
-                    <span className="text-sm font-bold text-slate-500"> / 25</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Score Formula Hint */}
-            <div className="p-5 rounded-2xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/50 flex items-start gap-4">
-              <AlertTriangle className="h-6 w-6 text-amber-500 shrink-0 mt-0.5" />
+          {/* Work Logs Card */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
+            <CardContent className="p-5 flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">How is this calculated?</p>
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mt-1">
-                  Scores automatically recalculate daily at midnight based on tasks resolved on the board, timesheets submitted in Work Logs, and Standups approved by the manager.
-                </p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Work Logs</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white flex items-baseline gap-1 flex-wrap">{metrics.hoursLogged.toFixed(1)} <span className="text-sm font-bold text-slate-500 whitespace-nowrap">/ {metrics.targetHours} hrs</span></p>
+                <p className="text-xs font-bold text-slate-400 mt-1">{metrics.logPercent}% of weekly goal</p>
               </div>
-            </div>
+              <div className="h-12 w-12 shrink-0 relative flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
+                  <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: metrics.logPercent, fill: COLORS.good }]} startAngle={90} endAngle={-270}>
+                    <RadialBar background={{ fill: 'var(--color-slate-100)' }} dataKey="value" cornerRadius={10} />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+                <Clock className="h-4 w-4 relative z-10" style={{ color: COLORS.good }} />
+              </div>
+            </CardContent>
+          </Card>
 
+          {/* Standups Card */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Standups</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">{metrics.submittedStandups} <span className="text-sm font-bold text-slate-500">/ {metrics.totalStandupDays} days</span></p>
+                <p className="text-xs font-bold text-slate-400 mt-1">{metrics.standupPercent}% participation</p>
+              </div>
+              <div className="h-12 w-12 shrink-0 relative flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
+                  <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: metrics.standupPercent, fill: COLORS.orange }]} startAngle={90} endAngle={-270}>
+                    <RadialBar background={{ fill: 'var(--color-slate-100)' }} dataKey="value" cornerRadius={10} />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+                <Mic className="h-4 w-4 relative z-10" style={{ color: COLORS.orange }} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Milestones Card */}
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Milestones Achieved</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">{metrics.milestonesAchieved} <span className="text-sm font-bold text-slate-500">/ {metrics.totalMilestones}</span></p>
+                <p className="text-xs font-bold text-slate-400 mt-1">{Math.round(metrics.milestonePercent)}% completed</p>
+              </div>
+              <div className="h-12 w-12 shrink-0 relative flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
+                  <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: metrics.milestonePercent, fill: '#8b5cf6' }]} startAngle={90} endAngle={-270}>
+                    <RadialBar background={{ fill: 'var(--color-slate-100)' }} dataKey="value" cornerRadius={10} />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+                <Trophy className="h-4 w-4 relative z-10 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column (lg:col-span-8) - Weekly Performance Trend */}
+          <div className="lg:col-span-8">
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-full bg-white dark:bg-slate-950">
+              <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60">
+                <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Weekly Performance Trend</CardTitle>
+                <CardDescription className="font-medium mt-1">Track your progress and score development over the past weeks.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 flex-1">
+                <div className="h-[350px] w-full">
+                  {loadingMetrics ? (
+                    <div className="h-full w-full flex items-center justify-center text-slate-500 font-bold">Calculating Trend...</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={metrics.weeklyTrendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={COLORS.orange} stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor={COLORS.orange} stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} className="text-slate-500" />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} className="text-slate-500" domain={[0, 100]} />
+                        <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                        <Area type="monotone" dataKey="score" stroke={COLORS.orange} strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </Card>
+
+          {/* Right Column (lg:col-span-4) - Pie Chart & Formula */}
+          <div className="lg:col-span-4 space-y-6">
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950">
+              <CardHeader className="p-5 pb-0">
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Contribution Score Distribution</CardTitle>
+              </CardHeader>
+              <CardContent className="p-5">
+                <div className="h-[220px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={metrics.scoreBreakdownData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {metrics.scoreBreakdownData.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        itemStyle={{ fontWeight: 'bold' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  {metrics.scoreBreakdownData.map((d: any) => (
+                    <div key={d.name} className="flex items-center text-xs font-bold text-slate-600 dark:text-slate-300">
+                      <div className="h-2.5 w-2.5 rounded-full mr-2 shrink-0" style={{ backgroundColor: d.fill }} />
+                      <span className="truncate">{d.name} ({d.value}%)</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border-amber-200/50 dark:border-amber-900/30 shadow-sm bg-amber-50/20 dark:bg-amber-950/10">
+              <CardHeader className="p-5 pb-2">
+                <CardTitle className="text-sm font-bold text-amber-700 dark:text-amber-400 flex items-center">
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Score Calculation Formula
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-5 pt-2 space-y-3 text-xs font-medium text-slate-600 dark:text-slate-400">
+                <p className="font-bold text-slate-800 dark:text-slate-200">
+                  Overall Score = (Tasks Completed % × 40%) + (Work Logs % × 35%) + (Milestones % × 25%)
+                </p>
+                <Separator className="bg-amber-200/30 dark:bg-amber-800/30" />
+                <div className="space-y-1.5">
+                  <p>📈 <span className="font-bold text-slate-800 dark:text-slate-200">Tasks Completed (40%):</span> Completed tasks relative to total assigned tasks.</p>
+                  <p>⏱️ <span className="font-bold text-slate-800 dark:text-slate-200">Work Logs (35%):</span> Hours logged relative to the target goal of 40 hours per week.</p>
+                  <p>🏁 <span className="font-bold text-slate-800 dark:text-slate-200">Milestones (25%):</span> Percentage of project milestones completed on time.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
@@ -551,8 +860,8 @@ export default function ContributionScores({ session }: { session?: any }) {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={deptData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-slate-500" />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} className="text-slate-500" domain={[60, 100]} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} className="text-slate-500" />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} className="text-slate-500" domain={[60, 100]} />
                     <RechartsTooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px' }} />
                     <Bar dataKey="score" fill={COLORS.orange} radius={[4, 4, 0, 0]} barSize={30} />
                   </BarChart>

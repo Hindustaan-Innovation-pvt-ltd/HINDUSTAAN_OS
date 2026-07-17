@@ -372,7 +372,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
                         return (
                           <SelectItem key={emp} value={emp}>
                             <div className="flex items-center gap-3">
-                              <Avatar className="h-6 w-6"><AvatarFallback className={`text-[9px] font-black ${colorClass}`}>{emp.split(' ').map(n=>n[0]).join('')}</AvatarFallback></Avatar>
+                              <Avatar className="h-6 w-6"><AvatarFallback className={`text-[9px] font-black ${colorClass}`}>{(emp as string).split(' ').map((n: string) => n[0]).join('')}</AvatarFallback></Avatar>
                               <span className="font-bold">{emp}</span>
                             </div>
                           </SelectItem>
