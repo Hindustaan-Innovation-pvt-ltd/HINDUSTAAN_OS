@@ -392,7 +392,14 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const approvedExtensions: any[] = (savedApprovedExtensions && savedApprovedExtensions !== 'null')
     ? (() => { try { return JSON.parse(savedApprovedExtensions); } catch { return []; } })()
     : [];
-  const dueTodayCount = tasks.filter(t => t.due_date.toLowerCase().includes('today') || t.due_date.toLowerCase().includes('12') || t.due_date.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase())).length;
+  const dueTodayCount = React.useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return tasks.filter((t: any) => {
+      if (!t.due_date) return false;
+      const dStr = t.due_date.includes('T') ? t.due_date.split('T')[0] : t.due_date;
+      return dStr <= todayStr && t.status !== 'Done' && t.status !== 'completed' && t.status !== 'done';
+    }).length;
+  }, [tasks]);
 
   const handleExtensionSubmit = () => {
     if (!selectedTaskId) {

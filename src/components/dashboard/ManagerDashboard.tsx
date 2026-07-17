@@ -236,7 +236,14 @@ function ManagerDashboardInner() {
     };
   }, []);
 
-  const dueTodayTasksCount = (tasks || []).filter(t => t?.due_date?.toLowerCase().includes('today') || t?.due_date?.toLowerCase().includes('12') || t?.due_date?.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase())).length;
+  const dueTodayTasksCount = React.useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return (tasks || []).filter((t: any) => {
+      if (!t?.due_date) return false;
+      const dStr = t.due_date.includes('T') ? t.due_date.split('T')[0] : t.due_date;
+      return dStr <= todayStr && t.status !== 'Done' && t.status !== 'completed' && t.status !== 'done';
+    }).length;
+  }, [tasks]);
 
   const [activeSessions, setActiveSessions] = useState<{ [key: string]: { time: number; isOnline: boolean } }>({});
 
@@ -413,7 +420,7 @@ function ManagerDashboardInner() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10">High Pri</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.dueTodayTasksCount ?? dueTodayTasksCount}</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{Math.max(dashboardStats?.dueTodayTasksCount || 0, dueTodayTasksCount)}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tasks Due Today</p>
             </div>
           </CardContent>
