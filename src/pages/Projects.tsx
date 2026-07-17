@@ -33,8 +33,8 @@ export default function Projects({ session }: { session?: any }) {
       try {
         const res = await api.get('/team/profiles');
         if (res.data?.success) {
-          const list = res.data.data.filter((m: any) => m.role === 'manager' || m.role === 'admin');
-          setLeads(list);
+          const employees = res.data.data.filter((p: any) => p.role === 'intern' || p.role === 'employee');
+          setLeads(employees);
         }
       } catch (err) {
         console.error("Failed to fetch leads:", err);
@@ -660,26 +660,26 @@ export default function Projects({ session }: { session?: any }) {
                         </PopoverTrigger>
                         <PopoverContent className="w-48 p-2 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl" align="start">
                           <div className="space-y-1 max-h-48 overflow-y-auto">
-                            {GLOBAL_TEAM_MEMBERS.map(member => {
+                            {leads.map(member => {
                               const assignees = task.assignee === 'Unassigned' ? [] : task.assignee.split(', ').filter(Boolean);
                               const isSelected = assignees.includes(member.name);
                               return (
                                 <label key={member.id} className="flex items-center px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer">
                                   <input 
-                                    type="checkbox" 
+                                    type="radio" 
                                     checked={isSelected}
                                     onChange={() => {
-                                      let newAssignees = [...assignees];
-                                      if (isSelected) {
-                                        newAssignees = newAssignees.filter(a => a !== member.name);
-                                      } else {
-                                        newAssignees.push(member.name);
-                                      }
                                       const updated = [...newProject.tasks];
-                                      updated[index].assignee = newAssignees.length > 0 ? newAssignees.join(', ') : 'Unassigned';
+                                      if (isSelected) {
+                                        updated[index].assignee = 'Unassigned';
+                                        updated[index].assigneeId = null;
+                                      } else {
+                                        updated[index].assignee = member.name;
+                                        updated[index].assigneeId = member.id;
+                                      }
                                       setNewProject({...newProject, tasks: updated});
                                     }}
-                                    className="mr-3 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-600 cursor-pointer accent-orange-600"
+                                    className="mr-3 h-4 w-4 rounded-full border-slate-300 text-orange-600 focus:ring-orange-600 cursor-pointer accent-orange-600"
                                   />
                                   <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{member.name}</span>
                                 </label>

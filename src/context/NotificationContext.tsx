@@ -1,16 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 
 export type NotificationType = 'task' | 'success' | 'alert' | 'warning' | 'info' | 'user' | 'request' | 'danger' | 'file' | 'meeting' | 'message';
 
 export interface NotificationAction {
   label: string;
-  primary: boolean;
+  primary?: boolean;
+  actionType?: string;
 }
 
 export interface NotificationItem {
-  id: number;
+  id: string | number;
   type: NotificationType;
   category: string;
   icon: string;
@@ -21,196 +23,81 @@ export interface NotificationItem {
   unread: boolean;
   group: string;
   priority?: string;
+  metadata?: any;
   actions?: NotificationAction[];
 }
 
 interface NotificationContextType {
   notifications: NotificationItem[];
   addNotification: (notification: Omit<NotificationItem, 'id' | 'time' | 'unread'>) => void;
-  markAsRead: (id: number) => void;
+  markAsRead: (id: string | number) => void;
+  clearNotification: (id: string | number) => void;
   clearAll: () => void;
   setNotifications: React.Dispatch<React.SetStateAction<NotificationItem[]>>;
+  fetchNotifications: () => void;
 }
-
-const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 1,
-    type: 'task',
-    category: 'Tasks',
-    icon: '📋',
-    title: 'New Task Assigned',
-    message: 'Rahul assigned Authentication Module to Tanvy.',
-    time: '2 minutes ago',
-    timestamp: Date.now() - 2 * 60 * 1000,
-    unread: true,
-    group: 'Today',
-    actions: [
-      { label: 'View Task', primary: true },
-      { label: 'Dismiss', primary: false }
-    ]
-  },
-  {
-    id: 2,
-    type: 'success',
-    category: 'Tasks',
-    icon: '✅',
-    title: 'Task Completed',
-    message: 'Tanvy completed Dashboard UI.',
-    time: '10 minutes ago',
-    timestamp: Date.now() - 10 * 60 * 1000,
-    unread: true,
-    group: 'Today',
-  },
-  {
-    id: 3,
-    type: 'alert',
-    category: 'Projects',
-    icon: '🚨',
-    title: 'Deadline Alert',
-    message: 'Backend API deadline is tomorrow.',
-    priority: 'High',
-    time: '1 hour ago',
-    timestamp: Date.now() - 60 * 60 * 1000,
-    unread: true,
-    group: 'Today',
-  },
-  {
-    id: 4,
-    type: 'warning',
-    category: 'Team',
-    icon: '📝',
-    title: 'Standup Missing',
-    message: 'Priya and Aman haven\'t submitted today\'s standup.',
-    time: '2 hours ago',
-    timestamp: Date.now() - 2 * 60 * 60 * 1000,
-    unread: false,
-    group: 'Today',
-  },
-  {
-    id: 5,
-    type: 'info',
-    category: 'Team',
-    icon: '⏱',
-    title: 'Work Log Submitted',
-    message: 'Rahul logged 7.5 hours today.',
-    time: '5 hours ago',
-    timestamp: Date.now() - 5 * 60 * 60 * 1000,
-    unread: false,
-    group: 'Today',
-  },
-  {
-    id: 6,
-    type: 'user',
-    category: 'Team',
-    icon: '👤',
-    title: 'New Team Member',
-    message: 'Sarah Jenning joined the project.',
-    time: '1 day ago',
-    timestamp: Date.now() - 24 * 60 * 60 * 1000,
-    unread: false,
-    group: 'Yesterday',
-  },
-  {
-    id: 7,
-    type: 'request',
-    category: 'Team',
-    icon: '📅',
-    title: 'Leave Request',
-    message: 'Client feedback document attached.',
-    time: '1 day ago',
-    timestamp: Date.now() - 24 * 60 * 60 * 1000,
-    unread: false,
-    group: 'Yesterday',
-    actions: [
-      { label: 'Approve', primary: true },
-      { label: 'Reject', primary: false }
-    ]
-  },
-  {
-    id: 8,
-    type: 'success',
-    category: 'Projects',
-    icon: '🎯',
-    title: 'Milestone Completed',
-    message: 'Sprint 2 milestone completed.',
-    time: '2 days ago',
-    timestamp: Date.now() - 2 * 24 * 60 * 60 * 1000,
-    unread: false,
-    group: 'Earlier',
-  },
-  {
-    id: 9,
-    type: 'danger',
-    category: 'Projects',
-    icon: '⚠️',
-    title: 'Project Risk',
-    message: 'Crime Prediction System is behind schedule.',
-    time: '2 days ago',
-    timestamp: Date.now() - 2 * 24 * 60 * 60 * 1000,
-    unread: false,
-    group: 'Earlier',
-  }
-];
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
-    const saved = localStorage.getItem('hindustaan_notifications');
-    return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
-  });
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  const fetchNotifications = async () => {
+    // Only fetch if a user session exists in local/session storage
+    const hasSession = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
+    if (!hasSession) {
+      return;
+    }
+
+    try {
+      const res = await api.get('/notifications');
+      if (res.data?.success) {
+        const mapped = res.data.data.map((n: any) => {
+          // Format date to readable time
+          const date = new Date(n.createdAt);
+          const now = new Date();
+          const diffMs = now.getTime() - date.getTime();
+          const diffMins = Math.round(diffMs / 60000);
+          
+          let timeStr = 'Just now';
+          if (diffMins > 0 && diffMins < 60) timeStr = `${diffMins} minutes ago`;
+          else if (diffMins >= 60 && diffMins < 1440) timeStr = `${Math.floor(diffMins / 60)} hours ago`;
+          else if (diffMins >= 1440) timeStr = `${Math.floor(diffMins / 1440)} days ago`;
+
+          // Map types to icons and categories (simplified)
+          let icon = '🔔';
+          let category = 'System';
+          
+          if (n.type === 'task') { icon = '📋'; category = 'Tasks'; }
+          if (n.type === 'alert') { icon = '🚨'; category = 'Alerts'; }
+          if (n.type === 'info') { icon = 'ℹ️'; category = 'Info'; }
+          if (n.type === 'success') { icon = '✅'; category = 'Success'; }
+
+          return {
+            id: n.id,
+            type: n.type || 'info',
+            category,
+            icon,
+            title: n.title,
+            message: n.message,
+            time: timeStr,
+            timestamp: date.getTime(),
+            unread: !n.isRead,
+            group: diffMins < 1440 ? 'Today' : 'Earlier',
+          };
+        });
+        setNotifications(mapped);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
+    }
+  };
 
   useEffect(() => {
-    localStorage.setItem('hindustaan_notifications', JSON.stringify(notifications));
-  }, [notifications]);
-
-  // Listen for external writes to localStorage (cross-tab sync)
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'hindustaan_notifications' && e.newValue) {
-        try {
-          const newNotifs = JSON.parse(e.newValue);
-          setNotifications(prev => {
-            const newNotif = newNotifs[0];
-            if (newNotif && (!prev.length || newNotif.id !== prev[0].id)) {
-              toast.info(newNotif.title, {
-                description: newNotif.message,
-                icon: newNotif.icon,
-                duration: 8000,
-              });
-            }
-            return newNotifs;
-          });
-        } catch (e) { console.error(e); }
-      }
-    };
-    
-    const handleExternalUpdate = () => {
-      const saved = localStorage.getItem('hindustaan_notifications');
-      if (saved && saved !== 'null') {
-        try {
-          const newNotifs = JSON.parse(saved);
-          setNotifications(prev => {
-            const newNotif = newNotifs[0];
-            if (newNotif && (!prev.length || newNotif.id !== prev[0].id)) {
-              toast.info(newNotif.title, {
-                description: newNotif.message,
-                icon: newNotif.icon,
-                duration: 8000,
-              });
-            }
-            return newNotifs;
-          });
-        } catch (e) { console.error(e); }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('notifications-updated', handleExternalUpdate);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('notifications-updated', handleExternalUpdate);
-    };
+    fetchNotifications();
+    // Poll every 60 seconds
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const addNotification = (notif: Omit<NotificationItem, 'id' | 'time' | 'unread'>) => {
@@ -224,16 +111,42 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     setNotifications(prev => [newNotification, ...prev]);
   };
 
-  const markAsRead = (id: number) => {
+  const markAsRead = async (id: string | number) => {
+    // Optimistic update
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
+    try {
+      if (typeof id === 'string') {
+        await api.patch(`/notifications/${id}/read`);
+      }
+    } catch (err) {
+      console.error("Failed to mark as read", err);
+      // Revert if error (omitted for brevity)
+    }
   };
 
-  const clearAll = () => {
+  const clearNotification = async (id: string | number) => {
+    // Optimistic update
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    try {
+      if (typeof id === 'string') {
+        await api.delete(`/notifications/${id}`);
+      }
+    } catch (err) {
+      console.error("Failed to clear notification", err);
+    }
+  };
+
+  const clearAll = async () => {
     setNotifications([]);
+    try {
+      await api.delete('/notifications');
+    } catch (err) {
+      console.error("Failed to clear notifications", err);
+    }
   };
 
   return (
-    <NotificationContext.Provider value={{ notifications, addNotification, markAsRead, clearAll, setNotifications }}>
+    <NotificationContext.Provider value={{ notifications, addNotification, markAsRead, clearNotification, clearAll, setNotifications, fetchNotifications }}>
       {children}
     </NotificationContext.Provider>
   );

@@ -132,7 +132,8 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
                       task.status === 'In Progress' ? 'in-progress' :
                       task.status === 'In Review' ? 'in-review' : 'todo',
               priority: task.priority ? task.priority.toLowerCase() : 'medium',
-              dueDate: projectData.deadline ? new Date(projectData.deadline) : undefined
+              dueDate: projectData.deadline ? new Date(projectData.deadline) : undefined,
+              assigneeId: task.assigneeId || undefined
             });
           }
         }
