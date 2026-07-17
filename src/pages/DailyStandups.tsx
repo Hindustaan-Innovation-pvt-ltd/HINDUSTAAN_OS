@@ -1218,55 +1218,7 @@ export default function DailyStandups({ session }: { session?: any }) {
       {role !== 'manager' && (
         <div className="mt-12 space-y-8 animate-in fade-in duration-700">
           <div className="border-t border-slate-200 dark:border-slate-800 pt-8">
-            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6">Today's Progress</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {/* Card 1: Tasks Completed */}
-              <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tasks Completed</p>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white">{tasksCompletedCount}</p>
-                </div>
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 rounded-xl">
-                  <CheckSquare className="h-6 w-6" />
-                </div>
-              </div>
-
-              {/* Card 2: Tasks Pending */}
-              <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tasks Pending</p>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white">{tasksPendingCount}</p>
-                </div>
-                <div className="p-3 bg-amber-50 dark:bg-amber-500/10 text-amber-600 rounded-xl">
-                  <AlertCircle className="h-6 w-6" />
-                </div>
-              </div>
-
-              {/* Card 3: Hours Logged Today */}
-              <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Hours Logged Today</p>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white">{hoursLoggedToday.toFixed(1)}h</p>
-                </div>
-                <div className="p-3 bg-blue-50 dark:bg-blue-500/10 text-blue-600 rounded-xl">
-                  <Clock className="h-6 w-6" />
-                </div>
-              </div>
-
-              {/* Card 4: Current Sprint Progress */}
-              <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Sprint Progress</p>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white">{sprintProgress}%</p>
-                </div>
-                <div className="p-3 bg-purple-50 dark:bg-purple-500/10 text-purple-600 rounded-xl">
-                  <Percent className="h-6 w-6" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left side (8 cols): Upcoming Deadlines + Weekly Standup Activity */}
             <div className="lg:col-span-8 space-y-8">
               
@@ -1468,6 +1420,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               </Card>
 
             </div>
+          </div>
           </div>
         </div>
       )}

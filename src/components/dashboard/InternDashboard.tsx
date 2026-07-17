@@ -351,7 +351,8 @@ export default function InternDashboard({ session }: InternDashboardProps) {
     fetchDashboard();
   }, []);
 
-  const activeTasksCount = dashboardData?.activeTasksCount ?? tasks.filter((t: any) => t.status !== 'Done').length;
+  const activeTasksCount = tasks.filter((t: any) => t && t.status !== 'Done' && t.status.toLowerCase() !== 'completed').length;
+  const completedTasksCount = tasks.filter((t: any) => t && (t.status === 'Done' || t.status.toLowerCase() === 'completed')).length;
 
   // Compute upcoming deadlines (handling relative dates like 'Today' and 'Tomorrow')
   const upcomingDeadlines = useMemo(() => {
@@ -522,7 +523,10 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             </div>
             <div>
               <p className="text-3xl font-black text-slate-900 dark:text-white">{activeTasksCount}</p>
-              <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">Active Tasks</p>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Active Tasks</p>
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full">{completedTasksCount} Done</span>
+              </div>
             </div>
           </CardContent>
         </Card>
