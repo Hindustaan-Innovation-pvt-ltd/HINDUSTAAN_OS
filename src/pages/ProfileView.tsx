@@ -189,7 +189,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {session?.user?.user_metadata?.role !== 'manager' && (
+                {session?.user?.user_metadata?.role !== 'manager' && session?.user?.user_metadata?.role !== 'admin' && (
                   <div className="space-y-1">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Reporting Manager</span>
                     <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.manager}</p>
@@ -197,9 +197,11 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                 )}
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Employment Type</span>
-                  <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.employmentType}</p>
+                  <p className="text-base font-bold text-slate-800 dark:text-slate-200">
+                    {session?.user?.user_metadata?.role === 'admin' ? 'Admin' : profile.employmentType}
+                  </p>
                 </div>
-                {session?.user?.user_metadata?.role !== 'manager' && (
+                {session?.user?.user_metadata?.role !== 'manager' && session?.user?.user_metadata?.role !== 'admin' && (
                   <div className="space-y-1">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Team</span>
                     <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.team}</p>
