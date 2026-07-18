@@ -565,14 +565,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   const totalManagersCount = usersList.filter(u => u.role === 'manager').length;
   const activeManagersList = usersList.filter(u => u.role === 'manager' && u.isActive !== false);
   const pendingNotifications = notifications.filter((n: any) => n.unread).length;
-  const totalProjectsCount = (() => {
-    try {
-      const saved = localStorage.getItem('hindustaan_projects');
-      return saved ? JSON.parse(saved).length : 0;
-    } catch {
-      return 0;
-    }
-  })();
+
 
   const departments = ['Engineering', 'Product', 'HR', 'Marketing', 'Sales', 'IT'];
 
