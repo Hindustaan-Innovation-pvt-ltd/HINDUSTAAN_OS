@@ -140,11 +140,11 @@ export default function DailyStandups({ session }: { session?: any }) {
 
   const [standups, setStandups] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_standups');
-    return (saved && saved !== 'null') ? JSON.parse(saved) : MOCK_STANDUPS;
+    return (saved && saved !== 'null') ? JSON.parse(saved) : [];
   });
   const [history, setHistory] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_standup_history');
-    return (saved && saved !== 'null') ? JSON.parse(saved) : MOCK_HISTORY;
+    return (saved && saved !== 'null') ? JSON.parse(saved) : [];
   });
 
   // Fetch real standups from backend on mount
@@ -156,20 +156,14 @@ export default function DailyStandups({ session }: { session?: any }) {
         if (user.role === 'manager' || user.role === 'admin') {
           // Manager: get team overview
           const res = await api.get('/standups/manager/sync');
-          if (res.data?.success && res.data.data?.teamStandups) {
-            const mapped = res.data.data.teamStandups.map((s: any) => ({
-              id: s.id,
-              user: s.user?.name || 'Unknown',
-              initials: (s.user?.name || 'U').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
-              role: s.user?.designation || 'Team Member',
-              status: s.submitted ? 'Submitted' : 'Pending',
-              yesterday: s.standup?.done || '',
-              today: s.standup?.doing || '',
-              blockers: s.standup?.blocked || 'None.',
-              time: s.standup?.submittedAt ? new Date(s.standup.submittedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : ''
-            }));
-            setStandups(mapped);
-            localStorage.setItem('hindustaan_standups', JSON.stringify(mapped));
+          if (res.data?.success && res.data.data?.standups) {
+            // Already mapped nicely by the backend in getManagerStandupsOverview!
+            setStandups(res.data.data.standups);
+            localStorage.setItem('hindustaan_standups', JSON.stringify(res.data.data.standups));
+            if (res.data.data.history) {
+              setHistory(res.data.data.history);
+              localStorage.setItem('hindustaan_standup_history', JSON.stringify(res.data.data.history));
+            }
           }
         } else {
           // Intern: get own standups

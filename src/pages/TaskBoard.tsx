@@ -3,7 +3,6 @@ import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayC
 import { cn, logActivity } from '@/lib/utils';
 import TaskDetailsModal from '../components/dashboard/TaskDetailsModal';
 import CreateTaskModal from '../components/dashboard/CreateTaskModal';
-import { INITIAL_TASKS } from '@/data/mockData';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/lib/auth';

@@ -26,8 +26,6 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { INITIAL_TASKS } from '@/data/mockData';
-import { mockWorkLogs } from '@/data/mockWorkLogs';
 import { TotalHoursModal } from '@/components/dashboard/worklogs/TotalHoursModal';
 import { format, subDays, startOfMonth, parseISO, isSameDay, startOfWeek, addDays } from 'date-fns';
 import api from '@/lib/api';

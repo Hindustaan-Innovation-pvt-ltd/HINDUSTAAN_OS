@@ -58,6 +58,8 @@ export default function TeamMembers() {
   const [whatsappMessage, setWhatsappMessage] = useState('');
   const [deactivatingIntern, setDeactivatingIntern] = useState<any | null>(null);
   const [isDeactivatingSubmit, setIsDeactivatingSubmit] = useState(false);
+  const [activatingIntern, setActivatingIntern] = useState<any | null>(null);
+  const [isActivatingSubmit, setIsActivatingSubmit] = useState(false);
 
   const mapBackendMember = (m: any) => {
     const depts = ['Frontend', 'Backend', 'AI/ML', 'UI/UX'];
@@ -94,7 +96,8 @@ export default function TeamMembers() {
       status: m.status || 'Offline',
       joiningDate: m.joiningDate || 'June 1, 2026',
       expectedEndDate: m.expectedEndDate || 'Sept 1, 2026',
-      skills: m.skills || defaultSkills[matchedDept] || ['TypeScript', 'Git']
+      skills: m.skills || defaultSkills[matchedDept] || ['TypeScript', 'Git'],
+      isActive: m.isActive
     };
   };
 
@@ -285,6 +288,28 @@ export default function TeamMembers() {
       });
     } finally {
       setIsDeactivatingSubmit(false);
+    }
+  };
+
+  const handleConfirmActivate = async () => {
+    if (!activatingIntern) return;
+    setIsActivatingSubmit(true);
+    try {
+      const response = await api.post(`/team/${activatingIntern.id}/activate`);
+      if (response.data?.success || response.status === 200) {
+        toast.success('Account Activated', {
+          description: response.data?.message || `${activatingIntern.name} has been activated successfully.`
+        });
+        setActivatingIntern(null);
+        await fetchData();
+      }
+    } catch (err: any) {
+      console.error('Error activating user:', err);
+      toast.error('Activation Failed', {
+        description: err.response?.data?.message || err.message || 'An error occurred during activation.'
+      });
+    } finally {
+      setIsActivatingSubmit(false);
     }
   };
 
@@ -556,15 +581,27 @@ export default function TeamMembers() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48 rounded-xl">
                               <DropdownMenuItem className="font-medium cursor-pointer"><CheckCircle2 className="mr-2 h-4 w-4" /> Assign Task</DropdownMenuItem>
-                              <DropdownMenuItem 
-                                className="font-medium cursor-pointer text-rose-600 dark:text-rose-400"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeactivatingIntern(intern);
-                                }}
-                              >
-                                <Clock className="mr-2 h-4 w-4" /> Deactivate
-                              </DropdownMenuItem>
+                              {intern.isActive !== false ? (
+                                <DropdownMenuItem 
+                                  className="font-medium cursor-pointer text-rose-600 dark:text-rose-400"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeactivatingIntern(intern);
+                                  }}
+                                >
+                                  <Clock className="mr-2 h-4 w-4" /> Deactivate
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem 
+                                  className="font-medium cursor-pointer text-emerald-600 dark:text-emerald-400"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActivatingIntern(intern);
+                                  }}
+                                >
+                                  <CheckCircle2 className="mr-2 h-4 w-4" /> Activate
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -955,6 +992,52 @@ export default function TeamMembers() {
                 </>
               ) : (
                 "Confirm & Deactivate"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Activate Intern Dialog */}
+      <Dialog open={!!activatingIntern} onOpenChange={(open) => !open && setActivatingIntern(null)}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+              <CheckCircle2 className="mr-2 h-5 w-5 text-emerald-500" />
+              Activate Intern Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Are you sure you want to activate <span className="font-semibold text-slate-900 dark:text-white">{activatingIntern?.name}</span>?
+            </p>
+            <p className="text-xs text-emerald-500 dark:text-emerald-400 font-medium">
+              This will re-enable their account and allow them to log in.
+            </p>
+          </div>
+          <DialogFooter className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => setActivatingIntern(null)} 
+              className="rounded-xl font-bold"
+              disabled={isActivatingSubmit}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleConfirmActivate}
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+              disabled={isActivatingSubmit}
+            >
+              {isActivatingSubmit ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Activating...
+                </>
+              ) : (
+                "Confirm & Activate"
               )}
             </Button>
           </DialogFooter>
