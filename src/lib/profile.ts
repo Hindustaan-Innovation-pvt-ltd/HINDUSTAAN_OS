@@ -11,7 +11,7 @@ export interface ProfileData {
   
   // Professional Information
   manager: string;
-  employmentType: 'Intern' | 'Employee';
+  employmentType: 'Intern' | 'Employee' | 'Admin';
   team: string;
   joiningDate: string;
   endDate: string;
