@@ -503,68 +503,34 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800 shadow-2xl">
           <DialogHeader>
-<<<<<<< HEAD
             <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">Timeline Settings</DialogTitle>
             <DialogDescription className="text-slate-500 font-medium">
-              Update the project's start and end dates.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Start Date</Label>
-              <DatePicker 
-                value={startDate}
-                onChange={(d) => {
-                  if (d) {
-                    setStartDate(d);
-                    localStorage.setItem('hindustaan_project_start_date', d.toISOString());
-                  }
-                }}
-                className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">End Date</Label>
-              <DatePicker 
-                value={endDate}
-                onChange={(d) => {
-                  if (d) {
-                    setEndDate(d);
-                    localStorage.setItem('hindustaan_project_end_date', d.toISOString());
-                  }
-                }}
-                className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
-              />
-            </div>
-          </div>
-          <DialogFooter className="pt-4 sm:justify-end">
-            <Button onClick={() => setIsSettingsOpen(false)} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white">Save changes</Button>
-          </DialogFooter>
-=======
-            <DialogTitle>Timeline Settings</DialogTitle>
-            <DialogDescription>
               The project timeline dates are now calculated dynamically based on active project tasks and milestones!
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Start Date (Auto-calculated)</Label>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Start Date (Auto-calculated)</Label>
               <Input 
                 type="date" 
                 value={format(effectiveStartDate, 'yyyy-MM-dd')} 
                 disabled
+                className="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white opacity-70"
               />
             </div>
-            <div className="grid gap-2">
-              <Label>End Date (Auto-calculated)</Label>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">End Date (Auto-calculated)</Label>
               <Input 
                 type="date" 
                 value={format(effectiveEndDate, 'yyyy-MM-dd')}
                 disabled
+                className="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white opacity-70"
               />
             </div>
           </div>
->>>>>>> ca23ffc (feat: update dashboard and contribution score components)
+          <DialogFooter className="pt-4 sm:justify-end">
+            <Button onClick={() => setIsSettingsOpen(false)} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white">Close</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       <Card className="rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-lg shadow-slate-200/20 dark:shadow-none flex flex-col overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl">
@@ -621,29 +587,6 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
       <CardContent className="p-0 grid grid-cols-1 xl:grid-cols-2 h-full">
         {/* Left Side: Calendar & Legend */}
         <div className="p-4 sm:p-6 flex flex-col items-center border-b xl:border-b-0 xl:border-r border-slate-100 dark:border-slate-800/60 bg-white dark:bg-slate-950/20 w-full overflow-hidden">
-<<<<<<< HEAD
-          <CalendarContext.Provider value={useMemo(() => ({ today, getDayEvents, handleDayClick }), [today, events, handleDayClick])}>
-            <Calendar
-              mode="single"
-              selected={selectedDay}
-              onSelect={(day) => day && handleDayClick(day)}
-              month={month}
-              onMonthChange={setMonth}
-              startMonth={startDate}
-              endMonth={endDate}
-              className="rounded-2xl border border-slate-100/50 dark:border-slate-800/50 p-3 sm:p-5 bg-white/60 dark:bg-slate-950/60 shadow-lg shadow-slate-200/20 dark:shadow-none w-fit mx-auto flex justify-center backdrop-blur-md"
-              classNames={{
-                caption_label: "text-sm font-bold text-slate-900 dark:text-slate-100",
-                button_previous: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-slate-900 dark:text-slate-100 flex items-center justify-center absolute left-1",
-                button_next: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-slate-900 dark:text-slate-100 flex items-center justify-center absolute right-1",
-                weekday: "text-slate-500 rounded-md w-8 font-normal text-[0.8rem] dark:text-slate-400"
-              }}
-              components={{
-                DayButton: CustomDayButton
-              }}
-            />
-          </CalendarContext.Provider>
-=======
           <TooltipProvider delayDuration={100}>
           <Calendar
             mode="single"
@@ -725,7 +668,6 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
             }}
           />
         </TooltipProvider>
->>>>>>> ca23ffc (feat: update dashboard and contribution score components)
 
         {/* Legend */}
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 px-2">
