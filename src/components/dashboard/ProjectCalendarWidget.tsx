@@ -94,68 +94,7 @@ const getEventColor = (type: string) => {
   }
 };
 
-const CalendarContext = React.createContext<{
-  today: Date;
-  getDayEvents: (date: Date) => ProjectEvent[];
-  handleDayClick: (date: Date) => void;
-} | null>(null);
 
-const CustomDayButton = (props: any) => {
-  const { day, modifiers, onClick, ...rest } = props;
-  const context = React.useContext(CalendarContext);
-  
-  if (!context) return <></>;
-
-  const { today, getDayEvents, handleDayClick } = context;
-  const isTodayDate = isSameDay(day.date, today);
-  const events = getDayEvents(day.date);
-  
-  // Ensure accessibility focus
-  const buttonRef = React.useRef<HTMLButtonElement>(null);
-  React.useEffect(() => {
-    if (modifiers.focused) buttonRef.current?.focus();
-  }, [modifiers.focused]);
-
-  return (
-    <>
-      <Button
-        ref={buttonRef}
-        variant="ghost"
-        size="icon"
-        {...rest}
-        onClick={(e) => {
-          if (!modifiers.outside) {
-            if (onClick) onClick(e);
-            handleDayClick(day.date);
-          }
-        }}
-        className={cn(
-          "flex aspect-square size-auto w-full min-w-8 flex-col gap-1 items-center justify-center leading-none font-normal relative z-10 transition-colors",
-          "hover:bg-slate-100 dark:hover:bg-slate-800",
-          modifiers.selected 
-            ? "bg-primary text-primary-foreground hover:bg-primary/90 focus:bg-primary focus:text-primary-foreground shadow-sm font-bold" 
-            : "",
-          isTodayDate && !modifiers.selected 
-            ? "text-primary font-bold bg-primary/10" 
-            : "",
-          modifiers.outside ? "text-slate-400 opacity-50 pointer-events-none" : ""
-        )}
-      >
-        <span className={cn("text-sm", events.length > 0 ? "mb-1.5" : "")}>{day.date.getDate()}</span>
-      </Button>
-      
-      {/* Event Dots - Positioned absolutely in the relative TD cell so they never overlap the number */}
-      {!modifiers.outside && events.length > 0 && (
-        <div className="absolute bottom-1 left-0 right-0 flex w-full justify-center gap-0.5 pointer-events-none z-20">
-          {events.slice(0, 3).map((e: any, i: number) => (
-            <div key={i} className={cn("h-1 w-1 rounded-full", getEventColor(e.type), modifiers.selected && "bg-background")} />
-          ))}
-          {events.length > 3 && <div className={cn("h-1 w-1 rounded-full bg-slate-400", modifiers.selected && "bg-background/70")} />}
-        </div>
-      )}
-    </>
-  );
-};
 
 const formatTime12Hour = (time24: string) => {
   if (!time24) return '';
@@ -503,68 +442,34 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800 shadow-2xl">
           <DialogHeader>
-<<<<<<< HEAD
             <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">Timeline Settings</DialogTitle>
             <DialogDescription className="text-slate-500 font-medium">
-              Update the project's start and end dates.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Start Date</Label>
-              <DatePicker 
-                value={startDate}
-                onChange={(d) => {
-                  if (d) {
-                    setStartDate(d);
-                    localStorage.setItem('hindustaan_project_start_date', d.toISOString());
-                  }
-                }}
-                className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">End Date</Label>
-              <DatePicker 
-                value={endDate}
-                onChange={(d) => {
-                  if (d) {
-                    setEndDate(d);
-                    localStorage.setItem('hindustaan_project_end_date', d.toISOString());
-                  }
-                }}
-                className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
-              />
-            </div>
-          </div>
-          <DialogFooter className="pt-4 sm:justify-end">
-            <Button onClick={() => setIsSettingsOpen(false)} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white">Save changes</Button>
-          </DialogFooter>
-=======
-            <DialogTitle>Timeline Settings</DialogTitle>
-            <DialogDescription>
               The project timeline dates are now calculated dynamically based on active project tasks and milestones!
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Start Date (Auto-calculated)</Label>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Start Date (Auto-calculated)</Label>
               <Input 
                 type="date" 
                 value={format(effectiveStartDate, 'yyyy-MM-dd')} 
                 disabled
+                className="w-full bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white opacity-80"
               />
             </div>
-            <div className="grid gap-2">
-              <Label>End Date (Auto-calculated)</Label>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">End Date (Auto-calculated)</Label>
               <Input 
                 type="date" 
                 value={format(effectiveEndDate, 'yyyy-MM-dd')}
                 disabled
+                className="w-full bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white opacity-80"
               />
             </div>
           </div>
->>>>>>> ca23ffc (feat: update dashboard and contribution score components)
+          <DialogFooter className="pt-4 sm:justify-end">
+            <Button onClick={() => setIsSettingsOpen(false)} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white">Close</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       <Card className="rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-lg shadow-slate-200/20 dark:shadow-none flex flex-col overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl">
@@ -621,111 +526,87 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
       <CardContent className="p-0 grid grid-cols-1 xl:grid-cols-2 h-full">
         {/* Left Side: Calendar & Legend */}
         <div className="p-4 sm:p-6 flex flex-col items-center border-b xl:border-b-0 xl:border-r border-slate-100 dark:border-slate-800/60 bg-white dark:bg-slate-950/20 w-full overflow-hidden">
-<<<<<<< HEAD
-          <CalendarContext.Provider value={useMemo(() => ({ today, getDayEvents, handleDayClick }), [today, events, handleDayClick])}>
+          <TooltipProvider delayDuration={100}>
             <Calendar
               mode="single"
               selected={selectedDay}
               onSelect={(day) => day && handleDayClick(day)}
               month={month}
               onMonthChange={setMonth}
-              startMonth={startDate}
-              endMonth={endDate}
-              className="rounded-2xl border border-slate-100/50 dark:border-slate-800/50 p-3 sm:p-5 bg-white/60 dark:bg-slate-950/60 shadow-lg shadow-slate-200/20 dark:shadow-none w-fit mx-auto flex justify-center backdrop-blur-md"
+              startMonth={effectiveStartDate}
+              endMonth={effectiveEndDate}
+              className="rounded-2xl border border-slate-100/50 dark:border-slate-800/50 p-3 sm:p-5 bg-white/60 dark:bg-slate-950/60 shadow-lg shadow-slate-200/20 dark:shadow-none w-full flex justify-center backdrop-blur-md"
               classNames={{
-                caption_label: "text-sm font-bold text-slate-900 dark:text-slate-100",
-                button_previous: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-slate-900 dark:text-slate-100 flex items-center justify-center absolute left-1",
-                button_next: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-slate-900 dark:text-slate-100 flex items-center justify-center absolute right-1",
-                weekday: "text-slate-500 rounded-md w-8 font-normal text-[0.8rem] dark:text-slate-400"
+                month_caption: "flex justify-center pt-1 pb-3 relative items-center w-full",
+                day: "h-10 w-10 p-0 font-normal aria-selected:opacity-100 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-600 dark:hover:text-orange-400 hover:scale-105 transition-all duration-200 relative cursor-pointer outline-none focus:ring-2 focus:ring-orange-500/50",
+                today: "bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-900/10 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-500/30 shadow-sm",
+                selected: "bg-gradient-to-br from-orange-500 to-rose-500 text-white hover:from-orange-600 hover:to-rose-600 hover:text-white focus:from-orange-600 focus:to-rose-600 focus:text-white font-bold shadow-md shadow-orange-500/30 hover:scale-105 transition-all",
+                weekday: "text-slate-400 dark:text-slate-500 rounded-md w-10 font-bold text-[0.75rem] uppercase tracking-wider",
+                month: "w-full relative text-slate-900 dark:text-white",
+                caption_label: "text-sm font-black text-slate-800 dark:text-slate-100 text-center",
+                button_previous: "h-8 w-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0 opacity-70 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white absolute left-1 flex items-center justify-center transition-all shadow-sm z-10",
+                button_next: "h-8 w-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0 opacity-70 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white absolute right-1 flex items-center justify-center transition-all shadow-sm z-10",
               }}
               components={{
-                DayButton: CustomDayButton
+                DayButton: ({ day, modifiers, ...props }) => {
+                  const isToday = isSameDay(day.date, today);
+                  const events = getDayEvents(day.date);
+                  
+                  return (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          {...props}
+                          className={cn(
+                            "relative h-10 w-10 rounded-lg flex flex-col items-center justify-center font-semibold text-sm transition-all outline-none",
+                            modifiers.selected ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" : 
+                            isToday ? "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30" : 
+                            "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800",
+                            modifiers.outside && "text-slate-300 dark:text-slate-600 cursor-default hover:bg-transparent"
+                          )}
+                          onClick={(e) => {
+                            if (!modifiers.outside) {
+                              if (props.onClick) props.onClick(e);
+                              handleDayClick(day.date);
+                            }
+                          }}
+                        >
+                          <span>{day.date.getDate()}</span>
+                          
+                          {/* Event Dots */}
+                          {!modifiers.outside && events.length > 0 && (
+                            <div className="absolute bottom-1 flex gap-0.5">
+                              {events.slice(0, 3).map((e, i) => (
+                                <div key={i} className={cn("h-1 w-1 rounded-full", getEventColor(e.type), modifiers.selected && "bg-white")} />
+                              ))}
+                              {events.length > 3 && <div className={cn("h-1 w-1 rounded-full bg-slate-400", modifiers.selected && "bg-white/70")} />}
+                            </div>
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      {!modifiers.outside && (
+                        <TooltipContent side="right" className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium p-3 rounded-xl shadow-xl border-0 z-[100]">
+                          <p className="font-bold mb-1 border-b border-slate-700 dark:border-slate-200 pb-1">{format(day.date, 'EEEE, MMM d')}</p>
+                          {events.length > 0 ? (
+                            <div className="space-y-1.5 mt-2">
+                              {events.map((e, idx) => (
+                                <div key={idx} className="flex items-center gap-2 text-xs">
+                                  <div className={cn("h-2 w-2 rounded-full", getEventColor(e.type))} />
+                                  <span>{e.title}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 italic">No scheduled events</p>
+                          )}
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  );
+                }
               }}
             />
-          </CalendarContext.Provider>
-=======
-          <TooltipProvider delayDuration={100}>
-          <Calendar
-            mode="single"
-            selected={selectedDay}
-            onSelect={(day) => day && handleDayClick(day)}
-            month={month}
-            onMonthChange={setMonth}
-            startMonth={effectiveStartDate}
-            endMonth={effectiveEndDate}
-            className="rounded-2xl border border-slate-100/50 dark:border-slate-800/50 p-3 sm:p-5 bg-white/60 dark:bg-slate-950/60 shadow-lg shadow-slate-200/20 dark:shadow-none w-full flex justify-center backdrop-blur-md"
-            classNames={{
-              month_caption: "flex justify-center pt-1 pb-3 relative items-center w-full",
-              day: "h-10 w-10 p-0 font-normal aria-selected:opacity-100 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-600 dark:hover:text-orange-400 hover:scale-105 transition-all duration-200 relative cursor-pointer outline-none focus:ring-2 focus:ring-orange-500/50",
-              today: "bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-900/10 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-500/30 shadow-sm",
-              selected: "bg-gradient-to-br from-orange-500 to-rose-500 text-white hover:from-orange-600 hover:to-rose-600 hover:text-white focus:from-orange-600 focus:to-rose-600 focus:text-white font-bold shadow-md shadow-orange-500/30 hover:scale-105 transition-all",
-              weekday: "text-slate-400 dark:text-slate-500 rounded-md w-10 font-bold text-[0.75rem] uppercase tracking-wider",
-              month: "w-full relative text-slate-900 dark:text-white",
-              caption_label: "text-sm font-black text-slate-800 dark:text-slate-100 text-center",
-              button_previous: "h-8 w-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0 opacity-70 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white absolute left-1 flex items-center justify-center transition-all shadow-sm z-10",
-              button_next: "h-8 w-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0 opacity-70 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white absolute right-1 flex items-center justify-center transition-all shadow-sm z-10",
-            }}
-            components={{
-              DayButton: ({ day, modifiers, ...props }) => {
-                const isToday = isSameDay(day.date, today);
-                const events = getDayEvents(day.date);
-                
-                return (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        {...props}
-                        className={cn(
-                          "relative h-10 w-10 rounded-lg flex flex-col items-center justify-center font-semibold text-sm transition-all outline-none",
-                          modifiers.selected ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" : 
-                          isToday ? "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30" : 
-                          "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800",
-                          modifiers.outside && "text-slate-300 dark:text-slate-600 cursor-default hover:bg-transparent"
-                        )}
-                        onClick={(e) => {
-                          if (!modifiers.outside) {
-                            if (props.onClick) props.onClick(e);
-                            handleDayClick(day.date);
-                          }
-                        }}
-                      >
-                        <span>{day.date.getDate()}</span>
-                        
-                        {/* Event Dots */}
-                        {!modifiers.outside && events.length > 0 && (
-                          <div className="absolute bottom-1 flex gap-0.5">
-                            {events.slice(0, 3).map((e, i) => (
-                              <div key={i} className={cn("h-1 w-1 rounded-full", getEventColor(e.type), modifiers.selected && "bg-white")} />
-                            ))}
-                            {events.length > 3 && <div className={cn("h-1 w-1 rounded-full bg-slate-400", modifiers.selected && "bg-white/70")} />}
-                          </div>
-                        )}
-                      </button>
-                    </TooltipTrigger>
-                    {!modifiers.outside && (
-                      <TooltipContent side="right" className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium p-3 rounded-xl shadow-xl border-0 z-[100]">
-                        <p className="font-bold mb-1 border-b border-slate-700 dark:border-slate-200 pb-1">{format(day.date, 'EEEE, MMM d')}</p>
-                        {events.length > 0 ? (
-                          <div className="space-y-1.5 mt-2">
-                            {events.map((e, idx) => (
-                              <div key={idx} className="flex items-center gap-2 text-xs">
-                                <div className={cn("h-2 w-2 rounded-full", getEventColor(e.type))} />
-                                <span>{e.title}</span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 italic">No scheduled events</p>
-                        )}
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                );
-              }
-            }}
-          />
-        </TooltipProvider>
->>>>>>> ca23ffc (feat: update dashboard and contribution score components)
+          </TooltipProvider>
 
         {/* Legend */}
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 px-2">

@@ -49,7 +49,6 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   const [formPassword, setFormPassword] = useState('');
   const [formId, setFormId] = useState('');
 
-  // Dashboard Overview state
   const [activities, setActivities] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_activity_feed');
     try {
@@ -58,6 +57,8 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
       return [];
     }
   });
+
+  const [showAllSummaryUsers, setShowAllSummaryUsers] = useState(false);
 
   const [notifications, setNotifications] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_notifications');
@@ -520,7 +521,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     setSelectedUser(user);
     setFormName(user.name);
     setFormEmail(user.email);
-    setFormRole(user.role);
+    setFormRole(user.role === 'intern' ? 'employee' : user.role);
     setFormDept(user.department || 'Engineering');
     setFormDesig(user.designation || '');
     setFormPhone(user.phone || '');
@@ -615,7 +616,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                       {selectedDetailUser.name}
                     </h2>
                     <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
-                      {selectedDetailUser.designation || 'Specialist'} • <span className="uppercase text-[9px] font-bold px-1.5 py-0.2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-650 dark:text-slate-300">{selectedDetailUser.role}</span>
+                      {selectedDetailUser.designation || 'Specialist'} • <span className="uppercase text-[9px] font-bold px-1.5 py-0.2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-650 dark:text-slate-300">{selectedDetailUser.role === 'intern' ? 'employee' : selectedDetailUser.role}</span>
                     </p>
                   </div>
                 </div>
@@ -672,7 +673,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                           </div>
                           <div>
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Account Role</p>
-                            <p className="text-sm font-black text-slate-800 dark:text-white capitalize">{selectedDetailUser.role}</p>
+                            <p className="text-sm font-black text-slate-800 dark:text-white capitalize">{selectedDetailUser.role === 'intern' ? 'employee' : selectedDetailUser.role}</p>
                           </div>
                         </CardContent>
                       </Card>
@@ -1271,7 +1272,14 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
                     <CardTitle className="text-lg font-bold flex items-center justify-between text-slate-900 dark:text-white">
                       User Account Summary
-                      <Button variant="ghost" size="sm" className="h-8 text-xs font-bold text-[#5B7CFF]">View All</Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 text-xs font-bold text-[#5B7CFF]"
+                        onClick={() => setShowAllSummaryUsers(!showAllSummaryUsers)}
+                      >
+                        {showAllSummaryUsers ? "Show Less" : "View All"}
+                      </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0 overflow-x-auto">
@@ -1285,7 +1293,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                         </tr>
                       </thead>
                       <tbody>
-                        {usersList.slice(0, 4).map((u: any, i: number) => {
+                        {(showAllSummaryUsers ? usersList : usersList.slice(0, 4)).map((u: any, i: number) => {
                           const initials = u.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
                           const isActive = u.isActive !== false;
                           return (
@@ -1316,7 +1324,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                                   u.role === 'admin' ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400" :
                                   u.role === 'manager' ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400" :
                                   "border-slate-255 bg-slate-50 text-slate-600 dark:border-slate-805 dark:bg-slate-900/60 dark:text-slate-350"
-                                )}>{u.role}</Badge>
+                                )}>{u.role === 'intern' ? 'employee' : u.role}</Badge>
                               </td>
                               <td className="px-6 py-4">
                                 <Badge className={isActive ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 'bg-slate-500/10 text-slate-500 hover:bg-slate-500/20'}>
@@ -1580,7 +1588,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                               u.role === 'manager' ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400" :
                               "border-slate-250 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-350"
                             )}>
-                              {u.role}
+                              {u.role === 'intern' ? 'employee' : u.role}
                             </Badge>
                           </td>
                           <td className="px-6 py-4">
