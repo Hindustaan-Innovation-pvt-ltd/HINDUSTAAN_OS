@@ -8,7 +8,9 @@ import {
   Clock, 
   Flag, 
   CheckCircle2,
-  Settings
+  Settings,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { format, isSameDay, isBefore, isAfter, startOfDay, addDays, parseISO, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -154,6 +156,108 @@ const CustomDayButton = (props: any) => {
   );
 };
 
+const formatTime12Hour = (time24: string) => {
+  if (!time24) return '';
+  const parts = time24.split(':');
+  if (parts.length < 2) return time24;
+  const h = parts[0];
+  const m = parts[1];
+  const hNum = parseInt(h, 10);
+  const ampm = hNum >= 12 ? 'PM' : 'AM';
+  const h12 = hNum % 12 || 12;
+  return `${h12.toString().padStart(2, '0')}:${m} ${ampm}`;
+};
+
+const parseTime24Hour = (time12: string) => {
+  if (!time12) return '';
+  const match = time12.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!match) return time12;
+  const h = match[1];
+  const m = match[2];
+  const ampm = match[3];
+  let hNum = parseInt(h, 10);
+  if (ampm.toUpperCase() === 'PM' && hNum < 12) hNum += 12;
+  if (ampm.toUpperCase() === 'AM' && hNum === 12) hNum = 0;
+  return `${hNum.toString().padStart(2, '0')}:${m}`;
+};
+
+const CustomTimePicker = ({ name, defaultValue }: { name: string, defaultValue?: string }) => {
+  const defaultMatch = (defaultValue || "09:00 AM").match(/(\d+):(\d+)\s*(AM|PM)/i);
+  const [hour, setHour] = React.useState(defaultMatch ? parseInt(defaultMatch[1], 10) : 9);
+  const [minute, setMinute] = React.useState(defaultMatch ? parseInt(defaultMatch[2], 10) : 0);
+  const [ampm, setAmpm] = React.useState(defaultMatch ? defaultMatch[3].toUpperCase() : "AM");
+
+  const [hourInput, setHourInput] = React.useState(hour.toString().padStart(2, '0'));
+  const [minuteInput, setMinuteInput] = React.useState(minute.toString().padStart(2, '0'));
+
+  React.useEffect(() => { setHourInput(hour.toString().padStart(2, '0')); }, [hour]);
+  React.useEffect(() => { setMinuteInput(minute.toString().padStart(2, '0')); }, [minute]);
+
+  const incHour = () => setHour(h => h === 12 ? 1 : h + 1);
+  const decHour = () => setHour(h => h === 1 ? 12 : h - 1);
+  
+  const incMin = () => setMinute(m => m >= 59 ? 0 : m + 1);
+  const decMin = () => setMinute(m => m <= 0 ? 59 : m - 1);
+  
+  const toggleAmpm = () => setAmpm(a => a === 'AM' ? 'PM' : 'AM');
+
+  const handleHourBlur = () => {
+    let val = parseInt(hourInput, 10);
+    if (isNaN(val) || val < 1) val = 12;
+    if (val > 12) val = 12;
+    setHour(val);
+    setHourInput(val.toString().padStart(2, '0'));
+  };
+
+  const handleMinBlur = () => {
+    let val = parseInt(minuteInput, 10);
+    if (isNaN(val) || val < 0) val = 0;
+    if (val > 59) val = 59;
+    setMinute(val);
+    setMinuteInput(val.toString().padStart(2, '0'));
+  };
+
+  return (
+    <div className="flex items-center gap-1.5 h-10">
+      <input type="hidden" name={name} value={`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} ${ampm}`} />
+      
+      <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-full overflow-hidden focus-within:ring-2 focus-within:ring-orange-500/50 focus-within:border-orange-500 transition-all shadow-sm">
+        <div className="flex flex-col border-r border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50">
+          <button type="button" onClick={incHour} className="px-1.5 flex-1 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors flex items-center justify-center"><ChevronUp className="h-3 w-3" /></button>
+          <button type="button" onClick={decHour} className="px-1.5 flex-1 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors flex items-center justify-center"><ChevronDown className="h-3 w-3" /></button>
+        </div>
+        <input 
+          className="w-10 h-full bg-transparent text-center font-bold text-slate-900 dark:text-white focus:outline-none" 
+          value={hourInput}
+          onChange={(e) => setHourInput(e.target.value.replace(/\D/g, '').slice(0, 2))}
+          onBlur={handleHourBlur}
+        />
+      </div>
+
+      <span className="font-black text-slate-400 pb-0.5">:</span>
+
+      <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-full overflow-hidden focus-within:ring-2 focus-within:ring-orange-500/50 focus-within:border-orange-500 transition-all shadow-sm">
+        <div className="flex flex-col border-r border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50">
+          <button type="button" onClick={incMin} className="px-1.5 flex-1 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors flex items-center justify-center"><ChevronUp className="h-3 w-3" /></button>
+          <button type="button" onClick={decMin} className="px-1.5 flex-1 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors flex items-center justify-center"><ChevronDown className="h-3 w-3" /></button>
+        </div>
+        <input 
+          className="w-10 h-full bg-transparent text-center font-bold text-slate-900 dark:text-white focus:outline-none" 
+          value={minuteInput}
+          onChange={(e) => setMinuteInput(e.target.value.replace(/\D/g, '').slice(0, 2))}
+          onBlur={handleMinBlur}
+        />
+      </div>
+
+      <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-full overflow-hidden ml-1 shadow-sm">
+        <button type="button" onClick={toggleAmpm} className="w-11 h-full font-bold text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
+          {ampm}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget() {
   const [date, setDate] = useState<Date>(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(undefined);
@@ -285,12 +389,10 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
       assignees: [{ name: 'Current User', initials: 'CU' }]
     };
 
-    setEvents(prev => {
-      const next = [...prev, newEvent];
-      localStorage.setItem('hindustaan_calendar_events', JSON.stringify(next));
-      window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: next } }));
-      return next;
-    });
+    const nextEvents = [...events, newEvent];
+    setEvents(nextEvents);
+    localStorage.setItem('hindustaan_calendar_events', JSON.stringify(nextEvents));
+    window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: nextEvents } }));
 
     toast.success(`${scheduleType === 'event' ? 'Event' : 'Meeting'} Scheduled Successfully`, {
       description: 'Your calendar has been updated with the new item.',
@@ -327,7 +429,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
       </datalist>
 
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl">
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">Timeline Settings</DialogTitle>
             <DialogDescription className="text-slate-500 font-medium">
@@ -628,7 +730,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
       </Sheet>
 
       <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
               {scheduleType === 'event' ? <CalendarIcon className="mr-2 h-5 w-5 text-orange-500" /> : <Video className="mr-2 h-5 w-5 text-orange-500" />}
@@ -658,25 +760,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
               </div>
               <div className="space-y-2">
                 <Label htmlFor="time" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Time</Label>
-                <Select name="time" defaultValue="09:00 AM">
-                  <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500">
-                    <SelectValue placeholder="Select time" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800 max-h-[200px]">
-                    {Array.from({ length: 48 }).map((_, i) => {
-                      const hour24 = Math.floor(i / 2);
-                      const minute = i % 2 === 0 ? '00' : '30';
-                      const ampm = hour24 >= 12 ? 'PM' : 'AM';
-                      const hour12 = hour24 % 12 || 12;
-                      const timeStr = `${hour12.toString().padStart(2, '0')}:${minute} ${ampm}`;
-                      return (
-                        <SelectItem key={timeStr} value={timeStr}>
-                          {timeStr}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                <CustomTimePicker name="time" defaultValue="09:00 AM" />
               </div>
             </div>
 
@@ -699,7 +783,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
 
       {/* Event History Modal */}
       <Dialog open={isAllEventsOpen} onOpenChange={setIsAllEventsOpen}>
-        <DialogContent className="sm:max-w-[425px] md:max-w-[600px] rounded-3xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 p-0 overflow-hidden shadow-2xl">
+        <DialogContent className="sm:max-w-[425px] md:max-w-[600px] rounded-3xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800 p-0 overflow-hidden shadow-2xl">
           <div className="bg-slate-50/50 dark:bg-slate-900/20 p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60">
             <DialogHeader>
               <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white flex items-center">
@@ -772,7 +856,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
       </Dialog>
 
       <Dialog open={!!eventToDelete} onOpenChange={(open) => !open && setEventToDelete(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-slate-900 dark:text-white text-rose-600 flex items-center">
               Delete Event
@@ -785,7 +869,10 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
             e.preventDefault();
             const formData = new FormData(e.currentTarget);
             const reason = formData.get('reason') as string;
-            setEvents(events.filter(ev => ev.id !== eventToDelete?.id));
+            const nextEvents = events.filter(ev => ev.id !== eventToDelete?.id);
+            setEvents(nextEvents);
+            localStorage.setItem('hindustaan_calendar_events', JSON.stringify(nextEvents));
+            window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: nextEvents } }));
             pushNotification('Event Deleted', `"${eventToDelete?.title}" deleted. Reason: ${reason}`, 'alert');
             toast.error('Event Deleted', { description: `Reason: ${reason}. Employees notified.` });
             setEventToDelete(null);
@@ -803,7 +890,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
       </Dialog>
 
       <Dialog open={!!eventToEdit} onOpenChange={(open) => !open && setEventToEdit(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
               Edit Event
@@ -824,12 +911,15 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
             if (!title || !dateStr) return;
             const [year, month, day] = dateStr.split('-').map(Number);
             
-            setEvents(events.map(ev => {
+            const nextEvents = events.map(ev => {
               if (ev.id === eventToEdit?.id) {
                 return { ...ev, title, time: timeStr, type, date: new Date(year, month - 1, day) };
               }
               return ev;
-            }));
+            });
+            setEvents(nextEvents);
+            localStorage.setItem('hindustaan_calendar_events', JSON.stringify(nextEvents));
+            window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: nextEvents } }));
             
             pushNotification('Event Edited', `"${title}" updated. Reason: ${reason}`, 'warning');
             toast.success('Event Updated', { description: `Reason: ${reason}. Employees notified.` });
@@ -850,19 +940,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-time" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Time</Label>
-                  <Select name="time" defaultValue={eventToEdit?.time || "09:00 AM"}>
-                    <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                    <SelectContent className="rounded-xl max-h-[200px]">
-                      {Array.from({ length: 48 }).map((_, i) => {
-                        const hour24 = Math.floor(i / 2);
-                        const minute = i % 2 === 0 ? '00' : '30';
-                        const ampm = hour24 >= 12 ? 'PM' : 'AM';
-                        const hour12 = hour24 % 12 || 12;
-                        const timeStr = `${hour12.toString().padStart(2, '0')}:${minute} ${ampm}`;
-                        return <SelectItem key={timeStr} value={timeStr}>{timeStr}</SelectItem>;
-                      })}
-                    </SelectContent>
-                  </Select>
+                  <CustomTimePicker name="time" defaultValue={eventToEdit?.time || "09:00 AM"} />
                 </div>
               </div>
               <div className="space-y-2">
@@ -882,7 +960,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
         </DialogContent>
       </Dialog>
       <Dialog open={!!eventToView} onOpenChange={(open) => !open && setEventToView(null)}>
-        <DialogContent className="sm:max-w-[500px] rounded-3xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 p-0 overflow-hidden shadow-2xl">
+        <DialogContent className="sm:max-w-[500px] rounded-3xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800 p-0 overflow-hidden shadow-2xl">
           {eventToView && (
             <>
               <div className="p-8 border-b border-slate-100 dark:border-slate-800/60 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900/50 dark:to-slate-950">
