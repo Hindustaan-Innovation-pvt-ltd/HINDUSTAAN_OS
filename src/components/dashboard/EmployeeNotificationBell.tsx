@@ -176,8 +176,8 @@ export function EmployeeNotificationBell({ onNavigate }: NotificationBellProps =
         localStorage.setItem('selected_leave_request_id', String(notification.metadata.requestId));
       }
     } else if (notification.category === 'Tasks') {
-      targetPath = isManager ? '/manager/tasks' : '/employee/tasks';
-      targetView = isManager ? 'Tasks' : 'My Tasks';
+      targetPath = (isManager || role === 'admin') ? '/manager/tasks' : '/employee/tasks';
+      targetView = (isManager || role === 'admin') ? 'Tasks' : 'My Tasks';
     } else if (notification.category === 'Standups') {
       targetPath = isManager ? '/manager/daily-standups' : '/employee/time-standup'; 
       targetView = isManager ? 'Daily Standups' : 'Daily Standup';

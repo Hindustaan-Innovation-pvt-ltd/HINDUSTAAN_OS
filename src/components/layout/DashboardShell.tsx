@@ -65,7 +65,7 @@ const employeeNavigation = [
 const managerNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
   { name: 'Projects', icon: FolderKanban },
-  { name: 'My Tasks', icon: CheckSquare },
+  { name: 'Tasks', icon: CheckSquare },
   { name: 'Gantt Timeline', icon: CalendarDays },
   { name: 'Progress Tracker', icon: BarChart2 },
   { name: 'Work Logs', icon: Clock },
@@ -83,7 +83,7 @@ const adminNavigationGroups = [
     icon: Building,
     items: [
       { name: 'Projects', icon: FolderKanban },
-      { name: 'My Tasks', icon: CheckSquare },
+      { name: 'Tasks', icon: CheckSquare },
       { name: 'Team Members', icon: Users },
       { name: 'Gantt Timeline', icon: CalendarDays },
       { name: 'Progress Tracker', icon: BarChart2 },

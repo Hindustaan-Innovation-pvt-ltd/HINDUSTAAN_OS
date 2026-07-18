@@ -41,7 +41,6 @@ import { ProjectCalendarWidget } from './ProjectCalendarWidget';
 import { Separator } from '@/components/ui/separator';
 import { AssignTaskDialog } from './AssignTaskDialog';
 import { useProjects } from '@/context/ProjectContext';
-import { INITIAL_TASKS } from '@/data/mockData';
 
 // --- Mock Data ---
 const TEAM_MEMBERS = [
@@ -111,6 +110,22 @@ const INITIAL_BLOCKERS = [
   }
 ];
 
+const formatTime = (totalSeconds: number) => {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return h.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+};
+
+const LiveTimer = ({ initialSeconds }: { initialSeconds: number }) => {
+  const [seconds, setSeconds] = React.useState(initialSeconds);
+  React.useEffect(() => {
+    const int = setInterval(() => setSeconds(s => s + 1), 1000);
+    return () => clearInterval(int);
+  }, []);
+  return <>{formatTime(seconds)}</>;
+};
+
 function ManagerDashboardInner() {
   const { projects } = useProjects();
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -148,14 +163,16 @@ function ManagerDashboardInner() {
     const saved = localStorage.getItem('hindustaan_tasks_list');
     try {
       const parsed = saved ? JSON.parse(saved) : null;
-      return Array.isArray(parsed) ? parsed : INITIAL_TASKS;
+      return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-      return INITIAL_TASKS;
+      return [];
     }
   });
 
   // Live dashboard stats from backend
   const [dashboardStats, setDashboardStats] = useState<any>(null);
+  const [liveTeamMembers, setLiveTeamMembers] = useState<any[]>(ONLINE_TEAM_MEMBERS_MANAGER);
+  const lastDataRef = React.useRef<string | null>(null);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -163,7 +180,14 @@ function ManagerDashboardInner() {
         const res = await api.get('/dashboard');
         if (res.data?.success) {
           const data = res.data.data;
-          setDashboardStats(data);
+          const dataString = JSON.stringify(data);
+          if (lastDataRef.current === dataString) return;
+          lastDataRef.current = dataString;
+          React.startTransition(() => {
+            setDashboardStats(data);
+            if (data.liveTeamMembers && data.liveTeamMembers.length > 0) {
+              setLiveTeamMembers(data.liveTeamMembers);
+            }
           // Hydrate activity feed from real backend data
           if (data.activityFeed && data.activityFeed.length > 0) {
             setActivityFeed(data.activityFeed);
@@ -190,6 +214,7 @@ function ManagerDashboardInner() {
             }));
             setBlockers(mappedBlockers);
           }
+          });
         }
       } catch (err) {
         console.warn('Manager dashboard fetch failed, using local data:', err);
@@ -218,7 +243,7 @@ function ManagerDashboardInner() {
 
     const handleLocalUpdate = (e: CustomEvent) => {
       if (e.detail.key === 'hindustaan_tasks_list') {
-        setTasks(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : INITIAL_TASKS);
+        setTasks(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : []);
       } else if (e.detail.key === 'hindustaan_activity_feed') {
         setActivityFeed(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : ACTIVITY_FEED_MOCK);
       } else if (e.detail.key === 'hindustaan_blockers') {
@@ -236,27 +261,26 @@ function ManagerDashboardInner() {
     };
   }, []);
 
-  const dueTodayTasksCount = (tasks || []).filter(t => t?.due_date?.toLowerCase().includes('today') || t?.due_date?.toLowerCase().includes('12') || t?.due_date?.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase())).length;
+  const dueTodayTasksCount = React.useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return (tasks || []).filter((t: any) => {
+      if (!t?.due_date) return false;
+      const dStr = t.due_date.includes('T') ? t.due_date.split('T')[0] : t.due_date;
+      return dStr <= todayStr && t.status !== 'Done' && t.status !== 'completed' && t.status !== 'done';
+    }).length;
+  }, [tasks]);
 
   const [activeSessions, setActiveSessions] = useState<{ [key: string]: { time: number; isOnline: boolean } }>({});
 
   useEffect(() => {
-    const teamMembers = [
-      { id: 'u-1', defaultOffset: 2 * 3600 + 15 * 60 + 30 },
-      { id: 'u-2', defaultOffset: 3600 + 45 * 60 + 12 },
-      { id: 'u-3', defaultOffset: 45 * 60 + 5 },
-      { id: 'u-4', defaultOffset: 3 * 3600 + 10 * 60 + 40 }
-    ];
-
     const updateSessions = () => {
       const sessions: { [key: string]: { time: number; isOnline: boolean } } = {};
-      teamMembers.forEach(member => {
+      liveTeamMembers.forEach(member => {
         const loginTimeStr = localStorage.getItem(`login_time_${member.id}`);
         if (loginTimeStr) {
           const startTime = parseInt(loginTimeStr, 10);
           sessions[member.id] = { time: Math.floor((Date.now() - startTime) / 1000), isOnline: true };
         } else {
-          // Changed to actually reflect offline status if real data doesn't exist
           sessions[member.id] = { time: 0, isOnline: false };
         }
       });
@@ -264,9 +288,7 @@ function ManagerDashboardInner() {
     };
 
     updateSessions();
-    const interval = setInterval(updateSessions, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  }, [liveTeamMembers]);
 
   const allMappedProjects: any[] = (projects || []).map(p => {
     if (!p) return null;
@@ -413,7 +435,7 @@ function ManagerDashboardInner() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10">High Pri</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.dueTodayTasksCount ?? dueTodayTasksCount}</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{Math.max(dashboardStats?.dueTodayTasksCount || 0, dueTodayTasksCount)}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tasks Due Today</p>
             </div>
           </CardContent>
@@ -511,7 +533,7 @@ function ManagerDashboardInner() {
                         <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Due: {project?.dueDate}</span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <Progress value={project?.progress || 0} className={cn("h-2 flex-1", project?.status === 'Aborted' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
+                        <Progress value={project?.progress || 0} className={cn("h-2 flex-1", project?.status === 'Aborted' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-700 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
                         <div className="flex items-center gap-1 justify-end w-16 shrink-0">
                           <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{project?.progress || 0}%</span>
                           <button
@@ -710,7 +732,7 @@ function ManagerDashboardInner() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {ONLINE_TEAM_MEMBERS_MANAGER.map((member) => {
+                {liveTeamMembers.map((member) => {
                   const sessionInfo = activeSessions[member.id];
                   const isOnline = sessionInfo?.isOnline;
                   const sessionTime = sessionInfo?.time || 0;
@@ -737,7 +759,7 @@ function ManagerDashboardInner() {
                       {isOnline ? (
                         <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold animate-pulse">
                           <Timer className="h-3.5 w-3.5 text-emerald-500" />
-                          <span>{formatTime(sessionTime)}</span>
+                          <span><LiveTimer initialSeconds={sessionTime} /></span>
                         </div>
                       ) : (
                         <div className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold">
@@ -854,152 +876,8 @@ function ManagerDashboardInner() {
         </div>
       )}
 
-      {/* All Projects Modal */}
-      {isAllProjectsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
-            className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
-            onClick={() => setIsAllProjectsOpen(false)}
-          />
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-2xl w-full max-w-2xl overflow-hidden relative z-10 animate-in fade-in zoom-in duration-300 flex flex-col max-h-[80vh]">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center"><Activity className="h-5 w-5 text-orange-600 mr-2" /> All Projects Overview</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Complete list of all projects across cohorts</p>
-              </div>
-              <button 
-                onClick={() => setIsAllProjectsOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto flex-1 space-y-6">
-              {allMappedProjects.map((project: any) => (
-                <div key={project?.id || Math.random()} className="group flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                        {project?.name}
-                      </span>
-                      <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", getStatusBadgeStyles(project?.status || 'Active'))}>
-                        {project?.status}
-                      </Badge>
-                    </div>
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Due: {project?.dueDate}</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <Progress value={project?.progress || 0} className={cn("h-2 flex-1", project?.status === 'Aborted' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
-                    <div className="flex items-center gap-1 justify-end w-16 shrink-0">
-                      <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{project?.progress || 0}%</span>
-                      <button
-                        onClick={() => {
-                          setIsAllProjectsOpen(false);
-                          setSelectedProject(project);
-                        }}
-                        className="flex items-center justify-center h-6 w-6 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-orange-600 transition-colors shrink-0 cursor-pointer"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* All Blockers Modal */}
-      {isAllBlockersOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
-            className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
-            onClick={() => setIsAllBlockersOpen(false)}
-          />
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-2xl w-full max-w-xl overflow-hidden relative z-10 animate-in fade-in zoom-in duration-300 flex flex-col max-h-[80vh]">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center"><AlertTriangle className="h-5 w-5 text-rose-600 mr-2" /> All Active Blockers</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Impediments requiring your immediate attention</p>
-              </div>
-              <button 
-                onClick={() => setIsAllBlockersOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto flex-1 space-y-4">
-              {blockers.length === 0 ? (
-                <div className="text-sm text-slate-500 italic p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                  No active blockers at the moment. Great job!
-                </div>
-              ) : (
-                blockers.map((blocker: any) => {
-                  const isResolved = (blocker as any).resolved;
-                  return (
-                    <div key={blocker.id} className={cn("flex flex-col gap-2 p-3.5 rounded-xl border relative transition-all duration-300", isResolved ? "bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-900/50" : cn(blocker.borderColor, blocker.bgColor))}>
-                      {isResolved && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] dark:opacity-[0.02]">
-                          <CheckCircle2 className="w-24 h-24 text-emerald-600" />
-                        </div>
-                      )}
-                      <div className={cn("flex items-center justify-between", isResolved && "opacity-75")}>
-                        <div className="flex items-center gap-2">
-                          <Avatar className={cn("h-6 w-6", isResolved && "opacity-60 grayscale")}>
-                            <AvatarFallback className={cn("text-[10px] font-bold", isResolved ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : blocker.avatarColor)}>{blocker.initials}</AvatarFallback>
-                          </Avatar>
-                          <span className={cn("font-bold text-sm", isResolved ? "text-slate-500 dark:text-slate-400 line-through decoration-slate-300 dark:decoration-slate-600" : "text-slate-900 dark:text-white")}>{blocker.user}</span>
-                        </div>
-                        <Badge variant="outline" className={cn("text-[10px]", isResolved ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" : blocker.priorityColor)}>
-                          {isResolved ? "Resolved" : blocker.priority}
-                        </Badge>
-                      </div>
-                      <p className={cn("text-sm font-medium ml-8", isResolved ? "text-slate-400 dark:text-slate-500" : "text-slate-600 dark:text-slate-400")}>
-                        {blocker.message}
-                      </p>
-                      
-                      {!isResolved && (
-                        <div className="flex items-center gap-3 ml-8 mt-1 relative z-10">
-                          <Button 
-                            onClick={() => {
-                              setBlockers((prev: any[]) => prev.map((b: any) => b.id === blocker.id ? { ...b, resolved: true } : b));
-                              import('sonner').then(m => m.toast.success('Blocker Resolved', { description: `Resolved for ${blocker.user}. The employee has been notified directly.` }));
-                            }}
-                            variant="ghost" 
-                            size="sm" 
-                            className={cn("h-7 text-xs px-2 font-bold cursor-pointer", blocker.textColor, blocker.hoverTextColor, blocker.hoverBgColor)}
-                          >
-                            Resolve
-                          </Button>
-                          <Button 
-                            onClick={() => setMessageUser(blocker.user)}
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-7 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold cursor-pointer"
-                          >
-                            Message
-                          </Button>
-                        </div>
-                      )}
-                      {(blocker as any).managerMessage && (
-                        <div className={cn("ml-8 mt-2 p-3 rounded-xl border shadow-sm relative overflow-hidden", isResolved ? "bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100/50 dark:border-emerald-800/30 opacity-75" : "bg-white/60 dark:bg-slate-900/50 border-slate-100 dark:border-slate-700/50")}>
-                          <div className={cn("absolute left-0 top-0 bottom-0 w-1", isResolved ? "bg-emerald-500/30" : "bg-orange-500/50")}></div>
-                          <p className={cn("text-[10px] font-bold uppercase tracking-wider mb-1", isResolved ? "text-emerald-600/70 dark:text-emerald-400/70" : "text-slate-500 dark:text-slate-400")}>Your Reply</p>
-                          <p className={cn("text-sm italic font-medium", isResolved ? "text-emerald-700 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200")}>"{(blocker as any).managerMessage}"</p>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+
 
       <AssignTaskDialog open={isAssignTaskOpen} onOpenChange={setIsAssignTaskOpen} />
 
@@ -1113,7 +991,7 @@ function ManagerDashboardInner() {
                         </Badge>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Progress value={project?.progress} className="h-1.5 flex-1 bg-slate-200 dark:bg-slate-800" />
+                        <Progress value={project?.progress} className="h-1.5 flex-1 bg-slate-200 dark:bg-slate-700" />
                         <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 w-8">{project?.progress}%</span>
                       </div>
                     </div>

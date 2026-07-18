@@ -7,7 +7,7 @@ import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import ProjectDetails from '@/components/projects/ProjectDetails';
 import { Badge } from '@/components/ui/badge';
-import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
+
 
 // --- Mock Data ---
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -43,14 +43,14 @@ export default function Projects({ session }: { session?: any }) {
     fetchLeads();
   }, []);
   const [selectedWeekDate, setSelectedWeekDate] = useState<Date>(new Date());
-  
+
   const role = session?.user?.user_metadata?.role || 'intern';
-  
+
   const baseProjects = (role === 'manager' || role === 'admin' ? projects : [projects[0]]).filter(Boolean);
 
   const handleSaveProject = () => {
     if (!newProject.name) return;
-    
+
     if (editingProjectId) {
       updateProject(editingProjectId, {
         name: newProject.name,
@@ -67,7 +67,7 @@ export default function Projects({ session }: { session?: any }) {
         { iconColor: 'bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400', strokeColor: '#db2777' }
       ];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      
+
       const project = {
         id: Date.now().toString(),
         name: newProject.name,
@@ -82,7 +82,7 @@ export default function Projects({ session }: { session?: any }) {
         deadline: newProject.deadline || 'TBD',
         budget: newProject.budget ? (newProject.budget.toString().startsWith('$') ? newProject.budget : `$${newProject.budget}`) : 'TBD'
       };
-      
+
       addProject(project);
       addNotification({
         type: 'success',
@@ -93,7 +93,7 @@ export default function Projects({ session }: { session?: any }) {
         group: 'Today',
       });
     }
-    
+
     setIsModalOpen(false);
     setEditingProjectId(null);
     setNewProject({ name: '', manager: '', managerId: '', deadline: '', budget: '', priority: 'Medium', tasks: [] });
@@ -110,7 +110,7 @@ export default function Projects({ session }: { session?: any }) {
 
   const groupedProjects = React.useMemo(() => {
     const seed = selectedWeekDate.getDate();
-    
+
     // Vibrant distinct color palette for timeline
     const PROJECT_PALETTE = [
       { bg: 'bg-rose-50 dark:bg-rose-500/15', text: 'text-rose-600 dark:text-rose-400', stroke: '#e11d48', border: 'border-rose-200 dark:border-rose-500/30' },
@@ -129,12 +129,12 @@ export default function Projects({ session }: { session?: any }) {
         // Waterfall logic so tasks don't overlap randomly
         const start = tIndex % 5; // 0, 1, 2, 3, 4
         let duration = 2 + (tIndex % 3); // 2, 3, 4
-        
+
         // Ensure it fits within the 7-day grid
         if (start + duration > 7) {
           duration = 7 - start;
         }
-        
+
         pTasks.push({
           id: t.id + seed + tIndex,
           name: t.title,
@@ -164,7 +164,7 @@ export default function Projects({ session }: { session?: any }) {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
-      
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -190,15 +190,15 @@ export default function Projects({ session }: { session?: any }) {
             <h3 className="font-bold text-slate-900 dark:text-white">Active Projects</h3>
           </div>
           <div className="flex space-x-4 text-sm font-bold">
-            <button 
+            <button
               onClick={() => setActiveTab('All')}
               className={cn("pb-1", activeTab === 'All' ? "text-slate-900 dark:text-white border-b-2 border-orange-600 dark:border-orange-400" : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300")}
             >All</button>
-            <button 
+            <button
               onClick={() => setActiveTab('Active')}
               className={cn("pb-1", activeTab === 'Active' ? "text-slate-900 dark:text-white border-b-2 border-orange-600 dark:border-orange-400" : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300")}
             >Active</button>
-            <button 
+            <button
               onClick={() => setActiveTab('Completed')}
               className={cn("pb-1", activeTab === 'Completed' ? "text-slate-900 dark:text-white border-b-2 border-orange-600 dark:border-orange-400" : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300")}
             >Completed</button>
@@ -210,8 +210,8 @@ export default function Projects({ session }: { session?: any }) {
             const completedTasks = project.tasks.filter((t: any) => t.status === 'Done').length;
             const totalTasks = project.tasks.length;
             const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-            const isPastDue = project.deadline && project.deadline !== 'TBD' && new Date(project.deadline).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
-            
+            const isPastDue = project.deadline && project.deadline !== 'TBD' && new Date(project.deadline).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
+
             // Mock avatars for premium look
             const mockAvatars = [
               `https://i.pravatar.cc/150?u=${project.id}1`,
@@ -220,20 +220,20 @@ export default function Projects({ session }: { session?: any }) {
             ];
 
             return (
-              <div 
-                key={project.id} 
+              <div
+                key={project.id}
                 className="group relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/80 dark:border-slate-800/80 rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_20px_40px_rgb(0,0,0,0.5)] hover:bg-white/90 dark:hover:bg-slate-900/90 transition-all duration-500 hover:-translate-y-1.5 cursor-pointer overflow-hidden flex flex-col"
                 onClick={() => setSelectedProject(project)}
               >
                 {/* Premium Background Gradient Glow */}
-                <div 
-                  className="absolute -right-20 -top-20 w-40 h-40 rounded-full blur-[70px] opacity-20 group-hover:opacity-50 transition-opacity duration-700 pointer-events-none" 
+                <div
+                  className="absolute -right-20 -top-20 w-40 h-40 rounded-full blur-[70px] opacity-20 group-hover:opacity-50 transition-opacity duration-700 pointer-events-none"
                   style={{ backgroundColor: project.strokeColor || '#f97316' }}
                 />
-                
+
                 <div className="p-5 relative z-10 border-b border-slate-200/50 dark:border-slate-800/50">
                   <div className="flex justify-between items-start mb-4">
-                    <div 
+                    <div
                       className={cn(
                         "h-11 w-11 rounded-xl flex items-center justify-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] dark:shadow-[inset_0_2px_4px_rgba(255,255,255,0.05)] border border-slate-100/50 dark:border-slate-800/50 backdrop-blur-md relative overflow-hidden",
                         project.iconColor
@@ -242,13 +242,13 @@ export default function Projects({ session }: { session?: any }) {
                       <div className="absolute inset-0 opacity-20 bg-gradient-to-br from-white to-transparent" />
                       <LayoutTemplate className="h-5 w-5 relative z-10" />
                     </div>
-                    
+
                     <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                       <Badge variant={
-                        project.status === 'Completed' ? 'default' : 
-                        project.status === 'In Progress' ? 'secondary' : 
-                        project.status === 'Aborted' ? 'destructive' :
-                        'outline'
+                        project.status === 'Completed' ? 'default' :
+                          project.status === 'In Progress' ? 'secondary' :
+                            project.status === 'Aborted' ? 'destructive' :
+                              'outline'
                       } className={cn(
                         "font-black tracking-widest uppercase text-[8px] px-2 py-0.5 rounded-md backdrop-blur-md border",
                         project.status === 'Completed' && "bg-emerald-500/10 text-emerald-700 border-emerald-200/50 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30",
@@ -259,7 +259,7 @@ export default function Projects({ session }: { session?: any }) {
                       )}>
                         {project.status}
                       </Badge>
-                      
+
                       {(role === 'manager' || role === 'admin') && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -306,7 +306,7 @@ export default function Projects({ session }: { session?: any }) {
                       )}
                     </div>
                   </div>
-                  
+
                   <div>
                     <h4 className="text-lg font-black text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors line-clamp-1 tracking-tight">{project.name}</h4>
                     <div className="flex items-center gap-2 mt-2">
@@ -321,7 +321,7 @@ export default function Projects({ session }: { session?: any }) {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="p-5 bg-slate-50/50 dark:bg-slate-900/30 flex-1 flex flex-col justify-between space-y-4 relative z-10">
                   <div className="flex justify-between items-center bg-white/50 dark:bg-slate-950/50 p-3 rounded-xl border border-slate-100/50 dark:border-slate-800/50 backdrop-blur-sm">
                     <div className="flex flex-col">
@@ -342,20 +342,20 @@ export default function Projects({ session }: { session?: any }) {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider">
                       <span className="text-slate-500 dark:text-slate-400">{completedTasks} / {totalTasks} Tasks</span>
                       <span className="text-slate-800 dark:text-white">{progress}%</span>
                     </div>
                     <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner relative">
-                      <div 
-                        className="absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out" 
-                        style={{ 
+                      <div
+                        className="absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out"
+                        style={{
                           width: `${progress}%`,
                           backgroundColor: project.strokeColor || '#f97316',
                           boxShadow: `0 0 8px ${project.strokeColor || '#f97316'}80`
-                        }} 
+                        }}
                       />
                     </div>
                   </div>
@@ -367,7 +367,7 @@ export default function Projects({ session }: { session?: any }) {
       </div>
 
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-        
+
         {/* Panel Toolbar */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
           <div className="flex items-center space-x-2">
@@ -395,7 +395,7 @@ export default function Projects({ session }: { session?: any }) {
         {/* Gantt Chart Container */}
         <div className="p-6 overflow-x-auto hide-scrollbar">
           <div className="min-w-[700px]">
-            
+
             {/* Timeline Header (Days) */}
             <div className="flex">
               {/* Spacer for task names */}
@@ -413,11 +413,11 @@ export default function Projects({ session }: { session?: any }) {
 
             {/* Gantt Rows */}
             <div className="mt-6 space-y-8 relative">
-              
+
               {/* Vertical Grid Lines */}
               <div className="absolute inset-0 flex ml-48 pointer-events-none">
                 <div className="flex-1 grid grid-cols-7 gap-2 h-full">
-                  {[0,1,2,3,4,5,6].map(i => (
+                  {[0, 1, 2, 3, 4, 5, 6].map(i => (
                     <div key={i} className="border-r border-slate-100 dark:border-slate-700/80 h-full"></div>
                   ))}
                 </div>
@@ -430,7 +430,7 @@ export default function Projects({ session }: { session?: any }) {
                   <div className={cn("flex items-center justify-between mb-3 px-4 py-2.5 rounded-xl border w-full col-span-full shadow-sm", project.headerBg, project.headerBorder)}>
                     <div className="flex items-center gap-3">
                       <div className={cn("h-6 w-6 rounded-md flex items-center justify-center shadow-sm", project.iconColor)}>
-                         <FolderKanban className="h-3 w-3" />
+                        <FolderKanban className="h-3 w-3" />
                       </div>
                       <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">{project.name}</p>
                     </div>
@@ -441,28 +441,28 @@ export default function Projects({ session }: { session?: any }) {
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline-block">Lead: {project.manager}</span>
                     </div>
                   </div>
-                  
+
                   {/* Task Bars or Completed Status */}
                   {project.isCompleted ? (
                     <div className="flex items-center relative group animate-in fade-in slide-in-from-right-4 duration-500">
                       <div className="w-48 shrink-0 pr-4 border-l-4 pl-3 py-1 border-emerald-500">
-                         <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Completed</p>
-                         <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">Execution Finished</p>
+                        <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Completed</p>
+                        <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">Execution Finished</p>
                       </div>
                       <div className="flex-1">
                         <div className="h-8 rounded-lg shadow-sm flex items-center justify-between px-4 text-xs font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 w-full col-span-full">
-                           <div className="flex items-center">
-                             <CheckSquare className="h-4 w-4 mr-2" />
-                             Project Execution Finished
-                           </div>
-                           <div className="flex items-center space-x-3 text-[10px]">
-                             <span className="bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded-md border border-emerald-200/50 dark:border-emerald-800/30">
-                               {project.tasks?.length * 4 || 0} Days Taken
-                             </span>
-                             <span className="bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded-md border border-emerald-200/50 dark:border-emerald-800/30 text-emerald-800 dark:text-emerald-300">
-                               {(project.tasks?.length * 4 || 0) * 8} Hours Logged
-                             </span>
-                           </div>
+                          <div className="flex items-center">
+                            <CheckSquare className="h-4 w-4 mr-2" />
+                            Project Execution Finished
+                          </div>
+                          <div className="flex items-center space-x-3 text-[10px]">
+                            <span className="bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded-md border border-emerald-200/50 dark:border-emerald-800/30">
+                              {project.tasks?.length * 4 || 0} Days Taken
+                            </span>
+                            <span className="bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded-md border border-emerald-200/50 dark:border-emerald-800/30 text-emerald-800 dark:text-emerald-300">
+                              {(project.tasks?.length * 4 || 0) * 8} Hours Logged
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -470,21 +470,21 @@ export default function Projects({ session }: { session?: any }) {
                     project.timelineTasks.map((task: any) => (
                       <div key={task.id} className="flex items-center relative group animate-in fade-in slide-in-from-right-4 duration-500">
                         {/* Task Name Label */}
-                        <div 
+                        <div
                           className="w-48 shrink-0 pr-4 border-l-4 pl-3 py-1"
                           style={{ borderColor: project.strokeColor || '#cbd5e1' }}
                         >
                           <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{task.name}</p>
                           <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">{task.assignee}</p>
                         </div>
-                        
+
                         {/* Task Timeline Bar */}
                         <div className="flex-1 grid grid-cols-7 gap-2">
                           <Popover>
                             <PopoverTrigger asChild>
-                              <div 
+                              <div
                                 className="h-8 rounded-lg shadow-sm flex items-center px-3 text-xs font-bold text-white whitespace-nowrap overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md cursor-pointer"
-                                style={{ 
+                                style={{
                                   gridColumn: `${task.start + 1} / span ${task.duration}`,
                                   backgroundColor: project.strokeColor || '#f97316'
                                 }}
@@ -555,7 +555,7 @@ export default function Projects({ session }: { session?: any }) {
                   className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Project Lead</label>
@@ -630,23 +630,23 @@ export default function Projects({ session }: { session?: any }) {
               <div className="space-y-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Tasks & Assignees</label>
-                  <button 
+                  <button
                     className="text-xs font-bold text-orange-600 hover:text-orange-700 dark:text-orange-500 flex items-center"
-                    onClick={() => setNewProject({...newProject, tasks: [...newProject.tasks, { id: Date.now().toString(), title: '', assignee: 'Unassigned', status: 'To Do' }]})}
+                    onClick={() => setNewProject({ ...newProject, tasks: [...newProject.tasks, { id: Date.now().toString(), title: '', assignee: 'Unassigned', status: 'To Do' }] })}
                   >
                     <Plus className="h-3 w-3 mr-1" /> Add Task
                   </button>
                 </div>
                 {newProject.tasks.map((task, index) => (
                   <div key={task.id} className="flex gap-2">
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="e.g. Design Dashboard"
                       value={task.title}
                       onChange={e => {
                         const updated = [...newProject.tasks];
                         updated[index].title = e.target.value;
-                        setNewProject({...newProject, tasks: updated});
+                        setNewProject({ ...newProject, tasks: updated });
                       }}
                       className="flex-1 h-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     />
@@ -665,8 +665,8 @@ export default function Projects({ session }: { session?: any }) {
                               const isSelected = assignees.includes(member.name);
                               return (
                                 <label key={member.id} className="flex items-center px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer">
-                                  <input 
-                                    type="radio" 
+                                  <input
+                                    type="radio"
                                     checked={isSelected}
                                     onChange={() => {
                                       const updated = [...newProject.tasks];
@@ -677,7 +677,7 @@ export default function Projects({ session }: { session?: any }) {
                                         updated[index].assignee = member.name;
                                         updated[index].assigneeId = member.id;
                                       }
-                                      setNewProject({...newProject, tasks: updated});
+                                      setNewProject({ ...newProject, tasks: updated });
                                     }}
                                     className="mr-3 h-4 w-4 rounded-full border-slate-300 text-orange-600 focus:ring-orange-600 cursor-pointer accent-orange-600"
                                   />
@@ -689,10 +689,10 @@ export default function Projects({ session }: { session?: any }) {
                         </PopoverContent>
                       </Popover>
                     </div>
-                    <button 
+                    <button
                       onClick={() => {
                         const updated = newProject.tasks.filter((_, i) => i !== index);
-                        setNewProject({...newProject, tasks: updated});
+                        setNewProject({ ...newProject, tasks: updated });
                       }}
                       className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
                     >
@@ -710,8 +710,8 @@ export default function Projects({ session }: { session?: any }) {
               <button className="flex-1 h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm" onClick={() => setIsModalOpen(false)}>
                 Cancel
               </button>
-              <button 
-                className="flex-1 h-12 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-md shadow-orange-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+              <button
+                className="flex-1 h-12 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-md shadow-orange-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleSaveProject}
                 disabled={newProject.name.trim().length < 3}
               >
@@ -724,4 +724,4 @@ export default function Projects({ session }: { session?: any }) {
     </div>
   );
 }
- 
+
