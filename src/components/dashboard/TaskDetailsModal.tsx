@@ -29,6 +29,7 @@ export interface Task {
   milestone?: string;
   created_at?: string;
   status: Status;
+  project_status?: string;
 }
 
 export interface Comment {
@@ -100,13 +101,14 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
   if (!editedTask) return null;
 
+  const isAborted = task?.project_status === 'aborted';
   const isManager = currentUser.role === 'manager';
   const isAdmin = currentUser.role === 'admin';
-  const canEditStatus = isManager || (currentUser.role === 'intern' && currentUser.id === task?.assignee_id);
+  const canEditMainFields = !isAborted && (isManager || isAdmin);
+  const canEditStatus = !isAborted && (isManager || (currentUser.role === 'intern' && currentUser.id === task?.assignee_id));
 
   const handleUpdateField = (field: keyof Task, value: any) => {
-    if (isAdmin) return;
-    if (!isManager && field !== 'status') return; // Extra safety guard
+    if (!canEditMainFields) return;
     setEditedTask(prev => prev ? { ...prev, [field]: value } : null);
     setHasChanges(true);
   };
@@ -154,6 +156,11 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
   return (
     <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden bg-white dark:bg-slate-950 p-0 gap-0 border-slate-200 dark:border-slate-700/60 rounded-xl shadow-2xl flex flex-col">
+        {isAborted && (
+          <div className="bg-red-500/10 text-red-600 dark:text-red-400 p-3 text-sm text-center font-medium border-b border-red-500/20">
+            This project has been aborted. Tasks cannot be modified until restored.
+          </div>
+        )}
 
         {/* Header Section */}
         <DialogHeader className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 shrink-0 text-left">
@@ -168,7 +175,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
             )}
             <div className="flex items-center space-x-2">
               <Tag className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-              {isManager ? (
+              {canEditMainFields ? (
                 <input 
                   type="text" 
                   value={editedTask.project_tag}
@@ -180,7 +187,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
               )}
             </div>
 
-            {isManager ? (
+            {canEditMainFields ? (
               <input 
                 type="text" 
                 value={editedTask.title}
@@ -206,7 +213,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
               <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
                 <Clock className="h-3.5 w-3.5 mr-1.5" /> Priority Level
               </label>
-              {isManager ? (
+              {canEditMainFields ? (
                 <div className="relative">
                   <select 
                     value={editedTask.priority}
@@ -242,7 +249,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-500/20 text-xs font-bold text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20">
                   {getInitials(editedTask.assignee_name)}
                 </div>
-                {isManager ? (
+                {canEditMainFields ? (
                   <select
                     value={editedTask.assignee_id}
                     onChange={(e) => {
@@ -273,7 +280,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
               <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
                 <Calendar className="h-3.5 w-3.5 mr-1.5" /> Target Deadline
               </label>
-              {isManager ? (
+              {canEditMainFields ? (
                 <input 
                   type="date"
                   value={editedTask.due_date ? new Date(editedTask.due_date).toISOString().split('T')[0] : ''}
@@ -292,7 +299,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
               <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
                 <Activity className="h-3.5 w-3.5 mr-1.5" /> Current Status
               </label>
-              {isManager ? (
+              {canEditStatus ? (
                 <div className="relative">
                   <select 
                     value={editedTask.status}
@@ -319,7 +326,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
           {/* Description */}
           <div>
             <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Detailed Context</label>
-            {isManager ? (
+            {canEditMainFields ? (
               <textarea 
                 value={editedTask.description}
                 onChange={(e) => handleUpdateField('description', e.target.value)}
@@ -334,7 +341,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
           </div>
 
           {/* Status Automated Transitions for Interns */}
-          {!isManager && !isAdmin && (currentUser.id === editedTask.assignee_id || currentUser.name === editedTask.assignee_name || (currentUser.name.toLowerCase().includes('tanvy') && editedTask.assignee_name.toLowerCase().includes('tanvy'))) && (
+          {canEditStatus && (
             <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-xl p-4 mt-2">
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Quick Action</span>
@@ -470,14 +477,17 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
         </div>
 
         {/* Save Changes Footer */}
-        {(isManager || canEditStatus) && hasChanges && (
-          <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/30 flex justify-end shrink-0">
-            <Button 
-              onClick={handleSaveChanges} 
-              className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 shadow-md transition-all hover:-translate-y-0.5 active:translate-y-0"
-            >
-              Save Changes
-            </Button>
+        {(isManager || canEditStatus) && hasChanges && !isAborted && (
+          <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50 flex justify-between shrink-0">
+            <div className="text-sm text-slate-500 dark:text-slate-400 self-center">
+              Last updated just now
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onClose} className="rounded-lg">Close</Button>
+              <Button onClick={handleSaveChanges} className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+                Save Changes
+              </Button>
+            </div>
           </div>
         )}
 

@@ -84,6 +84,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
           description: t.desc || '',
           project_tag: t.project?.name || 'General',
           projectId: t.projectId,
+          project_status: t.project?.status || 'active',
           assignee_name: t.assignee?.name || 'Unassigned',
           assignee_id: t.assigneeId || 'unassigned',
           priority: t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
@@ -585,6 +586,9 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                           task.priority === 'Normal' || task.priority === 'Medium' ? "border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:bg-amber-500/10" : 
                           "border-slate-200 text-slate-600 bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:bg-slate-800"
                         )}>{task.priority}</Badge>
+                        {task.project_status === 'aborted' && (
+                          <Badge variant="destructive" className="text-[10px] uppercase tracking-wider font-bold rounded bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200/50">Aborted</Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
                         <span className="flex items-center"><LayoutDashboard className="h-3 w-3 mr-1" /> {task.project_tag}</span>

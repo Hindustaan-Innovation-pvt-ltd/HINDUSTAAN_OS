@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayCircle, CheckCircle2, ChevronLeft, ChevronRight, FolderKanban, AlertTriangle, Loader2, Tag } from 'lucide-react';
 import { cn, logActivity } from '@/lib/utils';
+import { Badge } from "@/components/ui/badge";
 import TaskDetailsModal from '../components/dashboard/TaskDetailsModal';
 import CreateTaskModal from '../components/dashboard/CreateTaskModal';
 import api from '@/lib/api';
@@ -22,6 +23,7 @@ interface Task {
   priority: Priority;
   due_date: string;
   status: Status;
+  project_status?: string;
 }
 
 const COLUMNS: Status[] = ['To Do', 'In Progress', 'In Review', 'Done'];
@@ -114,6 +116,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
       description: t.desc || t.description || '',
       project_tag: t.project_tag || t.project?.name || 'General',
       projectId: t.projectId,
+      project_status: t.project_status || t.project?.status,
       assignee_name: t.assignee_name || t.assignee?.name || 'Unassigned',
       assignee_id: t.assignee_id || t.assigneeId || 'unassigned',
       priority: t.priority === 'High' ? 'High' : t.priority === 'Low' ? 'Low' : t.priority === 'Normal' ? 'Normal' : t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
@@ -470,13 +473,14 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                   ) : (
                     columnTasks.map(task => {
                       const isPastDue = task.due_date && new Date(task.due_date).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
+                      const isAborted = task.project_status === 'aborted';
                       return (
                         <div
                           key={task.id}
-                          draggable={currentUser.role === 'manager'}
+                          draggable={currentUser.role === 'manager' && !isAborted}
                           onClick={() => setSelectedTask(task)}
-                          onDragStart={currentUser.role === 'manager' ? (e) => handleDragStart(e, task.id) : undefined}
-                          onDragEnd={currentUser.role === 'manager' ? handleDragEnd : undefined}
+                          onDragStart={(currentUser.role === 'manager' && !isAborted) ? (e) => handleDragStart(e, task.id) : undefined}
+                          onDragEnd={(currentUser.role === 'manager' && !isAborted) ? handleDragEnd : undefined}
                           className={cn(
                             "group bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-md dark:shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer",
                             currentUser.role === 'manager' && "active:cursor-grabbing",
@@ -490,6 +494,9 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                               <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider truncate">
                                 {task.project_tag}
                               </span>
+                              {isAborted && (
+                                <Badge variant="destructive" className="text-[8px] py-0 px-1 ml-1 leading-tight uppercase bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200/50">Aborted</Badge>
+                              )}
                             </div>
                             <PriorityBadge priority={task.priority} isEmployeeDashboard={currentUser.role === 'intern'} />
                           </div>
