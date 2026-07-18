@@ -264,8 +264,17 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                 </div>
                 <div className="space-y-3 flex-1">
                   {tasks.filter((t: any) => t?.status === status).map((task: any, i: number) => (
-                    <div key={task?.id || i} className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white mb-3">{task?.title}</p>
+                    <div key={task?.id || i} className={cn("bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm transition-shadow",
+                      project?.status === 'Aborted' ? "opacity-75 grayscale cursor-not-allowed" : "hover:shadow-md cursor-pointer"
+                    )}>
+                      <div className="flex flex-col gap-2 mb-3">
+                        <p className={cn("text-sm font-semibold leading-tight",
+                          project?.status === 'Aborted' ? "text-slate-500 dark:text-slate-400 line-through" : "text-slate-900 dark:text-white"
+                        )}>{task?.title}</p>
+                        {project?.status === 'Aborted' && (
+                          <Badge variant="destructive" className="w-fit text-[8px] py-0 px-1 leading-tight uppercase bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200/50">Aborted</Badge>
+                        )}
+                      </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                           <Users className="h-3 w-3 text-slate-400" />

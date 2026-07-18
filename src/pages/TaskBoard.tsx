@@ -483,8 +483,9 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                           onDragEnd={(currentUser.role === 'manager' && !isAborted) ? handleDragEnd : undefined}
                           className={cn(
                             "group bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-md dark:shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer",
-                            currentUser.role === 'manager' && "active:cursor-grabbing",
+                            currentUser.role === 'manager' && !isAborted && "active:cursor-grabbing",
                             draggedTaskId === task.id ? "absolute opacity-0 pointer-events-none" : "relative opacity-100",
+                            isAborted && "opacity-75 grayscale bg-slate-50 dark:bg-slate-900/40 border-red-200 dark:border-red-900/50 hover:shadow-none hover:translate-y-0 cursor-not-allowed"
                           )}
                         >
                           {/* Project Tag & Priority */}
@@ -502,10 +503,15 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                           </div>
 
                           {/* Title & Description */}
-                          <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1 leading-tight group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                          <h4 className={cn("text-sm font-bold text-slate-900 dark:text-white mb-1 leading-tight transition-colors", 
+                            !isAborted && "group-hover:text-orange-600 dark:group-hover:text-orange-400",
+                            isAborted && "line-through text-slate-500 dark:text-slate-400"
+                          )}>
                             {task.title}
                           </h4>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4">
+                          <p className={cn("text-xs line-clamp-2 mb-4", 
+                            isAborted ? "text-slate-400 dark:text-slate-500 line-through" : "text-slate-500 dark:text-slate-400"
+                          )}>
                             {task.description}
                           </p>
 
