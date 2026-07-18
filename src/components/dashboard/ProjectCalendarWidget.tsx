@@ -58,6 +58,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
 import { useNotifications } from '@/context/NotificationContext';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Switch } from '@/components/ui/switch';
 
 // Data Structures
 type EventType = 'deadline' | 'completed' | 'milestone' | 'leave' | 'meeting';
@@ -276,6 +277,9 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
     const saved = localStorage.getItem('hindustaan_project_end_date');
     return saved ? new Date(saved) : DEFAULT_END_DATE;
   });
+  const [isAutoCalculated, setIsAutoCalculated] = useState(() => {
+    return localStorage.getItem('hindustaan_timeline_auto') !== 'false';
+  });
   const [events, setEvents] = useState<ProjectEvent[]>(() => {
     const saved = localStorage.getItem('hindustaan_calendar_events');
     if (saved) {
@@ -402,7 +406,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
   }, [events, projectEvents]);
 
   const { effectiveStartDate, effectiveEndDate } = useMemo(() => {
-    if (projectEvents.length === 0) return { effectiveStartDate: startDate, effectiveEndDate: endDate };
+    if (!isAutoCalculated || projectEvents.length === 0) return { effectiveStartDate: startDate, effectiveEndDate: endDate };
     const dates = projectEvents.map(e => e.date.getTime());
     const min = new Date(Math.min(...dates));
     const max = new Date(Math.max(...dates));
@@ -411,7 +415,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
       effectiveStartDate: new Date(min.getFullYear(), min.getMonth(), 1),
       effectiveEndDate: new Date(max.getFullYear(), max.getMonth() + 1, 0)
     };
-  }, [projectEvents, startDate, endDate]);
+  }, [projectEvents, startDate, endDate, isAutoCalculated]);
 
   // Dynamic calculations based on today
   const today = new Date();
@@ -444,17 +448,17 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const title = formData.get('title') as string;
-    const dateStr = formData.get('date') as string;
     const timeStr = formData.get('time') as string;
     const type = (formData.get('type') || (scheduleType === 'event' ? 'milestone' : 'sync')) as EventType;
 
-    if (!title || !dateStr) return;
+    if (!title || !scheduleDate) {
+      if (!scheduleDate) toast.error('Please pick a date first.');
+      return;
+    }
     
-    // Parse the local date string to avoid timezone shifts
-    const [year, month, day] = dateStr.split('-').map(Number);
     const newEvent: ProjectEvent = {
       id: Math.random().toString(),
-      date: new Date(year, month - 1, day),
+      date: scheduleDate,
       type: type,
       title: title,
       time: timeStr,
@@ -505,28 +509,75 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">Timeline Settings</DialogTitle>
             <DialogDescription className="text-slate-500 font-medium">
-              The project timeline dates are now calculated dynamically based on active project tasks and milestones!
+              Choose whether to auto-calculate the timeline from active tasks or set it manually.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Start Date (Auto-calculated)</Label>
-              <Input 
-                type="date" 
-                value={format(effectiveStartDate, 'yyyy-MM-dd')} 
-                disabled
-                className="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white opacity-70"
+            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+              <div className="flex flex-col gap-0.5">
+                <Label className="text-sm font-bold text-slate-900 dark:text-white">Auto-calculate Dates</Label>
+                <span className="text-xs text-slate-500 dark:text-slate-400">Sync with tasks and milestones</span>
+              </div>
+              <Switch 
+                checked={isAutoCalculated} 
+                onCheckedChange={(val) => {
+                  setIsAutoCalculated(val);
+                  localStorage.setItem('hindustaan_timeline_auto', val ? 'true' : 'false');
+                }} 
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">End Date (Auto-calculated)</Label>
-              <Input 
-                type="date" 
-                value={format(effectiveEndDate, 'yyyy-MM-dd')}
-                disabled
-                className="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white opacity-70"
-              />
-            </div>
+            
+            {isAutoCalculated ? (
+              <>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Start Date (Auto)</Label>
+                  <Input 
+                    type="date" 
+                    value={format(effectiveStartDate, 'yyyy-MM-dd')} 
+                    disabled
+                    className="w-full bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white opacity-70"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">End Date (Auto)</Label>
+                  <Input 
+                    type="date" 
+                    value={format(effectiveEndDate, 'yyyy-MM-dd')}
+                    disabled
+                    className="w-full bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white opacity-70"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Start Date</Label>
+                  <DatePicker 
+                    value={startDate}
+                    onChange={(d) => {
+                      if (d) {
+                        setStartDate(d);
+                        localStorage.setItem('hindustaan_project_start_date', d.toISOString());
+                      }
+                    }}
+                    className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">End Date</Label>
+                  <DatePicker 
+                    value={endDate}
+                    onChange={(d) => {
+                      if (d) {
+                        setEndDate(d);
+                        localStorage.setItem('hindustaan_project_end_date', d.toISOString());
+                      }
+                    }}
+                    className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
+                  />
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter className="pt-4 sm:justify-end">
             <Button onClick={() => setIsSettingsOpen(false)} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white">Close</Button>
@@ -908,8 +959,8 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
 
       {/* Event History Modal */}
       <Dialog open={isAllEventsOpen} onOpenChange={setIsAllEventsOpen}>
-        <DialogContent className="sm:max-w-[425px] md:max-w-[600px] rounded-3xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800 p-0 overflow-hidden shadow-2xl">
-          <div className="bg-slate-50/50 dark:bg-slate-900/20 p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60">
+        <DialogContent className="sm:max-w-[425px] md:max-w-[600px] rounded-3xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800 p-0 overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+          <div className="bg-slate-50/50 dark:bg-slate-900/20 p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 shrink-0">
             <DialogHeader>
               <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white flex items-center">
                 <Clock className="mr-3 h-6 w-6 text-orange-500" />
@@ -920,9 +971,8 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
               </DialogDescription>
             </DialogHeader>
           </div>
-          <div className="p-6 pt-4">
-            <ScrollArea className="max-h-[50vh] pr-4">
-              <div className="space-y-4">
+          <ScrollArea className="flex-1">
+            <div className="p-6 pt-4 space-y-4 pr-4">
                 {[...allEvents]
                   .sort((a, b) => b.date.getTime() - a.date.getTime())
                   .map((evt) => {
@@ -976,7 +1026,6 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
                 )}
               </div>
             </ScrollArea>
-          </div>
         </DialogContent>
       </Dialog>
 
