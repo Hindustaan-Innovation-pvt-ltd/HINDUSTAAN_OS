@@ -13,7 +13,7 @@ import {
 import { format, isSameDay, isBefore, isAfter, startOfDay, addDays, parseISO, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
+import { Calendar, CalendarDayButton } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -54,6 +54,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
 import { useNotifications } from '@/context/NotificationContext';
+import { DatePicker } from '@/components/ui/date-picker';
 
 // Data Structures
 type EventType = 'deadline' | 'completed' | 'milestone' | 'leave' | 'meeting';
@@ -79,13 +80,88 @@ const MOCK_EVENTS: ProjectEvent[] = [
   { id: '5', date: new Date(2026, 7, 1), type: 'milestone', title: 'Alpha Release', assignees: [{ name: 'Team', initials: 'TM' }] },
 ];
 
-export function ProjectCalendarWidget() {
+const getEventColor = (type: string) => {
+  switch(type) {
+    case 'deadline': return 'bg-rose-500';
+    case 'meeting': return 'bg-blue-500';
+    case 'milestone': return 'bg-purple-500';
+    case 'completed': return 'bg-emerald-500';
+    case 'leave': return 'bg-amber-500';
+    default: return 'bg-slate-500';
+  }
+};
+
+const CalendarContext = React.createContext<{
+  today: Date;
+  getDayEvents: (date: Date) => ProjectEvent[];
+  handleDayClick: (date: Date) => void;
+} | null>(null);
+
+const CustomDayButton = (props: any) => {
+  const { day, modifiers, onClick, ...rest } = props;
+  const context = React.useContext(CalendarContext);
+  
+  if (!context) return <></>;
+
+  const { today, getDayEvents, handleDayClick } = context;
+  const isTodayDate = isSameDay(day.date, today);
+  const events = getDayEvents(day.date);
+  
+  // Ensure accessibility focus
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  React.useEffect(() => {
+    if (modifiers.focused) buttonRef.current?.focus();
+  }, [modifiers.focused]);
+
+  return (
+    <>
+      <Button
+        ref={buttonRef}
+        variant="ghost"
+        size="icon"
+        {...rest}
+        onClick={(e) => {
+          if (!modifiers.outside) {
+            if (onClick) onClick(e);
+            handleDayClick(day.date);
+          }
+        }}
+        className={cn(
+          "flex aspect-square size-auto w-full min-w-8 flex-col gap-1 items-center justify-center leading-none font-normal relative z-10 transition-colors",
+          "hover:bg-slate-100 dark:hover:bg-slate-800",
+          modifiers.selected 
+            ? "bg-primary text-primary-foreground hover:bg-primary/90 focus:bg-primary focus:text-primary-foreground shadow-sm font-bold" 
+            : "",
+          isTodayDate && !modifiers.selected 
+            ? "text-primary font-bold bg-primary/10" 
+            : "",
+          modifiers.outside ? "text-slate-400 opacity-50 pointer-events-none" : ""
+        )}
+      >
+        <span className={cn("text-sm", events.length > 0 ? "mb-1.5" : "")}>{day.date.getDate()}</span>
+      </Button>
+      
+      {/* Event Dots - Positioned absolutely in the relative TD cell so they never overlap the number */}
+      {!modifiers.outside && events.length > 0 && (
+        <div className="absolute bottom-1 left-0 right-0 flex w-full justify-center gap-0.5 pointer-events-none z-20">
+          {events.slice(0, 3).map((e: any, i: number) => (
+            <div key={i} className={cn("h-1 w-1 rounded-full", getEventColor(e.type), modifiers.selected && "bg-background")} />
+          ))}
+          {events.length > 3 && <div className={cn("h-1 w-1 rounded-full bg-slate-400", modifiers.selected && "bg-background/70")} />}
+        </div>
+      )}
+    </>
+  );
+};
+
+export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget() {
   const [date, setDate] = useState<Date>(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(undefined);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [scheduleType, setScheduleType] = useState<'event'|'meeting'>('event');
+  const [scheduleDate, setScheduleDate] = useState<Date | undefined>(undefined);
 
   const [startDate, setStartDate] = useState<Date>(() => {
     const saved = localStorage.getItem('hindustaan_project_start_date');
@@ -220,21 +296,11 @@ export function ProjectCalendarWidget() {
       description: 'Your calendar has been updated with the new item.',
     });
     setIsScheduleOpen(false);
+    setScheduleDate(undefined);
   };
 
   const getDayEvents = (day: Date) => {
     return events.filter(e => isSameDay(e.date, day));
-  };
-
-  const getEventColor = (type: string) => {
-    switch(type) {
-      case 'deadline': return 'bg-rose-500';
-      case 'meeting': return 'bg-blue-500';
-      case 'milestone': return 'bg-purple-500';
-      case 'completed': return 'bg-emerald-500';
-      case 'leave': return 'bg-amber-500';
-      default: return 'bg-slate-500';
-    }
   };
 
   const getEventBadgeStyles = (type: string) => {
@@ -261,45 +327,43 @@ export function ProjectCalendarWidget() {
       </datalist>
 
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl">
           <DialogHeader>
-            <DialogTitle>Timeline Settings</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">Timeline Settings</DialogTitle>
+            <DialogDescription className="text-slate-500 font-medium">
               Update the project's start and end dates.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Start Date</Label>
-              <Input 
-                type="date" 
-                defaultValue={format(startDate, 'yyyy-MM-dd')} 
-                onChange={(e) => {
-                  const d = new Date(e.target.value);
-                  if (!isNaN(d.getTime())) {
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Start Date</Label>
+              <DatePicker 
+                value={startDate}
+                onChange={(d) => {
+                  if (d) {
                     setStartDate(d);
                     localStorage.setItem('hindustaan_project_start_date', d.toISOString());
                   }
                 }}
+                className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
               />
             </div>
-            <div className="grid gap-2">
-              <Label>End Date</Label>
-              <Input 
-                type="date" 
-                defaultValue={format(endDate, 'yyyy-MM-dd')}
-                onChange={(e) => {
-                  const d = new Date(e.target.value);
-                  if (!isNaN(d.getTime())) {
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">End Date</Label>
+              <DatePicker 
+                value={endDate}
+                onChange={(d) => {
+                  if (d) {
                     setEndDate(d);
                     localStorage.setItem('hindustaan_project_end_date', d.toISOString());
                   }
                 }}
+                className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button onClick={() => setIsSettingsOpen(false)}>Save changes</Button>
+          <DialogFooter className="pt-4 sm:justify-end">
+            <Button onClick={() => setIsSettingsOpen(false)} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white">Save changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -356,87 +420,27 @@ export function ProjectCalendarWidget() {
       <CardContent className="p-0 grid grid-cols-1 xl:grid-cols-2 h-full">
         {/* Left Side: Calendar & Legend */}
         <div className="p-4 sm:p-6 flex flex-col items-center border-b xl:border-b-0 xl:border-r border-slate-100 dark:border-slate-800/60 bg-white dark:bg-slate-950/20 w-full overflow-hidden">
-          <TooltipProvider delayDuration={100}>
-          <Calendar
-            mode="single"
-            selected={selectedDay}
-            onSelect={(day) => day && handleDayClick(day)}
-            month={month}
-            onMonthChange={setMonth}
-            startMonth={startDate}
-            endMonth={endDate}
-            className="rounded-2xl border border-slate-100/50 dark:border-slate-800/50 p-3 sm:p-5 bg-white/60 dark:bg-slate-950/60 shadow-lg shadow-slate-200/20 dark:shadow-none w-full flex justify-center backdrop-blur-md"
-            classNames={{
-              month_caption: "flex justify-center pt-1 pb-3 relative items-center w-full",
-              day: "h-10 w-10 p-0 font-normal aria-selected:opacity-100 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-600 dark:hover:text-orange-400 hover:scale-105 transition-all duration-200 relative cursor-pointer outline-none focus:ring-2 focus:ring-orange-500/50",
-              today: "bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-900/10 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-500/30 shadow-sm",
-              selected: "bg-gradient-to-br from-orange-500 to-rose-500 text-white hover:from-orange-600 hover:to-rose-600 hover:text-white focus:from-orange-600 focus:to-rose-600 focus:text-white font-bold shadow-md shadow-orange-500/30 hover:scale-105 transition-all",
-              weekday: "text-slate-400 dark:text-slate-500 rounded-md w-10 font-bold text-[0.75rem] uppercase tracking-wider",
-              month: "w-full relative text-slate-900 dark:text-white",
-              caption_label: "text-sm font-black text-slate-800 dark:text-slate-100 text-center",
-              button_previous: "h-8 w-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0 opacity-70 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white absolute left-1 flex items-center justify-center transition-all shadow-sm z-10",
-              button_next: "h-8 w-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0 opacity-70 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white absolute right-1 flex items-center justify-center transition-all shadow-sm z-10",
-            }}
-            components={{
-              DayButton: ({ day, modifiers, ...props }) => {
-                const isToday = isSameDay(day.date, today);
-                const events = getDayEvents(day.date);
-                
-                return (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        {...props}
-                        className={cn(
-                          "relative h-10 w-10 rounded-lg flex flex-col items-center justify-center font-semibold text-sm transition-all outline-none",
-                          modifiers.selected ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" : 
-                          isToday ? "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30" : 
-                          "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800",
-                          modifiers.outside && "text-slate-300 dark:text-slate-600 cursor-default hover:bg-transparent"
-                        )}
-                        onClick={(e) => {
-                          if (!modifiers.outside) {
-                            if (props.onClick) props.onClick(e);
-                            handleDayClick(day.date);
-                          }
-                        }}
-                      >
-                        <span>{day.date.getDate()}</span>
-                        
-                        {/* Event Dots */}
-                        {!modifiers.outside && events.length > 0 && (
-                          <div className="absolute bottom-1 flex gap-0.5">
-                            {events.slice(0, 3).map((e, i) => (
-                              <div key={i} className={cn("h-1 w-1 rounded-full", getEventColor(e.type), modifiers.selected && "bg-white")} />
-                            ))}
-                            {events.length > 3 && <div className={cn("h-1 w-1 rounded-full bg-slate-400", modifiers.selected && "bg-white/70")} />}
-                          </div>
-                        )}
-                      </button>
-                    </TooltipTrigger>
-                    {!modifiers.outside && (
-                      <TooltipContent side="right" className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium p-3 rounded-xl shadow-xl border-0 z-[100]">
-                        <p className="font-bold mb-1 border-b border-slate-700 dark:border-slate-200 pb-1">{format(day.date, 'EEEE, MMM d')}</p>
-                        {events.length > 0 ? (
-                          <div className="space-y-1.5 mt-2">
-                            {events.map((e, idx) => (
-                              <div key={idx} className="flex items-center gap-2 text-xs">
-                                <div className={cn("h-2 w-2 rounded-full", getEventColor(e.type))} />
-                                <span>{e.title}</span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 italic">No scheduled events</p>
-                        )}
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                );
-              }
-            }}
-          />
-        </TooltipProvider>
+          <CalendarContext.Provider value={useMemo(() => ({ today, getDayEvents, handleDayClick }), [today, events, handleDayClick])}>
+            <Calendar
+              mode="single"
+              selected={selectedDay}
+              onSelect={(day) => day && handleDayClick(day)}
+              month={month}
+              onMonthChange={setMonth}
+              startMonth={startDate}
+              endMonth={endDate}
+              className="rounded-2xl border border-slate-100/50 dark:border-slate-800/50 p-3 sm:p-5 bg-white/60 dark:bg-slate-950/60 shadow-lg shadow-slate-200/20 dark:shadow-none w-fit mx-auto flex justify-center backdrop-blur-md"
+              classNames={{
+                caption_label: "text-sm font-bold text-slate-900 dark:text-slate-100",
+                button_previous: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-slate-900 dark:text-slate-100 flex items-center justify-center absolute left-1",
+                button_next: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-slate-900 dark:text-slate-100 flex items-center justify-center absolute right-1",
+                weekday: "text-slate-500 rounded-md w-8 font-normal text-[0.8rem] dark:text-slate-400"
+              }}
+              components={{
+                DayButton: CustomDayButton
+              }}
+            />
+          </CalendarContext.Provider>
 
         {/* Legend */}
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 px-2">
@@ -457,7 +461,7 @@ export function ProjectCalendarWidget() {
             </div>
             <div className="space-y-3.5 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
               {upcomingEvents.length > 0 ? upcomingEvents.map((evt) => (
-                <div key={evt.id} onClick={() => setEventToView(evt)} className="group relative flex items-center gap-3.5 p-3 rounded-2xl bg-white dark:bg-slate-950/80 shadow-sm border border-slate-100 dark:border-slate-800/80 hover:border-orange-200 dark:hover:border-orange-900/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 pr-8 cursor-pointer">
+                <div key={evt.id} onClick={() => setEventToView(evt)} className="group relative flex items-center gap-3.5 p-3 rounded-2xl bg-white dark:bg-slate-950/80 shadow-sm border border-slate-100 dark:border-slate-800/80 hover:border-orange-200 dark:hover:border-orange-900/50 hover:shadow-md transition-all duration-300 pr-8 cursor-pointer">
                   <div className="flex flex-col items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/30 dark:to-orange-900/10 shrink-0 border border-orange-100/50 dark:border-orange-500/20 shadow-inner">
                     <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase leading-none mb-0.5 tracking-wider">{format(evt.date, 'MMM')}</span>
                     <span className="text-sm font-black text-orange-700 dark:text-orange-300 leading-none">{format(evt.date, 'dd')}</span>
@@ -643,10 +647,14 @@ export function ProjectCalendarWidget() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2 relative">
                 <Label htmlFor="date" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</Label>
-                <div className="relative">
-                  <Input id="date" name="date" type="date" required className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500 pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
-                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-                </div>
+                <DatePicker 
+                  id="date"
+                  name="date"
+                  value={scheduleDate}
+                  onChange={setScheduleDate}
+                  required
+                  className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="time" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Time</Label>
@@ -742,7 +750,7 @@ export function ProjectCalendarWidget() {
                                     <AvatarFallback className="bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-white text-[10px] font-bold">{a.initials}</AvatarFallback>
                                   </Avatar>
                                 </TooltipTrigger>
-                                <TooltipContent>
+                                <TooltipContent sideOffset={4} className="pointer-events-none">
                                   <p>{a.name}</p>
                                 </TooltipContent>
                               </Tooltip>
@@ -957,4 +965,4 @@ export function ProjectCalendarWidget() {
     </Card>
     </>
   );
-}
+});

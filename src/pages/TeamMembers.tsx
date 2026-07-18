@@ -311,7 +311,7 @@ export default function TeamMembers() {
                 Invite Intern
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a]">
+            <DialogContent className="sm:max-w-[600px] rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl">
               <DialogHeader>
                 <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Invite New Intern</DialogTitle>
               </DialogHeader>
@@ -393,10 +393,10 @@ export default function TeamMembers() {
         <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as any)} className="w-full space-y-6">
           {currentUser?.role === 'manager' && (
             <TabsList className="bg-slate-100 dark:bg-slate-900 rounded-xl p-1 gap-2 self-start w-fit">
-              <TabsTrigger value="active" className="rounded-lg font-bold px-4 py-2">
+              <TabsTrigger value="active" className="rounded-lg font-bold px-4 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white text-slate-600 dark:text-slate-400">
                 Active Directory
               </TabsTrigger>
-              <TabsTrigger value="pending" className="rounded-lg font-bold px-4 py-2 relative">
+              <TabsTrigger value="pending" className="rounded-lg font-bold px-4 py-2 relative data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white text-slate-600 dark:text-slate-400">
                 Pending Approvals
                 {pendingApprovals.length > 0 && (
                   <span className="ml-2 px-1.5 py-0.5 text-[10px] font-black bg-orange-500 text-white rounded-full">
@@ -837,7 +837,7 @@ export default function TeamMembers() {
 
       {/* Reassign Project Dialog */}
       <Dialog open={!!reassignIntern} onOpenChange={(open) => !open && setReassignIntern(null)}>
-        <DialogContent className="sm:max-w-[500px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-[500px] rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
               <MapPin className="mr-2 h-5 w-5 text-orange-500" />
@@ -885,7 +885,7 @@ export default function TeamMembers() {
 
       {/* WhatsApp Message Dialog */}
       <Dialog open={!!whatsappIntern} onOpenChange={(open) => !open && setWhatsappIntern(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
               <MessageSquare className="mr-2 h-5 w-5 text-emerald-500" />
@@ -917,7 +917,7 @@ export default function TeamMembers() {
 
       {/* Deactivate Intern Dialog */}
       <Dialog open={!!deactivatingIntern} onOpenChange={(open) => !open && setDeactivatingIntern(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
               <Clock className="mr-2 h-5 w-5 text-rose-500" />
@@ -963,7 +963,7 @@ export default function TeamMembers() {
 
       {/* Approval Details Modal */}
       <Dialog open={!!approvingUser} onOpenChange={(open) => !open && setApprovingUser(null)}>
-        <DialogContent className="sm:max-w-[450px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-[450px] rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
               <CheckCircle2 className="mr-2 h-5 w-5 text-emerald-500" />
