@@ -20,6 +20,7 @@ import api from '@/lib/api';
 export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'employee' | 'manager' }) {
   // User Management State
   const [usersList, setUsersList] = useState<User[]>([]);
+  const [totalProjectsCount, setTotalProjectsCount] = useState<number>(0);
   const [adminStats, setAdminStats] = useState({
     totalEmployees: 0,
     activeTasks: 0,
@@ -377,9 +378,21 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     }
   };
 
+  const fetchRealProjects = async () => {
+    try {
+      const res = await api.get('/projects');
+      if (res.data?.success) {
+        setTotalProjectsCount(res.data.data?.length || 0);
+      }
+    } catch (e) {
+      console.error('Failed to fetch real project count:', e);
+    }
+  };
+
   useEffect(() => {
     fetchAdminStats();
     fetchAdminUsers();
+    fetchRealProjects();
   }, []);
 
   const navigateToView = (view: string) => {
@@ -599,14 +612,6 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   const totalManagersCount = usersList.filter(u => u.role === 'manager').length;
   const activeManagersList = usersList.filter(u => u.role === 'manager' && u.isActive !== false);
   const pendingNotifications = notifications.filter((n: any) => n.unread).length;
-  const totalProjectsCount = (() => {
-    try {
-      const saved = localStorage.getItem('hindustaan_projects');
-      return saved ? JSON.parse(saved).length : GLOBAL_PROJECTS.length;
-    } catch {
-      return GLOBAL_PROJECTS.length;
-    }
-  })();
 
   const departments = ['Engineering', 'Product', 'HR', 'Marketing', 'Sales', 'IT'];
 

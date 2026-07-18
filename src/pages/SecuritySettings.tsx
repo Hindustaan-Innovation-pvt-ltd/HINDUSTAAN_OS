@@ -119,6 +119,10 @@ export default function SecuritySettings({ session }: { session?: any }) {
     setConfirmDialog({ isOpen: false, actionType: '', title: '', desc: '' });
   };
 
+  const handleNavigateToRoles = () => {
+    window.dispatchEvent(new CustomEvent('navigate-to-view', { detail: { view: 'Roles & Permissions' } }));
+  };
+
   const activeSessions = [
     { id: 1, user: 'Aakash Gupta', role: 'admin', device: 'MacBook Pro', browser: 'Chrome 120.0', ip: '192.168.1.1', lastActive: 'Just now', current: true },
     { id: 2, user: 'Amanda Smith', role: 'employee', device: 'Windows PC', browser: 'Edge 119.0', ip: '192.168.1.42', lastActive: '5 mins ago', current: false },
@@ -392,8 +396,28 @@ export default function SecuritySettings({ session }: { session?: any }) {
                       </div>
                     </div>
                     <div className="mt-5 grid grid-cols-2 gap-2">
-                      <Button variant="outline" size="sm" className="font-bold border-slate-200 dark:border-slate-700">View</Button>
-                      <Button variant="secondary" size="sm" className="font-bold" disabled={!role.editable}>Edit</Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="font-bold border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-slate-200"
+                        onClick={handleNavigateToRoles}
+                      >
+                        View
+                      </Button>
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className={cn(
+                          "font-bold transition-all",
+                          role.editable 
+                            ? "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-950 dark:text-slate-50 border border-slate-200 dark:border-slate-700" 
+                            : "bg-slate-50/50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-600 border border-slate-100 dark:border-slate-800"
+                        )}
+                        disabled={!role.editable}
+                        onClick={handleNavigateToRoles}
+                      >
+                        Edit
+                      </Button>
                     </div>
                   </div>
                 ))}
