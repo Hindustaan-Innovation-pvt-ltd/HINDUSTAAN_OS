@@ -121,7 +121,21 @@ export default function AnnouncementCenterModule() {
           views: ann.views,
           readPercentage: ann.readPercentage
         }));
-        setAnnouncements(mapped);
+
+        // Filter out mock/seeded announcements from display without touching the backend
+        const realAnnouncements = mapped.filter((ann: any) => {
+          const isMockId = typeof ann.id === 'string' && (ann.id.startsWith('ann-') || ann.id.includes('mock'));
+          const isMockTitle = [
+            'Q3 All Hands Meeting Scheduled',
+            'Workspace Leave Policy Updates',
+            'New API Security Best Practices Document',
+            'Server Migration Plan'
+          ].includes(ann.title);
+          
+          return !(isMockId || isMockTitle);
+        });
+
+        setAnnouncements(realAnnouncements);
       }
     } catch (e) {
       console.error("Failed to fetch announcements:", e);
