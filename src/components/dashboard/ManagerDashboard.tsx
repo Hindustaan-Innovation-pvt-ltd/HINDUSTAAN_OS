@@ -174,26 +174,26 @@ function ManagerDashboardInner() {
   const [liveTeamMembers, setLiveTeamMembers] = useState<any[]>(ONLINE_TEAM_MEMBERS_MANAGER);
   const lastDataRef = React.useRef<string | null>(null);
 
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const res = await api.get('/dashboard');
-        if (res.data?.success) {
-          const data = res.data.data;
-          const dataString = JSON.stringify(data);
-          if (lastDataRef.current === dataString) return;
-          lastDataRef.current = dataString;
-          React.startTransition(() => {
-            setDashboardStats(data);
-            if (data.liveTeamMembers && data.liveTeamMembers.length > 0) {
-              setLiveTeamMembers(data.liveTeamMembers);
-            }
+  const fetchDashboard = React.useCallback(async () => {
+    try {
+      const res = await api.get('/dashboard');
+      if (res.data?.success) {
+        const data = res.data.data;
+        const dataString = JSON.stringify(data);
+        if (lastDataRef.current === dataString) return;
+        lastDataRef.current = dataString;
+        React.startTransition(() => {
+          setDashboardStats(data);
+          if (data.liveTeamMembers && data.liveTeamMembers.length > 0) {
+            setLiveTeamMembers(data.liveTeamMembers);
+          }
           // Hydrate activity feed from real backend data
           if (data.activityFeed && data.activityFeed.length > 0) {
             setActivityFeed(data.activityFeed);
           }
-          // Hydrate blockers from standup blocker list
+          // Hydrate blockers from standup blocker list — resolved status comes from DB
           if (data.blockersList && data.blockersList.length > 0) {
+            const savedMsgs = JSON.parse(localStorage.getItem('hindustaan_manager_messages') || '{}');
             const mappedBlockers = data.blockersList.map((b: any, i: number) => ({
               id: b.id,
               user: b.userName,
@@ -210,22 +210,26 @@ function ManagerDashboardInner() {
               textColor: i % 2 === 0 ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400',
               hoverBgColor: i % 2 === 0 ? 'hover:bg-rose-100 dark:hover:bg-rose-500/20' : 'hover:bg-amber-100 dark:hover:bg-amber-500/20',
               hoverTextColor: i % 2 === 0 ? 'hover:text-rose-700' : 'hover:text-amber-700',
-              message: b.blockerText
+              message: b.blockerText,
+              resolved: b.resolved,     // ← from DB via API
+              resolvedByName: b.resolvedByName || null,
+              managerMessage: savedMsgs[b.id] || undefined
             }));
             setBlockers(mappedBlockers);
           }
-          });
-        }
-      } catch (err) {
-        console.warn('Manager dashboard fetch failed, using local data:', err);
+        });
       }
-    };
+    } catch (err) {
+      console.warn('Manager dashboard fetch failed, using local data:', err);
+    }
+  }, []);
+
+  useEffect(() => {
     fetchDashboard();
-    
     // Poll every 5 seconds for real-time updates
     const intervalId = setInterval(fetchDashboard, 5000);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [fetchDashboard]);
 
 
   useEffect(() => {
@@ -480,10 +484,17 @@ function ManagerDashboardInner() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <TrendingUp className="h-5 w-5" />
               </div>
-              <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">+4.2%</Badge>
+              <Badge variant="outline" className={cn(
+                "text-[10px] uppercase font-bold border",
+                (dashboardStats?.teamProductivity ?? 0) >= 50
+                  ? "text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10"
+                  : "text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10"
+              )}>
+                {(dashboardStats?.teamProductivity ?? 0) >= 50 ? '↑' : '↓'} {dashboardStats?.teamProductivity ?? 0}%
+              </Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats ? `${dashboardStats.teamProductivity}%` : '92%'}</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.teamProductivity ?? 0}%</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Team Productivity</p>
             </div>
           </CardContent>
@@ -599,9 +610,17 @@ function ManagerDashboardInner() {
                         {!isResolved && (
                           <div className="flex items-center gap-3 ml-8 mt-1 relative z-10">
                             <Button
-                              onClick={() => {
-                                setBlockers((prev: any[]) => prev.map((b: any) => b.id === blocker.id ? { ...b, resolved: true } : b));
-                                import('sonner').then(m => m.toast.success('Blocker Resolved', { description: `Resolved for ${blocker.user}. The employee has been notified directly.` }));
+                              onClick={async () => {
+                                try {
+                                  await api.patch(`/standups/${blocker.id}/resolve-blocker`);
+                                  // Invalidate cache so the next poll fetches fresh resolved state
+                                  lastDataRef.current = null;
+                                  await fetchDashboard();
+                                  import('sonner').then(m => m.toast.success('Blocker Resolved', { description: `Resolved for ${blocker.user}. Status saved to database.` }));
+                                } catch (err: any) {
+                                  const msg = err?.response?.data?.message || 'Failed to resolve blocker';
+                                  import('sonner').then(m => m.toast.error('Error', { description: msg }));
+                                }
                               }}
                               variant="ghost"
                               size="sm"
@@ -610,7 +629,7 @@ function ManagerDashboardInner() {
                               Resolve
                             </Button>
                             <Button
-                              onClick={() => setMessageUser(blocker.user)}
+                              onClick={() => setMessageUser(blocker.id)}
                               variant="ghost"
                               size="sm"
                               className="h-7 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 font-semibold cursor-pointer"
@@ -733,9 +752,11 @@ function ManagerDashboardInner() {
             <CardContent className="p-0">
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {liveTeamMembers.map((member) => {
-                  const sessionInfo = activeSessions[member.id];
-                  const isOnline = sessionInfo?.isOnline;
-                  const sessionTime = sessionInfo?.time || 0;
+                  const isOnline = member.isOnline === true;
+                  // Calculate elapsed seconds since standup was submitted (session start proxy)
+                  const sessionTime = isOnline && member.sessionStartedAt
+                    ? Math.floor((Date.now() - new Date(member.sessionStartedAt).getTime()) / 1000)
+                    : 0;
                   return (
                     <div key={member.id} className={cn("p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors", !isOnline && "opacity-75")}>
                       <div className="flex items-center gap-3">
@@ -901,10 +922,10 @@ function ManagerDashboardInner() {
                   <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
                     <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-900 shadow-sm">
                       <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 text-sm font-bold">
-                        {(messageUser || 'U').split(' ').map((n: string) => n[0]).join('')}
+                        {(blockers.find((b: any) => b.id === messageUser)?.user || 'U').split(' ').map((n: string) => n[0]).join('')}
                       </AvatarFallback>
                     </Avatar>
-                    <span>Message {messageUser?.split(' ')[0]}</span>
+                    <span>Message {blockers.find((b: any) => b.id === messageUser)?.user?.split(' ')[0]}</span>
                   </DialogTitle>
                   <DialogDescription className="text-slate-500 dark:text-slate-400 font-medium pt-2">
                     Send a direct, high-priority message regarding this blocker to help them get unblocked faster.
@@ -917,7 +938,7 @@ function ManagerDashboardInner() {
                   <Textarea
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
-                    placeholder={`Hey ${messageUser?.split(' ')[0]}, how can I help unblock you with this?`}
+                    placeholder={`Hey ${blockers.find((b: any) => b.id === messageUser)?.user?.split(' ')[0]}, how can I help unblock you with this?`}
                     className="min-h-[120px] rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500 text-slate-900 dark:text-white resize-none text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
@@ -930,7 +951,12 @@ function ManagerDashboardInner() {
                   type="button"
                   disabled={!messageText.trim()}
                   onClick={() => {
-                    setBlockers((prev: any[]) => prev.map((b: any) => b.user === messageUser ? { ...b, managerMessage: messageText } : b));
+                    setBlockers((prev: any[]) => prev.map((b: any) => b.id === messageUser ? { ...b, managerMessage: messageText } : b));
+                    const savedMsgs = JSON.parse(localStorage.getItem('hindustaan_manager_messages') || '{}');
+                    if (messageUser) {
+                        savedMsgs[messageUser] = messageText;
+                        localStorage.setItem('hindustaan_manager_messages', JSON.stringify(savedMsgs));
+                    }
                     setIsMessageSent(true);
                   }}
                   className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold cursor-pointer transition-all shadow-md hover:shadow-lg disabled:opacity-50"
@@ -947,7 +973,7 @@ function ManagerDashboardInner() {
               </div>
               <div className="space-y-2">
                 <h3 className="text-2xl font-black text-slate-900 dark:text-white">Sent!</h3>
-                <p className="text-slate-500 dark:text-slate-400 font-medium">Your message has been delivered to <span className="font-bold text-slate-700 dark:text-slate-200">{messageUser}</span>.</p>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">Your message has been delivered to <span className="font-bold text-slate-700 dark:text-slate-200">{blockers.find((b: any) => b.id === messageUser)?.user}</span>.</p>
               </div>
               <div className="w-full bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700/50 text-left relative">
                 <span className="absolute -top-2.5 left-4 bg-white dark:bg-slate-900 px-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">What you said</span>

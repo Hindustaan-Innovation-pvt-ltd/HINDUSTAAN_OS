@@ -277,7 +277,13 @@ export default function Projects({ session }: { session?: any }) {
                                 deadline: project.endDate || '',
                                 budget: project.budget && project.budget !== 'TBD' ? project.budget.replace('$', '') : '',
                                 priority: 'Medium',
-                                tasks: project.tasks || []
+                                tasks: (project.tasks || []).map((t: any) => ({
+                                  id: t.id,
+                                  title: t.title,
+                                  status: t.status,
+                                  assignee: t.assignee || t.assignee_name || 'Unassigned',
+                                  assigneeId: t.assigneeId || t.assignee_id || null
+                                }))
                               });
                               setIsModalOpen(true);
                             }}>
@@ -661,7 +667,7 @@ export default function Projects({ session }: { session?: any }) {
                         <PopoverContent className="w-48 p-2 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl" align="start">
                           <div className="space-y-1 max-h-48 overflow-y-auto">
                             {leads.map(member => {
-                              const assignees = task.assignee === 'Unassigned' ? [] : task.assignee.split(', ').filter(Boolean);
+                              const assignees = (!task.assignee || task.assignee === 'Unassigned') ? [] : task.assignee.split(', ').filter(Boolean);
                               const isSelected = assignees.includes(member.name);
                               return (
                                 <label key={member.id} className="flex items-center px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer">
