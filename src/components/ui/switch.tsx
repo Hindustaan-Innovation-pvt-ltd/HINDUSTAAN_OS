@@ -15,7 +15,8 @@ function Switch({
       data-slot="switch"
       data-size={size}
       className={cn(
-        "peer group/switch inline-flex shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-[1.15rem] data-[size=default]:w-8 data-[size=sm]:h-3.5 data-[size=sm]:w-6 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input dark:data-[state=unchecked]:bg-input/80",
+        "peer group/switch inline-flex shrink-0 cursor-pointer items-center rounded-full border border-transparent shadow-sm transition-all outline-none disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600 data-[state=unchecked]:bg-slate-200 data-[state=unchecked]:border-slate-300 dark:data-[state=checked]:bg-indigo-500 dark:data-[state=checked]:border-indigo-500 dark:data-[state=unchecked]:bg-slate-800 dark:data-[state=unchecked]:border-slate-700/80 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2",
+        size === "default" ? "h-5 w-9 px-[2px]" : "h-3.5 w-6 px-[1px]",
         className
       )}
       {...props}
@@ -23,7 +24,10 @@ function Switch({
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
         className={cn(
-          "pointer-events-none block rounded-full bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0 dark:data-[state=checked]:bg-primary-foreground dark:data-[state=unchecked]:bg-foreground"
+          "pointer-events-none block rounded-full bg-white dark:bg-slate-100 shadow-md ring-0 transition-transform",
+          size === "default" 
+            ? "h-4 w-4 data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0" 
+            : "h-2.5 w-2.5 data-[state=checked]:translate-x-3 data-[state=unchecked]:translate-x-0"
         )}
       />
     </SwitchPrimitive.Root>
@@ -31,3 +35,4 @@ function Switch({
 }
 
 export { Switch }
+

@@ -30,55 +30,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-// -- MOCK DATA GENERATOR --
-const generateData = () => {
-  const depts = ['Frontend', 'Backend', 'AI/ML', 'UI/UX'];
-  const interns = [];
-
-  const scoreDist = [
-    ...Array(8).fill([90, 100]), // Excellent
-    ...Array(10).fill([80, 89]), // Good
-    ...Array(7).fill([70, 79]),  // Average
-    ...Array(5).fill([50, 69])   // Needs Improvement
-  ];
-
-  for (let i = 0; i < 30; i++) {
-    const range = scoreDist[i];
-    const targetScore = Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0];
-
-    // Formula: 40% Task, 35% Logs, 25% Standups
-    const taskMax = 40; const logMax = 35; const standupMax = 25;
-
-    let taskScore = Math.round((targetScore / 100) * taskMax);
-    let logScore = Math.round((targetScore / 100) * logMax);
-    let standupScore = Math.round((targetScore / 100) * standupMax);
-
-    // Adjust slightly to match target score exactly
-    const diff = targetScore - (taskScore + logScore + standupScore);
-    taskScore += diff; // dump rounding diff into task score
-
-    const actualScore = taskScore + logScore + standupScore;
-
-    interns.push({
-      id: `INT-${(i + 1).toString().padStart(3, '0')}`,
-      name: i === 0 ? "Tanvy Pandey" : `Intern Member ${i + 1}`,
-      department: depts[i % 4],
-      project: i % 2 === 0 ? "Dashboard V2" : "Core API",
-      manager: "Aakash Gupta",
-      score: actualScore,
-      taskScore,
-      logScore,
-      standupScore,
-      trend: (Math.random() * 8 - 2).toFixed(1),
-      status: actualScore >= 90 ? 'Excellent' : actualScore >= 80 ? 'Good' : actualScore >= 70 ? 'Average' : 'Needs Improvement',
-      hoursLogged: Math.floor(Math.random() * (45 - 20) + 20),
-      tasksCompleted: Math.floor(Math.random() * (15 - 5) + 5)
-    });
-  }
-  return interns.sort((a, b) => b.score - a.score); // Highest first
-};
-
-const MOCK_INTERNS = generateData();
+// Real data will be fetched from the backend API
 
 // Chart Data
 const weeklyTrendData = [
@@ -155,6 +107,9 @@ export default function ContributionScores({ session }: { session?: any }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  const [internData, setInternData] = useState<any[]>([]);
+  const [loadingCohort, setLoadingCohort] = useState(true);
 
   const [metrics, setMetrics] = useState<any>({
     overallScore: 0,
@@ -437,28 +392,60 @@ export default function ContributionScores({ session }: { session?: any }) {
     }
   };
 
+  const fetchCohortData = async () => {
+    try {
+      setLoadingCohort(true);
+      const res = await api.get('/scores/cohort?period=today');
+      if (res.data?.success) {
+        const mapped = res.data.data.map((score: any) => ({
+          id: score.userId,
+          name: score.name,
+          department: "Engineering", // Backend doesn't return department
+          project: "Hindustaan OS",
+          manager: "Aakash Gupta",
+          score: Math.round(score.total),
+          taskScore: Math.round(score.tasksScore),
+          logScore: Math.round(score.hoursScore),
+          standupScore: Math.round(score.milestoneScore), // Mapping to UI fields
+          trend: 0, // Placeholder
+          status: score.total >= 90 ? 'Excellent' : score.total >= 80 ? 'Good' : score.total >= 70 ? 'Average' : 'Needs Improvement',
+          hoursLogged: Math.round(score.hoursScore * 0.48), // Approximate
+          tasksCompleted: Math.round(score.tasksScore / 10) // Approximate
+        }));
+        setInternData(mapped);
+      }
+    } catch (e) {
+      console.error('Error fetching cohort scores:', e);
+    } finally {
+      setLoadingCohort(false);
+    }
+  };
+
   useEffect(() => {
     fetchMetrics();
+    if (role !== 'intern' && role !== 'employee') {
+      fetchCohortData();
+    }
   }, [currentUserId, currentUserName, projects, isRefreshing]);
 
-  const filteredInterns = MOCK_INTERNS.filter(intern =>
+  const filteredInterns = internData.filter(intern =>
     intern.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     intern.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
     intern.project.toLowerCase().includes(searchTerm.toLowerCase())
   ).sort((a, b) => b.score - a.score);
 
-  const top3 = MOCK_INTERNS.slice(0, 3);
-  const needsAttention = MOCK_INTERNS.filter(i => i.score < 70).slice(0, 3);
+  const top3 = internData.slice(0, 3);
+  const needsAttention = internData.filter(i => i.score < 70).slice(0, 3);
 
   // Distribution for Donut
   const distData = [
-    { name: 'Excellent', value: MOCK_INTERNS.filter(i => i.score >= 90).length, fill: COLORS.excellent },
-    { name: 'Good', value: MOCK_INTERNS.filter(i => i.score >= 80 && i.score < 90).length, fill: COLORS.good },
-    { name: 'Average', value: MOCK_INTERNS.filter(i => i.score >= 70 && i.score < 80).length, fill: COLORS.average },
-    { name: 'Needs Imp.', value: MOCK_INTERNS.filter(i => i.score < 70).length, fill: COLORS.poor },
+    { name: 'Excellent', value: internData.filter(i => i.score >= 90).length, fill: COLORS.excellent },
+    { name: 'Good', value: internData.filter(i => i.score >= 80 && i.score < 90).length, fill: COLORS.good },
+    { name: 'Average', value: internData.filter(i => i.score >= 70 && i.score < 80).length, fill: COLORS.average },
+    { name: 'Needs Imp.', value: internData.filter(i => i.score < 70).length, fill: COLORS.poor },
   ];
 
-  const highestScorer = MOCK_INTERNS.reduce((max, intern) => (intern.score > max.score ? intern : max), MOCK_INTERNS[0]);
+  const highestScorer = internData.length > 0 ? internData.reduce((max, intern) => (intern.score > max.score ? intern : max), internData[0]) : null;
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -829,17 +816,23 @@ export default function ContributionScores({ session }: { session?: any }) {
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
           <CardContent className="p-5">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Highest Score</p>
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-900 shadow-sm">
-                <AvatarFallback className="bg-orange-100 text-orange-700 font-bold">
-                  {highestScorer.name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">{highestScorer.name}</p>
-                <p className="text-lg font-black text-emerald-600">{highestScorer.score}%</p>
+            <div className="flex-1 flex justify-end">
+                {highestScorer ? (
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border-2 border-emerald-500/20">
+                      <AvatarFallback className="bg-emerald-100 text-emerald-700">
+                        {highestScorer.name.split(' ').map((n: string) => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">{highestScorer.name}</p>
+                      <p className="text-lg font-black text-emerald-600">{highestScorer.score}%</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm font-medium text-slate-500">No data</p>
+                )}
               </div>
-            </div>
           </CardContent>
         </Card>
       </div>

@@ -4,7 +4,7 @@ import {
   Plus, ExternalLink, Search, Edit2, ShieldAlert, Power, 
   Trash2, HelpCircle, CheckCircle2, X, Filter, UserPlus, Briefcase, Mail, Phone, ChevronRight,
   Calendar, Clock, MapPin, Laptop, Lock, Shield, MessageSquare, PlusCircle, Send, Globe, Award, ClipboardList, CheckSquare, FolderKanban,
-  User as UserIcon, CreditCard, Settings, Download
+  User as UserIcon, CreditCard, Settings, Download, Loader2
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,12 +14,12 @@ import { getRegisteredUsers, registerUser, getCurrentUser } from '@/lib/auth';
 import type { User } from '@/lib/auth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { GLOBAL_ACTIVITY_FEED, GLOBAL_NOTIFICATIONS, GLOBAL_LOGS, GLOBAL_PROJECTS, INITIAL_TASKS } from '@/data/mockData';
 import api from '@/lib/api';
 
 export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'employee' | 'manager' }) {
   // User Management State
   const [usersList, setUsersList] = useState<User[]>([]);
+  const [totalProjectsCount, setTotalProjectsCount] = useState<number>(0);
   const [adminStats, setAdminStats] = useState({
     totalEmployees: 0,
     activeTasks: 0,
@@ -34,6 +34,9 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [deactivatingUser, setDeactivatingUser] = useState<User | null>(null);
+  const [activatingUser, setActivatingUser] = useState<User | null>(null);
+  const [isToggleSubmit, setIsToggleSubmit] = useState(false);
 
   // Form Fields for Create/Edit
   const [formName, setFormName] = useState('');
@@ -49,12 +52,16 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   // Dashboard Overview state
   const [activities, setActivities] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_activity_feed');
-    return saved ? JSON.parse(saved) : GLOBAL_ACTIVITY_FEED;
+    try {
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
   });
 
   const [notifications, setNotifications] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_notifications');
-    return saved ? JSON.parse(saved) : GLOBAL_NOTIFICATIONS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   // User Detail Panel State
@@ -89,34 +96,8 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     if (savedSessions) {
       setLoginHistory(JSON.parse(savedSessions));
     } else {
-      const initialSessions = [
-        {
-          id: `sess-${Date.now()}-1`,
-          device: 'Chrome / Windows (Current Session)',
-          ipAddress: '192.168.1.14',
-          timestamp: new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
-          location: 'Mumbai, India',
-          isActive: true
-        },
-        {
-          id: `sess-${Date.now()}-2`,
-          device: 'Safari / iPhone 15 Pro',
-          ipAddress: '103.45.21.90',
-          timestamp: new Date(Date.now() - 3600000 * 4).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
-          location: 'Delhi, India',
-          isActive: false
-        },
-        {
-          id: `sess-${Date.now()}-3`,
-          device: 'Firefox / macOS Big Sur',
-          ipAddress: '152.12.87.104',
-          timestamp: new Date(Date.now() - 86400000 * 2).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
-          location: 'Bengaluru, India',
-          isActive: false
-        }
-      ];
-      localStorage.setItem(sessionsKey, JSON.stringify(initialSessions));
-      setLoginHistory(initialSessions);
+      localStorage.setItem(sessionsKey, JSON.stringify([]));
+      setLoginHistory([]);
     }
     
     // 2. Activity Timeline Feed
@@ -125,42 +106,8 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     if (savedActivities) {
       setActivityFeed(JSON.parse(savedActivities));
     } else {
-      const initialActivities = [
-        {
-          id: `act-${Date.now()}-1`,
-          type: 'task',
-          action: 'Completed task',
-          target: 'Fix critical CSS overlapping layout issue',
-          description: 'Successfully refactored layout wrappers and added custom styles for responsiveness.',
-          timestamp: new Date(Date.now() - 3600000 * 2.5).toISOString()
-        },
-        {
-          id: `act-${Date.now()}-2`,
-          type: 'project',
-          action: 'Joined project',
-          target: 'Hindustaan OS core shell build',
-          description: 'Added to team workspace. Configured local environments.',
-          timestamp: new Date(Date.now() - 86400005).toISOString()
-        },
-        {
-          id: `act-${Date.now()}-3`,
-          type: 'file',
-          action: 'Uploaded file',
-          target: 'system_architecture_design.pdf',
-          description: 'Uploaded initial design diagram to asset dashboard.',
-          timestamp: new Date(Date.now() - 86400000 * 3).toISOString()
-        },
-        {
-          id: `act-${Date.now()}-4`,
-          type: 'status',
-          action: 'Updated status',
-          target: 'Active deployment',
-          description: 'System profile set to Active. Initial authentication token allocated.',
-          timestamp: new Date(Date.now() - 86400000 * 5).toISOString()
-        }
-      ];
-      localStorage.setItem(activitiesKey, JSON.stringify(initialActivities));
-      setActivityFeed(initialActivities);
+      localStorage.setItem(activitiesKey, JSON.stringify([]));
+      setActivityFeed([]);
     }
     
     // 3. Internal Notes
@@ -169,22 +116,8 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     if (savedNotes) {
       setInternalNotes(JSON.parse(savedNotes));
     } else {
-      const initialNotesList = [
-        {
-          id: `note-${Date.now()}-1`,
-          author: 'Aakash Gupta',
-          timestamp: new Date(Date.now() - 86400000 * 2).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
-          content: 'Excellent performance in frontend redesign sprint. Very responsive in standups.'
-        },
-        {
-          id: `note-${Date.now()}-2`,
-          author: 'Aakash Gupta',
-          timestamp: new Date(Date.now() - 86400000 * 8).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
-          content: 'Profile created. Initial orientation completed successfully.'
-        }
-      ];
-      localStorage.setItem(notesKey, JSON.stringify(initialNotesList));
-      setInternalNotes(initialNotesList);
+      localStorage.setItem(notesKey, JSON.stringify([]));
+      setInternalNotes([]);
     }
     
     // Reset filters
@@ -272,7 +205,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     if (!selectedDetailUser) return [];
     try {
       const savedTasks = localStorage.getItem('hindustaan_tasks_list');
-      const allTasks = savedTasks ? JSON.parse(savedTasks) : INITIAL_TASKS;
+      const allTasks = savedTasks ? JSON.parse(savedTasks) : [];
       return allTasks.filter((t: any) => 
         t.assignee && t.assignee.toLowerCase() === selectedDetailUser.name.toLowerCase()
       );
@@ -285,7 +218,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     if (!selectedDetailUser) return [];
     try {
       const savedProjects = localStorage.getItem('hindustaan_projects');
-      const allProjects = savedProjects ? JSON.parse(savedProjects) : GLOBAL_PROJECTS;
+      const allProjects = savedProjects ? JSON.parse(savedProjects) : [];
       return allProjects.filter((p: any) => 
         p.manager === selectedDetailUser.name || 
         (p.team && p.team.some((member: any) => member.toLowerCase().includes(selectedDetailUser.name.toLowerCase())))
@@ -307,7 +240,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     if (!selectedDetailUser) return [];
     try {
       const savedLogs = localStorage.getItem('work_logs_list_v4') || localStorage.getItem('work_logs_list');
-      const allLogs = savedLogs ? JSON.parse(savedLogs) : GLOBAL_LOGS;
+      const allLogs = savedLogs ? JSON.parse(savedLogs) : [];
       return allLogs.filter((l: any) => 
         l.userEmail && l.userEmail.toLowerCase() === selectedDetailUser.email.toLowerCase()
       );
@@ -377,9 +310,21 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     }
   };
 
+  const fetchRealProjects = async () => {
+    try {
+      const res = await api.get('/projects');
+      if (res.data?.success) {
+        setTotalProjectsCount(res.data.data?.length || 0);
+      }
+    } catch (e) {
+      console.error('Failed to fetch real project count:', e);
+    }
+  };
+
   useEffect(() => {
     fetchAdminStats();
     fetchAdminUsers();
+    fetchRealProjects();
   }, []);
 
   const navigateToView = (view: string) => {
@@ -524,16 +469,37 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     refreshUsers();
   };
 
-  const toggleUserActive = async (user: User) => {
-    if (!user.id) return;
+  const handleConfirmDeactivate = async () => {
+    if (!deactivatingUser?.id) return;
+    setIsToggleSubmit(true);
     try {
-      const res = await api.delete(`/admin/users/${user.id}`);
+      const res = await api.delete(`/admin/users/${deactivatingUser.id}`);
       if (res.data?.success) {
-        toast.success(`Account for "${user.name}" has been deactivated successfully!`);
+        toast.success(`Account for "${deactivatingUser.name}" has been deactivated successfully!`);
         refreshUsers();
+        setDeactivatingUser(null);
       }
     } catch (e: any) {
-      toast.error("Failed to deactivate account", { description: e.response?.data?.message || e.message });
+      toast.error(`Failed to deactivate account`, { description: e.response?.data?.message || e.message });
+    } finally {
+      setIsToggleSubmit(false);
+    }
+  };
+
+  const handleConfirmActivate = async () => {
+    if (!activatingUser?.id) return;
+    setIsToggleSubmit(true);
+    try {
+      const res = await api.put(`/admin/users/${activatingUser.id}/activate`);
+      if (res.data?.success || res.status === 200) {
+        toast.success(`Account for "${activatingUser.name}" has been activated successfully!`);
+        refreshUsers();
+        setActivatingUser(null);
+      }
+    } catch (e: any) {
+      toast.error(`Failed to activate account`, { description: e.response?.data?.message || e.message });
+    } finally {
+      setIsToggleSubmit(false);
     }
   };
 
@@ -599,14 +565,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   const totalManagersCount = usersList.filter(u => u.role === 'manager').length;
   const activeManagersList = usersList.filter(u => u.role === 'manager' && u.isActive !== false);
   const pendingNotifications = notifications.filter((n: any) => n.unread).length;
-  const totalProjectsCount = (() => {
-    try {
-      const saved = localStorage.getItem('hindustaan_projects');
-      return saved ? JSON.parse(saved).length : GLOBAL_PROJECTS.length;
-    } catch {
-      return GLOBAL_PROJECTS.length;
-    }
-  })();
+
 
   const departments = ['Engineering', 'Product', 'HR', 'Marketing', 'Sales', 'IT'];
 
@@ -1663,7 +1622,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                                 <Edit2 className="h-3.5 w-3.5" />
                               </Button>
                               <Button
-                                onClick={() => toggleUserActive(u)}
+                                onClick={() => isActive ? setDeactivatingUser(u) : setActivatingUser(u)}
                                 variant="outline"
                                 size="icon"
                                 className={cn(
@@ -1984,6 +1943,98 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deactivate User Dialog */}
+      <Dialog open={!!deactivatingUser} onOpenChange={(open) => !open && setDeactivatingUser(null)}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+              <Power className="mr-2 h-5 w-5 text-rose-500" />
+              Deactivate Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Are you sure you want to deactivate <span className="font-semibold text-slate-900 dark:text-white">{deactivatingUser?.name}</span>?
+            </p>
+            <p className="text-xs text-rose-500 dark:text-rose-400 font-medium">
+              This will disable their account.
+            </p>
+          </div>
+          <DialogFooter className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => setDeactivatingUser(null)} 
+              className="rounded-xl font-bold"
+              disabled={isToggleSubmit}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleConfirmDeactivate}
+              className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold"
+              disabled={isToggleSubmit}
+            >
+              {isToggleSubmit ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deactivating...
+                </>
+              ) : (
+                "Confirm & Deactivate"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Activate User Dialog */}
+      <Dialog open={!!activatingUser} onOpenChange={(open) => !open && setActivatingUser(null)}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+              <Power className="mr-2 h-5 w-5 text-emerald-500" />
+              Activate Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Are you sure you want to activate <span className="font-semibold text-slate-900 dark:text-white">{activatingUser?.name}</span>?
+            </p>
+            <p className="text-xs text-emerald-500 dark:text-emerald-400 font-medium">
+              This will re-enable their account and allow them to log in.
+            </p>
+          </div>
+          <DialogFooter className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => setActivatingUser(null)} 
+              className="rounded-xl font-bold"
+              disabled={isToggleSubmit}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleConfirmActivate}
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+              disabled={isToggleSubmit}
+            >
+              {isToggleSubmit ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Activating...
+                </>
+              ) : (
+                "Confirm & Activate"
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

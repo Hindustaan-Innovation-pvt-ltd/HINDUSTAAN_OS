@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useProjects } from '@/context/ProjectContext';
 import { 
   Calendar as CalendarIcon, 
   ChevronRight, 
@@ -341,15 +342,86 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
     });
   };
 
+  const { projects } = useProjects();
+  
+  const projectEvents = useMemo(() => {
+    const dynamicEvents: ProjectEvent[] = [];
+    
+    projects?.forEach((p: any) => {
+      if (p.endDate || p.deadline) {
+        const dStr = p.endDate || (p.deadline !== 'TBD' ? p.deadline : null);
+        if (dStr) {
+          const deadlineDate = new Date(dStr);
+          if (!isNaN(deadlineDate.getTime())) {
+            dynamicEvents.push({
+              id: `proj-${p.id}-deadline`,
+              date: deadlineDate,
+              type: 'deadline',
+              title: `${p.name} Deadline`,
+              assignees: p.manager && p.manager !== 'Unassigned' ? [{ name: p.manager, initials: p.manager.slice(0, 2).toUpperCase() }] : []
+            });
+          }
+        }
+      }
+      
+      p.milestones?.forEach((m: any) => {
+        if (m.date && m.date !== 'TBD') {
+          const mDate = new Date(m.date);
+          if (!isNaN(mDate.getTime())) {
+            dynamicEvents.push({
+              id: `ms-${m.id}`,
+              date: mDate,
+              type: 'milestone',
+              title: `${p.name}: ${m.title}`,
+              assignees: []
+            });
+          }
+        }
+      });
+      
+      p.tasks?.forEach((t: any) => {
+        if (t.due_date && t.status !== 'Done') { // Exclude completed tasks
+          const tDate = new Date(t.due_date);
+          if (!isNaN(tDate.getTime())) {
+            dynamicEvents.push({
+              id: `task-${t.id}`,
+              date: tDate,
+              type: 'deadline',
+              title: `${p.name}: ${t.title}`,
+              assignees: t.assignee_name && t.assignee_name !== 'Unassigned' ? [{ name: t.assignee_name, initials: t.assignee_name.slice(0, 2).toUpperCase() }] : []
+            });
+          }
+        }
+      });
+    });
+    return dynamicEvents;
+  }, [projects]);
+
+  const allEvents = useMemo(() => {
+    return [...events, ...projectEvents];
+  }, [events, projectEvents]);
+
+  const { effectiveStartDate, effectiveEndDate } = useMemo(() => {
+    if (projectEvents.length === 0) return { effectiveStartDate: startDate, effectiveEndDate: endDate };
+    const dates = projectEvents.map(e => e.date.getTime());
+    const min = new Date(Math.min(...dates));
+    const max = new Date(Math.max(...dates));
+    
+    return { 
+      effectiveStartDate: new Date(min.getFullYear(), min.getMonth(), 1),
+      effectiveEndDate: new Date(max.getFullYear(), max.getMonth() + 1, 0)
+    };
+  }, [projectEvents, startDate, endDate]);
+
   // Dynamic calculations based on today
   const today = new Date();
   
   // Ensure we render the correct default month. If today is outside the project range, show the nearest valid month.
-  const initialMonth = isBefore(today, startDate) ? startDate : isAfter(today, endDate) ? endDate : today;
+  const initialMonth = isBefore(today, effectiveStartDate) ? effectiveStartDate : isAfter(today, effectiveEndDate) ? effectiveEndDate : today;
   const [month, setMonth] = useState<Date>(initialMonth);
 
-  const totalDays = differenceInDays(endDate, startDate);
-  const daysCompleted = isBefore(today, startDate) ? 0 : isAfter(today, endDate) ? totalDays : differenceInDays(today, startDate);
+  const totalDays = differenceInDays(effectiveEndDate, effectiveStartDate);
+  const daysCompleted = isBefore(today, effectiveStartDate) ? 0 : isAfter(today, effectiveEndDate) ? totalDays : differenceInDays(today, effectiveStartDate);
   const daysRemaining = Math.max(0, totalDays - daysCompleted);
   const progressPercent = totalDays > 0 ? Math.round((daysCompleted / totalDays) * 100) : 0;
 
@@ -358,10 +430,10 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
   const upcomingEvents = useMemo(() => {
     // Keep events in "Upcoming" until 24 hours after their date
     const cutoffDate = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-    return [...events]
+    return [...allEvents]
       .filter(e => isAfter(e.date, cutoffDate))
       .reverse();
-  }, [events, today]);
+  }, [allEvents, today]);
 
   const handleDayClick = (day: Date) => {
     setSelectedDay(day);
@@ -402,7 +474,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
   };
 
   const getDayEvents = (day: Date) => {
-    return events.filter(e => isSameDay(e.date, day));
+    return allEvents.filter(e => isSameDay(e.date, day));
   };
 
   const getEventBadgeStyles = (type: string) => {
@@ -431,6 +503,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800 shadow-2xl">
           <DialogHeader>
+<<<<<<< HEAD
             <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">Timeline Settings</DialogTitle>
             <DialogDescription className="text-slate-500 font-medium">
               Update the project's start and end dates.
@@ -467,6 +540,31 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
           <DialogFooter className="pt-4 sm:justify-end">
             <Button onClick={() => setIsSettingsOpen(false)} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white">Save changes</Button>
           </DialogFooter>
+=======
+            <DialogTitle>Timeline Settings</DialogTitle>
+            <DialogDescription>
+              The project timeline dates are now calculated dynamically based on active project tasks and milestones!
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Start Date (Auto-calculated)</Label>
+              <Input 
+                type="date" 
+                value={format(effectiveStartDate, 'yyyy-MM-dd')} 
+                disabled
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>End Date (Auto-calculated)</Label>
+              <Input 
+                type="date" 
+                value={format(effectiveEndDate, 'yyyy-MM-dd')}
+                disabled
+              />
+            </div>
+          </div>
+>>>>>>> ca23ffc (feat: update dashboard and contribution score components)
         </DialogContent>
       </Dialog>
       <Card className="rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-lg shadow-slate-200/20 dark:shadow-none flex flex-col overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl">
@@ -481,10 +579,11 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
             <CardDescription 
               className="text-xs font-semibold mt-1 cursor-pointer hover:text-orange-600 dark:hover:text-orange-400 transition-colors flex items-center gap-1.5 border border-transparent hover:border-orange-200 dark:hover:border-orange-900/50 hover:bg-orange-50 dark:hover:bg-orange-900/20 w-fit px-1.5 -ml-1.5 py-0.5 rounded-md"
               onClick={() => setIsSettingsOpen(true)}
-              title="Click to change project dates"
+              title="Click to view dynamic project dates"
             >
-              {format(startDate, 'MMM d')} - {format(endDate, 'MMM d, yyyy')}
-              <Settings className="h-3 w-3 opacity-50" />
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+              {format(effectiveStartDate, 'MMM d')} - {format(effectiveEndDate, 'MMM d, yyyy')}
+            </p>  <Settings className="h-3 w-3 opacity-50" />
             </CardDescription>
           </div>
           
@@ -522,6 +621,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
       <CardContent className="p-0 grid grid-cols-1 xl:grid-cols-2 h-full">
         {/* Left Side: Calendar & Legend */}
         <div className="p-4 sm:p-6 flex flex-col items-center border-b xl:border-b-0 xl:border-r border-slate-100 dark:border-slate-800/60 bg-white dark:bg-slate-950/20 w-full overflow-hidden">
+<<<<<<< HEAD
           <CalendarContext.Provider value={useMemo(() => ({ today, getDayEvents, handleDayClick }), [today, events, handleDayClick])}>
             <Calendar
               mode="single"
@@ -543,6 +643,89 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
               }}
             />
           </CalendarContext.Provider>
+=======
+          <TooltipProvider delayDuration={100}>
+          <Calendar
+            mode="single"
+            selected={selectedDay}
+            onSelect={(day) => day && handleDayClick(day)}
+            month={month}
+            onMonthChange={setMonth}
+            startMonth={effectiveStartDate}
+            endMonth={effectiveEndDate}
+            className="rounded-2xl border border-slate-100/50 dark:border-slate-800/50 p-3 sm:p-5 bg-white/60 dark:bg-slate-950/60 shadow-lg shadow-slate-200/20 dark:shadow-none w-full flex justify-center backdrop-blur-md"
+            classNames={{
+              month_caption: "flex justify-center pt-1 pb-3 relative items-center w-full",
+              day: "h-10 w-10 p-0 font-normal aria-selected:opacity-100 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-600 dark:hover:text-orange-400 hover:scale-105 transition-all duration-200 relative cursor-pointer outline-none focus:ring-2 focus:ring-orange-500/50",
+              today: "bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-900/10 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-500/30 shadow-sm",
+              selected: "bg-gradient-to-br from-orange-500 to-rose-500 text-white hover:from-orange-600 hover:to-rose-600 hover:text-white focus:from-orange-600 focus:to-rose-600 focus:text-white font-bold shadow-md shadow-orange-500/30 hover:scale-105 transition-all",
+              weekday: "text-slate-400 dark:text-slate-500 rounded-md w-10 font-bold text-[0.75rem] uppercase tracking-wider",
+              month: "w-full relative text-slate-900 dark:text-white",
+              caption_label: "text-sm font-black text-slate-800 dark:text-slate-100 text-center",
+              button_previous: "h-8 w-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0 opacity-70 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white absolute left-1 flex items-center justify-center transition-all shadow-sm z-10",
+              button_next: "h-8 w-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0 opacity-70 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white absolute right-1 flex items-center justify-center transition-all shadow-sm z-10",
+            }}
+            components={{
+              DayButton: ({ day, modifiers, ...props }) => {
+                const isToday = isSameDay(day.date, today);
+                const events = getDayEvents(day.date);
+                
+                return (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        {...props}
+                        className={cn(
+                          "relative h-10 w-10 rounded-lg flex flex-col items-center justify-center font-semibold text-sm transition-all outline-none",
+                          modifiers.selected ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" : 
+                          isToday ? "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30" : 
+                          "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800",
+                          modifiers.outside && "text-slate-300 dark:text-slate-600 cursor-default hover:bg-transparent"
+                        )}
+                        onClick={(e) => {
+                          if (!modifiers.outside) {
+                            if (props.onClick) props.onClick(e);
+                            handleDayClick(day.date);
+                          }
+                        }}
+                      >
+                        <span>{day.date.getDate()}</span>
+                        
+                        {/* Event Dots */}
+                        {!modifiers.outside && events.length > 0 && (
+                          <div className="absolute bottom-1 flex gap-0.5">
+                            {events.slice(0, 3).map((e, i) => (
+                              <div key={i} className={cn("h-1 w-1 rounded-full", getEventColor(e.type), modifiers.selected && "bg-white")} />
+                            ))}
+                            {events.length > 3 && <div className={cn("h-1 w-1 rounded-full bg-slate-400", modifiers.selected && "bg-white/70")} />}
+                          </div>
+                        )}
+                      </button>
+                    </TooltipTrigger>
+                    {!modifiers.outside && (
+                      <TooltipContent side="right" className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium p-3 rounded-xl shadow-xl border-0 z-[100]">
+                        <p className="font-bold mb-1 border-b border-slate-700 dark:border-slate-200 pb-1">{format(day.date, 'EEEE, MMM d')}</p>
+                        {events.length > 0 ? (
+                          <div className="space-y-1.5 mt-2">
+                            {events.map((e, idx) => (
+                              <div key={idx} className="flex items-center gap-2 text-xs">
+                                <div className={cn("h-2 w-2 rounded-full", getEventColor(e.type))} />
+                                <span>{e.title}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 italic">No scheduled events</p>
+                        )}
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                );
+              }
+            }}
+          />
+        </TooltipProvider>
+>>>>>>> ca23ffc (feat: update dashboard and contribution score components)
 
         {/* Legend */}
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 px-2">
@@ -798,7 +981,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
           <div className="p-6 pt-4">
             <ScrollArea className="max-h-[50vh] pr-4">
               <div className="space-y-4">
-                {[...events]
+                {[...allEvents]
                   .sort((a, b) => b.date.getTime() - a.date.getTime())
                   .map((evt) => {
                     const isPast = isBefore(evt.date, startOfDay(today));

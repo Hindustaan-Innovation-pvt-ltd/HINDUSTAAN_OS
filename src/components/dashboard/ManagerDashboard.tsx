@@ -41,7 +41,6 @@ import { ProjectCalendarWidget } from './ProjectCalendarWidget';
 import { Separator } from '@/components/ui/separator';
 import { AssignTaskDialog } from './AssignTaskDialog';
 import { useProjects } from '@/context/ProjectContext';
-import { INITIAL_TASKS } from '@/data/mockData';
 
 // --- Mock Data ---
 const TEAM_MEMBERS = [
@@ -111,6 +110,22 @@ const INITIAL_BLOCKERS = [
   }
 ];
 
+const formatTime = (totalSeconds: number) => {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return h.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+};
+
+const LiveTimer = ({ initialSeconds }: { initialSeconds: number }) => {
+  const [seconds, setSeconds] = React.useState(initialSeconds);
+  React.useEffect(() => {
+    const int = setInterval(() => setSeconds(s => s + 1), 1000);
+    return () => clearInterval(int);
+  }, []);
+  return <>{formatTime(seconds)}</>;
+};
+
 function ManagerDashboardInner() {
   const { projects } = useProjects();
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -148,14 +163,16 @@ function ManagerDashboardInner() {
     const saved = localStorage.getItem('hindustaan_tasks_list');
     try {
       const parsed = saved ? JSON.parse(saved) : null;
-      return Array.isArray(parsed) ? parsed : INITIAL_TASKS;
+      return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-      return INITIAL_TASKS;
+      return [];
     }
   });
 
   // Live dashboard stats from backend
   const [dashboardStats, setDashboardStats] = useState<any>(null);
+  const [liveTeamMembers, setLiveTeamMembers] = useState<any[]>(ONLINE_TEAM_MEMBERS_MANAGER);
+  const lastDataRef = React.useRef<string | null>(null);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -163,7 +180,14 @@ function ManagerDashboardInner() {
         const res = await api.get('/dashboard');
         if (res.data?.success) {
           const data = res.data.data;
-          setDashboardStats(data);
+          const dataString = JSON.stringify(data);
+          if (lastDataRef.current === dataString) return;
+          lastDataRef.current = dataString;
+          React.startTransition(() => {
+            setDashboardStats(data);
+            if (data.liveTeamMembers && data.liveTeamMembers.length > 0) {
+              setLiveTeamMembers(data.liveTeamMembers);
+            }
           // Hydrate activity feed from real backend data
           if (data.activityFeed && data.activityFeed.length > 0) {
             setActivityFeed(data.activityFeed);
@@ -190,6 +214,7 @@ function ManagerDashboardInner() {
             }));
             setBlockers(mappedBlockers);
           }
+          });
         }
       } catch (err) {
         console.warn('Manager dashboard fetch failed, using local data:', err);
@@ -218,7 +243,7 @@ function ManagerDashboardInner() {
 
     const handleLocalUpdate = (e: CustomEvent) => {
       if (e.detail.key === 'hindustaan_tasks_list') {
-        setTasks(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : INITIAL_TASKS);
+        setTasks(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : []);
       } else if (e.detail.key === 'hindustaan_activity_feed') {
         setActivityFeed(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : ACTIVITY_FEED_MOCK);
       } else if (e.detail.key === 'hindustaan_blockers') {
@@ -236,27 +261,26 @@ function ManagerDashboardInner() {
     };
   }, []);
 
-  const dueTodayTasksCount = (tasks || []).filter(t => t?.due_date?.toLowerCase().includes('today') || t?.due_date?.toLowerCase().includes('12') || t?.due_date?.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase())).length;
+  const dueTodayTasksCount = React.useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return (tasks || []).filter((t: any) => {
+      if (!t?.due_date) return false;
+      const dStr = t.due_date.includes('T') ? t.due_date.split('T')[0] : t.due_date;
+      return dStr <= todayStr && t.status !== 'Done' && t.status !== 'completed' && t.status !== 'done';
+    }).length;
+  }, [tasks]);
 
   const [activeSessions, setActiveSessions] = useState<{ [key: string]: { time: number; isOnline: boolean } }>({});
 
   useEffect(() => {
-    const teamMembers = [
-      { id: 'u-1', defaultOffset: 2 * 3600 + 15 * 60 + 30 },
-      { id: 'u-2', defaultOffset: 3600 + 45 * 60 + 12 },
-      { id: 'u-3', defaultOffset: 45 * 60 + 5 },
-      { id: 'u-4', defaultOffset: 3 * 3600 + 10 * 60 + 40 }
-    ];
-
     const updateSessions = () => {
       const sessions: { [key: string]: { time: number; isOnline: boolean } } = {};
-      teamMembers.forEach(member => {
+      liveTeamMembers.forEach(member => {
         const loginTimeStr = localStorage.getItem(`login_time_${member.id}`);
         if (loginTimeStr) {
           const startTime = parseInt(loginTimeStr, 10);
           sessions[member.id] = { time: Math.floor((Date.now() - startTime) / 1000), isOnline: true };
         } else {
-          // Changed to actually reflect offline status if real data doesn't exist
           sessions[member.id] = { time: 0, isOnline: false };
         }
       });
@@ -264,9 +288,7 @@ function ManagerDashboardInner() {
     };
 
     updateSessions();
-    const interval = setInterval(updateSessions, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  }, [liveTeamMembers]);
 
   const allMappedProjects: any[] = (projects || []).map(p => {
     if (!p) return null;
@@ -413,7 +435,7 @@ function ManagerDashboardInner() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10">High Pri</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.dueTodayTasksCount ?? dueTodayTasksCount}</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{Math.max(dashboardStats?.dueTodayTasksCount || 0, dueTodayTasksCount)}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tasks Due Today</p>
             </div>
           </CardContent>
@@ -710,7 +732,7 @@ function ManagerDashboardInner() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {ONLINE_TEAM_MEMBERS_MANAGER.map((member) => {
+                {liveTeamMembers.map((member) => {
                   const sessionInfo = activeSessions[member.id];
                   const isOnline = sessionInfo?.isOnline;
                   const sessionTime = sessionInfo?.time || 0;
@@ -737,7 +759,7 @@ function ManagerDashboardInner() {
                       {isOnline ? (
                         <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold animate-pulse">
                           <Timer className="h-3.5 w-3.5 text-emerald-500" />
-                          <span>{formatTime(sessionTime)}</span>
+                          <span><LiveTimer initialSeconds={sessionTime} /></span>
                         </div>
                       ) : (
                         <div className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold">

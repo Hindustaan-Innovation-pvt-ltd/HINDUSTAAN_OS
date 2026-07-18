@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Trophy, Target, Flag, Clock, CheckCircle2, Rocket, Award, HelpCircle, Zap, ShieldCheck, Star, Flame, TrendingUp } from 'lucide-react';
-import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -17,7 +16,7 @@ const contributionData = {
   'This Month': { score: 94, tasks: 38, hours: 32, miles: 22 },
 };
 
-const TEAM = GLOBAL_TEAM_MEMBERS.map(m => m.name);
+const TEAM: string[] = [];
 
 function MetricCard({ name, data, period, onPeriodChange }: { name: string, data: any, period: string, onPeriodChange: (p: string) => void }) {
   const { score, tasks, hours, miles } = data[period as keyof typeof data];

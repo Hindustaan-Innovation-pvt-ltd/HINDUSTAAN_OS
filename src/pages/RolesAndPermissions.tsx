@@ -155,7 +155,7 @@ export default function RolesAndPermissions() {
   const roleStats = {
     admin: usersList.filter(u => u.role === 'admin').length,
     manager: usersList.filter(u => u.role === 'manager').length,
-    employee: usersList.filter(u => u.role === 'employee').length,
+    employee: usersList.filter(u => u.role === 'employee' || u.role === 'intern').length,
     intern: usersList.filter(u => u.role === 'employee' && u.designation?.toLowerCase().includes('intern')).length // or fallback/intern role if seeded
   };
 
@@ -176,7 +176,7 @@ export default function RolesAndPermissions() {
     },
     { 
       name: 'Employee', 
-      count: usersList.filter(u => u.role === 'employee').length, 
+      count: usersList.filter(u => u.role === 'employee' || u.role === 'intern').length, 
       desc: 'Task assignment capability, daily standups log, work hours logs, and profile self-service.',
       icon: UserCheck,
       color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
@@ -279,7 +279,9 @@ export default function RolesAndPermissions() {
                                 <div className="font-extrabold text-slate-900 dark:text-white">{u.name}</div>
                                 <div className="text-[10px] text-slate-400 mt-0.5">{u.email}</div>
                               </div>
-                              <Badge variant="outline" className="text-[9px] uppercase tracking-wider">{u.role}</Badge>
+                              <Badge variant="outline" className="text-[9px] uppercase tracking-wider">
+                                {u.role === 'intern' ? 'employee' : u.role}
+                              </Badge>
                             </div>
                           ))
                         ) : (
@@ -295,7 +297,7 @@ export default function RolesAndPermissions() {
                     <input
                       type="text"
                       readOnly
-                      value={selectedUser ? selectedUser.role.toUpperCase() : 'No user selected'}
+                      value={selectedUser ? (selectedUser.role === 'intern' ? 'EMPLOYEE' : selectedUser.role.toUpperCase()) : 'No user selected'}
                       className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm font-bold text-slate-550 dark:text-slate-400 cursor-not-allowed outline-none"
                     />
                   </div>
@@ -371,12 +373,12 @@ export default function RolesAndPermissions() {
                         </td>
                         <td className="px-6 py-4">
                           <Badge variant="outline" className="uppercase font-bold text-[9px] border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                            {h.prevRole}
+                            {h.prevRole === 'intern' ? 'employee' : h.prevRole}
                           </Badge>
                         </td>
                         <td className="px-6 py-4">
                           <Badge className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 uppercase font-bold text-[9px]">
-                            {h.newRole}
+                            {h.newRole === 'intern' ? 'employee' : h.newRole}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">
