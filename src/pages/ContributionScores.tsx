@@ -884,7 +884,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs">
-                              {intern.name.split(' ').map(n => n[0]).join('')}
+                              {intern.name.split(' ').map((n: string) => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
                           <div>
@@ -1026,7 +1026,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                 <div key={intern.id} className="flex items-center justify-between bg-white dark:bg-slate-900 p-3 rounded-xl border border-rose-100 dark:border-rose-900/30">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-rose-100 text-rose-700 text-xs font-bold">{intern.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                      <AvatarFallback className="bg-rose-100 text-rose-700 text-xs font-bold">{intern.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="text-sm font-bold text-slate-900 dark:text-white">{intern.name}</p>

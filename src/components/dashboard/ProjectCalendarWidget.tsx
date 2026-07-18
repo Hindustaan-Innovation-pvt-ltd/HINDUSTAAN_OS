@@ -432,7 +432,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
     const cutoffDate = new Date(today.getTime() - 24 * 60 * 60 * 1000);
     return [...allEvents]
       .filter(e => isAfter(e.date, cutoffDate))
-      .reverse();
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [allEvents, today]);
 
   const handleDayClick = (day: Date) => {
