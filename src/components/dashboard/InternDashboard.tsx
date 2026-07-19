@@ -728,8 +728,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             </CardHeader>
             <CardContent className="p-0 flex-1 flex flex-col">
               <div className="divide-y divide-slate-100 dark:divide-slate-800 flex-1 flex flex-col justify-center">
-<<<<<<< HEAD
-                {tasks.length > 0 ? tasks.map(task => (
+                 {displayedTodayTasks.length > 0 ? displayedTodayTasks.map((task: any) => (
                     <div key={task.id} className={cn(
                       "p-4 md:p-5 py-2.5 md:py-3 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group",
                       task.project_status === 'aborted' ? "opacity-75 grayscale bg-slate-50 dark:bg-slate-900/40 cursor-not-allowed" : "hover:bg-slate-50 dark:hover:bg-slate-900/50"
@@ -739,13 +738,6 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                           <h4 className={cn("text-base font-bold transition-colors truncate",
                             task.project_status === 'aborted' ? "text-slate-500 dark:text-slate-400 line-through" : "text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400"
                           )}>{task.title}</h4>
-=======
-                 {displayedTodayTasks.length > 0 ? displayedTodayTasks.map((task: any) => (
-                  <div key={task.id} className="p-4 md:p-5 py-2.5 md:py-3 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1.5">
-                        <h4 className="text-base font-bold text-slate-900 dark:text-white truncate group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{task.title}</h4>
->>>>>>> 2797757 (feat: update dashboard components and contribution scores)
                         <Badge variant="outline" className={cn(
                           "text-[10px] uppercase tracking-wider font-bold rounded",
                           task.priority === 'High' ? "border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-500/10" : 
