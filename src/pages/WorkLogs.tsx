@@ -122,7 +122,7 @@ export default function WorkLogs({ session }: { session?: any }) {
   const [statusFilter, setStatusFilter] = useState('All');
   const [projectFilter, setProjectFilter] = useState('All');
   const [employeeFilter, setEmployeeFilter] = useState('All');
-  const [dateFilter, setDateFilter] = useState<Date | undefined>(new Date());
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [heatmapDate, setHeatmapDate] = useState<Date>(todayDate);
   const [activeTab, setActiveTab] = useState('all');
   const [selectedSpecificDate, setSelectedSpecificDate] = useState<string>(todayStr);
@@ -179,24 +179,9 @@ export default function WorkLogs({ session }: { session?: any }) {
     fetchTeam();
   }, [role]);
   
-  let currentUserId = 'manager-1';
-  let currentUserName = 'Admin User';
-  
-  if (role === 'employee') {
-    if (email.toLowerCase().includes('amanda')) {
-      currentUserId = 'u-1';
-      currentUserName = 'Amanda Smith';
-    } else if (email.toLowerCase().includes('rahul')) {
-      currentUserId = 'u-2';
-      currentUserName = 'Rahul Sharma';
-    } else if (email.toLowerCase().includes('priya')) {
-      currentUserId = 'u-3';
-      currentUserName = 'Priya Patel';
-    } else {
-      currentUserId = 'u-4';
-      currentUserName = session?.user?.user_metadata?.name || 'Tanvy Pandey';
-    }
-  }
+  const loggedInUser = getCurrentUser();
+  const currentUserId = loggedInUser?.id || 'manager-1';
+  const currentUserName = loggedInUser?.name || 'Admin User';
 
   const currentUser = {
     id: currentUserId,
@@ -312,21 +297,19 @@ export default function WorkLogs({ session }: { session?: any }) {
   };
 
   const userBaseLogs = useMemo(() => {
-    const base = currentUser.role === 'employee' 
-      ? logs.filter((log: any) => log.name === currentUser.name)
-      : logs;
+    // Backend API already filters work logs for employee role on server
+    const base = logs;
 
     return base.filter((log: any) => {
-      const logDate = new Date(log.rawDate);
-      if (isNaN(logDate.getTime())) return true; // keep if invalid mock date
+      const logDate = new Date(log.rawDate || log.date);
+      if (isNaN(logDate.getTime())) return true;
 
-      let inRange = true;
-      if (dateFilter) {
-        inRange = isSameDay(logDate, dateFilter);
+      if (activeTab !== 'all' && dateFilter) {
+        return isSameDay(logDate, dateFilter);
       }
-      return inRange;
+      return true;
     });
-  }, [logs, currentUser, dateFilter]);
+  }, [logs, dateFilter, activeTab]);
 
   const uniqueProjects = useMemo(() => Array.from(new Set(logs.map(l => l.project))), [logs]);
   const uniqueEmployees = useMemo(() => Array.from(new Set(logs.map(l => l.name))), [logs]);
@@ -406,7 +389,7 @@ export default function WorkLogs({ session }: { session?: any }) {
               isEmployee ? "w-[140px] h-8" : "w-[160px] h-9"
             )}>
               <CalendarIcon className="mr-2 h-4 w-4 text-[#6366F1]" />
-              {dateFilter ? format(dateFilter, "do MMMM") : <span>Pick a date</span>}
+              {dateFilter ? format(dateFilter, "do MMMM") : <span>All Dates</span>}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl" align="start">
@@ -459,7 +442,7 @@ export default function WorkLogs({ session }: { session?: any }) {
           </SelectContent>
         </Select>
 
-        {isEmployee && (dateFilter || searchQuery || projectFilter !== 'All' || statusFilter !== 'All') && (
+        {(dateFilter || searchQuery || projectFilter !== 'All' || statusFilter !== 'All' || employeeFilter !== 'All') && (
           <Button 
             variant="ghost" 
             size="sm"
@@ -468,6 +451,7 @@ export default function WorkLogs({ session }: { session?: any }) {
               setSearchQuery('');
               setProjectFilter('All');
               setStatusFilter('All');
+              setEmployeeFilter('All');
             }}
             className="h-8 text-xs text-[#64748B] hover:text-[#6366F1] font-bold px-2 rounded-xl transition-colors"
           >

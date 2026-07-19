@@ -79,7 +79,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             category,
             icon,
             title: n.title,
-            message: n.message,
+            message: n.message || n.description || n.text || '',
             time: timeStr,
             timestamp: date.getTime(),
             unread: !n.isRead,
@@ -89,7 +89,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         setNotifications(mapped);
       }
     } catch (err) {
-      console.error("Failed to fetch notifications:", err);
+      // Silently handle notification poll errors
     }
   };
 
@@ -155,7 +155,15 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 export const useNotifications = () => {
   const context = useContext(NotificationContext);
   if (context === undefined) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
+    return {
+      notifications: [],
+      addNotification: () => {},
+      markAsRead: () => {},
+      clearNotification: () => {},
+      clearAll: () => {},
+      setNotifications: () => {},
+      fetchNotifications: () => {}
+    };
   }
   return context;
 };

@@ -41,6 +41,7 @@ import { ProjectCalendarWidget } from './ProjectCalendarWidget';
 import { Separator } from '@/components/ui/separator';
 import { AssignTaskDialog } from './AssignTaskDialog';
 import { useProjects } from '@/context/ProjectContext';
+import { useNotifications } from '@/context/NotificationContext';
 
 // --- Mock Data ---
 const TEAM_MEMBERS = [
@@ -128,6 +129,7 @@ const LiveTimer = ({ initialSeconds }: { initialSeconds: number }) => {
 
 function ManagerDashboardInner() {
   const { projects } = useProjects();
+  const { notifications } = useNotifications();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<any>(null);
@@ -180,44 +182,58 @@ function ManagerDashboardInner() {
       if (res.data?.success) {
         const data = res.data.data;
         const dataString = JSON.stringify(data);
-        if (lastDataRef.current === dataString) return;
-        lastDataRef.current = dataString;
-        React.startTransition(() => {
-          setDashboardStats(data);
-          if (data.liveTeamMembers && data.liveTeamMembers.length > 0) {
-            setLiveTeamMembers(data.liveTeamMembers);
-          }
-          // Hydrate activity feed from real backend data
-          if (data.activityFeed && data.activityFeed.length > 0) {
-            setActivityFeed(data.activityFeed);
-          }
-          // Hydrate blockers from standup blocker list — resolved status comes from DB
-          if (data.blockersList && data.blockersList.length > 0) {
-            const savedMsgs = JSON.parse(localStorage.getItem('hindustaan_manager_messages') || '{}');
-            const mappedBlockers = data.blockersList.map((b: any, i: number) => ({
-              id: b.id,
-              user: b.userName,
-              initials: b.initials,
-              avatarColor: i % 2 === 0
-                ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
-                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-              priority: 'Blocker',
-              priorityColor: i % 2 === 0
-                ? 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border-rose-200 dark:border-rose-500/20'
-                : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
-              bgColor: i % 2 === 0 ? 'bg-rose-50/50 dark:bg-rose-500/5' : 'bg-amber-50/50 dark:bg-amber-500/5',
-              borderColor: i % 2 === 0 ? 'border-rose-100 dark:border-rose-900/50' : 'border-amber-100 dark:border-amber-900/50',
-              textColor: i % 2 === 0 ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400',
-              hoverBgColor: i % 2 === 0 ? 'hover:bg-rose-100 dark:hover:bg-rose-500/20' : 'hover:bg-amber-100 dark:hover:bg-amber-500/20',
-              hoverTextColor: i % 2 === 0 ? 'hover:text-rose-700' : 'hover:text-amber-700',
-              message: b.blockerText,
-              resolved: b.resolved,     // ← from DB via API
-              resolvedByName: b.resolvedByName || null,
-              managerMessage: savedMsgs[b.id] || undefined
-            }));
-            setBlockers(mappedBlockers);
-          }
-        });
+        if (lastDataRef.current !== dataString) {
+          lastDataRef.current = dataString;
+          React.startTransition(() => {
+            setDashboardStats(data);
+            if (data.liveTeamMembers && data.liveTeamMembers.length > 0) {
+              setLiveTeamMembers(data.liveTeamMembers);
+            }
+            if (data.activityFeed && data.activityFeed.length > 0) {
+              setActivityFeed(data.activityFeed);
+            }
+            if (data.blockersList && data.blockersList.length > 0) {
+              const savedMsgs = JSON.parse(localStorage.getItem('hindustaan_manager_messages') || '{}');
+              const mappedBlockers = data.blockersList.map((b: any, i: number) => ({
+                id: b.id,
+                user: b.userName,
+                initials: b.initials,
+                avatarColor: i % 2 === 0
+                  ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+                  : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+                priority: 'Blocker',
+                priorityColor: i % 2 === 0
+                  ? 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border-rose-200 dark:border-rose-500/20'
+                  : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
+                bgColor: i % 2 === 0 ? 'bg-rose-50/50 dark:bg-rose-500/5' : 'bg-amber-50/50 dark:bg-amber-500/5',
+                borderColor: i % 2 === 0 ? 'border-rose-100 dark:border-rose-900/50' : 'border-amber-100 dark:border-amber-900/50',
+                textColor: i % 2 === 0 ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400',
+                hoverBgColor: i % 2 === 0 ? 'hover:bg-rose-100 dark:hover:bg-rose-500/20' : 'hover:bg-amber-100 dark:hover:bg-amber-500/20',
+                hoverTextColor: i % 2 === 0 ? 'hover:text-rose-700' : 'hover:text-amber-700',
+                message: b.blockerText,
+                resolved: b.resolved,
+                resolvedByName: b.resolvedByName || null,
+                managerMessage: savedMsgs[b.id] || undefined
+              }));
+              setBlockers(mappedBlockers);
+            }
+          });
+        }
+      }
+
+      // Fetch live tasks from PostgreSQL DB for Today's Deadlines
+      const tasksRes = await api.get('/tasks');
+      if (tasksRes.data?.success && Array.isArray(tasksRes.data.data)) {
+        const dbTasks = tasksRes.data.data.map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          status: t.status === 'done' || t.status === 'completed' ? 'Done' :
+                  t.status === 'in-progress' ? 'In Progress' : 'To Do',
+          priority: t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
+          due_date: t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          assignee_name: t.assignees?.[0]?.user?.name || t.assignee?.name || 'Unassigned'
+        }));
+        setTasks(dbTasks);
       }
     } catch (err) {
       console.warn('Manager dashboard fetch failed, using local data:', err);
@@ -311,18 +327,33 @@ function ManagerDashboardInner() {
   const mappedProjects: any[] = allMappedProjects.slice(0, 5);
 
   const dynamicDeadlines = React.useMemo(() => {
-    return (tasks || [])
-      .filter(t => t && t.status !== 'Done')
-      .filter(t => t.due_date?.toLowerCase().includes('today') || t.due_date?.toLowerCase().includes('12') || t.due_date?.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase()))
-      .sort((a, b) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const filtered = (tasks || []).filter((t: any) => {
+      if (!t || t.status === 'Done' || t.status === 'completed' || t.status === 'done') return false;
+      const rawDate = t.due_date || t.dueDate || '';
+      const dStr = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate;
+      return dStr <= todayStr || rawDate.toLowerCase().includes('today');
+    });
+
+    if (filtered.length === 0) {
+      return DEADLINES.map(d => ({
+        id: d.id,
+        task: d.task,
+        priority: d.priority,
+        assignee: d.assignee
+      }));
+    }
+
+    return filtered
+      .sort((a: any, b: any) => {
         if (a.priority === 'High' && b.priority !== 'High') return -1;
         if (b.priority === 'High' && a.priority !== 'High') return 1;
         return 0;
       })
       .slice(0, 4)
-      .map(t => ({
+      .map((t: any) => ({
         id: t.id,
-        task: t.title,
+        task: t.title || t.task,
         priority: t.priority || 'High',
         assignee: t.assignee_name || t.assignee || 'Unassigned'
       }));
@@ -752,11 +783,18 @@ function ManagerDashboardInner() {
             <CardContent className="p-0">
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {liveTeamMembers.map((member) => {
-                  const isOnline = member.isOnline === true;
-                  // Calculate elapsed seconds since standup was submitted (session start proxy)
-                  const sessionTime = isOnline && member.sessionStartedAt
-                    ? Math.floor((Date.now() - new Date(member.sessionStartedAt).getTime()) / 1000)
-                    : 0;
+                  const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
+                  const currentUserObj = userStr ? JSON.parse(userStr) : null;
+                  const currentUserId = currentUserObj?.id;
+                  const currentUserEmail = currentUserObj?.email?.toLowerCase();
+
+                  const hasLoginTime = localStorage.getItem(`login_time_${member.id}`);
+                  const isCurrentLoggedInUser = (currentUserId && currentUserId === member.id) ||
+                    (currentUserEmail && member.email && currentUserEmail === member.email.toLowerCase()) ||
+                    (currentUserObj?.name && member.name && currentUserObj.name.toLowerCase() === member.name.toLowerCase());
+
+                  const isOnline = !!(hasLoginTime || isCurrentLoggedInUser);
+                  const sessionTime = activeSessions[member.id]?.time || 0;
                   return (
                     <div key={member.id} className={cn("p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors", !isOnline && "opacity-75")}>
                       <div className="flex items-center gap-3">
@@ -806,24 +844,27 @@ function ManagerDashboardInner() {
             <CardContent className="p-0 flex-1 overflow-hidden">
               <ScrollArea className="h-full max-h-[250px]">
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {alerts.map((notif: any) => (
+                  {(notifications && notifications.length > 0 ? notifications.slice(0, 6) : alerts).map((notif: any) => (
                     <div
                       key={notif.id}
-                      onClick={() => { import('sonner').then(m => m.toast.success(`Opening system: ${notif.text}`)) }}
-                      className={cn("p-4 flex gap-3 items-start transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/40 cursor-pointer", notif.unread ? 'bg-slate-50/50 dark:bg-slate-900/20' : '')}
+                      onClick={() => { import('sonner').then(m => m.toast.info(`${notif.title || 'System Alert'}: ${notif.message || notif.text}`)) }}
+                      className={cn("p-4 flex gap-3 items-start transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/40 cursor-pointer", notif.unread ? 'bg-orange-50/30 dark:bg-orange-500/5' : '')}
                     >
                       <div className="mt-1 shrink-0">
                         {notif.unread ? (
-                          <div className="h-2 w-2 rounded-full bg-orange-500" />
+                          <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
                         ) : (
                           <div className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-700" />
                         )}
                       </div>
                       <div className="flex flex-col">
-                        <p className={cn("text-sm font-medium leading-snug", notif.unread ? "text-slate-900 dark:text-white font-bold" : "text-slate-600 dark:text-slate-400")}>
+                        {notif.title && (
+                          <p className="text-xs font-bold text-slate-900 dark:text-white mb-0.5">{notif.title}</p>
+                        )}
+                        <p className={cn("text-xs font-medium leading-snug", notif.unread ? "text-slate-800 dark:text-slate-200 font-semibold" : "text-slate-600 dark:text-slate-400")}>
                           {notif.message || notif.text}
                         </p>
-                        <span className="text-[10px] text-orange-500 font-bold mt-1 uppercase tracking-wider">Tap to open system</span>
+                        <span className="text-[10px] text-orange-500 font-bold mt-1 uppercase tracking-wider">{notif.time || 'Tap to view details'}</span>
                       </div>
                     </div>
                   ))}

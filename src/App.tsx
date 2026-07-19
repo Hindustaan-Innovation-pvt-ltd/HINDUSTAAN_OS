@@ -174,8 +174,7 @@ function App() {
   return (
     <ThemeProvider>
       <WorkspaceProvider>
-      <NotificationProvider>
-        <WorkspaceProvider>
+        <NotificationProvider>
           <ProjectProvider key={session?.user?.email || 'guest'}>
             <UserProvider key={session?.user?.email || 'guest'}>
               <TooltipProvider>
@@ -443,8 +442,7 @@ function App() {
               </TooltipProvider>
             </UserProvider>
           </ProjectProvider>
-        </WorkspaceProvider>
-      </NotificationProvider>
+        </NotificationProvider>
       </WorkspaceProvider>
     </ThemeProvider>
   );

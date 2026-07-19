@@ -7,7 +7,7 @@ type ProjectContextType = {
   loading: boolean;
   addProject: (projectData: any) => Promise<boolean>;
   updateProject: (id: string, updateData: any) => Promise<boolean>;
-  deleteProject: (id: string) => Promise<boolean>;
+  deleteProject: (id: string, reason?: string) => Promise<boolean>;
   refreshProjects: () => Promise<void>;
   addMilestone: (projectId: string, name: string, dueDate?: string) => Promise<boolean>;
   updateMilestoneStatus: (milestoneId: string, status: string) => Promise<boolean>;
@@ -54,7 +54,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
                 p.endDate ? new Date(p.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD',
       endDate: p.endDate ? new Date(p.endDate).toISOString().split('T')[0] : 
                (p.deadline && p.deadline !== 'TBD' && !isNaN(Date.parse(p.deadline)) ? new Date(p.deadline).toISOString().split('T')[0] : ''),
-      budget: p.budget && p.budget !== 'TBD' ? (p.budget.startsWith('$') ? p.budget : `$${p.budget}`) : 'TBD',
+      budget: p.budget && p.budget !== 'TBD' ? (p.budget.startsWith('₹') ? p.budget : `₹${p.budget.replace('$', '')}`) : 'TBD',
       progress,
       milestones: (p.milestones || []).map((m: any) => ({
         id: m.id,
@@ -82,9 +82,12 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       const res = await api.get('/projects');
+      console.log('[DEBUG API] /api/projects response:', res.data);
       if (res.data?.success) {
         const backendProjects = res.data.data || [];
-        setProjects(backendProjects.map(mapBackendProject));
+        const mapped = backendProjects.map(mapBackendProject);
+        console.log('[DEBUG API] Mapped Projects:', mapped);
+        setProjects(mapped);
       }
     } catch (e) {
       console.error('Failed to fetch projects:', e);
@@ -174,9 +177,9 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const deleteProject = async (id: string): Promise<boolean> => {
+  const deleteProject = async (id: string, reason?: string): Promise<boolean> => {
     try {
-      const res = await api.delete(`/projects/${id}`);
+      const res = await api.delete(`/projects/${id}`, { data: { reason } });
       if (res.data?.success) {
         await refreshProjects();
         return true;

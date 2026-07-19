@@ -110,6 +110,8 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
   const [dbProjects, setDbProjects] = useState<any[]>([]);
 
   const mapBackendTask = (t: any): Task => {
+    const assignees = t.assignees || [];
+    const firstAssignee = assignees[0] || {};
     return {
       id: t.id,
       title: t.title,
@@ -117,8 +119,8 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
       project_tag: t.project_tag || t.project?.name || 'General',
       projectId: t.projectId,
       project_status: t.project_status || t.project?.status,
-      assignee_name: t.assignee_name || t.assignee?.name || 'Unassigned',
-      assignee_id: t.assignee_id || t.assigneeId || 'unassigned',
+      assignee_name: t.assignee_name || t.assignee?.name || firstAssignee.name || 'Unassigned',
+      assignee_id: t.assignee_id || t.assigneeId || firstAssignee.id || 'unassigned',
       priority: t.priority === 'High' ? 'High' : t.priority === 'Low' ? 'Low' : t.priority === 'Normal' ? 'Normal' : t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
       due_date: t.due_date || (t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
       status: t.status === 'Done' || t.status === 'done' || t.status === 'completed' ? 'Done' :
@@ -177,10 +179,8 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
     name: currentUserName
   };
 
-  // Base tasks. If intern, only show tasks of the project he/she is working on of that particular employee
-  const baseTasks = currentUser.role === 'intern'
-    ? tasks.filter(task => task.assignee_id === currentUser.id || task.assignee_name === currentUser.name)
-    : tasks;
+  // Base tasks (backend /api/tasks already filters tasks for intern/employee roles on server)
+  const baseTasks = tasks;
 
   // Extract unique filter options dynamically based on the baseTasks visible to this user
   const projects = ['All', ...Array.from(new Set(baseTasks.map(t => t.project_tag)))];

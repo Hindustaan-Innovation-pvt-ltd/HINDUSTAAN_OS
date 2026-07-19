@@ -50,6 +50,24 @@ interface TaskDetailsModalProps {
 const STATUSES: Status[] = ['To Do', 'In Progress', 'In Review', 'Done'];
 
 import api from '@/lib/api';
+import { toast } from 'sonner';
+
+function formatRelativeTime(dateStr: string) {
+  try {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  } catch (e) {
+    return 'Just now';
+  }
+}
 
 export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, onUpdateTask }: TaskDetailsModalProps) {
   const [editedTask, setEditedTask] = useState<Task | null>(null);
@@ -74,6 +92,31 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
     fetchTeam();
   }, []);
 
+  const fetchComments = async (taskId: string) => {
+    try {
+      const res = await api.get(`/tasks/${taskId}/comments`);
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        const fetched = res.data.data.map((c: any) => ({
+          id: c.id,
+          author_name: c.user?.name || 'Team Member',
+          text: c.content,
+          timestamp: c.createdAt ? formatRelativeTime(c.createdAt) : 'Just now'
+        }));
+        setComments([
+          {
+            id: 'c-sys',
+            author_name: 'System',
+            text: 'Task created and assigned.',
+            timestamp: '2 days ago'
+          },
+          ...fetched
+        ]);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch comments for task:", err);
+    }
+  };
+
   const handleSaveEditComment = (commentId: string) => {
     if (!editingText.trim()) return;
     setComments(prev => prev.map(c => c.id === commentId ? { ...c, text: editingText } : c));
@@ -87,15 +130,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
       setEditedTask({ ...task });
       setNewComment('');
       setHasChanges(false);
-      // Mock comments load
-      setComments([
-        {
-          id: 'c-1',
-          author_name: 'System',
-          text: 'Task created and assigned.',
-          timestamp: '2 days ago'
-        }
-      ]);
+      fetchComments(task.id);
     }
   }, [task, isOpen]);
 
@@ -126,17 +161,30 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
     }
   };
 
-  const submitComment = (e: React.FormEvent) => {
+  const submitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
-    const comment: Comment = {
-      id: Date.now().toString(),
+    if (!newComment.trim() || !task) return;
+    const text = newComment.trim();
+    setNewComment('');
+
+    const tempComment: Comment = {
+      id: `temp-${Date.now()}`,
       author_name: currentUser.name || 'Current User',
-      text: newComment,
+      text: text,
       timestamp: 'Just now'
     };
-    setComments(prev => [...prev, comment]);
-    setNewComment('');
+    setComments(prev => [...prev, tempComment]);
+
+    try {
+      const res = await api.post(`/tasks/${task.id}/comments`, { content: text });
+      if (res.data?.success) {
+        toast.success("Comment posted successfully!");
+        fetchComments(task.id);
+      }
+    } catch (err: any) {
+      console.error("Failed to post comment:", err);
+      toast.error("Failed to post comment");
+    }
   };
 
   // Helpers

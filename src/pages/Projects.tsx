@@ -17,12 +17,17 @@ const GANTT_TASKS: any[] = [];
 import { useProjects } from '@/context/ProjectContext';
 import { useNotifications } from '@/context/NotificationContext';
 import api from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function Projects({ session }: { session?: any }) {
   const { addNotification } = useNotifications();
   const [activeTab, setActiveTab] = useState('All');
   const { projects, addProject, updateProject, deleteProject } = useProjects();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingProject, setDeletingProject] = useState<any>(null);
+  const [deletionReason, setDeletionReason] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [newProject, setNewProject] = useState({ name: '', manager: '', managerId: '', deadline: '', budget: '', priority: 'Medium', tasks: [] as any[] });
@@ -58,7 +63,7 @@ export default function Projects({ session }: { session?: any }) {
         managerId: newProject.managerId,
         deadline: newProject.deadline,
         tasks: newProject.tasks,
-        budget: newProject.budget ? (newProject.budget.toString().startsWith('$') ? newProject.budget : `$${newProject.budget}`) : 'TBD'
+        budget: newProject.budget ? (newProject.budget.toString().startsWith('₹') ? newProject.budget : `₹${newProject.budget.replace('$', '')}`) : 'TBD'
       });
     } else {
       const colors = [
@@ -80,7 +85,7 @@ export default function Projects({ session }: { session?: any }) {
         manager: newProject.manager || 'Unassigned',
         managerId: newProject.managerId || '',
         deadline: newProject.deadline || 'TBD',
-        budget: newProject.budget ? (newProject.budget.toString().startsWith('$') ? newProject.budget : `$${newProject.budget}`) : 'TBD'
+        budget: newProject.budget ? (newProject.budget.toString().startsWith('₹') ? newProject.budget : `₹${newProject.budget.replace('$', '')}`) : 'TBD'
       };
 
       addProject(project);
@@ -302,8 +307,10 @@ export default function Projects({ session }: { session?: any }) {
                                 <X className="mr-2 h-3.5 w-3.5" /> Abort
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem className="font-bold text-xs cursor-pointer rounded-lg text-red-600 focus:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30" onClick={() => {
-                              deleteProject(project.id);
+                             <DropdownMenuItem className="font-bold text-xs cursor-pointer rounded-lg text-red-600 focus:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30" onClick={() => {
+                              setDeletingProject(project);
+                              setDeletionReason('');
+                              setDeleteModalOpen(true);
                             }}>
                               <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
                             </DropdownMenuItem>
@@ -618,12 +625,12 @@ export default function Projects({ session }: { session?: any }) {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Estimated Budget</label>
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Estimated Budget (₹)</label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">₹</span>
                     <input
                       type="number"
-                      placeholder="e.g. 15000"
+                      placeholder="e.g. 50000"
                       value={newProject.budget}
                       onChange={(e) => setNewProject({ ...newProject, budget: e.target.value })}
                       className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
@@ -722,6 +729,85 @@ export default function Projects({ session }: { session?: any }) {
                 disabled={newProject.name.trim().length < 3}
               >
                 {editingProjectId ? 'Save Changes' : 'Launch Project'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Project Deletion Reason Modal */}
+      {deleteModalOpen && deletingProject && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-2xl">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">Delete Project</h3>
+                  <p className="text-xs font-semibold text-slate-500">{deletingProject.name}</p>
+                </div>
+              </div>
+              <button onClick={() => setDeleteModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                Are you sure you want to delete <span className="font-bold text-slate-900 dark:text-white">"{deletingProject.name}"</span>? Please specify a reason for deleting this project. A notification will be broadcast to all team members.
+              </p>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Reason for Deletion <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={deletionReason}
+                  onChange={e => setDeletionReason(e.target.value)}
+                  placeholder="Explain why this project is being deleted (e.g. Scope completed, Budget reallocated, Merged into another module)..."
+                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                className="flex-1 h-11 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={!deletionReason.trim() || isDeleting}
+                onClick={async () => {
+                  if (!deletingProject || !deletionReason.trim()) return;
+                  setIsDeleting(true);
+                  try {
+                    await deleteProject(deletingProject.id, deletionReason.trim());
+                    addNotification({
+                      type: 'alert',
+                      category: 'Projects',
+                      icon: '🚨',
+                      title: `Project Deleted: ${deletingProject.name}`,
+                      message: `Project "${deletingProject.name}" was deleted by Manager.\nReason: ${deletionReason.trim()}`,
+                      group: 'Today',
+                    });
+                    toast.success("Project Deleted", { description: "Deletion reason broadcasted to all team members in notifications." });
+                    setDeleteModalOpen(false);
+                    setDeletingProject(null);
+                    setDeletionReason('');
+                  } catch (err: any) {
+                    toast.error("Failed to delete project", { description: err?.message || 'Server error' });
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                className="flex-1 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-md shadow-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isDeleting ? 'Deleting...' : 'Confirm Delete'}
               </button>
             </div>
           </div>

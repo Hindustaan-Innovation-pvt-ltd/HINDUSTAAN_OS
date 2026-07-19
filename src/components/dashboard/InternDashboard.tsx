@@ -59,7 +59,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   
   const { user: contextUser } = useUser();
   const user = getCurrentUser();
-  let currentUserId = user?.id || 'u-4';
+  let currentUserId = user?.id || '';
   let currentUserName = contextUser?.name || user?.name || 'User';
 
   const { projects } = useProjects();
@@ -79,19 +79,13 @@ export default function InternDashboard({ session }: InternDashboardProps) {
     }
   };
   
-  // Extract dynamic tasks from central task list (TaskBoard source)
-  const [tasks, setTasks] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_tasks_list');
-    const allTasks = saved ? JSON.parse(saved) : [];
-    return allTasks.filter((t: any) => 
-      t.assignee_name === currentUserName || 
-      (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
-    );
-  });
+  // Dynamic tasks state fetched strictly from DB API
+  const [tasks, setTasks] = useState<any[]>([]);
 
   const fetchInternTasks = async () => {
     try {
       const res = await api.get('/tasks?limit=1000');
+      console.log('[DEBUG API] /api/tasks response:', { url: '/api/tasks?limit=1000', data: res.data });
       if (res.data?.success && Array.isArray(res.data.data)) {
         const mapped = res.data.data.map((t: any) => ({
           id: t.id,
@@ -100,67 +94,83 @@ export default function InternDashboard({ session }: InternDashboardProps) {
           project_tag: t.project?.name || 'General',
           projectId: t.projectId,
           project_status: t.project?.status || 'active',
-          assignee_name: t.assignee?.name || 'Unassigned',
-          assignee_id: t.assigneeId || 'unassigned',
+          assignee_name: t.assignee_name || (t.assignees && t.assignees[0]?.name) || 'Unassigned',
+          assignee_id: t.assignee_id || (t.assignees && t.assignees[0]?.id) || 'unassigned',
+          assignees: t.assignees || [],
           priority: t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
-          due_date: formatDateSafely(t.dueDate),
+          due_date: formatDateSafely(t.due_date || t.dueDate),
           status: t.status === 'done' || t.status === 'completed' ? 'Done' :
                   t.status === 'in-progress' ? 'In Progress' :
                   t.status === 'in-review' ? 'In Review' : 'To Do'
         }));
         
-        // Filter tasks assigned to this user
-        const filtered = mapped.filter((t: any) => 
-          t.assignee_id === currentUserId ||
-          t.assignee_name === currentUserName ||
-          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
-        );
-        setTasks(filtered);
+        console.log('[DEBUG API] Mapped DB Tasks:', mapped);
+        setTasks(mapped);
       }
     } catch (err) {
       console.warn('Failed to fetch tasks on InternDashboard:', err);
     }
   };
 
+  const [leaves, setLeaves] = useState<any[]>([]);
+
+  const fetchLeaves = async () => {
+    try {
+      const res = await api.get('/leaves');
+      console.log('[DEBUG API] /api/leaves response:', res.data);
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setLeaves(res.data.data);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch leaves on InternDashboard:', err);
+    }
+  };
+
+  const [activityFeed, setActivityFeed] = useState<any[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
+
+  const [allLogs, setAllLogs] = useState<any[]>([]);
+  const [loggedHours, setLoggedHours] = useState(0);
+
+  const fetchWorkLogs = async () => {
+    try {
+      const res = await api.get('/worklogs');
+      console.log('[DEBUG API] /api/worklogs response:', res.data);
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        const logs = res.data.data;
+        setAllLogs(logs);
+        const total = logs.reduce((acc: number, log: any) => acc + (log.hours || 0), 0);
+        setLoggedHours(total);
+        console.log('[DEBUG API] Mapped WorkLogs:', { count: logs.length, totalHours: total });
+      }
+    } catch (err) {
+      console.warn('Failed to fetch worklogs on InternDashboard:', err);
+    }
+  };
+
   useEffect(() => {
     fetchInternTasks();
     fetchLeaves();
+    fetchWorkLogs();
   }, [currentUserId, currentUserName]);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'hindustaan_tasks_list' && e.newValue) {
-        const allTasks = JSON.parse(e.newValue);
-        setTasks(allTasks.filter((t: any) => 
-          t.assignee_name === currentUserName || 
-          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
-        ));
-        fetchInternTasks();
-      } else if (e.key === 'local-storage-update') {
+      if (e.key === 'work_logs_list' || e.key === 'hindustaan_tasks_list') {
+        fetchWorkLogs();
         fetchInternTasks();
       }
     };
-    
     const handleLocalUpdate = (e: CustomEvent) => {
-      if (e.detail.key === 'hindustaan_tasks_list') {
-        const allTasks = typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : [];
-        setTasks(allTasks.filter((t: any) => 
-          t.assignee_name === currentUserName || 
-          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
-        ));
+      if (e.detail.key === 'work_logs_list' || e.detail.key === 'hindustaan_tasks_list') {
+        fetchWorkLogs();
         fetchInternTasks();
       }
     };
 
     const handleTasksUpdatedEvent = () => {
-      const saved = localStorage.getItem('hindustaan_tasks_list');
-      if (saved) {
-        const allTasks = JSON.parse(saved);
-        setTasks(allTasks.filter((t: any) => 
-          t.assignee_name === currentUserName || 
-          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
-        ));
-      }
+      fetchWorkLogs();
+      fetchInternTasks();
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -174,57 +184,81 @@ export default function InternDashboard({ session }: InternDashboardProps) {
     };
   }, [currentUserName]);
 
-  const [leaves, setLeaves] = useState<any[]>([]);
+  // Read todays standup
+  const [todaysStandup, setTodaysStandup] = useState<any>(null);
 
-  const fetchLeaves = async () => {
-    try {
-      const res = await api.get('/leaves');
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setLeaves(res.data.data);
-      }
-    } catch (err) {
-      console.warn('Failed to fetch leaves on InternDashboard:', err);
+  const getProgress = (status: string) => {
+    switch (status) {
+      case 'Done': return 100;
+      case 'In Review': return 85;
+      case 'In Progress': return 50;
+      default: return 0;
     }
   };
 
-  const [activityFeed, setActivityFeed] = useState<any[]>([]);
-  
-  const [calendarEvents, setCalendarEvents] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_calendar_events');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return parsed.map((e: any) => ({ ...e, date: new Date(e.date) }));
-      } catch { return []; }
+  // Live backend dashboard data
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const lastDataRef = React.useRef<string | null>(null);
+
+  const overallScore = dashboardData?.contribution?.overallScore ?? 0;
+  const tasksCompleted = dashboardData?.performance?.completedTasks ?? 0;
+  const tasksTotal = dashboardData?.performance?.totalTasks ?? 0;
+  const hoursLoggedValue = dashboardData?.performance?.totalHours ?? 0;
+  const milestonesCompleted = dashboardData?.performance?.completedMilestones ?? 0;
+  const milestonesTotal = dashboardData?.totalMilestones ?? 0;
+
+  const fetchDashboard = async () => {
+    try {
+      const res = await api.get('/dashboard');
+      console.log('[DEBUG API] /api/dashboard response:', res.data);
+      if (res.data?.success) {
+        const dataString = JSON.stringify(res.data.data);
+        if (lastDataRef.current === dataString) return;
+        lastDataRef.current = dataString;
+
+        React.startTransition(() => {
+          setDashboardData(res.data.data);
+          // Hydrate todaysStandup from live data
+          if (res.data.data.standupStatus?.submittedToday) {
+            setTodaysStandup({
+              status: 'Submitted',
+              time: res.data.data.standupStatus.submissionTime || '',
+              yesterday: res.data.data.standupStatus.yesterday || '',
+              today: res.data.data.standupStatus.today || '',
+              blockers: res.data.data.standupStatus.blockers || 'None'
+            });
+          } else {
+            setTodaysStandup(null);
+          }
+          // Hydrate logged hours
+          if (typeof res.data.data.loggedHours === 'number') {
+            setLoggedHours(res.data.data.loggedHours);
+          }
+          // Hydrate activity feed
+          if (res.data.data.activityFeed && res.data.data.activityFeed.length > 0) {
+            setActivityFeed(res.data.data.activityFeed);
+          }
+        });
+      }
+    } catch (err) {
+      console.warn('Intern dashboard fetch failed:', err);
     }
-    return [];
-  });
+  };
 
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'hindustaan_calendar_events' && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          setCalendarEvents(parsed.map((evt: any) => ({ ...evt, date: new Date(evt.date) })));
-        } catch {}
-      }
-    };
-    const handleLocalUpdate = (e: CustomEvent) => {
-      if (e.detail.key === 'hindustaan_calendar_events') {
-        try {
-          const parsed = typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : e.detail.value;
-          if (Array.isArray(parsed)) {
-            setCalendarEvents(parsed.map((evt: any) => ({ ...evt, date: new Date(evt.date) })));
-          }
-        } catch {}
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    };
+    fetchDashboard();
+    fetchLeaves();
+    fetchWorkLogs();
+    fetchInternTasks();
+
+    // Poll every 5 seconds for real-time updates
+    const intervalId = setInterval(() => {
+      fetchDashboard();
+      fetchLeaves();
+      fetchWorkLogs();
+      fetchInternTasks();
+    }, 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const employeeUpcomingEvents = useMemo(() => {
@@ -296,112 +330,6 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       .sort((a: any, b: any) => a.date.getTime() - b.date.getTime())
       .slice(0, 5);
   }, [calendarEvents, tasks, leaves, projects, currentUserName]);
-
-  const [allLogs, setAllLogs] = useState<any[]>(() => {
-    const saved = localStorage.getItem('work_logs_list');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [loggedHours, setLoggedHours] = useState(() => {
-    const logs = allLogs;
-    const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && log.name.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())));
-    return userLogs.reduce((acc: number, log: any) => acc + log.hours, 0);
-  });
-
-  useEffect(() => {
-    const handleLogsChange = (logsStr: string | null) => {
-      const logs = logsStr ? JSON.parse(logsStr) : [];
-      setAllLogs(logs);
-      const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && log.name.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())));
-      setLoggedHours(userLogs.reduce((acc: number, log: any) => acc + log.hours, 0));
-    };
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'work_logs_list') handleLogsChange(e.newValue);
-    };
-    const handleLocalUpdate = (e: CustomEvent) => {
-      if (e.detail.key === 'work_logs_list') handleLogsChange(e.detail.value);
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    };
-  }, [currentUserName]);
-
-  // Read todays standup
-  const [todaysStandup, setTodaysStandup] = useState<any>(null);
-
-  const getProgress = (status: string) => {
-    switch (status) {
-      case 'Done': return 100;
-      case 'In Review': return 85;
-      case 'In Progress': return 50;
-      default: return 0;
-    }
-  };
-
-  // Live backend dashboard data
-  const [dashboardData, setDashboardData] = useState<any>(null);
-  const lastDataRef = React.useRef<string | null>(null);
-
-  const overallScore = dashboardData?.contribution?.overallScore ?? 88;
-  const tasksCompleted = dashboardData?.performance?.completedTasks ?? 24;
-  const tasksTotal = dashboardData?.performance?.totalTasks ?? 30;
-  const hoursLoggedValue = dashboardData?.performance?.totalHours ?? 42;
-  const milestonesCompleted = dashboardData?.performance?.completedMilestones ?? 2;
-  const milestonesTotal = dashboardData?.totalMilestones ?? 3;
-
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const res = await api.get('/dashboard');
-        if (res.data?.success) {
-          const dataString = JSON.stringify(res.data.data);
-          if (lastDataRef.current === dataString) return;
-          lastDataRef.current = dataString;
-
-          React.startTransition(() => {
-            setDashboardData(res.data.data);
-            // Hydrate todaysStandup from live data
-            if (res.data.data.standupStatus?.submittedToday) {
-              setTodaysStandup({
-                status: 'Submitted',
-                time: res.data.data.standupStatus.submissionTime || '',
-                yesterday: res.data.data.standupStatus.yesterday || '',
-                today: res.data.data.standupStatus.today || '',
-                blockers: res.data.data.standupStatus.blockers || 'None'
-              });
-            } else {
-              setTodaysStandup(null);
-            }
-            // Hydrate logged hours
-            if (typeof res.data.data.loggedHours === 'number') {
-              setLoggedHours(res.data.data.loggedHours);
-            }
-            // Hydrate activity feed
-            if (res.data.data.activityFeed && res.data.data.activityFeed.length > 0) {
-              setActivityFeed(res.data.data.activityFeed);
-            }
-          });
-        }
-      } catch (err) {
-        console.warn('Intern dashboard fetch failed, using local data:', err);
-      }
-    };
-    fetchDashboard();
-    fetchLeaves();
-
-    // Poll every 5 seconds for real-time updates
-    const intervalId = setInterval(() => {
-      fetchDashboard();
-      fetchLeaves();
-    }, 5000);
-    return () => clearInterval(intervalId);
-  }, []);
 
   const activeTasksCount = typeof dashboardData?.activeTasksCount === 'number'
     ? dashboardData.activeTasksCount
@@ -700,7 +628,9 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             <div>
               <p className="text-2xl font-black text-slate-900 dark:text-white">Standup</p>
               {todaysStandup ? (
-                <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">Logged at {todaysStandup.time}</p>
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">
+                  {todaysStandup.time?.startsWith('Logged at') ? todaysStandup.time : `Logged at ${todaysStandup.time}`}
+                </p>
               ) : (
                 <p className="text-sm font-bold text-rose-500 dark:text-rose-400 mt-1">Action Required</p>
               )}

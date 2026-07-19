@@ -114,17 +114,20 @@ export default function EmailLogsModule() {
       const res = await api.get('/notifications/email-logs');
       if (res.data?.success) {
         // Map backend sentDate schema to frontend sentDate format
-        const mapped = (res.data.data || []).map((log: any) => ({
-          id: log.id,
-          recipient: log.recipient,
-          subject: log.subject,
-          type: log.type,
-          status: log.status,
-          sentBy: log.sentBy,
-          sentDate: log.sentDate ? log.sentDate.replace('T', ' ').slice(0, 16) : new Date().toISOString().replace('T', ' ').slice(0, 16),
-          deliveryStatus: log.deliveryStatus,
-          body: log.body
-        }));
+        const mapped = (res.data.data || []).map((log: any) => {
+          const rawDate = typeof log.sentDate === 'string' ? log.sentDate : (log.sentDate ? new Date(log.sentDate).toISOString() : new Date().toISOString());
+          return {
+            id: log.id,
+            recipient: log.recipient,
+            subject: log.subject,
+            type: log.type,
+            status: log.status,
+            sentBy: log.sentBy,
+            sentDate: rawDate.replace('T', ' ').slice(0, 16),
+            deliveryStatus: log.deliveryStatus,
+            body: log.body
+          };
+        });
         setLogs(mapped);
       }
     } catch (e) {

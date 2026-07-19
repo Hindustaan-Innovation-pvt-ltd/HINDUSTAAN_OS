@@ -131,7 +131,8 @@ export default function DailyStandups({ session }: { session?: any }) {
   const role = session?.user?.user_metadata?.role || currentUser?.role || 'employee';
   const email = session?.user?.email || currentUser?.email || 'user@hindustaan.in';
   
-  const currentUserName = session?.user?.user_metadata?.name || currentUser?.name || 'Tanvy';
+  const currentUserName = session?.user?.user_metadata?.name || currentUser?.name || 'Employee';
+  const firstName = (currentUserName || '').split(' ')[0].toLowerCase();
 
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
@@ -182,6 +183,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               dateGroup: new Date(s.date).toDateString() === new Date().toDateString() ? 'Today' : 'Earlier'
             }));
             setHistory(mapped);
+            setStandups(mapped);
             localStorage.setItem('hindustaan_standup_history', JSON.stringify(mapped));
           }
         }
@@ -617,13 +619,13 @@ export default function DailyStandups({ session }: { session?: any }) {
     ? (() => { try { return JSON.parse(savedApprovedExtensions); } catch { return []; } })()
     : [];
   
-  const firstName = (currentUserName || '').split(' ')[0].toLowerCase();
   const myTasks = allTasksArray.filter((t: any) =>
-    t && (t.assignee_name?.toLowerCase().includes(firstName) || t.assignee_id === (
-      ['Amanda Smith','Rahul Sharma','Priya Patel'].indexOf(currentUserName) >= 0
-        ? `u-${['Amanda Smith','Rahul Sharma','Priya Patel'].indexOf(currentUserName) + 1}`
-        : 'u-4'
-    ))
+    t && (
+      t.assignee_id === currentUser?.id ||
+      t.assigneeId === currentUser?.id ||
+      (t.assignees && Array.isArray(t.assignees) && t.assignees.some((a: any) => (a.userId || a.id) === currentUser?.id)) ||
+      t.assignee_name?.toLowerCase().includes(firstName)
+    )
   );
 
   const tasksCompletedCount = myTasks.filter((t: any) => t && t.status === 'Done').length;
@@ -676,10 +678,21 @@ export default function DailyStandups({ session }: { session?: any }) {
   const [historySearch, setHistorySearch] = useState('');
   const [historyDateFilter, setHistoryDateFilter] = useState('');
 
-  // Filter standups to show only logged in employee (recent 2-3) if role is not manager
   const displayStandups = role !== 'manager'
-    ? history.filter(s => s && s.user && s.user.toLowerCase().includes(firstName)).slice(0, 3)
+    ? (history.length > 0 ? history.slice(0, 3) : [])
     : standups;
+
+  const hasSubmittedToday = role !== 'manager'
+    ? history.some(s => s && s.dateGroup === 'Today')
+    : false;
+
+  const submittedCount = role !== 'manager'
+    ? (hasSubmittedToday ? 1 : 0)
+    : displayStandups.filter(s => s.status === 'Submitted').length;
+
+  const pendingCount = role !== 'manager'
+    ? (hasSubmittedToday ? 0 : 1)
+    : displayStandups.filter(s => s.status === 'Pending').length;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -739,9 +752,6 @@ export default function DailyStandups({ session }: { session?: any }) {
     setFormData({ yesterday: '', today: '', blockers: '', notes: '' });
   };
 
-  const submittedCount = displayStandups.filter(s => s.status === 'Submitted').length;
-  const pendingCount = displayStandups.filter(s => s.status === 'Pending').length;
-
   const handleRemindAll = () => {
     toast.success(`Reminders sent to all ${pendingCount} pending team members!`);
     setSentReminders(new Set(standups.filter(s => s.status === 'Pending').map(s => s.id)));
@@ -775,16 +785,14 @@ export default function DailyStandups({ session }: { session?: any }) {
 
   // Filter history to show only logged in employee standups if role is not manager
   const filteredHistory = history.filter(h => {
-    if (!h || !h.user) return false;
+    if (!h) return false;
     if (role !== 'manager') {
-      const matchesUser = h.user.toLowerCase().includes(firstName);
-      if (!matchesUser) return false;
       if (historyDateFilter) {
         return getEntryDateString(h) === historyDateFilter;
       }
       return true;
     }
-    return h.user.toLowerCase().includes(historySearch.toLowerCase());
+    return h.user && h.user.toLowerCase().includes(historySearch.toLowerCase());
   });
 
   const groupedHistory = filteredHistory.reduce((acc: any, item: any) => {

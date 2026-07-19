@@ -95,14 +95,10 @@ const CustomTooltip = ({ active, payload }: any) => {
 export default function ContributionScores({ session }: { session?: any }) {
   const { projects } = useProjects();
   const currentUser = getCurrentUser();
-  const currentUserId = currentUser?.id || 'u-4';
-  const role = session?.user?.user_metadata?.role || currentUser?.role || 'intern';
-  const email = session?.user?.email || currentUser?.email || 'user@hindustaan.in';
-
-  let currentUserName = currentUser?.name || 'Tanvy Pandey';
-  if (email.toLowerCase().includes('amanda')) currentUserName = 'Amanda Smith';
-  else if (email.toLowerCase().includes('rahul')) currentUserName = 'Rahul Sharma';
-  else if (email.toLowerCase().includes('priya')) currentUserName = 'Priya Patel';
+  const currentUserId = currentUser?.id;
+  const role = session?.user?.user_metadata?.role || currentUser?.role || 'employee';
+  const email = session?.user?.email || currentUser?.email || '';
+  const currentUserName = session?.user?.user_metadata?.name || currentUser?.name || 'Employee';
 
   const [searchTerm, setSearchTerm] = useState('');
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -146,15 +142,52 @@ export default function ContributionScores({ session }: { session?: any }) {
       setLoadingMetrics(true);
       const nameToCheck = currentUserName;
 
-      // 1. Fetch Tasks (API + localStorage)
+      // Try fetching server-computed contributionScore from /api/dashboard first
+      try {
+        const dashRes = await api.get('/dashboard');
+        if (dashRes.data?.success && dashRes.data.data?.contributionScore) {
+          const cs = dashRes.data.data.contributionScore;
+          if (cs.overallScore > 0 || cs.totalTasks > 0 || cs.hoursLogged > 0) {
+            setMetrics({
+              overallScore: cs.overallScore || 0,
+              tasksCompleted: cs.tasksCompleted || 0,
+              totalTasks: cs.totalTasks || 0,
+              taskPercent: cs.taskPercent || 0,
+              hoursLogged: cs.hoursLogged || 0,
+              targetHours: 48,
+              logPercent: cs.logPercent || 0,
+              submittedStandups: cs.standupsSubmitted || cs.submittedStandups || 0,
+              totalStandupDays: 6,
+              standupPercent: cs.standupPercent || 0,
+              milestonesAchieved: cs.milestonesAchieved || 0,
+              totalMilestones: cs.totalMilestones || 0,
+              milestonePercent: cs.milestonePercent || 0,
+              weeklyTrendData: cs.weeklyTrendData || [
+                { name: 'Week 1', score: Math.max(50, (cs.overallScore || 70) - 15) },
+                { name: 'Week 2', score: Math.max(60, (cs.overallScore || 75) - 10) },
+                { name: 'Week 3', score: Math.max(70, (cs.overallScore || 80) - 5) },
+                { name: 'Week 4', score: cs.overallScore || 85 },
+              ],
+              scoreBreakdownData: [
+                { name: 'Tasks Completed', value: 35, fill: COLORS.excellent },
+                { name: 'Work Logs', value: 25, fill: COLORS.good },
+                { name: 'Standups', value: 20, fill: COLORS.orange },
+                { name: 'Milestones', value: 20, fill: '#8b5cf6' },
+              ]
+            });
+            setLoadingMetrics(false);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('Dashboard fallback in ContributionScores:', e);
+      }
+
+      // 1. Fetch Tasks (Backend API restricts tasks by user role automatically)
       const tasksRes = await api.get('/tasks?limit=1000');
       let apiTasks: any[] = [];
       if (tasksRes.data?.success && Array.isArray(tasksRes.data.data)) {
-        apiTasks = tasksRes.data.data.filter((t: any) =>
-          t.assigneeId === currentUserId ||
-          (t.assignee?.name && t.assignee.name.toLowerCase() === nameToCheck.toLowerCase()) ||
-          (t.assignee?.name && nameToCheck.toLowerCase().includes(t.assignee.name.split(' ')[0].toLowerCase()))
-        );
+        apiTasks = tasksRes.data.data;
       }
 
       // Also get from localStorage
@@ -164,11 +197,7 @@ export default function ContributionScores({ session }: { session?: any }) {
         try {
           const parsed = JSON.parse(savedTasksStr);
           if (Array.isArray(parsed)) {
-            localTasks = parsed.filter((t: any) => 
-              t.assignee_id === currentUserId ||
-              t.assignee_name?.toLowerCase() === nameToCheck.toLowerCase() || 
-              (nameToCheck.toLowerCase().includes(nameToCheck.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(nameToCheck.split(' ')[0].toLowerCase()))
-            );
+            localTasks = parsed;
           }
         } catch (e) {
           console.error('Error parsing local tasks:', e);
@@ -201,15 +230,11 @@ export default function ContributionScores({ session }: { session?: any }) {
       const totalTasks = combinedTasks.length;
       const taskPercent = totalTasks > 0 ? Math.round((tasksCompleted / totalTasks) * 100) : 0;
 
-      // 2. Fetch Work Logs (API + localStorage)
+      // 2. Fetch Work Logs (Backend API restricts logs by user role automatically)
       const logsRes = await api.get('/worklogs');
       let apiLogs: any[] = [];
       if (logsRes.data?.success && Array.isArray(logsRes.data.data)) {
-        apiLogs = logsRes.data.data.filter((l: any) =>
-          l.userId === currentUserId ||
-          (l.user?.name && l.user.name.toLowerCase() === nameToCheck.toLowerCase()) ||
-          (l.user?.name && nameToCheck.toLowerCase().includes(l.user.name.split(' ')[0].toLowerCase()))
-        );
+        apiLogs = logsRes.data.data;
       }
 
       const savedLogsStr = localStorage.getItem('work_logs_list');
@@ -444,6 +469,22 @@ export default function ContributionScores({ session }: { session?: any }) {
     { name: 'Average', value: internData.filter(i => i.score >= 70 && i.score < 80).length, fill: COLORS.average },
     { name: 'Needs Imp.', value: internData.filter(i => i.score < 70).length, fill: COLORS.poor },
   ];
+
+  const teamAverageScore = internData.length > 0 
+    ? Math.round(internData.reduce((acc, i) => acc + (i.score || 0), 0) / internData.length)
+    : 0;
+
+  const avgTaskPerf = internData.length > 0 
+    ? Math.round(internData.reduce((acc, i) => acc + (i.taskScore || 0), 0) / internData.length)
+    : 0;
+
+  const avgLogPerf = internData.length > 0 
+    ? Math.round(internData.reduce((acc, i) => acc + (i.logScore || 0), 0) / internData.length)
+    : 0;
+
+  const avgStandupPerf = internData.length > 0 
+    ? Math.round(internData.reduce((acc, i) => acc + (i.standupScore || 0), 0) / internData.length)
+    : 0;
 
   const highestScorer = internData.length > 0 ? internData.reduce((max, intern) => (intern.score > max.score ? intern : max), internData[0]) : null;
 
@@ -781,7 +822,7 @@ export default function ContributionScores({ session }: { session?: any }) {
               <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Team Average</span>
             </div>
             <div className="flex items-end gap-3 mt-4">
-              <span className="text-5xl font-black text-slate-900 dark:text-white">86%</span>
+              <span className="text-5xl font-black text-slate-900 dark:text-white">{teamAverageScore}%</span>
               <span className="flex items-center text-sm font-bold text-emerald-600 mb-1">
                 <TrendingUp className="h-4 w-4 mr-1" /> +4%
               </span>
@@ -791,9 +832,9 @@ export default function ContributionScores({ session }: { session?: any }) {
 
         {/* Small KPIs */}
         {[
-          { title: "Task Performance", val: "91%", icon: Target, color: COLORS.excellent },
-          { title: "Work Logs", val: "94%", icon: Clock, color: COLORS.good },
-          { title: "Standups", val: "89%", icon: Mic, color: COLORS.orange },
+          { title: "Task Performance", val: `${avgTaskPerf}%`, icon: Target, color: COLORS.excellent },
+          { title: "Work Logs", val: `${avgLogPerf}%`, icon: Clock, color: COLORS.good },
+          { title: "Standups", val: `${avgStandupPerf}%`, icon: Mic, color: COLORS.orange },
         ].map((kpi, i) => (
           <Card key={i} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
             <CardContent className="p-5 flex items-center justify-between">

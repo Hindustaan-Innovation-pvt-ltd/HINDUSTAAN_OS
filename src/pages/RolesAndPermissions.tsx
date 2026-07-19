@@ -48,34 +48,21 @@ export default function RolesAndPermissions() {
   useEffect(() => {
     fetchUsers();
 
-    // Load History from localStorage
+    // Load History from localStorage (only real changes)
     const savedHistory = localStorage.getItem('hindustaan_role_history');
     if (savedHistory) {
-      setHistoryList(JSON.parse(savedHistory));
+      try {
+        const parsed = JSON.parse(savedHistory);
+        const filtered = parsed.filter((h: RoleHistoryItem) => 
+          h.userName !== 'Amanda Smith' && h.userName !== 'Aakash Gupta' && h.changedBy !== 'Aakash Gupta'
+        );
+        setHistoryList(filtered);
+        localStorage.setItem('hindustaan_role_history', JSON.stringify(filtered));
+      } catch (e) {
+        setHistoryList([]);
+      }
     } else {
-      // Seed default history records
-      const demoHistory: RoleHistoryItem[] = [
-        {
-          id: 'h1',
-          userName: 'Amanda Smith',
-          userEmail: 'amanda@hindustaan.in',
-          prevRole: 'intern',
-          newRole: 'employee',
-          changedBy: 'Aakash Gupta',
-          timestamp: new Date(Date.now() - 3600000 * 24).toISOString()
-        },
-        {
-          id: 'h2',
-          userName: 'Aakash Gupta',
-          userEmail: 'manager1@hindustaan.in',
-          prevRole: 'employee',
-          newRole: 'manager',
-          changedBy: 'admin',
-          timestamp: new Date(Date.now() - 3600000 * 12).toISOString()
-        }
-      ];
-      localStorage.setItem('hindustaan_role_history', JSON.stringify(demoHistory));
-      setHistoryList(demoHistory);
+      setHistoryList([]);
     }
   }, []);
 
@@ -315,7 +302,6 @@ export default function RolesAndPermissions() {
                       )}
                     >
                       <option value="">-- Choose New Role --</option>
-                      <option value="Admin">Admin</option>
                       <option value="Manager">Manager</option>
                       <option value="Employee">Employee</option>
                     </select>
