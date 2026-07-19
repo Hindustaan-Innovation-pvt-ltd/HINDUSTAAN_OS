@@ -63,6 +63,21 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   let currentUserName = contextUser?.name || user?.name || 'User';
 
   const { projects } = useProjects();
+
+  const formatDateSafely = (dateVal: any) => {
+    if (!dateVal || String(dateVal).toLowerCase() === 'tbd') {
+      return new Date().toISOString().split('T')[0];
+    }
+    try {
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) {
+        return new Date().toISOString().split('T')[0];
+      }
+      return d.toISOString().split('T')[0];
+    } catch {
+      return new Date().toISOString().split('T')[0];
+    }
+  };
   
   // Extract dynamic tasks from central task list (TaskBoard source)
   const [tasks, setTasks] = useState<any[]>(() => {
@@ -88,7 +103,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
           assignee_name: t.assignee?.name || 'Unassigned',
           assignee_id: t.assigneeId || 'unassigned',
           priority: t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
-          due_date: t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          due_date: formatDateSafely(t.dueDate),
           status: t.status === 'done' || t.status === 'completed' ? 'Done' :
                   t.status === 'in-progress' ? 'In Progress' :
                   t.status === 'in-review' ? 'In Review' : 'To Do'
@@ -109,6 +124,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
 
   useEffect(() => {
     fetchInternTasks();
+    fetchLeaves();
   }, [currentUserId, currentUserName]);
 
   useEffect(() => {
@@ -158,6 +174,19 @@ export default function InternDashboard({ session }: InternDashboardProps) {
     };
   }, [currentUserName]);
 
+  const [leaves, setLeaves] = useState<any[]>([]);
+
+  const fetchLeaves = async () => {
+    try {
+      const res = await api.get('/leaves');
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setLeaves(res.data.data);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch leaves on InternDashboard:', err);
+    }
+  };
+
   const [activityFeed, setActivityFeed] = useState<any[]>([]);
   
   const [calendarEvents, setCalendarEvents] = useState<any[]>(() => {
@@ -201,11 +230,72 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const employeeUpcomingEvents = useMemo(() => {
     const today = new Date();
     const cutoffDate = startOfDay(today);
-    return [...calendarEvents]
+    
+    // 1. Task Deadlines
+    const taskEvents = tasks
+      .filter((t: any) => t && t.status !== 'Done' && t.status !== 'completed' && t.due_date)
+      .map((t: any) => {
+        let dueDate: Date;
+        try {
+          dueDate = new Date(t.due_date);
+        } catch {
+          dueDate = new Date();
+        }
+        return {
+          id: `task-event-${t.id}`,
+          date: dueDate,
+          title: t.title,
+          type: 'deadline',
+          time: '11:59 PM'
+        };
+      });
+
+    // 2. Approved Leaves
+    const leaveEvents = leaves
+      .filter((l: any) => l.status === 'Approved' && l.startDate)
+      .map((l: any) => {
+        let lDate: Date;
+        try {
+          lDate = new Date(l.startDate);
+        } catch {
+          lDate = new Date();
+        }
+        return {
+          id: `leave-event-${l.id}`,
+          date: lDate,
+          title: `${l.user?.name || currentUserName} on Leave`,
+          type: 'leave',
+          time: 'All Day'
+        };
+      });
+
+    // 3. Project Milestones
+    const milestoneEvents = projects.flatMap((proj: any) => {
+      return (proj.milestones || [])
+        .filter((m: any) => m.status !== 'completed' && m.status !== 'Done' && m.date && m.date !== 'TBD')
+        .map((m: any) => {
+          let dateVal = new Date();
+          const parsed = Date.parse(`${m.date}, ${new Date().getFullYear()}`);
+          if (!isNaN(parsed)) {
+            dateVal = new Date(parsed);
+          }
+          return {
+            id: `milestone-event-${m.id}`,
+            date: dateVal,
+            title: `${m.title} (${proj.name})`,
+            type: 'milestone',
+            time: 'All Day'
+          };
+        });
+    });
+
+    const allEvents = [...calendarEvents, ...taskEvents, ...leaveEvents, ...milestoneEvents];
+
+    return allEvents
       .filter((e: any) => isAfter(e.date, cutoffDate) || isSameDay(e.date, cutoffDate))
-      .reverse()
+      .sort((a: any, b: any) => a.date.getTime() - b.date.getTime())
       .slice(0, 5);
-  }, [calendarEvents]);
+  }, [calendarEvents, tasks, leaves, projects, currentUserName]);
 
   const [allLogs, setAllLogs] = useState<any[]>(() => {
     const saved = localStorage.getItem('work_logs_list');
@@ -258,6 +348,13 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const lastDataRef = React.useRef<string | null>(null);
 
+  const overallScore = dashboardData?.contribution?.overallScore ?? 88;
+  const tasksCompleted = dashboardData?.performance?.completedTasks ?? 24;
+  const tasksTotal = dashboardData?.performance?.totalTasks ?? 30;
+  const hoursLoggedValue = dashboardData?.performance?.totalHours ?? 42;
+  const milestonesCompleted = dashboardData?.performance?.completedMilestones ?? 2;
+  const milestonesTotal = dashboardData?.totalMilestones ?? 3;
+
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
@@ -296,17 +393,54 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       }
     };
     fetchDashboard();
+    fetchLeaves();
 
     // Poll every 5 seconds for real-time updates
-    const intervalId = setInterval(fetchDashboard, 5000);
+    const intervalId = setInterval(() => {
+      fetchDashboard();
+      fetchLeaves();
+    }, 5000);
     return () => clearInterval(intervalId);
   }, []);
 
-  const activeTasksCount = tasks.filter((t: any) => t && t.status !== 'Done' && t.status.toLowerCase() !== 'completed').length;
-  const completedTasksCount = tasks.filter((t: any) => t && (t.status === 'Done' || t.status.toLowerCase() === 'completed')).length;
+  const activeTasksCount = typeof dashboardData?.activeTasksCount === 'number'
+    ? dashboardData.activeTasksCount
+    : tasks.filter((t: any) => t && t.status !== 'Done' && t.status.toLowerCase() !== 'completed').length;
+
+  const completedTasksCount = typeof dashboardData?.performance?.completedTasks === 'number'
+    ? dashboardData.performance.completedTasks
+    : tasks.filter((t: any) => t && (t.status === 'Done' || t.status.toLowerCase() === 'completed')).length;
 
   // Compute upcoming deadlines (handling relative dates like 'Today' and 'Tomorrow')
   const upcomingDeadlines = useMemo(() => {
+    if (dashboardData?.upcomingTasks && dashboardData.upcomingTasks.length > 0) {
+      return dashboardData.upcomingTasks.map((t: any) => {
+        let dueDate: Date;
+        try {
+          dueDate = new Date(t.dueDate);
+        } catch {
+          dueDate = new Date();
+        }
+        const todayDate = new Date();
+        todayDate.setHours(0,0,0,0);
+        dueDate.setHours(0,0,0,0);
+        const isOverdue = dueDate < todayDate;
+        const isToday = dueDate.getTime() === todayDate.getTime();
+        return {
+          id: t.id,
+          title: t.title,
+          priority: t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
+          project_tag: t.project?.name || 'General',
+          due_date: formatDateSafely(t.dueDate),
+          status: t.status === 'done' || t.status === 'completed' ? 'Done' :
+                  t.status === 'in-progress' ? 'In Progress' :
+                  t.status === 'in-review' ? 'In Review' : 'To Do',
+          isOverdue,
+          isToday
+        };
+      });
+    }
+
     return tasks
       .filter((t: any) => t && t.status !== 'Done' && t.due_date)
       .map((t: any) => {
@@ -336,21 +470,40 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       })
       .sort((a: any, b: any) => a.parsedDate.getTime() - b.parsedDate.getTime())
       .slice(0, 5);
-  }, [tasks]);
+  }, [tasks, dashboardData]);
 
   // Load approved deadline extensions
   const savedApprovedExtensions = localStorage.getItem('hindustaan_approved_extensions');
   const approvedExtensions: any[] = (savedApprovedExtensions && savedApprovedExtensions !== 'null')
     ? (() => { try { return JSON.parse(savedApprovedExtensions); } catch { return []; } })()
     : [];
-  const dueTodayCount = React.useMemo(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    return tasks.filter((t: any) => {
-      if (!t.due_date) return false;
-      const dStr = t.due_date.includes('T') ? t.due_date.split('T')[0] : t.due_date;
-      return dStr <= todayStr && t.status !== 'Done' && t.status !== 'completed' && t.status !== 'done';
-    }).length;
-  }, [tasks]);
+  const dueTodayCount = typeof dashboardData?.dueTodayCount === 'number'
+    ? dashboardData.dueTodayCount
+    : tasks.filter((t: any) => {
+        if (!t.due_date) return false;
+        const dStr = t.due_date.includes('T') ? t.due_date.split('T')[0] : t.due_date;
+        const todayStr = new Date().toISOString().split('T')[0];
+        return dStr <= todayStr && t.status !== 'Done' && t.status !== 'completed' && t.status !== 'done';
+      }).length;
+
+  const displayedTodayTasks = useMemo(() => {
+    if (dashboardData?.todayTasks && dashboardData.todayTasks.length > 0) {
+      return dashboardData.todayTasks.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        priority: t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
+        project_tag: t.project?.name || 'General',
+        due_date: formatDateSafely(t.dueDate),
+        status: t.status === 'done' || t.status === 'completed' ? 'Done' :
+                t.status === 'in-progress' ? 'In Progress' :
+                t.status === 'in-review' ? 'In Review' : 'To Do',
+        progress: t.status === 'done' || t.status === 'completed' ? 100 :
+                  t.status === 'in-progress' ? 50 :
+                  t.status === 'in-review' ? 85 : 0
+      }));
+    }
+    return tasks;
+  }, [tasks, dashboardData]);
 
   const handleExtensionSubmit = () => {
     if (!selectedTaskId) {
@@ -524,9 +677,9 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             <div className="relative h-16 w-16 flex items-center justify-center shrink-0">
               <svg className="w-full h-full transform -rotate-90">
                 <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-slate-100 dark:text-slate-800" />
-                <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray="175" strokeDashoffset={175 - (175 * 88) / 100} className="text-orange-500" />
+                <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray="175" strokeDashoffset={175 - (175 * overallScore) / 100} className="text-orange-500" />
               </svg>
-              <span className="absolute text-sm font-black text-slate-900 dark:text-white">88%</span>
+              <span className="absolute text-sm font-black text-slate-900 dark:text-white">{overallScore}%</span>
             </div>
           </CardContent>
         </Card>
@@ -575,6 +728,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             </CardHeader>
             <CardContent className="p-0 flex-1 flex flex-col">
               <div className="divide-y divide-slate-100 dark:divide-slate-800 flex-1 flex flex-col justify-center">
+<<<<<<< HEAD
                 {tasks.length > 0 ? tasks.map(task => (
                     <div key={task.id} className={cn(
                       "p-4 md:p-5 py-2.5 md:py-3 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group",
@@ -585,6 +739,13 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                           <h4 className={cn("text-base font-bold transition-colors truncate",
                             task.project_status === 'aborted' ? "text-slate-500 dark:text-slate-400 line-through" : "text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400"
                           )}>{task.title}</h4>
+=======
+                 {displayedTodayTasks.length > 0 ? displayedTodayTasks.map((task: any) => (
+                  <div key={task.id} className="p-4 md:p-5 py-2.5 md:py-3 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1.5">
+                        <h4 className="text-base font-bold text-slate-900 dark:text-white truncate group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{task.title}</h4>
+>>>>>>> 2797757 (feat: update dashboard components and contribution scores)
                         <Badge variant="outline" className={cn(
                           "text-[10px] uppercase tracking-wider font-bold rounded",
                           task.priority === 'High' ? "border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-500/10" : 
@@ -689,30 +850,30 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             </CardHeader>
             <CardContent className="flex-1 flex flex-col p-4 md:p-5 pt-0">
               <div className="flex items-end gap-2 mb-4">
-                <span className="text-5xl font-black text-slate-900 dark:text-white">88%</span>
+                <span className="text-5xl font-black text-slate-900 dark:text-white">{overallScore}%</span>
                 <span className="text-sm font-bold text-slate-500 mb-1">Overall Score</span>
               </div>
               <div className="space-y-3">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
                     <span>Tasks Completed</span>
-                    <span>24 / 30</span>
+                    <span>{tasksCompleted} / {tasksTotal}</span>
                   </div>
-                  <Progress value={80} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-emerald-500" />
+                  <Progress value={tasksTotal > 0 ? (tasksCompleted / tasksTotal) * 100 : 0} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-emerald-500" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
                     <span>Hours Logged</span>
-                    <span>42 / 50</span>
+                    <span>{hoursLoggedValue.toFixed(1)} / 50</span>
                   </div>
-                  <Progress value={84} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-blue-500" />
+                  <Progress value={Math.min(100, (hoursLoggedValue / 50) * 100)} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-blue-500" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
                     <span>Milestones</span>
-                    <span>2 / 3</span>
+                    <span>{milestonesCompleted} / {milestonesTotal}</span>
                   </div>
-                  <Progress value={66} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-purple-500" />
+                  <Progress value={milestonesTotal > 0 ? (milestonesCompleted / milestonesTotal) * 100 : 0} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-purple-500" />
                 </div>
               </div>
             </CardContent>
@@ -799,10 +960,9 @@ export default function InternDashboard({ session }: InternDashboardProps) {
           </Card>
         </div>
 
-        {/* Right Column Wrapper */}
+        {/* Refactored Training Calendar */}
         <div className="space-y-4 md:space-y-5 h-full">
-          {/* Refactored Training Calendar */}
-          <EmployeeCalendar />
+          <EmployeeCalendar tasks={tasks} role={role} leaves={leaves} />
         </div>
       </div>
 
@@ -851,7 +1011,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             <div className="h-20 w-20 rounded-full bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center mb-4">
               <Trophy className="h-10 w-10 text-purple-500" />
             </div>
-            <h3 className="text-4xl font-black mb-2 text-slate-900 dark:text-white">88%</h3>
+            <h3 className="text-4xl font-black mb-2 text-slate-900 dark:text-white">{overallScore}%</h3>
             <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mb-4">↑ +6 points this week</p>
             <p className="text-sm text-slate-500 px-4">Your contribution score is a unified metric calculated automatically based on your <strong>completed tasks</strong>, <strong>logged hours</strong>, and <strong>milestones achieved</strong>.</p>
           </div>

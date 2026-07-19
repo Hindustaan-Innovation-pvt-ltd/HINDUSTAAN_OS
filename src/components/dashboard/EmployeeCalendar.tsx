@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { format, isSameDay } from 'date-fns';
+import { format, isSameDay, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -16,26 +16,55 @@ interface CalendarTask {
   state: TaskState;
 }
 
-const MOCK_CALENDAR_TASKS: CalendarTask[] = [
-  { id: '1', date: new Date(2026, 6, 1), title: 'Onboarding complete', state: 'completed' },
-  { id: '2', date: new Date(2026, 6, 2), title: 'Setup local env', state: 'completed' },
-  { id: '3', date: new Date(2026, 6, 3), title: 'Read documentation', state: 'completed' },
-  { id: '4', date: new Date(2026, 6, 4), title: 'First PR submitted', state: 'completed' },
-  { id: '5', date: new Date(2026, 6, 6), title: 'Code review fixes', state: 'completed' },
-  { id: '6', date: new Date(2026, 6, 7), title: 'Dashboard UI', state: 'in-progress' },
-  { id: '7', date: new Date(2026, 6, 7), title: 'Fix Auth bug', state: 'in-progress' },
-  { id: '8', date: new Date(2026, 6, 5), title: 'API integration', state: 'overdue' },
-];
-
-export function EmployeeCalendar() {
+export function EmployeeCalendar({ tasks = [], role = 'intern', leaves = [] }: { tasks?: any[], role?: string, leaves?: any[] }) {
   // Use dynamic current date
   const today = new Date(); 
   const [selectedMonth, setSelectedMonth] = useState<Date>(today);
-  const startDate = new Date(2026, 6, 1);
-  const endDate = new Date(2026, 9, 1);
+  const startDate = new Date(today.getFullYear() - 1, 0, 1);
+  const endDate = new Date(today.getFullYear() + 1, 11, 31);
+
+  const calendarTasks = React.useMemo(() => {
+    const mappedTasks = tasks.map((t: any) => {
+      let dueDate: Date;
+      try {
+        dueDate = new Date(t.due_date || t.dueDate);
+      } catch {
+        dueDate = new Date();
+      }
+      
+      const isCompleted = t.status === 'Done' || t.status === 'completed';
+      const isOverdue = !isCompleted && startOfDay(dueDate) < startOfDay(new Date());
+      
+      return {
+        id: t.id,
+        date: dueDate,
+        title: t.title,
+        state: isCompleted ? 'completed' : (isOverdue ? 'overdue' : 'in-progress')
+      } as CalendarTask;
+    });
+
+    const mappedLeaves = leaves
+      .filter((l: any) => l.status === 'Approved' && l.startDate)
+      .map((l: any) => {
+        let lDate: Date;
+        try {
+          lDate = new Date(l.startDate);
+        } catch {
+          lDate = new Date();
+        }
+        return {
+          id: l.id,
+          date: lDate,
+          title: `On Leave: ${l.reason || 'Approved leave'}`,
+          state: 'overdue'
+        } as CalendarTask;
+      });
+
+    return [...mappedTasks, ...mappedLeaves];
+  }, [tasks, leaves]);
 
   const getTasksForDay = (date: Date) => {
-    return MOCK_CALENDAR_TASKS.filter(task => isSameDay(task.date, date));
+    return calendarTasks.filter(task => isSameDay(task.date, date));
   };
 
   const getDotColor = (state: TaskState) => {
@@ -46,6 +75,10 @@ export function EmployeeCalendar() {
       default: return 'bg-slate-400';
     }
   };
+
+  const totalCount = tasks.length;
+  const completedCount = tasks.filter((t: any) => t.status === 'Done' || t.status === 'completed').length;
+  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
     <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-full">
@@ -134,12 +167,16 @@ export function EmployeeCalendar() {
         
         <div className="w-full pt-4 mt-2 border-t border-slate-100 dark:border-slate-800 shrink-0">
           <div className="flex justify-between text-xs font-bold text-slate-700 dark:text-slate-300 mb-2.5">
-            <span>Internship Progress</span>
-            <span className="text-orange-600 dark:text-orange-400">Week 2 of 12</span>
+            <span>{role === 'intern' ? 'Internship Progress' : 'Task Completion Progress'}</span>
+            <span className="text-orange-600 dark:text-orange-400">
+              {role === 'intern' ? 'Week 2 of 12' : `${completedCount} of ${totalCount} Tasks`}
+            </span>
           </div>
           <div className="flex items-center gap-3">
-            <Progress value={18} className="h-2 flex-1 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 rounded-full" />
-            <span className="text-xs font-black text-slate-900 dark:text-white">18%</span>
+            <Progress value={role === 'intern' ? 18 : completionRate} className="h-2 flex-1 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 rounded-full" />
+            <span className="text-xs font-black text-slate-900 dark:text-white">
+              {role === 'intern' ? '18%' : `${completionRate}%`}
+            </span>
           </div>
         </div>
       </CardContent>
