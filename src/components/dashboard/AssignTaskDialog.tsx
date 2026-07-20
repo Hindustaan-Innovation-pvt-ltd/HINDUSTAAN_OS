@@ -87,21 +87,27 @@ const assignTaskSchema = z.object({
   path: ["dueDate"],
 });
 
-export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
+export function AssignTaskDialog({ open, onOpenChange, defaultAssigneeId, defaultAssigneeName, onSuccess }: { open: boolean, onOpenChange: (open: boolean) => void, defaultAssigneeId?: string, defaultAssigneeName?: string, onSuccess?: () => void }) {
   const [loading, setLoading] = useState(false);
   const [dbProjects, setDbProjects] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [dbTasks, setDbTasks] = useState<any[]>([]);
 
   useEffect(() => {
     if (!open) return;
     const loadDialogData = async () => {
       try {
-        const [projRes, teamRes] = await Promise.all([
+        const [projRes, teamRes, taskRes] = await Promise.all([
           api.get('/projects'),
-          api.get('/team')
+          api.get('/team'),
+          api.get('/tasks')
         ]);
-        if (projRes.data?.success) setDbProjects(projRes.data.data || []);
+        if (projRes.data?.success) {
+          const allProjs = projRes.data.data || [];
+          setDbProjects(allProjs.filter((p: any) => !p.status || p.status.toLowerCase() === 'active'));
+        }
         if (teamRes.data?.success) setTeamMembers(teamRes.data.data.members || []);
+        if (taskRes.data?.success) setDbTasks(taskRes.data.data || []);
       } catch (err) {
         console.warn('Failed to load dialog metadata:', err);
       }
@@ -115,7 +121,7 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
       title: '',
       description: '',
       projectId: '',
-      assigneeId: '',
+      assigneeId: defaultAssigneeId || '',
       priority: 'Medium',
       status: 'To Do',
       estimatedHours: undefined,
@@ -123,8 +129,17 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
     },
   });
 
-  const activeProjects = dbProjects.length > 0 ? dbProjects : PROJECTS;
-  const activeTeamMembers = teamMembers.length > 0 ? teamMembers : [];
+  useEffect(() => {
+    if (open && defaultAssigneeId) {
+      form.setValue('assigneeId', defaultAssigneeId);
+    }
+  }, [open, defaultAssigneeId, form]);
+
+  const activeProjects = dbProjects.length > 0 ? dbProjects : [];
+  let activeTeamMembers = teamMembers.length > 0 ? teamMembers : [];
+  if (defaultAssigneeId && defaultAssigneeName && !activeTeamMembers.some(m => m.id === defaultAssigneeId)) {
+    activeTeamMembers = [{ id: defaultAssigneeId, name: defaultAssigneeName }, ...activeTeamMembers];
+  }
 
   const onSubmit = async (values: z.infer<typeof assignTaskSchema>) => {
     setLoading(true);
@@ -162,30 +177,35 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
 
     // Save to backend database
     try {
-      const backendPriority = values.priority.toLowerCase() === 'normal' ? 'medium' : values.priority.toLowerCase();
-      const res = await api.post('/tasks', {
-        title: values.title,
-        desc: values.description || '',
-        projectId: values.projectId,
-        assigneeId: values.assigneeId || undefined,
-        priority: backendPriority,
-        startDate: values.startDate ? new Date(values.startDate) : undefined,
-        dueDate: values.dueDate ? new Date(values.dueDate) : undefined,
-        status: values.status === 'Done' ? 'done' : values.status === 'In Progress' ? 'in-progress' : values.status === 'In Review' ? 'in-review' : 'todo'
-      });
-
-      if (res.data?.success) {
-        toast.success('Task created and assigned successfully on server!');
+      const existingTask = dbTasks.find(t => t.title === values.title || t.id === values.title);
+      if (existingTask) {
+        await api.patch(`/tasks/${existingTask.id}/assign`, {
+          userId: values.assigneeId
+        });
+        if (values.projectId && values.projectId !== existingTask.projectId && values.projectId !== existingTask.project?.id) {
+          await api.patch(`/tasks/${existingTask.id}`, { projectId: values.projectId });
+        }
+      } else {
+        const backendPriority = values.priority.toLowerCase() === 'normal' ? 'medium' : values.priority.toLowerCase();
+        await api.post('/tasks', {
+          title: values.title,
+          desc: values.description || '',
+          projectId: values.projectId,
+          assigneeId: values.assigneeId || undefined,
+          priority: backendPriority,
+          startDate: values.startDate ? new Date(values.startDate) : undefined,
+          dueDate: values.dueDate ? new Date(values.dueDate) : undefined,
+          status: values.status === 'Done' ? 'done' : values.status === 'In Progress' ? 'in-progress' : values.status === 'In Review' ? 'in-review' : 'todo'
+        });
       }
+
+      toast.success('Task assigned successfully to ' + (assignee?.name || defaultAssigneeName || 'team member') + '!');
+      if (onSuccess) onSuccess();
     } catch (err: any) {
       console.error(err);
       toast.error('Could not save task to database', { description: err.response?.data?.message || err.message });
     } finally {
       setLoading(false);
-      toast.success('Task assigned successfully.', {
-        description: `Amanda assigned '${values.title}' to ${assignee?.name || 'Unassigned'}.`
-      });
-      
       form.reset();
       onOpenChange(false);
     }
@@ -198,7 +218,7 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
         <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
           <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Assign New Task</DialogTitle>
           <DialogDescription className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Create and assign a new task to an intern.
+            {defaultAssigneeName ? `Assign task and project to ${defaultAssigneeName}.` : `Assign task and project to team member.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -213,10 +233,35 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
                   name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-bold text-slate-700 dark:text-slate-300">Task Title <span className="text-orange-500">*</span></FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Landing Page Design" className="rounded-lg bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus-visible:ring-orange-500" {...field} />
-                      </FormControl>
+                      <FormLabel className="font-bold text-slate-700 dark:text-slate-300">Task <span className="text-orange-500">*</span></FormLabel>
+                      <Select 
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          const matchedTask = dbTasks.find(t => t.title === val || t.id === val);
+                          if (matchedTask) {
+                            const matchedProj = activeProjects.find(p => p.name === matchedTask.project_tag || p.id === matchedTask.projectId);
+                            if (matchedProj) {
+                              form.setValue('projectId', matchedProj.id);
+                            }
+                          }
+                        }} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="rounded-lg bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-orange-500">
+                            <SelectValue placeholder="Select task from list" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl max-h-[300px]">
+                          {dbTasks.length > 0 ? (
+                            dbTasks.map(task => (
+                              <SelectItem key={task.id} value={task.title} className="font-medium">{task.title}</SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="No tasks available" disabled className="font-medium">No tasks available</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -246,281 +291,87 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
                 />
               </div>
 
-              {/* Description */}
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-bold text-slate-700 dark:text-slate-300">Description</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Provide task details, links, or acceptance criteria..." 
-                        className="resize-none h-20 rounded-lg bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus-visible:ring-orange-500" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Assignee & Priority */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="assigneeId"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col pt-1.5">
-                      <FormLabel className="font-bold text-slate-700 dark:text-slate-300">Assign To <span className="text-orange-500">*</span></FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
+              {/* Assign To (Only shown when not pre-selected from an employee card) */}
+              {!defaultAssigneeId && (
+                <div className="grid grid-cols-1 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="assigneeId"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col pt-1.5">
+                        <FormLabel className="font-bold text-slate-700 dark:text-slate-300">Assign To <span className="text-orange-500">*</span></FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
                               <Button
-                              variant="outline"
-                              role="combobox"
-                              className={cn(
-                                "justify-between rounded-lg font-medium bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white",
-                                !field.value && "text-slate-500 dark:text-slate-400 font-normal"
-                              )}
-                            >
-                              {field.value
-                                ? (
-                                  <div className="flex items-center gap-2">
-                                    <Avatar className="h-5 w-5">
-                                      <AvatarFallback className="text-[9px] bg-orange-100 text-orange-700">
-                                        {activeTeamMembers.find(i => i.id === field.value)?.initials || activeTeamMembers.find(i => i.id === field.value)?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <span>{activeTeamMembers.find(i => i.id === field.value)?.name}</span>
-                                  </div>
-                                )
-                                : "Select intern..."}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[300px] p-0 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl" align="start">
-                          <Command>
-                            <CommandInput placeholder="Search intern..." />
-                            <CommandList>
-                              <CommandEmpty>No intern found.</CommandEmpty>
-                              <CommandGroup>
-                                {activeTeamMembers.map((intern) => (
-                                  <CommandItem
-                                    value={intern.name}
-                                    key={intern.id}
-                                    onSelect={() => {
-                                      form.setValue("assigneeId", intern.id);
-                                    }}
-                                    className="flex items-center gap-2 cursor-pointer font-medium"
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        intern.id === field.value
-                                          ? "opacity-100 text-orange-500"
-                                          : "opacity-0"
-                                      )}
-                                    />
-                                    <Avatar className="h-6 w-6">
-                                      <AvatarFallback className="text-[10px] bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                                        {intern.initials || intern.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex flex-col">
-                                      <span>{intern.name}</span>
-                                      <span className="text-xs text-slate-500">{intern.designation || intern.role || 'Intern'}</span>
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                  "justify-between rounded-lg font-medium bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white",
+                                  !field.value && "text-slate-500 dark:text-slate-400 font-normal"
+                                )}
+                              >
+                                {field.value
+                                  ? (
+                                    <div className="flex items-center gap-2">
+                                      <Avatar className="h-5 w-5">
+                                        <AvatarFallback className="text-[9px] bg-orange-100 text-orange-700">
+                                          {activeTeamMembers.find(i => i.id === field.value)?.initials || activeTeamMembers.find(i => i.id === field.value)?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span>{activeTeamMembers.find(i => i.id === field.value)?.name}</span>
                                     </div>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-bold text-slate-700 dark:text-slate-300">Priority</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-lg bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-orange-500">
-                            <SelectValue placeholder="Select priority" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl">
-                          <SelectItem value="Low"><Badge variant="outline" className="text-slate-500 border-slate-200">Low</Badge></SelectItem>
-                          <SelectItem value="Medium"><Badge variant="outline" className="text-amber-500 border-amber-200 bg-amber-50 dark:bg-amber-500/10">Medium</Badge></SelectItem>
-                          <SelectItem value="High"><Badge variant="outline" className="text-rose-500 border-rose-200 bg-rose-50 dark:bg-rose-500/10">High</Badge></SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Status & Milestone */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-bold text-slate-700 dark:text-slate-300">Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-lg bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-orange-500">
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl">
-                          <SelectItem value="To Do">To Do</SelectItem>
-                          <SelectItem value="In Progress">In Progress</SelectItem>
-                          <SelectItem value="In Review">In Review</SelectItem>
-                          <SelectItem value="Done">Done</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="milestone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-bold text-slate-700 dark:text-slate-300">Milestone</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-lg bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-orange-500">
-                            <SelectValue placeholder="No milestone" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl">
-                          <SelectItem value="none" className="italic text-slate-500">No milestone</SelectItem>
-                          {MILESTONES.map(m => (
-                            <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Dates & Hours */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col pt-1.5">
-                      <FormLabel className="font-bold text-slate-700 dark:text-slate-300">Start Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "pl-3 text-left font-normal rounded-lg bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800",
-                                !field.value && "text-slate-500 dark:text-slate-400"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date("1900-01-01")}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="dueDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col pt-1.5">
-                      <FormLabel className="font-bold text-slate-700 dark:text-slate-300">Due Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "pl-3 text-left font-normal rounded-lg bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800",
-                                !field.value && "text-slate-500 dark:text-slate-400"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date("1900-01-01")}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="estimatedHours"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-bold text-slate-700 dark:text-slate-300">Est. Hours</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="0" 
-                          step="0.5" 
-                          placeholder="e.g. 5" 
-                          className="rounded-lg bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus-visible:ring-orange-500" 
-                          {...field} 
-                          onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
+                                  )
+                                  : "Select intern..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[300px] p-0 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search intern..." />
+                              <CommandList>
+                                <CommandEmpty>No intern found.</CommandEmpty>
+                                <CommandGroup>
+                                  {activeTeamMembers.map((intern) => (
+                                    <CommandItem
+                                      value={intern.name}
+                                      key={intern.id}
+                                      onSelect={() => {
+                                        form.setValue("assigneeId", intern.id);
+                                      }}
+                                      className="flex items-center gap-2 cursor-pointer font-medium"
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          intern.id === field.value
+                                            ? "opacity-100 text-orange-500"
+                                            : "opacity-0"
+                                        )}
+                                      />
+                                      <Avatar className="h-6 w-6">
+                                        <AvatarFallback className="text-[10px] bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                          {intern.initials || intern.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex flex-col">
+                                        <span>{intern.name}</span>
+                                        <span className="text-xs text-slate-500">{intern.designation || intern.role || 'Intern'}</span>
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
             </div>
 
             <DialogFooter className="p-6 pt-4 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">

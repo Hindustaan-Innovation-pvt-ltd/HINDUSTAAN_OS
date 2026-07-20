@@ -482,41 +482,43 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                           onDragStart={(currentUser.role === 'manager' && !isAborted) ? (e) => handleDragStart(e, task.id) : undefined}
                           onDragEnd={(currentUser.role === 'manager' && !isAborted) ? handleDragEnd : undefined}
                           className={cn(
-                            "group bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-md dark:shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer",
+                            "group bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-md dark:shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between h-[180px]",
                             currentUser.role === 'manager' && !isAborted && "active:cursor-grabbing",
                             draggedTaskId === task.id ? "absolute opacity-0 pointer-events-none" : "relative opacity-100",
                             isAborted && "opacity-75 grayscale bg-slate-50 dark:bg-slate-900/40 border-red-200 dark:border-red-900/50 hover:shadow-none hover:translate-y-0 cursor-not-allowed"
                           )}
                         >
-                          {/* Project Tag & Priority */}
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center space-x-1.5 min-w-0">
-                              <Tag className="h-3 w-3 text-slate-400 shrink-0" />
-                              <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider truncate">
-                                {task.project_tag}
-                              </span>
-                              {isAborted && (
-                                <Badge variant="destructive" className="text-[8px] py-0 px-1 ml-1 leading-tight uppercase bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200/50">Aborted</Badge>
-                              )}
+                          <div>
+                            {/* Project Tag & Priority */}
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center space-x-1.5 min-w-0">
+                                <Tag className="h-3 w-3 text-slate-400 shrink-0" />
+                                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider truncate">
+                                  {task.project_tag}
+                                </span>
+                                {isAborted && (
+                                  <Badge variant="destructive" className="text-[8px] py-0 px-1 ml-1 leading-tight uppercase bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200/50">Aborted</Badge>
+                                )}
+                              </div>
+                              <PriorityBadge priority={task.priority} isEmployeeDashboard={currentUser.role === 'intern'} />
                             </div>
-                            <PriorityBadge priority={task.priority} isEmployeeDashboard={currentUser.role === 'intern'} />
+
+                            {/* Title & Description */}
+                            <h4 className={cn("text-sm font-bold text-slate-900 dark:text-white mb-1 leading-tight transition-colors", 
+                              !isAborted && "group-hover:text-orange-600 dark:group-hover:text-orange-400",
+                              isAborted && "line-through text-slate-500 dark:text-slate-400"
+                            )}>
+                              {task.title}
+                            </h4>
+                            <p className={cn("text-xs line-clamp-2", 
+                              isAborted ? "text-slate-400 dark:text-slate-500 line-through" : "text-slate-500 dark:text-slate-400"
+                            )}>
+                              {task.description}
+                            </p>
                           </div>
 
-                          {/* Title & Description */}
-                          <h4 className={cn("text-sm font-bold text-slate-900 dark:text-white mb-1 leading-tight transition-colors", 
-                            !isAborted && "group-hover:text-orange-600 dark:group-hover:text-orange-400",
-                            isAborted && "line-through text-slate-500 dark:text-slate-400"
-                          )}>
-                            {task.title}
-                          </h4>
-                          <p className={cn("text-xs line-clamp-2 mb-4", 
-                            isAborted ? "text-slate-400 dark:text-slate-500 line-through" : "text-slate-500 dark:text-slate-400"
-                          )}>
-                            {task.description}
-                          </p>
-
-                          {/* Bottom Row: Date & Assignee */}
-                          <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 mt-auto">
+                          {/* Bottom Row: Date */}
+                          <div className="flex items-center pt-3 border-t border-slate-100 dark:border-slate-800 mt-auto">
                             <div className={cn("flex items-center space-x-1.5", 
                               task.due_date && new Date(task.due_date).setHours(0,0,0,0) < new Date().setHours(0,0,0,0) 
                                 ? "text-rose-600 dark:text-rose-500" 
@@ -524,13 +526,6 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                             )}>
                               {task.due_date && new Date(task.due_date).setHours(0,0,0,0) < new Date().setHours(0,0,0,0) ? <AlertTriangle className="h-3.5 w-3.5" /> : <Calendar className="h-3.5 w-3.5" />}
                               <span className="text-xs font-semibold">Deadline: {task.due_date} {task.due_date && new Date(task.due_date).setHours(0,0,0,0) < new Date().setHours(0,0,0,0) && <span className="ml-1 text-[9px] uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 px-1 py-0.5 rounded">Past</span>}</span>
-                            </div>
-                            
-                            <div 
-                              className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-500/20 text-[10px] font-bold text-orange-700 dark:text-orange-300 ring-2 ring-white dark:ring-slate-900"
-                              title={task.assignee_name}
-                            >
-                              {getInitials(task.assignee_name)}
                             </div>
                           </div>
                         </div>

@@ -16,12 +16,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { 
   Users, Search, Filter, Plus, Download, MoreVertical, MapPin, 
   Mail, Phone, GraduationCap, Briefcase, Calendar, CheckCircle2, 
-  MessageSquare, Clock, Trophy, ExternalLink, Activity, ArrowRightLeft, MessageCircle, Loader2, Check
+  MessageSquare, Clock, Trophy, ExternalLink, Activity, ArrowRightLeft, MessageCircle, Loader2, Check, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { getCurrentUser, type User } from '@/lib/auth';
 import api from '@/lib/api';
+import { AssignTaskDialog } from '@/components/dashboard/AssignTaskDialog';
 
 // Removed generateMockInterns as we only use API now
 
@@ -50,6 +51,30 @@ export default function TeamMembers() {
   });
 
   const [selectedIntern, setSelectedIntern] = useState<any | null>(null);
+  const [memberDetail, setMemberDetail] = useState<any | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selectedIntern?.id) {
+      setMemberDetail(null);
+      return;
+    }
+    const fetchDetail = async () => {
+      setDetailLoading(true);
+      try {
+        const res = await api.get(`/team/${selectedIntern.id}`);
+        if (res.data?.success) {
+          setMemberDetail(res.data.data);
+        }
+      } catch (err) {
+        console.warn('Failed to load member detail from DB:', err);
+      } finally {
+        setDetailLoading(false);
+      }
+    };
+    fetchDetail();
+  }, [selectedIntern?.id]);
+
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [reassignIntern, setReassignIntern] = useState<any | null>(null);
   const [reassignMessage, setReassignMessage] = useState('');
@@ -60,43 +85,33 @@ export default function TeamMembers() {
   const [isDeactivatingSubmit, setIsDeactivatingSubmit] = useState(false);
   const [activatingIntern, setActivatingIntern] = useState<any | null>(null);
   const [isActivatingSubmit, setIsActivatingSubmit] = useState(false);
+  const [assigningIntern, setAssigningIntern] = useState<any | null>(null);
+  const [activeProjects, setActiveProjects] = useState<any[]>([]);
 
   const mapBackendMember = (m: any) => {
     const depts = ['Frontend', 'Backend', 'AI/ML', 'UI/UX'];
     const matchedDept = depts.find(d => d.toLowerCase() === (m.department || '').toLowerCase()) || m.department || 'Frontend';
 
-    const defaultSkills: Record<string, string[]> = {
-      'Frontend': ['React', 'TypeScript', 'Tailwind CSS', 'CSS3'],
-      'Backend': ['Node.js', 'Express', 'PostgreSQL', 'Prisma'],
-      'AI/ML': ['Python', 'PyTorch', 'Scikit-Learn', 'Pandas'],
-      'UI/UX': ['Figma', 'UI Design', 'Wireframing', 'Prototyping'],
-      'Engineering': ['React', 'TypeScript', 'Node.js', 'Prisma'],
-      'Operations': ['Excel', 'Coordination', 'Planning', 'Strategy'],
-      'HR': ['Recruitment', 'Onboarding', 'Communication', 'Sourcing'],
-      'Marketing': ['SEO', 'Content', 'Social Media', 'Analytics'],
-      'Sales': ['Pitching', 'Closing', 'CRM', 'Negotiation']
-    };
-
     return {
       id: m.id || m.empId || '',
-      empId: m.empId || '',
+      empId: m.empId || (typeof m.id === 'string' && m.id.startsWith('INT-') ? m.id : `EMP-${(m.id || '').slice(0, 4).toUpperCase()}`),
       name: m.name || 'Unknown Intern',
       email: m.email || '',
-      phone: m.phone || 'N/A',
-      college: m.college || 'IIT Delhi',
-      degree: m.degree || 'B.Tech Computer Science',
+      phone: m.phone || 'No phone recorded',
+      college: m.college || '',
+      degree: m.degree || '',
       role: m.role || 'Intern',
       department: matchedDept,
-      manager: m.manager || 'Aakash Gupta',
+      manager: m.manager || 'Assigned Manager',
       project: m.project || 'Bench',
-      score: typeof m.score === 'string' ? parseFloat(m.score) || 75 : m.score || 75,
-      attendance: m.attendance || 95,
+      score: typeof m.score === 'string' ? parseFloat(m.score) || 0 : m.score ?? 0,
+      attendance: typeof m.attendance === 'string' ? parseFloat(m.attendance) || 0 : m.attendance ?? 0,
       currentTask: m.currentTask || 'No active task',
-      hoursLogged: typeof m.hoursLogged === 'string' ? parseFloat(m.hoursLogged) || 0 : m.hoursLogged || 0,
+      hoursLogged: typeof m.hoursLogged === 'string' ? parseFloat(m.hoursLogged) || 0 : m.hoursLogged ?? 0,
       status: m.status || 'Offline',
       joiningDate: m.joiningDate || 'June 1, 2026',
       expectedEndDate: m.expectedEndDate || 'Sept 1, 2026',
-      skills: m.skills || defaultSkills[matchedDept] || ['TypeScript', 'Git'],
+      skills: Array.isArray(m.skills) && m.skills.length > 0 ? m.skills : [],
       isActive: m.isActive
     };
   };
@@ -109,16 +124,16 @@ export default function TeamMembers() {
       if (teamRes.data?.success) {
         const backendMembers = teamRes.data.data.members || [];
         setInterns(backendMembers.map(mapBackendMember));
-        setStats(prev => ({
-          ...prev,
-          totalInterns: teamRes.data.data.stats.totalInterns,
-          onlineCount: teamRes.data.data.stats.onlineCount,
-          leaveCount: teamRes.data.data.stats.leaveCount,
-        }));
+        setStats({
+          totalInterns: teamRes.data.data.stats.totalInterns || 0,
+          onlineCount: teamRes.data.data.stats.onlineCount || 0,
+          leaveCount: teamRes.data.data.stats.leaveCount || 0,
+          pendingInvitations: teamRes.data.data.stats.pendingInvitations || 0,
+        });
       }
 
       // 2. Fetch Pending approvals
-      if (currentUser?.role === 'manager') {
+      if (currentUser?.role === 'manager' || currentUser?.role === 'admin') {
         const pendingRes = await api.get('/team/pending');
         if (pendingRes.data?.success) {
           const pendingData = pendingRes.data.data || [];
@@ -129,18 +144,29 @@ export default function TeamMembers() {
           }));
         }
       }
+
+      // 3. Fetch active projects from DB
+      try {
+        const projRes = await api.get('/projects');
+        if (projRes.data?.success) {
+          const projs = projRes.data.data || [];
+          setActiveProjects(projs.filter((p: any) => !p.status || p.status.toLowerCase() === 'active'));
+        }
+      } catch (projErr) {
+        console.warn('Could not load active projects:', projErr);
+      }
     } catch (err: any) {
       console.error('Error fetching team data:', err);
       if (err.response?.status !== 401) {
         toast.error('Data Load Error', { description: err.message || 'Failed to load team directories.' });
       }
       setInterns([]);
-      setStats(prev => ({
-        ...prev,
+      setStats({
         totalInterns: 0,
         onlineCount: 0,
-        leaveCount: 0
-      }));
+        leaveCount: 0,
+        pendingInvitations: 0
+      });
     } finally {
       setLoading(false);
     }
@@ -329,55 +355,7 @@ export default function TeamMembers() {
         </div>
         
         <div className="flex items-center gap-3">
-          <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-            <DialogTrigger asChild>
-              <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-sm font-bold h-10">
-                <Plus className="mr-2 h-4 w-4" />
-                Invite Intern
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl">
-              <DialogHeader>
-                <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Invite New Intern</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleInviteSubmit} className="space-y-6 pt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">First Name</label>
-                    <Input required placeholder="E.g. Aakash" className="rounded-xl" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Last Name</label>
-                    <Input required placeholder="E.g. Gupta" className="rounded-xl" />
-                  </div>
-                  <div className="space-y-1.5 col-span-2">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Personal Email</label>
-                    <Input required type="email" placeholder="aakash@example.com" className="rounded-xl" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Department</label>
-                    <Select defaultValue="engineering">
-                      <SelectTrigger className="rounded-xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="engineering">Engineering</SelectItem>
-                        <SelectItem value="design">Design</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Role</label>
-                    <Input required placeholder="Frontend Intern" className="rounded-xl" />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
-                  <Button type="button" variant="ghost" onClick={() => setIsInviteOpen(false)} className="rounded-xl font-bold">Cancel</Button>
-                  <Button type="submit" className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold">Send Invitation</Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          {/* Invite Intern button removed as requested */}
         </div>
       </div>
 
@@ -404,7 +382,7 @@ export default function TeamMembers() {
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
           <CardContent className="p-5 flex flex-col gap-1">
             <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Pending Approvals</span>
-            <span className="text-3xl font-black text-blue-600 dark:text-blue-500">{pendingApprovals.length}</span>
+            <span className="text-3xl font-black text-blue-600 dark:text-blue-500">{stats.pendingInvitations || pendingApprovals.length}</span>
           </CardContent>
         </Card>
       </div>
@@ -416,16 +394,16 @@ export default function TeamMembers() {
         </Card>
       ) : (
         <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as any)} className="w-full space-y-6">
-          {currentUser?.role === 'manager' && (
+          {(currentUser?.role === 'manager' || currentUser?.role === 'admin') && (
             <TabsList className="bg-slate-100 dark:bg-slate-900 rounded-xl p-1 gap-2 self-start w-fit">
               <TabsTrigger value="active" className="rounded-lg font-bold px-4 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white text-slate-600 dark:text-slate-400">
                 Active Directory
               </TabsTrigger>
               <TabsTrigger value="pending" className="rounded-lg font-bold px-4 py-2 relative data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white text-slate-600 dark:text-slate-400">
                 Pending Approvals
-                {pendingApprovals.length > 0 && (
+                {(stats.pendingInvitations || pendingApprovals.length) > 0 && (
                   <span className="ml-2 px-1.5 py-0.5 text-[10px] font-black bg-orange-500 text-white rounded-full">
-                    {pendingApprovals.length}
+                    {stats.pendingInvitations || pendingApprovals.length}
                   </span>
                 )}
               </TabsTrigger>
@@ -520,7 +498,7 @@ export default function TeamMembers() {
             </Card>
 
             {/* Grid of Interns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
               {filteredInterns.length === 0 ? (
                 <div className="col-span-full py-12 text-center text-slate-500 dark:text-slate-400 font-medium">
                   No team members found matching search or filters.
@@ -558,14 +536,6 @@ export default function TeamMembers() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-orange-100 text-orange-600 hover:bg-orange-200 hover:text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 dark:hover:bg-orange-500/30 transition-all border-0 shadow-none" onClick={(e) => {
-                            e.stopPropagation();
-                            setReassignIntern(intern);
-                            setReassignMessage(`Hi ${intern.name.split(' ')[0]}, you are being moved from ${intern.project} to a new project.`);
-                            setNewProject('');
-                          }} title="Reassign Project">
-                            <ArrowRightLeft className="h-4 w-4" />
-                          </Button>
                           <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-200 hover:text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 dark:hover:bg-emerald-500/30 transition-all border-0 shadow-none" onClick={(e) => {
                             e.stopPropagation();
                             setWhatsappIntern(intern);
@@ -580,28 +550,10 @@ export default function TeamMembers() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                              <DropdownMenuItem className="font-medium cursor-pointer"><CheckCircle2 className="mr-2 h-4 w-4" /> Assign Task</DropdownMenuItem>
-                              {intern.isActive !== false ? (
-                                <DropdownMenuItem 
-                                  className="font-medium cursor-pointer text-rose-600 dark:text-rose-400"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setDeactivatingIntern(intern);
-                                  }}
-                                >
-                                  <Clock className="mr-2 h-4 w-4" /> Deactivate
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem 
-                                  className="font-medium cursor-pointer text-emerald-600 dark:text-emerald-400"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActivatingIntern(intern);
-                                  }}
-                                >
-                                  <CheckCircle2 className="mr-2 h-4 w-4" /> Activate
-                                </DropdownMenuItem>
-                              )}
+                              <DropdownMenuItem className="font-medium cursor-pointer" onClick={(e) => {
+                                e.stopPropagation();
+                                setAssigningIntern(intern);
+                              }}><CheckCircle2 className="mr-2 h-4 w-4 text-emerald-500" /> Assign Task</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -639,13 +591,15 @@ export default function TeamMembers() {
                         </div>
                       </div>
                       
-                      <div className="flex flex-wrap gap-1.5 mt-auto">
-                        {intern.skills.map((skill: string) => (
-                          <Badge key={skill} variant="secondary" className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border-0 rounded text-[10px] px-1.5">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
+                      {intern.skills && intern.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-auto">
+                          {intern.skills.map((skill: string) => (
+                            <Badge key={skill} variant="secondary" className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border-0 rounded text-[10px] px-1.5">
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))
@@ -666,7 +620,7 @@ export default function TeamMembers() {
                   </p>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
                   {pendingApprovals.map((pending) => (
                     <Card key={pending.id} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between overflow-hidden">
                       <CardHeader className="p-5 pb-3">
@@ -749,7 +703,7 @@ export default function TeamMembers() {
                     </SheetTitle>
                     <p className="text-sm font-bold text-slate-500 mt-1">{selectedIntern.role}</p>
                     <Badge variant="outline" className="mt-3 rounded text-xs font-bold bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/80 dark:text-slate-300 dark:border-slate-700">
-                      {selectedIntern.id}
+                      {selectedIntern.empId || selectedIntern.id}
                     </Badge>
                   </div>
                   <div className="flex gap-2">
@@ -777,93 +731,84 @@ export default function TeamMembers() {
                   </div>
 
                   <TabsContent value="overview" className="m-0 p-6 space-y-8">
-                    {/* Contact Info */}
+                    {/* Contact & Info */}
                     <div className="space-y-4">
                       <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Contact & Info</h4>
                       <div className="grid grid-cols-1 gap-4">
                         <div className="flex items-center gap-3 text-sm font-medium text-slate-600 dark:text-slate-400">
-                          <Mail className="h-4 w-4 text-slate-400 shrink-0" /> {selectedIntern.email}
+                          <Mail className="h-4 w-4 text-slate-400 shrink-0" /> {selectedIntern.email || 'No email provided'}
                         </div>
                         <div className="flex items-center gap-3 text-sm font-medium text-slate-600 dark:text-slate-400">
-                          <Phone className="h-4 w-4 text-slate-400 shrink-0" /> {selectedIntern.phone}
+                          <Phone className="h-4 w-4 text-slate-400 shrink-0" /> {selectedIntern.phone || 'No phone recorded'}
                         </div>
                         <div className="flex items-center gap-3 text-sm font-medium text-slate-600 dark:text-slate-400">
-                          <GraduationCap className="h-4 w-4 text-slate-400 shrink-0" /> {selectedIntern.college} - {selectedIntern.degree}
+                          <Shield className="h-4 w-4 text-slate-400 shrink-0" /> Department: <span className="font-bold text-slate-900 dark:text-white">{selectedIntern.department || 'Engineering'}</span>
                         </div>
+                        <div className="flex items-center gap-3 text-sm font-medium text-slate-600 dark:text-slate-400">
+                          <Briefcase className="h-4 w-4 text-slate-400 shrink-0" /> Designation: <span className="font-bold text-slate-900 dark:text-white">{selectedIntern.role || 'Intern'}</span>
+                        </div>
+                        {memberDetail?.profile?.createdAt && (
+                          <div className="flex items-center gap-3 text-sm font-medium text-slate-600 dark:text-slate-400">
+                            <Calendar className="h-4 w-4 text-slate-400 shrink-0" /> Joined: <span className="font-bold text-slate-900 dark:text-white">{new Date(memberDetail.profile.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
-
-                    <Separator className="bg-slate-100 dark:bg-slate-800" />
-
-                    {/* Internship Details */}
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Internship Details</h4>
-                      <div className="grid grid-cols-2 gap-y-4 gap-x-8">
-                        <div>
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Department</p>
-                          <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedIntern.department}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Project</p>
-                          <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedIntern.project}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Manager</p>
-                          <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center">
-                            <Avatar className="h-5 w-5 mr-2 inline-block"><AvatarFallback className="text-[8px] bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold">AG</AvatarFallback></Avatar>
-                            {selectedIntern.manager}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Duration</p>
-                          <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedIntern.joiningDate} - {selectedIntern.expectedEndDate}</p>
-                        </div>
-                      </div>
-                    </div>
-
                   </TabsContent>
                   
                   <TabsContent value="activity" className="m-0 p-6">
-                    <div className="space-y-6">
-                      <div className="relative pl-6 py-2 before:absolute before:left-2 before:top-4 before:bottom-[-24px] before:w-px before:bg-slate-200 dark:before:bg-slate-800">
-                        <div className="absolute left-[3px] top-4 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950" />
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">Task Completed: Dashboard Analytics UI</p>
-                        <p className="text-xs font-semibold text-slate-500 mt-1">Today, 2:30 PM</p>
+                    {detailLoading ? (
+                      <div className="flex items-center justify-center py-12 text-slate-500 font-medium">Loading activity timeline from database...</div>
+                    ) : memberDetail?.activity && memberDetail.activity.length > 0 ? (
+                      <div className="space-y-6">
+                        {memberDetail.activity.map((act: any, idx: number) => (
+                          <div key={act.id || idx} className={cn("relative pl-6 py-2", idx < memberDetail.activity.length - 1 && "before:absolute before:left-2 before:top-4 before:bottom-[-24px] before:w-px before:bg-slate-200 dark:before:bg-slate-800")}>
+                            <div className={cn(
+                              "absolute left-[3px] top-4 h-2.5 w-2.5 rounded-full ring-4 ring-white dark:ring-slate-950",
+                              act.color === 'emerald' ? "bg-emerald-500" : act.color === 'blue' ? "bg-blue-500" : "bg-orange-500"
+                            )} />
+                            <p className="text-sm font-bold text-slate-900 dark:text-white">{act.title}</p>
+                            <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-0.5">{act.subtitle}</p>
+                            <p className="text-[11px] font-semibold text-slate-400 mt-1">{act.timestamp}</p>
+                          </div>
+                        ))}
                       </div>
-                      <div className="relative pl-6 py-2 before:absolute before:left-2 before:top-4 before:bottom-[-24px] before:w-px before:bg-slate-200 dark:before:bg-slate-800">
-                        <div className="absolute left-[3px] top-4 h-2.5 w-2.5 rounded-full bg-blue-500 ring-4 ring-white dark:ring-slate-950" />
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">Daily Standup Submitted</p>
-                        <p className="text-xs font-semibold text-slate-500 mt-1">Today, 9:15 AM</p>
+                    ) : (
+                      <div className="text-center py-12 text-sm font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+                        No activity recorded in the database yet for this team member.
                       </div>
-                      <div className="relative pl-6 py-2">
-                        <div className="absolute left-[3px] top-4 h-2.5 w-2.5 rounded-full bg-orange-500 ring-4 ring-white dark:ring-slate-950" />
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">Hours Logged: 6.5 hours</p>
-                        <p className="text-xs font-semibold text-slate-500 mt-1">Yesterday</p>
-                      </div>
-                    </div>
+                    )}
                   </TabsContent>
 
                   <TabsContent value="performance" className="m-0 p-6 space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
-                        <span className="text-3xl font-black text-orange-600 dark:text-orange-500 mb-1">{selectedIntern.score}%</span>
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Contribution</span>
-                      </div>
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
-                        <span className="text-3xl font-black text-emerald-600 dark:text-emerald-500 mb-1">{selectedIntern.attendance}%</span>
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Attendance</span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-sm font-bold">
-                          <span className="text-slate-700 dark:text-slate-300">Sprint Progress</span>
-                          <span className="text-slate-900 dark:text-white">75%</span>
+                    {detailLoading ? (
+                      <div className="flex items-center justify-center py-12 text-slate-500 font-medium">Loading performance metrics from database...</div>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
+                            <span className="text-3xl font-black text-orange-600 dark:text-orange-500 mb-1">{memberDetail?.performance?.score ?? selectedIntern.score}%</span>
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Contribution</span>
+                          </div>
+                          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
+                            <span className="text-3xl font-black text-emerald-600 dark:text-emerald-500 mb-1">{memberDetail?.performance?.attendance ?? selectedIntern.attendance}%</span>
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Attendance Rate</span>
+                          </div>
                         </div>
-                        <Progress value={75} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
-                      </div>
-                    </div>
+                        
+                        <div className="space-y-4 pt-2">
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-sm font-bold">
+                              <span className="text-slate-700 dark:text-slate-300">Task Completion Rate</span>
+                              <span className="text-slate-900 dark:text-white">
+                                {memberDetail?.performance ? `${memberDetail.performance.taskCompletionRate}% (${memberDetail.performance.completedTasks}/${memberDetail.performance.totalTasks} tasks)` : '0%'}
+                              </span>
+                            </div>
+                            <Progress value={memberDetail?.performance?.taskCompletionRate || 0} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </TabsContent>
                 </Tabs>
               </div>
@@ -893,12 +838,13 @@ export default function TeamMembers() {
                   <SelectValue placeholder="Select a new project..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
-                  <SelectItem value="Dashboard UI Revamp">Dashboard UI Revamp</SelectItem>
-                  <SelectItem value="Supabase Migration">Supabase Migration</SelectItem>
-                  <SelectItem value="Predictive Model V2">Predictive Model V2</SelectItem>
-                  <SelectItem value="Onboarding Flow">Onboarding Flow</SelectItem>
-                  <SelectItem value="Backend API V3">Backend API V3</SelectItem>
-                  <SelectItem value="Marketing Site">Marketing Site</SelectItem>
+                  {activeProjects.length > 0 ? (
+                    activeProjects.map(project => (
+                      <SelectItem key={project.id} value={project.name}>{project.name}</SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-xs text-slate-500 text-center">No active projects found in database</div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -1106,6 +1052,18 @@ export default function TeamMembers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Assign Task Dialog */}
+      <AssignTaskDialog 
+        open={!!assigningIntern} 
+        onOpenChange={(open) => !open && setAssigningIntern(null)} 
+        defaultAssigneeId={assigningIntern?.id} 
+        defaultAssigneeName={assigningIntern?.name} 
+        onSuccess={() => {
+          setAssigningIntern(null);
+          fetchData();
+        }}
+      />
     </div>
   );
 }
