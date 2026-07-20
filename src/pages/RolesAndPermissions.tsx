@@ -84,7 +84,7 @@ export default function RolesAndPermissions() {
     }
 
     const prevRole = targetUser.role;
-    const mappedRole = newRole.toLowerCase() === 'employee' ? 'intern' : newRole.toLowerCase();
+    const mappedRole = newRole.toLowerCase() === 'intern' ? 'intern' : newRole.toLowerCase();
     if (prevRole === mappedRole) {
       toast.info('The user is already assigned this role.');
       return;
@@ -142,8 +142,7 @@ export default function RolesAndPermissions() {
   const roleStats = {
     admin: usersList.filter(u => u.role === 'admin').length,
     manager: usersList.filter(u => u.role === 'manager').length,
-    employee: usersList.filter(u => u.role === 'employee' || u.role === 'intern').length,
-    intern: usersList.filter(u => u.role === 'employee' && u.designation?.toLowerCase().includes('intern')).length // or fallback/intern role if seeded
+    intern: usersList.filter(u => u.role === 'employee' || u.role === 'intern').length
   };
 
   const roles = [
@@ -162,7 +161,7 @@ export default function RolesAndPermissions() {
       color: 'bg-blue-500/10 text-blue-500 border-blue-500/20'
     },
     { 
-      name: 'Employee', 
+      name: 'Intern', 
       count: usersList.filter(u => u.role === 'employee' || u.role === 'intern').length, 
       desc: 'Task assignment capability, daily standups log, work hours logs, and profile self-service.',
       icon: UserCheck,
@@ -267,7 +266,7 @@ export default function RolesAndPermissions() {
                                 <div className="text-[10px] text-slate-400 mt-0.5">{u.email}</div>
                               </div>
                               <Badge variant="outline" className="text-[9px] uppercase tracking-wider">
-                                {u.role === 'intern' ? 'employee' : u.role}
+                                {u.role === 'employee' ? 'intern' : u.role}
                               </Badge>
                             </div>
                           ))
@@ -284,7 +283,7 @@ export default function RolesAndPermissions() {
                     <input
                       type="text"
                       readOnly
-                      value={selectedUser ? (selectedUser.role === 'intern' ? 'EMPLOYEE' : selectedUser.role.toUpperCase()) : 'No user selected'}
+                      value={selectedUser ? (selectedUser.role === 'employee' ? 'INTERN' : selectedUser.role.toUpperCase()) : 'No user selected'}
                       className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm font-bold text-slate-550 dark:text-slate-400 cursor-not-allowed outline-none"
                     />
                   </div>
@@ -303,7 +302,7 @@ export default function RolesAndPermissions() {
                     >
                       <option value="">-- Choose New Role --</option>
                       <option value="Manager">Manager</option>
-                      <option value="Employee">Employee</option>
+                      <option value="Intern">Intern</option>
                     </select>
                   </div>
 
@@ -359,12 +358,12 @@ export default function RolesAndPermissions() {
                         </td>
                         <td className="px-6 py-4">
                           <Badge variant="outline" className="uppercase font-bold text-[9px] border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                            {h.prevRole === 'intern' ? 'employee' : h.prevRole}
+                            {h.prevRole === 'employee' ? 'intern' : h.prevRole}
                           </Badge>
                         </td>
                         <td className="px-6 py-4">
                           <Badge className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 uppercase font-bold text-[9px]">
-                            {h.newRole === 'intern' ? 'employee' : h.newRole}
+                            {h.newRole === 'employee' ? 'intern' : h.newRole}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">

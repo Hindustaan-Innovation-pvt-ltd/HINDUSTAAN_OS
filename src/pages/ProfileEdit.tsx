@@ -24,12 +24,7 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [department, setDepartment] = useState('');
-  const [skillsText, setSkillsText] = useState('');
-  const [aboutMe, setAboutMe] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
-  const [github, setGithub] = useState('');
-  const [linkedin, setLinkedin] = useState('');
-  const [portfolio, setPortfolio] = useState('');
   const [avatar, setAvatar] = useState('');
 
   useEffect(() => {
@@ -41,13 +36,8 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
       // Populate fields
       setName(data.name);
       setPhone(data.phone);
-      setDepartment(data.department.toLowerCase());
-      setSkillsText(data.skills.join(', '));
-      setAboutMe(data.aboutMe);
+      setDepartment(data.department || '');
       setEmergencyContact(data.emergencyContact);
-      setGithub(data.github);
-      setLinkedin(data.linkedin);
-      setPortfolio(data.portfolio || '');
       setAvatar(data.avatar || '');
 
       // Load live data from backend asynchronously
@@ -58,7 +48,7 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
             setProfile(freshData);
             setName(freshData.name);
             setPhone(freshData.phone);
-            setDepartment(freshData.department.toLowerCase());
+            setDepartment(freshData.department || '');
             setAvatar(freshData.avatar || '');
           }
         });
@@ -80,23 +70,12 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
       return;
     }
 
-    // Process skills comma-separated text into array
-    const parsedSkills = skillsText
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean);
-
     const updatedProfile: ProfileData = {
       ...profile,
       name: name.trim(),
       phone: phone.trim(),
       department: department,
-      skills: parsedSkills,
-      aboutMe: aboutMe.trim(),
       emergencyContact: emergencyContact.trim(),
-      github: github.trim(),
-      linkedin: linkedin.trim(),
-      portfolio: portfolio.trim(),
       avatar: avatar
     };
 
@@ -112,16 +91,7 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
     };
     localStorage.setItem('hindustaan_user', JSON.stringify(sessionUser));
 
-    // 3. Dispatch avatar update event
-    if (avatar && !avatar.startsWith('http')) {
-      // base64 local avatar – keep in localStorage only (no upload since AvatarUpload handles cloud upload)
-      localStorage.setItem(`userAvatar_${user.email.toLowerCase()}`, avatar);
-    } else if (!avatar) {
-      localStorage.removeItem(`userAvatar_${user.email.toLowerCase()}`);
-    }
-    window.dispatchEvent(new Event('avatar-updated'));
-
-    // 4. Update user context immediately so sidebar/topbar re-renders
+    // 3. Update user context immediately so sidebar/topbar re-renders
     updateUser({
       name: name.trim(),
       department: department,
@@ -155,14 +125,14 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
 
   if (!profile) {
     return (
-      <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
+      <div className="flex h-100 items-center justify-center text-slate-400 dark:text-slate-500">
         <p>Loading Edit Form...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1000px] mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-250 mx-auto space-y-6 animate-in fade-in duration-500">
       
       {/* Header with Back Button */}
       <div className="flex items-center gap-3">
@@ -247,11 +217,11 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
-                      <SelectItem value="engineering">Engineering</SelectItem>
-                      <SelectItem value="design">Design</SelectItem>
-                      <SelectItem value="marketing">Marketing</SelectItem>
-                      <SelectItem value="sales">Sales</SelectItem>
-                      <SelectItem value="operations">Operations</SelectItem>
+                      <SelectItem value="HR">HR</SelectItem>
+                      <SelectItem value="Engineering">Engineering</SelectItem>
+                      <SelectItem value="Marketing">Marketing</SelectItem>
+                      <SelectItem value="Sales">Sales</SelectItem>
+                      <SelectItem value="Operations">Operations</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -267,77 +237,7 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
                 </div>
               </div>
 
-              {/* Skills Tags */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Skills (Comma-separated)</label>
-                <Input 
-                  value={skillsText} 
-                  onChange={(e) => setSkillsText(e.target.value)} 
-                  placeholder="React, TypeScript, Tailwind CSS, Git..."
-                  className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
-                />
-                <p className="text-[10px] text-slate-400 font-medium">Add multiple skills separated by commas.</p>
-              </div>
 
-              {/* About Me */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">About Me</label>
-                <textarea
-                  value={aboutMe}
-                  onChange={(e) => setAboutMe(e.target.value)}
-                  placeholder="Describe yourself and your experience..."
-                  rows={3}
-                  className="flex w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-semibold text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80">
-                <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4">Social Links</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* GitHub */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                      <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-                      </svg> GitHub URL
-                    </label>
-                    <Input 
-                      value={github} 
-                      onChange={(e) => setGithub(e.target.value)} 
-                      placeholder="https://github.com/..."
-                      className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
-                    />
-                  </div>
-
-                  {/* LinkedIn */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                      <svg className="h-3.5 w-3.5 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-                      </svg> LinkedIn URL
-                    </label>
-                    <Input 
-                      value={linkedin} 
-                      onChange={(e) => setLinkedin(e.target.value)} 
-                      placeholder="https://linkedin.com/in/..."
-                      className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
-                    />
-                  </div>
-
-                  {/* Portfolio */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                      <Globe className="h-3.5 w-3.5 text-green-500" /> Portfolio URL
-                    </label>
-                    <Input 
-                      value={portfolio} 
-                      onChange={(e) => setPortfolio(e.target.value)} 
-                      placeholder="https://..."
-                      className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 font-semibold" 
-                    />
-                  </div>
-                </div>
-              </div>
 
               {/* Read-Only Professional details hint */}
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/20 dark:bg-slate-900/20 p-4 rounded-xl">

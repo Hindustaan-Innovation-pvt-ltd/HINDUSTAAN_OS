@@ -30,6 +30,10 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [deptFilter, setDeptFilter] = useState<string>('All');
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -130,6 +134,11 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     setDetailActiveTab('profile');
     
   }, [selectedDetailUser]);
+
+  // Reset pagination on filter change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, deptFilter, statusFilter, showOnlyRole]);
 
   const handleRevokeSession = (sessionId: string) => {
     if (!selectedDetailUser) return;
@@ -506,7 +515,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   const handleApproveUser = async (user: User) => {
     if (!user.id) return;
     try {
-      const res = await api.post(`/auth/approve/${user.id}`, { empId: user.empId || undefined });
+      const res = await api.post(`/auth/approve/${user.id}`, {});
       if (res.data?.success || res.status === 200) {
         toast.success(`Account for "${user.name}" has been approved successfully!`);
         refreshUsers();
@@ -586,6 +595,9 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
     return matchesSearch && matchesRole && matchesDept && matchesStatus;
   });
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 transition-colors duration-300">
@@ -703,7 +715,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                           { label: 'Full Name', value: selectedDetailUser.name, icon: UserIcon },
                           { label: 'Email Address', value: selectedDetailUser.email, icon: Mail },
                           { label: 'Phone Number', value: selectedDetailUser.phoneWa || selectedDetailUser.phone || 'Not provided', icon: Phone },
-                          { label: 'Employee ID', value: selectedDetailUser.empId || selectedDetailUser.id || 'N/A', icon: Key },
+                          { label: 'Employee ID', value: selectedDetailUser.empId || 'Not Assigned', icon: Key },
                           { label: 'Department / Team', value: selectedDetailUser.department || 'Not Assigned', icon: Briefcase },
                           { label: 'Reporting Manager', value: selectedDetailUser.reportingManager || 'Not Assigned', icon: Users },
                           { label: 'Date Joined', value: selectedDetailUser.createdAt || selectedDetailUser.dateJoined ? new Date((selectedDetailUser.createdAt || selectedDetailUser.dateJoined) as string | Date).toLocaleDateString('en-US', { dateStyle: 'long' }) : 'Unknown', icon: Calendar }
@@ -1174,16 +1186,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
             </p>
           </div>
           
-          {showOnlyRole && (
-            <div className="flex items-center gap-3">
-              <Button 
-                onClick={() => { resetForm(); setIsCreateOpen(true); }}
-                className="bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md shadow-orange-500/10 transition-transform active:scale-95"
-              >
-                <UserPlus className="h-4 w-4 mr-2" /> Add {showOnlyRole === 'manager' ? 'Manager' : 'Employee'}
-              </Button>
-            </div>
-          )}
+
         </div>
 
         {/* Conditional Content */}
@@ -1405,10 +1408,10 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
               <CardHeader className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30 flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">
-                    {showOnlyRole === 'manager' ? 'Manager Directory' : 'Employee Directory'}
+                    {showOnlyRole === 'manager' ? 'Manager Directory' : 'Interns Directory'}
                   </CardTitle>
                   <p className="text-xs text-slate-500 mt-1">
-                    Showing {filteredUsers.length} of {usersList.filter(u => u.role === showOnlyRole).length} registered {showOnlyRole === 'manager' ? 'managers' : 'employees'}.
+                    Showing {filteredUsers.length} of {usersList.filter(u => u.role === showOnlyRole).length} registered {showOnlyRole === 'manager' ? 'managers' : 'interns'}.
                   </p>
                 </div>
               </CardHeader>
@@ -1418,9 +1421,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     <tr>
                       <th className="px-6 py-4 font-bold">User / ID</th>
                       <th className="px-6 py-4 font-bold">Designation & Department</th>
-                      {showOnlyRole !== 'manager' && (
-                        <th className="px-6 py-4 font-bold">Reporting Manager</th>
-                      )}
+
                       <th className="px-6 py-4 font-bold">Phone Number</th>
                       <th className="px-6 py-4 font-bold">System Role</th>
                       <th className="px-6 py-4 font-bold">Status</th>
@@ -1428,7 +1429,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredUsers.map((u, i) => {
+                    {paginatedUsers.map((u, i) => {
                       const isActive = u.isActive !== false;
                       const initials = u.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
@@ -1454,7 +1455,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                               <div className="min-w-0">
                                 <div className="font-extrabold text-slate-900 dark:text-white leading-snug truncate">{u.name}</div>
                                 <div className="text-xs text-slate-500 dark:text-slate-400 leading-snug font-medium mt-0.5 truncate">{u.email}</div>
-                                <div className="text-[10px] text-slate-400 font-bold tracking-wider mt-1 font-mono uppercase">{u.id || 'N/A'}</div>
+                                <div className="text-[10px] text-slate-400 font-bold tracking-wider mt-1 font-mono uppercase">{u.empId || 'Pending'}</div>
                               </div>
                             </div>
                           </td>
@@ -1464,17 +1465,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                               <Briefcase className="h-3 w-3 mr-1 text-slate-400" /> {u.department || 'Unassigned'}
                             </div>
                           </td>
-                          {showOnlyRole !== 'manager' && (
-                            <td className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">
-                              {u.reportingManager && u.reportingManager !== 'None' ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20">
-                                  {u.reportingManager}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-slate-400 font-medium">None</span>
-                              )}
-                            </td>
-                          )}
+
                           <td className="px-6 py-4 font-medium text-slate-500 dark:text-slate-400">
                             {u.phoneWa || u.phone ? u.phoneWa || u.phone : <span className="text-xs italic text-slate-400">No phone</span>}
                           </td>
@@ -1517,15 +1508,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                                   <CheckCircle2 className="h-3.5 w-3.5" />
                                 </Button>
                               )}
-                              <Button 
-                                onClick={() => openEditModal(u)}
-                                variant="outline" 
-                                size="icon" 
-                                className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80"
-                                title="Edit details"
-                              >
-                                <Edit2 className="h-3.5 w-3.5" />
-                              </Button>
+                              
                               <Button
                                 onClick={() => isActive ? setDeactivatingUser(u) : setActivatingUser(u)}
                                 variant="outline"
@@ -1545,7 +1528,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                         </tr>
                       );
                     })}
-                    {filteredUsers.length === 0 && (
+                    {paginatedUsers.length === 0 && (
                       <tr>
                         <td colSpan={showOnlyRole === 'manager' ? 6 : 7} className="px-6 py-12 text-center text-slate-400 italic font-medium">
                           No matching records found.
@@ -1555,6 +1538,37 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   </tbody>
                 </table>
               </CardContent>
+              
+              {filteredUsers.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                  <span className="text-xs font-semibold text-slate-500">
+                    Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of {filteredUsers.length} entries
+                  </span>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="text-xs font-bold rounded-lg border-slate-200 dark:border-slate-700"
+                    >
+                      Previous
+                    </Button>
+                    <div className="flex items-center justify-center px-3 text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Page {currentPage} of {totalPages}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages || totalPages === 0}
+                      className="text-xs font-bold rounded-lg border-slate-200 dark:border-slate-700"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </Card>
           </div>
         )}
@@ -1567,10 +1581,10 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
         <DialogContent className="sm:max-w-120 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
           <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/30">
             <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
-              {showOnlyRole === 'manager' ? 'Create Manager Account' : 'Create Employee Account'}
+              {showOnlyRole === 'manager' ? 'Create Manager Account' : 'Create Intern Account'}
             </DialogTitle>
             <DialogDescription className="text-xs font-semibold text-slate-450">
-              {showOnlyRole === 'manager' ? 'Initialize a new secure cohort manager profile.' : 'Initialize a new secure cohort employee profile.'}
+              {showOnlyRole === 'manager' ? 'Initialize a new secure cohort manager profile.' : 'Initialize a new secure cohort intern profile.'}
             </DialogDescription>
           </DialogHeader>
           
@@ -1602,31 +1616,11 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    {showOnlyRole === 'manager' ? 'Manager ID' : 'Employee ID'}
-                  </label>
-                  <input
-                    type="text"
-                    value={formId}
-                    onChange={(e) => setFormId(e.target.value)}
-                    placeholder={showOnlyRole === 'manager' ? 'E.g. MGR123' : 'E.g. EMP123'}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-                  />
-                  <button
-                    type="button"
-                    onClick={generateNewEmpId}
-                    className="text-xs font-bold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors focus:outline-none underline decoration-dotted mt-1 block"
-                  >
-                    Generate {showOnlyRole === 'manager' ? 'Manager ID' : 'EMP ID'}
-                  </button>
-                </div>
-
-                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">System Role</label>
                   <input
                     type="text"
                     readOnly
-                    value={showOnlyRole === 'manager' ? 'Manager' : 'Employee'}
+                    value={showOnlyRole === 'manager' ? 'Manager' : 'Intern'}
                     className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm font-semibold text-slate-500 dark:text-slate-400 cursor-not-allowed focus:outline-none"
                   />
                 </div>

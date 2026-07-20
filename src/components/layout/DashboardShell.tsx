@@ -94,7 +94,7 @@ const adminNavigationGroups = [
     name: 'User Management',
     icon: Users,
     items: [
-      { name: 'Employees', icon: User },
+      { name: 'Interns', icon: User },
       { name: 'Managers', icon: UserCircle },
       { name: 'Roles & Permissions', icon: Shield },
     ]
@@ -152,7 +152,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
   return (
     <div className="flex h-full flex-col bg-white dark:bg-slate-900 overflow-hidden relative">
         {/* Branding Badge */}
-        <div className={cn("flex shrink-0 items-center border-b border-slate-100 dark:border-[#5B7CFF]/20 py-4 relative", collapsed ? "justify-center px-0 h-[90px] flex-col gap-2" : "justify-between px-4 min-h-[90px]")}>
+        <div className={cn("flex shrink-0 items-center border-b border-slate-100 dark:border-[#5B7CFF]/20 py-4 relative", collapsed ? "justify-center px-0 h-22.5 flex-col gap-2" : "justify-between px-4 min-h-22.5")}>
           <div className="flex items-center group cursor-pointer transition-all duration-300 hover:scale-[1.03]" onClick={() => onNavigate('Dashboard')}>
             {collapsed ? (
               <BrandLogo variant="minimized" />
@@ -164,15 +164,15 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
           {!isMobile && (
             <div 
               onMouseDown={startResizing}
-              className="absolute -right-[4px] top-0 bottom-0 h-screen w-[8px] cursor-col-resize z-40 flex items-center justify-center group"
+              className="absolute -right-1 top-0 bottom-0 h-screen w-2 cursor-col-resize z-40 flex items-center justify-center group"
             >
-              <div className="h-16 w-[4px] rounded-full bg-[#5B7CFF]/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="h-16 w-1 rounded-full bg-[#5B7CFF]/50 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
           )}
 
           {isMobile && (
             <button 
-              className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300"
+              className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
               onClick={() => setSidebarOpen(false)}
             >
               <X className="h-6 w-6" />
@@ -205,7 +205,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                         "group flex items-center justify-between font-bold rounded-xl transition-all duration-300 py-3 relative w-full cursor-pointer",
                         collapsed ? "justify-center px-0 h-12 mb-1" : "px-3",
                         isCurrent && !hasSubItems
-                          ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-[0_0_15px_color-mix(in_srgb,var(--color-orange-500)_40%,transparent)]"
+                          ? "bg-linear-to-r from-orange-500 to-orange-600 text-white shadow-[0_0_15px_color-mix(in_srgb,var(--color-orange-500)_40%,transparent)]"
                           : "text-slate-600 dark:text-slate-400 hover:bg-orange-500/10 dark:hover:bg-orange-500/10 hover:text-orange-500 dark:hover:text-orange-500"
                       )}
                     >
@@ -279,12 +279,12 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                                   className={cn(
                                     "flex items-center font-bold rounded-xl transition-all duration-300 py-2.5 px-3 w-full",
                                     isSubCurrent
-                                      ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-[0_0_10px_color-mix(in_srgb,var(--color-orange-500)_30%,transparent)]"
+                                      ? "bg-linear-to-r from-orange-500 to-orange-600 text-white shadow-[0_0_10px_color-mix(in_srgb,var(--color-orange-500)_30%,transparent)]"
                                       : "text-slate-500 dark:text-slate-400 hover:text-orange-500 dark:hover:text-orange-500 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                                   )}
                                 >
                                   <SubIcon className={cn("h-4 w-4 mr-3 shrink-0", isSubCurrent ? "text-white" : "text-slate-400 group-hover:text-orange-500")} />
-                                  <span className="truncate text-[13px] whitespace-nowrap overflow-hidden">{subItem.name}</span>
+                                  <span className="truncate text-xs whitespace-nowrap overflow-hidden">{subItem.name}</span>
                                 </button>
                               );
                             })}
@@ -503,7 +503,7 @@ export default function DashboardShell({
         {/* Toggle Button (Desktop) - Seamlessly attached outside */}
         <button
           onClick={toggleSidebar}
-          className="absolute -right-[28px] top-8 z-50 flex h-8 w-[28px] items-center justify-center rounded-r-md rounded-l-none border border-l-0 border-slate-200 dark:border-slate-700/60 bg-blue-50 dark:bg-[#0c1222] text-blue-600 dark:text-[#5B7CFF] hover:bg-blue-100 dark:hover:bg-[#151e32] shadow-sm cursor-pointer transition-all duration-200"
+          className="absolute -right-7 top-8 z-50 flex h-8 w-7 items-center justify-center rounded-r-md rounded-l-none border border-l-0 border-slate-200 dark:border-slate-700/60 bg-blue-50 dark:bg-[#0c1222] text-blue-600 dark:text-[#5B7CFF] hover:bg-blue-100 dark:hover:bg-[#151e32] shadow-sm cursor-pointer transition-all duration-200"
           title={sidebarWidth < 150 ? "Expand Sidebar" : "Shrink Sidebar"}
         >
           {sidebarWidth < 150 ? (
@@ -519,7 +519,7 @@ export default function DashboardShell({
         
         {/* Top Sticky Header */}
         {/* Top Sticky Header */}
-        <header className="sticky top-0 z-30 flex flex-col justify-center border-b border-slate-200 dark:border-[#5B7CFF]/20 bg-white/80 dark:bg-[#050816]/80 px-4 shadow-sm backdrop-blur-md sm:px-6 lg:px-8 md:h-16 h-auto py-3 md:py-0">
+        <header className="sticky top-0 z-30 flex flex-col justify-center border-b border-slate-200 dark:border-[#5B7CFF]/20 bg-white/80 dark:bg-slate-950/80 px-4 shadow-sm backdrop-blur-md sm:px-6 lg:px-8 md:h-16 h-auto py-3 md:py-0">
           
           <div className="flex items-center justify-between w-full gap-x-4">
             <div className="flex items-center gap-x-4">
@@ -533,7 +533,7 @@ export default function DashboardShell({
                     <Menu className="h-6 w-6" aria-hidden="true" />
                   </button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-[280px] border-r border-slate-200 dark:border-[#5B7CFF]/20 flex flex-col">
+                <SheetContent side="left" className="p-0 w-70 border-r border-slate-200 dark:border-[#5B7CFF]/20 flex flex-col">
                   <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={onNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={280} startResizing={() => {}} isMobile={true} toggleSidebar={toggleSidebar} />
                 </SheetContent>
               </Sheet>
@@ -600,7 +600,7 @@ export default function DashboardShell({
 
         {/* Viewport Container */}
         <main className="flex-1 overflow-y-auto flex flex-col bg-slate-50/50 dark:bg-transparent relative z-0">
-          <div className="mx-auto max-w-screen-2xl flex-1 w-full max-w-full overflow-x-hidden px-4 py-6 md:px-6 lg:px-8">
+          <div className="mx-auto max-w-screen-2xl flex-1 w-full overflow-x-hidden px-4 py-6 md:px-6 lg:px-8">
             {children}
           </div>
           {/* Global Footer */}

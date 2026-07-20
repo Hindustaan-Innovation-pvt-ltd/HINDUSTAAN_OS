@@ -378,7 +378,7 @@ function App() {
                   }}
                 >
                   {currentView === 'Dashboard' && <RoleBasedRouter session={session} onNavigate={handleNavigate} />}
-                  {currentView === 'Employees' && (
+                  {currentView === 'Interns' && (
                     <AdminDashboard showOnlyRole="employee" />
                   )}
                   {currentView === 'Managers' && (
@@ -436,11 +436,11 @@ function App() {
                     'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Edit Profile', 'Team Members',
                     'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
                     'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support', 'Workspace Settings - Security & Access',
-                    'Workspace Settings - General', 'Workspace Settings - Projects', 'Workspace Settings - Appearance', 'Subscription Management', 'Employees', 'Managers', 'Roles & Permissions',
+                    'Workspace Settings - General', 'Workspace Settings - Projects', 'Workspace Settings - Appearance', 'Subscription Management', 'Interns', 'Managers', 'Roles & Permissions',
                     'Email Logs', 'Announcement Center', 'System Notifications', 'Delivery Channels'
                   ].includes(currentView) && (
-                      <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
-                        <p>Module "{currentView}" is under construction.</p>
+                      <div className="flex h-100 items-center justify-center text-slate-400 dark:text-slate-500">
+                        <p className="text-lg font-bold">This section is coming soon.</p>
                       </div>
                     )}
                 </DashboardShell>

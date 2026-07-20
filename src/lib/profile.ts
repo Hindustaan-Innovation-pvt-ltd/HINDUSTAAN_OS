@@ -91,7 +91,7 @@ const createDefaultProfile = (user: User): ProfileData => {
     employeeId: user.id || `EMP${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
     department: user.department || 'Engineering',
     role: user.role === 'manager' ? 'Manager' : 'Frontend Developer',
-    avatar: localStorage.getItem(`userAvatar_${user.email.toLowerCase()}`) || '',
+    avatar: user.avatarUrl || '',
     manager: user.role === 'manager' ? 'VP of Engineering' : 'Aakash Gupta',
     employmentType: user.role === 'admin' ? 'Admin' : user.role === 'manager' ? 'Employee' : 'Intern',
     team: user.department ? `${user.department} Team` : 'Core Engineering',

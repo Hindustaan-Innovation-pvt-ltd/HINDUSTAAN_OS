@@ -398,11 +398,18 @@ export const fetchProfileFromBackend = async (userId: string): Promise<User | nu
  * Returns the Cloudinary URL on success.
  */
 export const uploadAvatarToBackend = async (file: File): Promise<string> => {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      resolve(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  });
+  const formData = new FormData();
+  formData.append('image', file);
+
+  try {
+    const response = await api.post('/upload/profile-photo', formData);
+
+    if (response.data?.url) {
+      return response.data.url;
+    }
+    throw new Error('No URL returned from backend');
+  } catch (error) {
+    console.error('Failed to upload avatar to backend:', error);
+    throw error;
+  }
 };

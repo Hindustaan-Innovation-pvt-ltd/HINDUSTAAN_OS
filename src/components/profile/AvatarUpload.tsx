@@ -40,36 +40,25 @@ export function AvatarUpload({ avatar, name, role, onAvatarChange, email }: Avat
 
         // Replace preview with real CDN URL
         onAvatarChange(cloudUrl);
-        const emailKey = email.toLowerCase();
-        localStorage.setItem(`userAvatar_${emailKey}`, cloudUrl);
         updateUser({ avatar: cloudUrl });
+        
+        const key = 'hindustaan_user';
+        const sessionStr = localStorage.getItem(key) || sessionStorage.getItem(key);
+        if (sessionStr) {
+          try {
+            const session = JSON.parse(sessionStr);
+            session.avatarUrl = cloudUrl;
+            if (localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(session));
+            else sessionStorage.setItem(key, JSON.stringify(session));
+          } catch(e) {}
+        }
+        
         toast.success('Profile picture uploaded successfully.');
       } catch (err: any) {
-        console.error('Upload to backend failed, keeping local preview:', err);
-        // Fallback: compress & keep base64 locally
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_SIZE = 256;
-          let width = img.width;
-          let height = img.height;
-          if (width > height) {
-            if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
-          } else {
-            if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          onAvatarChange(compressedDataUrl);
-          const emailKey = email.toLowerCase();
-          localStorage.setItem(`userAvatar_${emailKey}`, compressedDataUrl);
-          updateUser({ avatar: compressedDataUrl });
-        };
-        img.src = previewUrl;
-        toast.warning('Saved locally', { description: 'Upload to server failed. Avatar saved in your browser only.' });
+        console.error('Upload to backend failed:', err);
+        // Revert to old avatar on failure
+        onAvatarChange(avatar);
+        toast.error('Upload failed', { description: 'Could not upload avatar to server.' });
       }
     };
     reader.readAsDataURL(file);
