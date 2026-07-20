@@ -10,6 +10,9 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    if (config.url?.includes('/auth/login') || config.url?.includes('/auth/signup')) {
+      return config;
+    }
     const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
     if (userStr) {
       try {
@@ -131,8 +134,9 @@ api.interceptors.response.use(
 
         localStorage.removeItem('hindustaan_user');
         sessionStorage.removeItem('hindustaan_user');
+        window.dispatchEvent(new Event('auth-logout'));
         if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
-          window.location.href = '/';
+          window.location.href = '/login';
         }
         return Promise.reject(refreshError);
       }

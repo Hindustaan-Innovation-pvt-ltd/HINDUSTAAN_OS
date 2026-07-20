@@ -156,6 +156,13 @@ function App() {
       }
     }
     setLoading(false);
+
+    const handleAuthLogout = () => {
+      setSession(null);
+      setCurrentView('Dashboard');
+    };
+    window.addEventListener('auth-logout', handleAuthLogout);
+    return () => window.removeEventListener('auth-logout', handleAuthLogout);
   }, []);
 
   if (loading) {

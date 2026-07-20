@@ -171,7 +171,14 @@ export default function Login({
         window.location.reload();
       }
     } catch (err: any) {
-      toast.error('Authentication Error', { description: err.message });
+      if (err.message && err.message.includes('User not found')) {
+        console.error("Login failed: User not found or invalid credentials.");
+        toast.error('Account Not Found', {
+          description: 'No matching account exists in the database with this email. Please verify the address or click "Register" to create a new workspace account.',
+        });
+      } else {
+        toast.error('Authentication Error', { description: err.message });
+      }
     } finally {
       setLoading(false);
     }
