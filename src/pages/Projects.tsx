@@ -16,6 +16,7 @@ const GANTT_TASKS: any[] = [];
 
 import { useProjects } from '@/context/ProjectContext';
 import { useNotifications } from '@/context/NotificationContext';
+import { getCurrentUser } from '@/lib/auth';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -178,8 +179,11 @@ export default function Projects({ session }: { session?: any }) {
         </div>
         {role === 'manager' && (
           <button onClick={() => {
+            const currentManager = getCurrentUser() || session?.user;
+            const managerName = currentManager?.name || session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || 'Aakash Gupta';
+            const managerId = currentManager?.id || session?.user?.id || 'MGR001';
             setEditingProjectId(null);
-            setNewProject({ name: '', manager: '', managerId: '', deadline: '', budget: '', priority: 'Medium', tasks: [] });
+            setNewProject({ name: '', manager: managerName, managerId: managerId, deadline: '', budget: '', priority: 'Medium', tasks: [] });
             setIsModalOpen(true);
           }} className="flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 shrink-0">
             <Plus className="h-4 w-4 mr-1.5" /> New Project
@@ -576,6 +580,7 @@ export default function Projects({ session }: { session?: any }) {
                     <select
                       value={newProject.managerId || ''}
                       onChange={(e) => {
+                        if (!editingProjectId) return;
                         const selectedId = e.target.value;
                         const selectedLead = leads.find(l => l.id === selectedId);
                         setNewProject({
@@ -584,14 +589,23 @@ export default function Projects({ session }: { session?: any }) {
                           manager: selectedLead ? selectedLead.name : 'Unassigned'
                         });
                       }}
-                      className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all appearance-none cursor-pointer"
+                      disabled={!editingProjectId}
+                      className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all appearance-none cursor-pointer disabled:opacity-90 disabled:cursor-not-allowed"
                     >
-                      <option value="">Unassigned</option>
-                      {leads.map(lead => (
-                        <option key={lead.id} value={lead.id}>{lead.name}</option>
-                      ))}
+                      {!editingProjectId ? (
+                        <option value={newProject.managerId || (getCurrentUser()?.id || 'MGR001')}>
+                          {newProject.manager || (getCurrentUser()?.name || 'Aakash Gupta')}
+                        </option>
+                      ) : (
+                        <>
+                          <option value="">Unassigned</option>
+                          {leads.map(lead => (
+                            <option key={lead.id} value={lead.id}>{lead.name}</option>
+                          ))}
+                        </>
+                      )}
                     </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
+                    {editingProjectId && <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -639,84 +653,86 @@ export default function Projects({ session }: { session?: any }) {
                 </div>
               </div>
 
-              {/* Tasks & Assignees Section */}
-              <div className="space-y-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Tasks & Assignees</label>
-                  <button
-                    className="text-xs font-bold text-orange-600 hover:text-orange-700 dark:text-orange-500 flex items-center"
-                    onClick={() => setNewProject({ ...newProject, tasks: [...newProject.tasks, { id: Date.now().toString(), title: '', assignee: 'Unassigned', status: 'To Do' }] })}
-                  >
-                    <Plus className="h-3 w-3 mr-1" /> Add Task
-                  </button>
-                </div>
-                {newProject.tasks.map((task, index) => (
-                  <div key={task.id} className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="e.g. Design Dashboard"
-                      value={task.title}
-                      onChange={e => {
-                        const updated = [...newProject.tasks];
-                        updated[index].title = e.target.value;
-                        setNewProject({ ...newProject, tasks: updated });
-                      }}
-                      className="flex-1 h-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                    />
-                    <div className="relative w-40 shrink-0">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button className="w-full h-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all text-left flex items-center justify-between">
-                            <span className="truncate">{task.assignee || 'Unassigned'}</span>
-                            <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 ml-2" />
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-48 p-2 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl" align="start">
-                          <div className="space-y-1 max-h-48 overflow-y-auto">
-                            {leads.map(member => {
-                              const assignees = (!task.assignee || task.assignee === 'Unassigned') ? [] : task.assignee.split(', ').filter(Boolean);
-                              const isSelected = assignees.includes(member.name);
-                              return (
-                                <label key={member.id} className="flex items-center px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer">
-                                  <input
-                                    type="radio"
-                                    checked={isSelected}
-                                    onChange={() => {
-                                      const updated = [...newProject.tasks];
-                                      if (isSelected) {
-                                        updated[index].assignee = 'Unassigned';
-                                        updated[index].assigneeId = null;
-                                      } else {
-                                        updated[index].assignee = member.name;
-                                        updated[index].assigneeId = member.id;
-                                      }
-                                      setNewProject({ ...newProject, tasks: updated });
-                                    }}
-                                    className="mr-3 h-4 w-4 rounded-full border-slate-300 text-orange-600 focus:ring-orange-600 cursor-pointer accent-orange-600"
-                                  />
-                                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{member.name}</span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+              {/* Tasks & Assignees Section - Hidden during Create New Project */}
+              {editingProjectId && (
+                <div className="space-y-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Tasks & Assignees</label>
                     <button
-                      onClick={() => {
-                        const updated = newProject.tasks.filter((_, i) => i !== index);
-                        setNewProject({ ...newProject, tasks: updated });
-                      }}
-                      className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                      className="text-xs font-bold text-orange-600 hover:text-orange-700 dark:text-orange-500 flex items-center"
+                      onClick={() => setNewProject({ ...newProject, tasks: [...newProject.tasks, { id: Date.now().toString(), title: '', assignee: 'Unassigned', status: 'To Do' }] })}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Plus className="h-3 w-3 mr-1" /> Add Task
                     </button>
                   </div>
-                ))}
-                {newProject.tasks.length === 0 && (
-                  <p className="text-xs text-slate-500 italic">No tasks added yet. Click "+ Add Task" to start assigning work.</p>
-                )}
-              </div>
+                  {newProject.tasks.map((task, index) => (
+                    <div key={task.id} className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="e.g. Design Dashboard"
+                        value={task.title}
+                        onChange={e => {
+                          const updated = [...newProject.tasks];
+                          updated[index].title = e.target.value;
+                          setNewProject({ ...newProject, tasks: updated });
+                        }}
+                        className="flex-1 h-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                      />
+                      <div className="relative w-40 shrink-0">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button className="w-full h-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all text-left flex items-center justify-between">
+                              <span className="truncate">{task.assignee || 'Unassigned'}</span>
+                              <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 ml-2" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-48 p-2 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl" align="start">
+                            <div className="space-y-1 max-h-48 overflow-y-auto">
+                              {leads.map(member => {
+                                const assignees = (!task.assignee || task.assignee === 'Unassigned') ? [] : task.assignee.split(', ').filter(Boolean);
+                                const isSelected = assignees.includes(member.name);
+                                return (
+                                  <label key={member.id} className="flex items-center px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer">
+                                    <input
+                                      type="radio"
+                                      checked={isSelected}
+                                      onChange={() => {
+                                        const updated = [...newProject.tasks];
+                                        if (isSelected) {
+                                          updated[index].assignee = 'Unassigned';
+                                          updated[index].assigneeId = null;
+                                        } else {
+                                          updated[index].assignee = member.name;
+                                          updated[index].assigneeId = member.id;
+                                        }
+                                        setNewProject({ ...newProject, tasks: updated });
+                                      }}
+                                      className="mr-3 h-4 w-4 rounded-full border-slate-300 text-orange-600 focus:ring-orange-600 cursor-pointer accent-orange-600"
+                                    />
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{member.name}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const updated = newProject.tasks.filter((_, i) => i !== index);
+                          setNewProject({ ...newProject, tasks: updated });
+                        }}
+                        className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {newProject.tasks.length === 0 && (
+                    <p className="text-xs text-slate-500 italic">No tasks added yet. Click "+ Add Task" to start assigning work.</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="p-6 pt-0 flex gap-3 mt-4">

@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -14,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, isToday, isSameMonth, addDays, subMonths, addMonths, differenceInDays, isWeekend, setMonth, setYear } from 'date-fns';
 import { useProjects } from '@/context/ProjectContext';
+import { getCurrentUser } from '@/lib/auth';
 import api from '@/lib/api';
 
 type ProjectTask = {
@@ -80,7 +80,7 @@ const mapGlobalProjectsToGantt = (globalProjects: any[], currentDate: Date): Pro
 };
 
 export default function GanttTimeline({ session }: { session?: any }) {
-  const { projects: globalProjects, addProject, refreshProjects } = useProjects();
+  const { projects: globalProjects, refreshProjects } = useProjects();
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Real-time update every 5 seconds
@@ -125,28 +125,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
     scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
-  // New Project State
-  const [newProjectOpen, setNewProjectOpen] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
-  const [newProjectManager, setNewProjectManager] = useState('');
-  const [newProjectMembers, setNewProjectMembers] = useState<string[]>([]);
-  const [newProjectColor, setNewProjectColor] = useState('bg-orange-500');
 
-  const [dbMembers, setDbMembers] = useState<any[]>([]);
-  useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        const res = await api.get('/team/profiles');
-        if (res.data?.success) {
-          const employees = res.data.data.filter((p: any) => p.role === 'intern' || p.role === 'employee');
-          setDbMembers(employees);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchMembers();
-  }, []);
 
   // Filter State
   const [filters, setFilters] = useState({
@@ -189,26 +168,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
     }
   }, [currentDate, daysInMonth]);
 
-  const handleAddProject = () => {
-    if (!newProjectName || !newProjectManager) return;
-    
-    const selectedManager = dbMembers.find(m => m.name === newProjectManager);
-    
-    addProject({
-      id: `p-${Date.now()}`,
-      name: newProjectName,
-      manager: newProjectManager,
-      managerId: selectedManager?.id,
-      color: newProjectColor,
-      tasks: [],
-      members: newProjectMembers,
-      status: 'In Progress'
-    });
-    setNewProjectOpen(false);
-    setNewProjectName('');
-    setNewProjectManager('');
-    setNewProjectMembers([]);
-  };
+
 
   const getStatusColor = (status: string) => {
     switch(status) {
@@ -362,159 +322,6 @@ export default function GanttTimeline({ session }: { session?: any }) {
               </div>
             </PopoverContent>
           </Popover>
-
-          {/* New Project Dialog */}
-          <Dialog open={newProjectOpen} onOpenChange={setNewProjectOpen}>
-            <DialogTrigger asChild>
-              <Button className="h-9 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-bold shadow-sm">
-                <Plus className="h-4 w-4 mr-2" /> New Project
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-0 overflow-hidden">
-              <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50">
-                <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">Create New Project</DialogTitle>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Set up a new master project timeline. This will be visible to all assigned teams.</p>
-              </DialogHeader>
-              <div className="grid gap-6 p-6 py-5">
-                <div className="grid gap-2">
-                  <Label htmlFor="name" className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Project Name</Label>
-                  <Input 
-                    id="name" 
-                    placeholder="e.g. Q4 Marketing Push" 
-                    value={newProjectName}
-                    onChange={(e) => setNewProjectName(e.target.value)}
-                    className="h-11 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60 focus-visible:ring-orange-500 font-bold text-slate-900 dark:text-white shadow-sm"
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="manager" className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Team Leader</Label>
-                  <Select value={newProjectManager} onValueChange={setNewProjectManager}>
-                    <SelectTrigger className="h-11 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60 focus:ring-orange-500 font-bold text-slate-900 dark:text-white shadow-sm">
-                      <SelectValue placeholder="Select a team leader" />
-                    </SelectTrigger>
-                    <SelectContent position="popper" className="rounded-xl border-slate-200 dark:border-slate-800 shadow-xl max-h-[220px] overflow-y-auto scrollbar-hide">
-                      {dbMembers.map(m => m.name).map((emp, i) => {
-                        const colors = ['bg-orange-100 text-orange-700', 'bg-emerald-100 text-emerald-700', 'bg-rose-100 text-rose-700', 'bg-blue-100 text-blue-700', 'bg-purple-100 text-purple-700'];
-                        const colorClass = colors[i % colors.length];
-                        return (
-                          <SelectItem key={emp} value={emp}>
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-6 w-6"><AvatarFallback className={`text-[9px] font-black ${colorClass}`}>{(emp as string).split(' ').map((n: string) => n[0]).join('')}</AvatarFallback></Avatar>
-                              <span className="font-bold">{emp}</span>
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid gap-2 mt-1">
-                  <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Additional Team Members (Optional)</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-between h-auto min-h-[44px] rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60 font-bold text-slate-900 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 text-left">
-                        <div className="flex flex-wrap gap-1.5 items-center">
-                          {newProjectMembers.length > 0 ? (
-                            newProjectMembers.map(member => (
-                              <Badge key={member} variant="secondary" className="rounded-md bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold border border-slate-200/50 dark:border-slate-700/50 px-2.5 py-1 flex items-center gap-1.5">
-                                {member}
-                                <div 
-                                  className="cursor-pointer rounded-full p-0.5 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors opacity-70 hover:opacity-100"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setNewProjectMembers(prev => prev.filter(m => m !== member));
-                                  }}
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                                </div>
-                              </Badge>
-                            ))
-                          ) : (
-                            <span className="text-slate-500 dark:text-slate-400 font-medium py-1">Select team members...</span>
-                          )}
-                        </div>
-                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1.5 rounded-xl border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-slate-950" align="start">
-                      <div className="flex flex-col max-h-[220px] overflow-y-auto scrollbar-hide">
-                        {dbMembers.map(m => m.name).filter(m => m !== newProjectManager).map((member) => (
-                          <div
-                            key={member}
-                            onClick={() => {
-                              setNewProjectMembers(prev => 
-                                prev.includes(member) ? prev.filter(m => m !== member) : [...prev, member]
-                              )
-                            }}
-                            className={cn(
-                              "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors",
-                              newProjectMembers.includes(member) && "bg-slate-50 dark:bg-slate-900/40"
-                            )}
-                          >
-                            <div className={cn(
-                              "flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border shadow-sm transition-colors",
-                              newProjectMembers.includes(member)
-                                ? "bg-orange-500 border-orange-500 text-white"
-                                : "bg-white border-slate-300 dark:bg-slate-900 dark:border-slate-700"
-                            )}>
-                              {newProjectMembers.includes(member) && <CheckCircle2 className="h-3 w-3" />}
-                            </div>
-                            <span className={cn(
-                              "text-sm font-semibold",
-                              newProjectMembers.includes(member) ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-300"
-                            )}>{member}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Theme Color</Label>
-                  <div className="flex items-center gap-4 mt-2">
-                    {[
-                      { name: 'Orange', value: 'bg-orange-500' },
-                      { name: 'Blue', value: 'bg-blue-500' },
-                      { name: 'Emerald', value: 'bg-emerald-500' },
-                      { name: 'Indigo', value: 'bg-indigo-500' },
-                      { name: 'Rose', value: 'bg-rose-500' },
-                      { name: 'Purple', value: 'bg-purple-500' },
-                    ].map((color) => (
-                      <button
-                        key={color.value}
-                        onClick={() => setNewProjectColor(color.value)}
-                        className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ring-offset-2 dark:ring-offset-slate-950",
-                          color.value,
-                          newProjectColor === color.value 
-                            ? "ring-2 ring-slate-900 dark:ring-white scale-110" 
-                            : "opacity-80 hover:opacity-100 hover:scale-110 hover:ring-2 hover:ring-slate-300 dark:hover:ring-slate-700"
-                        )}
-                        title={color.name}
-                      >
-                        {newProjectColor === color.value && <CheckCircle2 className="h-4 w-4 text-white drop-shadow-sm" />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <DialogFooter className="p-6 pt-4 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50 sm:justify-between items-center">
-                <Button variant="ghost" onClick={() => setNewProjectOpen(false)} className="rounded-xl font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white">Cancel</Button>
-                <Button 
-                  onClick={handleAddProject} 
-                  disabled={!newProjectName || !newProjectManager}
-                  className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold px-8 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Launch Project
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
         </div>
       </div>
 
