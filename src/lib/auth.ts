@@ -8,8 +8,10 @@ export interface User {
   designation?: string;
   department?: string;
   phone?: string;
+  phoneWa?: string;
   password?: string; // Only stored locally for mock
   dateJoined?: string;
+  createdAt?: string | Date;
   isActive?: boolean;
   reportingManager?: string;
   empId?: string;
@@ -17,6 +19,7 @@ export interface User {
   avatarUrl?: string;
   accessToken?: string;
   refreshToken?: string;
+  lastLogin?: string | Date;
 }
 
 const USERS_KEY = 'hindustaan_users';

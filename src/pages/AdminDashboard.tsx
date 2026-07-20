@@ -560,9 +560,12 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   };
 
   // Filters & Calculations
-  const activeUsersCount = usersList.filter(u => u.isActive !== false).length;
-  const totalEmployeesCount = usersList.filter(u => u.role === 'employee' || u.role === 'intern').length;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const activeUsersCount = usersList.filter(u => u.isActive !== false && u.lastLogin && new Date(u.lastLogin) >= today).length;
+  const totalInternsCount = usersList.filter(u => u.role === 'intern').length;
   const totalManagersCount = usersList.filter(u => u.role === 'manager').length;
+  const totalEmployeesCount = totalInternsCount + totalManagersCount;
   const activeManagersList = usersList.filter(u => u.role === 'manager' && u.isActive !== false);
   const pendingNotifications = notifications.filter((n: any) => n.unread).length;
 
@@ -605,7 +608,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   <div className={cn(
                     "h-12 w-12 rounded-xl flex items-center justify-center text-sm font-black border shrink-0",
                     selectedDetailUser.isActive !== false
-                      ? "bg-gradient-to-br from-orange-500 to-amber-600 text-white border-orange-400"
+                      ? "bg-linear-to-br from-orange-500 to-amber-600 text-white border-orange-400"
                       : "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-800"
                   )}>
                     {selectedDetailUser.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
@@ -623,7 +626,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
             </div>
 
             {/* Main Tabs Card */}
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden flex flex-col min-h-[600px]">
+            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden flex flex-col min-h-150">
               {/* Tab Navigation header */}
               <div className="flex border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 overflow-x-auto px-4 custom-scrollbar">
                 {[
@@ -699,11 +702,11 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                         {[
                           { label: 'Full Name', value: selectedDetailUser.name, icon: UserIcon },
                           { label: 'Email Address', value: selectedDetailUser.email, icon: Mail },
-                          { label: 'Phone Number', value: selectedDetailUser.phone || 'Not provided', icon: Phone },
-                          { label: 'Employee ID', value: selectedDetailUser.id || 'N/A', icon: Key },
-                          { label: 'Department / Team', value: selectedDetailUser.department || 'Engineering', icon: Briefcase },
-                          { label: 'Reporting Manager', value: selectedDetailUser.reportingManager || 'None', icon: Users },
-                          { label: 'Date Joined', value: selectedDetailUser.dateJoined ? new Date(selectedDetailUser.dateJoined).toLocaleDateString('en-US', { dateStyle: 'long' }) : 'June 15, 2026', icon: Calendar }
+                          { label: 'Phone Number', value: selectedDetailUser.phoneWa || selectedDetailUser.phone || 'Not provided', icon: Phone },
+                          { label: 'Employee ID', value: selectedDetailUser.empId || selectedDetailUser.id || 'N/A', icon: Key },
+                          { label: 'Department / Team', value: selectedDetailUser.department || 'Not Assigned', icon: Briefcase },
+                          { label: 'Reporting Manager', value: selectedDetailUser.reportingManager || 'Not Assigned', icon: Users },
+                          { label: 'Date Joined', value: selectedDetailUser.createdAt || selectedDetailUser.dateJoined ? new Date((selectedDetailUser.createdAt || selectedDetailUser.dateJoined) as string | Date).toLocaleDateString('en-US', { dateStyle: 'long' }) : 'Unknown', icon: Calendar }
                         ].map((item, idx) => {
                           const Icon = item.icon;
                           return (
@@ -863,7 +866,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                         return (
                           <div key={activity.id} className="relative group animate-in fade-in slide-in-from-left-2 duration-200">
                             <div className={cn(
-                              "absolute -left-[37px] top-0 h-7.5 w-7.5 rounded-full flex items-center justify-center border text-xs font-black shadow-sm transition-transform group-hover:scale-110",
+                              "absolute -left-9.25 top-0 h-7.5 w-7.5 rounded-full flex items-center justify-center border text-xs font-black shadow-sm transition-transform group-hover:scale-110",
                               color
                             )}>
                               <Icon className="h-4 w-4" />
@@ -940,7 +943,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                           <CheckSquare className="h-4 w-4 text-orange-500 shrink-0" /> Assigned Tasks ({getAssignedTasks().length})
                         </h3>
                       </div>
-                      <CardContent className="p-0 max-h-[220px] overflow-y-auto custom-scrollbar">
+                      <CardContent className="p-0 max-h-55 overflow-y-auto custom-scrollbar">
                         {getAssignedTasks().map((task: any) => (
                           <div key={task.id} className="p-3.5 border-b border-slate-101 dark:border-slate-808 last:border-0 hover:bg-slate-50/40 dark:hover:bg-slate-800/10 transition-colors">
                             <div className="flex items-start justify-between gap-3">
@@ -1029,8 +1032,8 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                           <ClipboardList className="h-4 w-4 text-purple-500 shrink-0" /> Recent Work Logs / Timesheet
                         </h3>
                       </div>
-                      <CardContent className="p-0 max-h-[220px] overflow-y-auto overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-xs text-left min-w-[500px]">
+                      <CardContent className="p-0 max-h-55 overflow-y-auto overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-xs text-left min-w-125">
                           <thead className="text-[10px] text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/60 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                             <tr>
                               <th className="px-4 py-2 font-bold">Date</th>
@@ -1189,10 +1192,10 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
           <div className="space-y-6">
             {/* Stats Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
-                  <div className="h-9 w-9 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
-                    <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  <div className="h-9 w-9 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center shrink-0">
+                    <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                   </div>
                   <div>
                     <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Total Employees</p>
@@ -1200,8 +1203,19 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   </div>
                 </CardContent>
               </Card>
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
+                <CardContent className="p-4 flex flex-col items-start gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
+                    <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Total Interns</p>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1.5 leading-none">{totalInternsCount}</h3>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-75 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay- transition-all hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-[#5B7CFF]/10 flex items-center justify-center shrink-0">
                     <ShieldCheck className="h-5 w-5 text-[#5B7CFF]" />
@@ -1213,7 +1227,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-100 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay- transition-all hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center shrink-0">
                     <FolderKanban className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -1225,7 +1239,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-125 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay- transition-all hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-cyan-50 dark:bg-cyan-500/10 flex items-center justify-center shrink-0">
                     <Activity className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
@@ -1237,7 +1251,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-150 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
+              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay- transition-all hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-teal-50 dark:bg-teal-500/10 flex items-center justify-center shrink-0">
                     <Award className="h-5 w-5 text-teal-600 dark:text-teal-400" />
@@ -1249,33 +1263,19 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay-200 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
-                <CardContent className="p-4 flex flex-col items-start gap-3">
-                  <div className="h-9 w-9 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
-                    <BellRing className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Pending Notifications</p>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1.5 leading-none">{pendingNotifications}</h3>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
-            {/* Split layout: User Account Summary & Workspace Status */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
-              <div className="lg:col-span-2 space-y-6">
-                {/* User Account Summary */}
+            {/* User Account Summary */}
+            <div className="grid grid-cols-1 gap-6">
+              <div className="space-y-6">
                 <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden">
                   <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
                     <CardTitle className="text-lg font-bold flex items-center justify-between text-slate-900 dark:text-white">
                       User Account Summary
-                      <Button variant="ghost" size="sm" className="h-8 text-xs font-bold text-[#5B7CFF]">View All</Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0 overflow-x-auto">
-                    <table className="w-full text-sm text-left min-w-[600px]">
+                    <table className="w-full text-sm text-left min-w-150">
                       <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                         <tr>
                           <th className="px-6 py-4 font-bold">User</th>
@@ -1306,7 +1306,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                                   </div>
                                   <div>
                                     <div className="font-extrabold text-slate-900 dark:text-white leading-snug">{u.name}</div>
-                                    <div className="text-xs text-slate-450 dark:text-slate-400 leading-snug truncate max-w-[150px]">{u.email}</div>
+                                    <div className="text-xs text-slate-450 dark:text-slate-400 leading-snug truncate max-w-37.5">{u.email}</div>
                                   </div>
                                 </div>
                               </td>
@@ -1323,7 +1323,9 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                                   {isActive ? 'Active' : 'Inactive'}
                                 </Badge>
                               </td>
-                              <td className="px-6 py-4 text-slate-500 text-xs">{isActive ? 'Just now' : '2 hours ago'}</td>
+                              <td className="px-6 py-4 text-slate-500 text-xs">
+                                {u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}
+                              </td>
                             </tr>
                           );
                         })}
@@ -1331,105 +1333,8 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     </table>
                   </CardContent>
                 </Card>
-
-
-              </div>
-
-              <div className="h-full col-span-1">
-                {/* Workspace Configuration Status */}
-                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm h-full flex flex-col">
-                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-                    <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Workspace Status</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6 flex-1 flex flex-col justify-between">
-                    <div className="space-y-8">
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-                            <Server className="h-4 w-4 text-[#5B7CFF]" /> Storage Usage
-                          </div>
-                          <span className="text-xs font-bold text-slate-500">45%</span>
-                        </div>
-                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] w-[45%]" />
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-                            <Users className="h-4 w-4 text-emerald-500" /> Seats Used
-                          </div>
-                          <span className="text-xs font-bold text-slate-500">136 / 150</span>
-                        </div>
-                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-emerald-500 w-[90%]" />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60 space-y-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-550 dark:text-slate-400 font-medium">SSO Configuration</span>
-                        <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">Active</Badge>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-550 dark:text-slate-400 font-medium">2FA Enforcement</span>
-                        <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">Enabled</Badge>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-550 dark:text-slate-400 font-medium">Database Size</span>
-                        <span className="font-extrabold text-slate-800 dark:text-slate-200">{adminStats.dbSize}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-550 dark:text-slate-400 font-medium">System Health</span>
-                        <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20">{adminStats.health}</Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
               </div>
             </div>
-
-            {/* Recent Workspace Activity */}
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm animate-in fade-in duration-300">
-              <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-                <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Recent Workspace Activity</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {activities.slice(0, 6).map((activity: any, i: number) => {
-                    let Icon = Activity;
-                    let color = 'text-[#5B7CFF]';
-                    let bg = 'bg-[#5B7CFF]/10';
-
-                    if (activity.type === 'project' || activity.type === 'assign') {
-                      Icon = ShieldCheck;
-                      color = 'text-emerald-500';
-                      bg = 'bg-emerald-500/10';
-                    } else if (activity.type === 'task' || activity.type === 'log') {
-                      Icon = Key;
-                      color = 'text-orange-500';
-                    }
-
-                    return (
-                      <div key={i} className="flex gap-4 p-4 rounded-xl border border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${bg}`}>
-                          <Icon className={`h-5 w-5 ${color}`} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                            {activity.user} {activity.action} <span className="font-extrabold text-orange-600 dark:text-orange-400">{activity.target}</span>
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         ) : (
           // CRUD Registry View
@@ -1571,7 +1476,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                             </td>
                           )}
                           <td className="px-6 py-4 font-medium text-slate-500 dark:text-slate-400">
-                            {u.phone ? u.phone : <span className="text-xs italic text-slate-400">No phone</span>}
+                            {u.phoneWa || u.phone ? u.phoneWa || u.phone : <span className="text-xs italic text-slate-400">No phone</span>}
                           </td>
                           <td className="px-6 py-4">
                             <Badge variant="outline" className={cn(
@@ -1659,7 +1564,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
       {/* CREATE MODAL */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-[480px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-120 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
           <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/30">
             <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
               {showOnlyRole === 'manager' ? 'Create Manager Account' : 'Create Employee Account'}
@@ -1812,7 +1717,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
       {/* EDIT MODAL */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="sm:max-w-[480px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-120 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
           <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/30">
             <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">Edit Employee Details</DialogTitle>
             <DialogDescription className="text-xs font-semibold text-slate-450">Modify properties and assign roles dynamically.</DialogDescription>
@@ -1948,7 +1853,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
       {/* Deactivate User Dialog */}
       <Dialog open={!!deactivatingUser} onOpenChange={(open) => !open && setDeactivatingUser(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-106.25 rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
               <Power className="mr-2 h-5 w-5 text-rose-500" />
@@ -1994,7 +1899,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
       {/* Activate User Dialog */}
       <Dialog open={!!activatingUser} onOpenChange={(open) => !open && setActivatingUser(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-106.25 rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
               <Power className="mr-2 h-5 w-5 text-emerald-500" />
