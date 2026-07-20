@@ -8,28 +8,136 @@ const api = axios.create({
   },
 });
 
+api.interceptors.request.use(
+  (config) => {
+    const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        if (user && user.accessToken) {
+          config.headers.Authorization = `Bearer ${user.accessToken}`;
+        }
+      } catch (e) {
+        console.error('Failed to parse user session in request interceptor:', e);
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      // Do not intercept refresh, login, or logout endpoints to prevent loops
+      if (
+        originalRequest.url?.includes('/auth/login') ||
+        originalRequest.url?.includes('/auth/refresh') ||
+        originalRequest.url?.includes('/auth/logout')
+      ) {
+        return Promise.reject(error);
+      }
+
       // Check if this is the mock admin user to prevent automatic logout loop
-      const userStr = localStorage.getItem('hindustaan_user');
+      const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
       let isMockAdmin = false;
+      let user: any = null;
       if (userStr) {
         try {
-          const user = JSON.parse(userStr);
+          user = JSON.parse(userStr);
           isMockAdmin = user.role === 'admin' && user.id === 'ADM001';
         } catch (e) {}
       }
 
-      if (!isMockAdmin) {
+      if (isMockAdmin) {
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise(function (resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshToken = user?.refreshToken;
+        const baseURL = import.meta.env.VITE_API_URL || 'https://hindustaan-os-backend.onrender.com/api';
+        const refreshResponse = await axios.post(
+          `${baseURL}/auth/refresh`,
+          refreshToken ? { refreshToken } : {},
+          { withCredentials: true }
+        );
+
+        if (
+          refreshResponse.data &&
+          refreshResponse.data.success &&
+          (refreshResponse.data.accessToken || refreshResponse.data.token)
+        ) {
+          const newAccessToken = refreshResponse.data.accessToken || refreshResponse.data.token;
+          const newRefreshToken = refreshResponse.data.refreshToken || refreshToken;
+
+          if (user) {
+            user.accessToken = newAccessToken;
+            if (newRefreshToken) {
+              user.refreshToken = newRefreshToken;
+            }
+            if (localStorage.getItem('hindustaan_user')) {
+              localStorage.setItem('hindustaan_user', JSON.stringify(user));
+            } else if (sessionStorage.getItem('hindustaan_user')) {
+              sessionStorage.setItem('hindustaan_user', JSON.stringify(user));
+            }
+          }
+
+          api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+          processQueue(null, newAccessToken);
+          isRefreshing = false;
+
+          return api(originalRequest);
+        } else {
+          throw new Error('Refresh token returned unsuccessful response');
+        }
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        isRefreshing = false;
+
         localStorage.removeItem('hindustaan_user');
         sessionStorage.removeItem('hindustaan_user');
         if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
           window.location.href = '/';
         }
+        return Promise.reject(refreshError);
       }
     }
+
     return Promise.reject(error);
   }
 );

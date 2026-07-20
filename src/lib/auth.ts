@@ -15,6 +15,8 @@ export interface User {
   empId?: string;
   isApproved?: boolean;
   avatarUrl?: string;
+  accessToken?: string;
+  refreshToken?: string;
 }
 
 const USERS_KEY = 'hindustaan_users';
@@ -194,6 +196,8 @@ export const loginUser = async (
         phone: dbUser.phoneWa || undefined,
         avatarUrl: dbUser.avatarUrl || undefined,
         empId: dbUser.empId || undefined,
+        accessToken: response.data.accessToken || response.data.token || undefined,
+        refreshToken: response.data.refreshToken || undefined,
       };
 
       if (rememberMe) {
@@ -215,7 +219,8 @@ export const loginUser = async (
       
       if (user) {
         const accessToken = `mock-token-${Date.now()}`;
-        const safeUser = { name: user.name, email: user.email, role: user.role, id: user.id, department: user.department, designation: user.designation, phone: user.phone, accessToken, userId: user.id };
+        const refreshToken = `mock-refresh-${Date.now()}`;
+        const safeUser = { name: user.name, email: user.email, role: user.role, id: user.id, department: user.department, designation: user.designation, phone: user.phone, accessToken, refreshToken, userId: user.id };
         if (rememberMe) {
           localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(safeUser));
           sessionStorage.removeItem(LOCAL_SESSION_KEY);
