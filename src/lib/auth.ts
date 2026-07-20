@@ -54,18 +54,6 @@ export const initializeAuth = () => {
       reportingManager: 'Aakash Gupta'
     },
     {
-      id: 'ADM001',
-      name: 'admin',
-      email: 'admin@hindustaan.in',
-      password: 'admin@123',
-      role: 'admin',
-      designation: 'System Administrator',
-      department: 'IT',
-      dateJoined: new Date().toISOString(),
-      isActive: true,
-      reportingManager: 'None'
-    },
-    {
       id: 'EMP002',
       name: 'Amanda Smith',
       email: 'amanda@hindustaan.in',
@@ -218,6 +206,9 @@ export const loginUser = async (
       const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && (!password || u.password === password || password === 'default_otp_password_placeholder'));
       
       if (user) {
+        if (user.role === 'admin' || email.toLowerCase().includes('admin')) {
+          throw new Error('Administrator login strictly requires connection to the live backend database.');
+        }
         const accessToken = `mock-token-${Date.now()}`;
         const refreshToken = `mock-refresh-${Date.now()}`;
         const safeUser = { name: user.name, email: user.email, role: user.role, id: user.id, department: user.department, designation: user.designation, phone: user.phone, accessToken, refreshToken, userId: user.id };
@@ -242,6 +233,9 @@ export const loginUser = async (
       const users = getRegisteredUsers();
       const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && (!password || u.password === password || password === 'default_otp_password_placeholder'));
       if (user) {
+        if (user.role === 'admin' || email.toLowerCase().includes('admin')) {
+          throw new Error('Administrator account not found in database. Only Admins present in the backend database can log in.');
+        }
         console.warn('User not found on backend DB, falling back to local demo account:', email);
         const accessToken = `mock-token-${Date.now()}`;
         const refreshToken = `mock-refresh-${Date.now()}`;

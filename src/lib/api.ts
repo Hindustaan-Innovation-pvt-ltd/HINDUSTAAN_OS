@@ -65,11 +65,14 @@ api.interceptors.response.use(
       if (userStr) {
         try {
           user = JSON.parse(userStr);
-          isMockOrDemoUser =
-            (user && user.role === 'admin' && user.id === 'ADM001') ||
-            (user && String(user.accessToken || '').startsWith('mock-token-')) ||
-            (user && String(user.id || '').startsWith('demo-')) ||
-            (user && String(user.email || '').toLowerCase().endsWith('@hindustaan.in'));
+          if (user && user.role === 'admin') {
+            isMockOrDemoUser = false;
+          } else {
+            isMockOrDemoUser =
+              (user && String(user.accessToken || '').startsWith('mock-token-')) ||
+              (user && String(user.id || '').startsWith('demo-')) ||
+              (user && String(user.email || '').toLowerCase().endsWith('@hindustaan.in'));
+          }
         } catch (e) {}
       }
 

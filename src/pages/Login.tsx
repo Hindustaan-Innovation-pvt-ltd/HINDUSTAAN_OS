@@ -9,7 +9,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 import { Button } from '@/components/ui/button';
 import { loginUser, getRegisteredUsers, initializeAuth } from '@/lib/auth';
-import { User as UserIcon } from 'lucide-react';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 
 export default function Login({
@@ -27,11 +26,9 @@ export default function Login({
   defaultRole?: string,
   isAdminLogin?: boolean
 }) {
-  const [name, setName] = useState(defaultName);
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Authentication Modes
@@ -73,14 +70,6 @@ export default function Login({
   }, [showOTPDialog, otpState]);
 
   const validateUser = () => {
-    if (isAdminLogin && email.toLowerCase() === 'admin@hindustaan.in') {
-      return {
-        id: 'ADM001',
-        name: 'admin',
-        email: 'admin@hindustaan.in',
-        role: 'admin',
-      };
-    }
     // Return a dummy user to bypass client-side list validation
     // as we now perform actual validation via backend APIs.
     return {
@@ -97,7 +86,7 @@ export default function Login({
     try {
       console.log("Data is sending to backend successfully");
       // Connect to backend via loginUser
-      const user = await loginUser(email, password, rememberMe);
+      const user = await loginUser(email, password, true);
       if (!user) {
         toast.error('Authentication Error', { description: 'Login failed.' });
         setLoading(false);
@@ -185,6 +174,10 @@ export default function Login({
   };
 
   const sendOTP = async (targetEmail: string) => {
+    if (isAdminLogin || targetEmail.toLowerCase().includes('admin')) {
+      toast.error('Restricted', { description: 'Administrator accounts strictly require password authentication against the live database.' });
+      return false;
+    }
     setLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API
@@ -260,7 +253,7 @@ export default function Login({
 
     if (success) {
       try {
-        const user = await loginUser(email, undefined, rememberMe); // OTP login, no password needed
+        const user = await loginUser(email, undefined, true); // OTP login, no password needed
         if (user) {
           toast.success('Verification Successful', { description: 'Welcome back!' });
           setShowOTPDialog(false);
@@ -343,29 +336,6 @@ export default function Login({
                 <div className="space-y-3 lg:space-y-2">
 
                   <div>
-                    <label htmlFor="name" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-0.5">
-                      Full Name
-                    </label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                        <UserIcon className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                      </div>
-                      <input
-                        id="name"
-                        name="name"
-                        type="text"
-                        required
-                        minLength={3}
-                        maxLength={50}
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 lg:py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
-                        placeholder="Enter your full name"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
                     <label htmlFor="email-address" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-0.5">
                       Email Address
                     </label>
@@ -423,18 +393,6 @@ export default function Login({
                   )}
                 </div>
 
-                <div className="flex items-center space-x-2 pt-0.5">
-                  <input
-                    type="checkbox"
-                    id="rememberMe"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-3.5 h-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-900"
-                  />
-                  <label htmlFor="rememberMe" className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                    Remember Me
-                  </label>
-                </div>
 
                 <div className="flex items-center justify-between pt-0.5 pb-1">
                   {!isOTPMode ? (
