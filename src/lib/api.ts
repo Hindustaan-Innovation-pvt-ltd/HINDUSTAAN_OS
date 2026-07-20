@@ -58,18 +58,22 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      // Check if this is the mock admin user to prevent automatic logout loop
+      // Check if this is a mock or demo user to prevent automatic logout/refresh loops
       const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
-      let isMockAdmin = false;
+      let isMockOrDemoUser = false;
       let user: any = null;
       if (userStr) {
         try {
           user = JSON.parse(userStr);
-          isMockAdmin = user.role === 'admin' && user.id === 'ADM001';
+          isMockOrDemoUser =
+            (user && user.role === 'admin' && user.id === 'ADM001') ||
+            (user && String(user.accessToken || '').startsWith('mock-token-')) ||
+            (user && String(user.id || '').startsWith('demo-')) ||
+            (user && String(user.email || '').toLowerCase().endsWith('@hindustaan.in'));
         } catch (e) {}
       }
 
-      if (isMockAdmin) {
+      if (isMockOrDemoUser) {
         return Promise.reject(error);
       }
 
