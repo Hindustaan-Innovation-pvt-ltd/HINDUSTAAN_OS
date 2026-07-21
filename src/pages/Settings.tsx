@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useUser } from '@/context/UserContext';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  User, Shield, Bell, Palette, Link as LinkIcon, Database, Globe, HelpCircle, 
+import {
+  User, Shield, Bell, Palette, Link as LinkIcon, Database, Globe, HelpCircle,
   Download, MonitorSmartphone, CheckCircle2, Moon, Sun, Monitor, ChevronLeft, Clock,
   Eye, EyeOff, QrCode, Smartphone, Laptop, AlertTriangle, X, Save, Loader2
 } from 'lucide-react';
@@ -32,10 +33,11 @@ const SETTINGS_SECTIONS = [
   { id: 'help', label: 'Help & Support', description: 'Get assistance and read documentation.', icon: HelpCircle },
 ];
 
-export default function Settings({ session }: { session: any }) {
+export default function Settings() {
   const { theme, toggleTheme, accentColor, setAccentColor } = useTheme();
-  const role = session?.user?.user_metadata?.role || 'intern';
-  
+  const { user } = useUser();
+  const role = user?.role || 'employee';
+
   const [activeTab, setActiveTab] = useState<string | null>(null);
 
   const [storageUsed, setStorageUsed] = useState(45);
@@ -61,19 +63,19 @@ export default function Settings({ session }: { session: any }) {
   const handleDownloadPDF = () => {
     try {
       const doc = new jsPDF();
-      
+
       // Page Title
       doc.setFontSize(22);
       doc.setTextColor(15, 23, 42);
       doc.text("Project OS - Workspace Summary Report", 14, 25);
-      
+
       doc.setFontSize(10);
       doc.setTextColor(100, 116, 139);
       doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 32);
-      
+
       doc.setDrawColor(226, 232, 240);
       doc.line(14, 35, 196, 35);
-      
+
       // Safe JSON LocalStorage Loader Helper
       const getJSONData = (key: string, fallback: any) => {
         try {
@@ -85,20 +87,20 @@ export default function Settings({ session }: { session: any }) {
           return fallback;
         }
       };
-      
+
       // Load Workspace Data
       const logs = getJSONData('work_logs_list_v4', getJSONData('work_logs_list', [
         { date: "Jul 10, 2026", name: "Amanda Smith", project: "Frontend Core", task: "Component Refactoring", hours: 8.5, status: "Approved" },
         { date: "Jul 10, 2026", name: "Rahul Sharma", project: "Backend Core", task: "Database Optimization", hours: 7.2, status: "Approved" },
         { date: "Jul 10, 2026", name: "Tanvy Pandey", project: "Frontend Core", task: "Kanban Board & Work Logs", hours: 6.0, status: "Pending" }
       ]));
-      
+
       const tasks = getJSONData('hindustaan_tasks_list', [
         { title: "Design System Setup", status: "Done", assignee_name: "Amanda Smith", project_tag: "ProjectOS Redesign", priority: "High" },
         { title: "Authentication Flow", status: "Done", assignee_name: "Rahul Sharma", project_tag: "ProjectOS Redesign", priority: "High" },
         { title: "Dashboard Layout", status: "In Progress", assignee_name: "Priya Patel", project_tag: "ProjectOS Redesign", priority: "Medium" }
       ]);
-      
+
       const standups = getJSONData('hindustaan_standups', [
         { user: "Tanvy", role: "Frontend Developer", yesterday: "Finished responsive layout.", today: "Kanban drag-and-drop.", blockers: "None." },
         { user: "Rahul Sharma", role: "Backend Developer", yesterday: "Database schema setup.", today: "REST API endpoints.", blockers: "None." }
@@ -108,45 +110,45 @@ export default function Settings({ session }: { session: any }) {
       doc.setFontSize(14);
       doc.setTextColor(15, 23, 42);
       doc.text("1. Recent Work Logs", 14, 45);
-      
+
       autoTable(doc, {
         startY: 50,
         head: [['Date', 'Employee', 'Project', 'Task', 'Hours', 'Status']],
         body: logs.map((l: any) => [
-          l.date || l.formattedDate || '', 
-          l.name || l.employeeName || '', 
-          l.project || '', 
-          l.task || '', 
-          `${l.hours || 0}h`, 
+          l.date || l.formattedDate || '',
+          l.name || l.employeeName || '',
+          l.project || '',
+          l.task || '',
+          `${l.hours || 0}h`,
           l.status || 'Approved'
         ]),
         headStyles: { fillColor: [91, 124, 255] },
         theme: 'striped'
       });
-      
+
       const nextY1 = (doc as any).lastAutoTable.finalY + 15;
-      
+
       // 2. Tasks Section
       doc.setFontSize(14);
       doc.setTextColor(15, 23, 42);
       doc.text("2. Tasks Summary", 14, nextY1);
-      
+
       autoTable(doc, {
         startY: nextY1 + 5,
         head: [['Task Title', 'Status', 'Assignee', 'Project', 'Priority']],
         body: tasks.map((t: any) => [
-          t.title || '', 
-          t.status || '', 
-          t.assignee_name || t.assignee || 'Unassigned', 
-          t.project_tag || '', 
+          t.title || '',
+          t.status || '',
+          t.assignee_name || t.assignee || 'Unassigned',
+          t.project_tag || '',
           t.priority || 'Medium'
         ]),
         headStyles: { fillColor: [168, 85, 247] },
         theme: 'striped'
       });
-      
+
       const nextY2 = (doc as any).lastAutoTable.finalY + 15;
-      
+
       // 3. Standups Section
       let startStandupY = nextY2 + 5;
       if (nextY2 > 240) {
@@ -160,21 +162,21 @@ export default function Settings({ session }: { session: any }) {
         doc.setTextColor(15, 23, 42);
         doc.text("3. Daily Standups", 14, nextY2);
       }
-      
+
       autoTable(doc, {
         startY: startStandupY,
         head: [['User', 'Role', 'Yesterday\'s Work', 'Today\'s Plan', 'Blockers']],
         body: standups.map((s: any) => [
-          s.user || '', 
-          s.role || '', 
-          s.yesterday || '', 
-          s.today || '', 
+          s.user || '',
+          s.role || '',
+          s.yesterday || '',
+          s.today || '',
           s.blockers || 'None'
         ]),
         headStyles: { fillColor: [16, 185, 129] },
         theme: 'striped'
       });
-      
+
       // Use Blob and anchor element for maximum browser download reliability
       const blob = doc.output('blob');
       const url = URL.createObjectURL(blob);
@@ -185,7 +187,7 @@ export default function Settings({ session }: { session: any }) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
+
       toast.success("PDF Report Downloaded");
     } catch (error: any) {
       console.error(error);
@@ -236,7 +238,7 @@ export default function Settings({ session }: { session: any }) {
     if (/[A-Z]/.test(pwd)) strength++;
     if (/[a-z]/.test(pwd)) strength++;
     if (/[0-9]/.test(pwd)) strength++;
-    
+
     if (strength <= 2) return { label: 'Weak', color: 'bg-rose-500', width: '33%' };
     if (strength === 3) return { label: 'Medium', color: 'bg-amber-500', width: '66%' };
     return { label: 'Strong', color: 'bg-emerald-500', width: '100%' };
@@ -358,13 +360,13 @@ export default function Settings({ session }: { session: any }) {
   useEffect(() => {
     const saved = localStorage.getItem('hindustaan_notification_toggles');
     if (saved) {
-      try { setToggles(JSON.parse(saved)); } catch {}
+      try { setToggles(JSON.parse(saved)); } catch { }
     }
   }, []);
 
 
   const renderContent = () => {
-    switch(activeTab) {
+    switch (activeTab) {
       case 'standup':
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
@@ -372,11 +374,11 @@ export default function Settings({ session }: { session: any }) {
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Standup Settings</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize how Daily Standups work for you {role === 'manager' && 'and your team'}.</p>
             </div>
-            
+
             {/* Summary Card */}
-            <Card className="bg-gradient-to-br from-violet-500 to-blue-600 text-white shadow-lg border-0">
+            <Card className="bg-linear-to-br from-violet-500 to-blue-600 text-white shadow-lg border-0">
               <CardContent className="p-6">
-                <h3 className="text-lg font-bold mb-4 flex items-center"><Clock className="h-5 w-5 mr-2"/> Standup Configuration</h3>
+                <h3 className="text-lg font-bold mb-4 flex items-center"><Clock className="h-5 w-5 mr-2" /> Standup Configuration</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <p className="text-violet-100 text-xs font-semibold uppercase">Reminder</p>
@@ -389,9 +391,9 @@ export default function Settings({ session }: { session: any }) {
                   <div>
                     <p className="text-violet-100 text-xs font-semibold uppercase">Notifications</p>
                     <p className="text-sm font-bold mt-1 leading-tight">
-                      {standupSettings.emailReminder && standupSettings.browserNotification ? 'Email + Browser' : 
-                       standupSettings.emailReminder ? 'Email Only' : 
-                       standupSettings.browserNotification ? 'Browser Only' : 'None'}
+                      {standupSettings.emailReminder && standupSettings.browserNotification ? 'Email + Browser' :
+                        standupSettings.emailReminder ? 'Email Only' :
+                          standupSettings.browserNotification ? 'Browser Only' : 'None'}
                     </p>
                   </div>
                 </div>
@@ -399,13 +401,13 @@ export default function Settings({ session }: { session: any }) {
             </Card>
 
             <Card className="rounded-2xl border-violet-500/20 bg-white/50 dark:bg-slate-900/40 backdrop-blur-xl shadow-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-violet-500/10 to-blue-500/10 rounded-full blur-3xl -z-10 translate-x-1/2 -translate-y-1/2"></div>
+              <div className="absolute top-0 right-0 w-64 h-64 bg-linear-to-br from-violet-500/10 to-blue-500/10 rounded-full blur-3xl -z-10 translate-x-1/2 -translate-y-1/2"></div>
               <CardContent className="p-6 space-y-6">
-                
+
                 {/* Reminders & Timings */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Timings & Alerts</h3>
-                  
+
                   <div className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
                     <div>
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white">Daily Standup Reminder</h4>
@@ -478,10 +480,10 @@ export default function Settings({ session }: { session: any }) {
                     </div>
                   </div>
                 )}
-                
+
               </CardContent>
               <CardFooter className="p-6 pt-0 flex justify-end">
-                <Button onClick={saveStandupSettings} className="rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700 text-white font-bold px-8 shadow-md">
+                <Button onClick={saveStandupSettings} className="rounded-xl bg-linear-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700 text-white font-bold px-8 shadow-md">
                   Save Changes
                 </Button>
               </CardFooter>
@@ -496,7 +498,7 @@ export default function Settings({ session }: { session: any }) {
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Account & Security</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage your password and security preferences.</p>
             </div>
-            
+
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-lg font-bold">Change Password</CardTitle>
@@ -507,7 +509,7 @@ export default function Settings({ session }: { session: any }) {
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Current Password</label>
                   <div className="relative">
                     <Input type={showPassword.current ? "text" : "password"} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 pr-10" />
-                    <button type="button" onClick={() => setShowPassword(p => ({...p, current: !p.current}))} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <button type="button" onClick={() => setShowPassword(p => ({ ...p, current: !p.current }))} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                       {showPassword.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
@@ -516,7 +518,7 @@ export default function Settings({ session }: { session: any }) {
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">New Password</label>
                   <div className="relative">
                     <Input type={showPassword.new ? "text" : "password"} value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 pr-10" />
-                    <button type="button" onClick={() => setShowPassword(p => ({...p, new: !p.new}))} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <button type="button" onClick={() => setShowPassword(p => ({ ...p, new: !p.new }))} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                       {showPassword.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
@@ -537,7 +539,7 @@ export default function Settings({ session }: { session: any }) {
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Confirm New Password</label>
                   <div className="relative">
                     <Input type={showPassword.confirm ? "text" : "password"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 pr-10" />
-                    <button type="button" onClick={() => setShowPassword(p => ({...p, confirm: !p.confirm}))} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <button type="button" onClick={() => setShowPassword(p => ({ ...p, confirm: !p.confirm }))} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                       {showPassword.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
@@ -567,7 +569,7 @@ export default function Settings({ session }: { session: any }) {
                     else setTwoFactorDisableModalOpen(true);
                   }} />
                 </div>
-                
+
                 <div className="p-6">
                   <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4">Active Sessions & Login History</h3>
                   <div className="space-y-3">
@@ -594,7 +596,7 @@ export default function Settings({ session }: { session: any }) {
 
             {/* Modals */}
             <Dialog open={twoFactorModalOpen} onOpenChange={setTwoFactorModalOpen}>
-              <DialogContent className="sm:max-w-[425px] rounded-2xl border-slate-200 dark:border-slate-800">
+              <DialogContent className="sm:max-w-106.25 rounded-2xl border-slate-200 dark:border-slate-800">
                 <DialogHeader>
                   <DialogTitle className="text-slate-900 dark:text-white">Enable Two Factor Authentication</DialogTitle>
                   <DialogDescription className="text-slate-500">Scan this QR code with your authenticator app.</DialogDescription>
@@ -622,9 +624,9 @@ export default function Settings({ session }: { session: any }) {
             </Dialog>
 
             <Dialog open={twoFactorDisableModalOpen} onOpenChange={setTwoFactorDisableModalOpen}>
-              <DialogContent className="sm:max-w-[400px] rounded-2xl border-slate-200 dark:border-slate-800">
+              <DialogContent className="sm:max-w-100 rounded-2xl border-slate-200 dark:border-slate-800">
                 <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-rose-600"><AlertTriangle className="h-5 w-5"/> Disable Two Factor Authentication?</DialogTitle>
+                  <DialogTitle className="flex items-center gap-2 text-rose-600"><AlertTriangle className="h-5 w-5" /> Disable Two Factor Authentication?</DialogTitle>
                   <DialogDescription className="text-slate-500">This will reduce the security of your account. Are you sure?</DialogDescription>
                 </DialogHeader>
                 <DialogFooter className="mt-4">
@@ -635,9 +637,9 @@ export default function Settings({ session }: { session: any }) {
             </Dialog>
 
             <Dialog open={sessionToRevoke !== null} onOpenChange={(open) => !open && setSessionToRevoke(null)}>
-              <DialogContent className="sm:max-w-[400px] rounded-2xl border-slate-200 dark:border-slate-800">
+              <DialogContent className="sm:max-w-100 rounded-2xl border-slate-200 dark:border-slate-800">
                 <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-rose-600"><AlertTriangle className="h-5 w-5"/> Remove this device session?</DialogTitle>
+                  <DialogTitle className="flex items-center gap-2 text-rose-600"><AlertTriangle className="h-5 w-5" /> Remove this device session?</DialogTitle>
                   <DialogDescription className="text-slate-500">You will be logged out on that device immediately.</DialogDescription>
                 </DialogHeader>
                 <DialogFooter className="mt-4">
@@ -646,7 +648,7 @@ export default function Settings({ session }: { session: any }) {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            
+
           </div>
         );
       case 'notifications':
@@ -656,7 +658,7 @@ export default function Settings({ session }: { session: any }) {
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Notification Preferences</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Control how and when you receive alerts.</p>
             </div>
-            
+
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
               <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
@@ -724,13 +726,13 @@ export default function Settings({ session }: { session: any }) {
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Appearance</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Customize how the application looks on your device.</p>
             </div>
-            
+
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
               <CardContent className="p-6 space-y-6">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Theme Preferences</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <button 
+                    <button
                       onClick={() => theme !== 'light' && toggleTheme()}
                       className={cn(
                         "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all",
@@ -740,8 +742,8 @@ export default function Settings({ session }: { session: any }) {
                       <Sun className={cn("h-8 w-8", theme === 'light' ? "text-orange-600" : "text-slate-400")} />
                       <span className={cn("text-sm font-bold", theme === 'light' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Light Theme</span>
                     </button>
-                    
-                    <button 
+
+                    <button
                       onClick={() => theme !== 'dark' && toggleTheme()}
                       className={cn(
                         "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all",
@@ -752,7 +754,7 @@ export default function Settings({ session }: { session: any }) {
                       <span className={cn("text-sm font-bold", theme === 'dark' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Dark Theme</span>
                     </button>
 
-                    <button 
+                    <button
                       className={cn(
                         "flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 opacity-50 cursor-not-allowed"
                       )}
@@ -766,7 +768,7 @@ export default function Settings({ session }: { session: any }) {
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800/60">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Accent Color</h3>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setAccentColor('default')} className={cn("h-8 w-8 rounded-full bg-gradient-to-br from-[#5B7CFF] to-[#A855F7] transition-transform flex items-center justify-center", accentColor === 'default' ? "ring-4 ring-[#8833D7]/30" : "hover:scale-110")}>{accentColor === 'default' && <div className="h-2 w-2 rounded-full bg-white" />}</button>
+                    <button onClick={() => setAccentColor('default')} className={cn("h-8 w-8 rounded-full bg-linear-to-br from-[#5B7CFF] to-[#A855F7] transition-transform flex items-center justify-center", accentColor === 'default' ? "ring-4 ring-[#8833D7]/30" : "hover:scale-110")}>{accentColor === 'default' && <div className="h-2 w-2 rounded-full bg-white" />}</button>
                     <button onClick={() => setAccentColor('orange')} className={cn("h-8 w-8 rounded-full bg-orange-500 transition-transform flex items-center justify-center", accentColor === 'orange' ? "ring-4 ring-orange-500/20" : "hover:scale-110")}>{accentColor === 'orange' && <div className="h-2 w-2 rounded-full bg-white" />}</button>
                     <button onClick={() => setAccentColor('blue')} className={cn("h-8 w-8 rounded-full bg-blue-500 transition-transform flex items-center justify-center", accentColor === 'blue' ? "ring-4 ring-blue-500/20" : "hover:scale-110")}>{accentColor === 'blue' && <div className="h-2 w-2 rounded-full bg-white" />}</button>
                     <button onClick={() => setAccentColor('emerald')} className={cn("h-8 w-8 rounded-full bg-emerald-500 transition-transform flex items-center justify-center", accentColor === 'emerald' ? "ring-4 ring-emerald-500/20" : "hover:scale-110")}>{accentColor === 'emerald' && <div className="h-2 w-2 rounded-full bg-white" />}</button>
@@ -810,7 +812,7 @@ export default function Settings({ session }: { session: any }) {
                   <Progress value={(storageUsed / 500) * 100} className="h-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
                   <p className="text-[10px] font-semibold text-slate-500 mt-2">Cache size includes local drafts and offline data.</p>
                 </div>
-                
+
                 <div className="flex gap-3">
                   <Button onClick={handleClearCache} variant="outline" className="rounded-xl border-slate-200 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Clear Cache</Button>
                 </div>
@@ -882,7 +884,7 @@ export default function Settings({ session }: { session: any }) {
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Help & Support</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Get assistance and read documentation.</p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-6 flex items-start gap-4">
@@ -895,7 +897,7 @@ export default function Settings({ session }: { session: any }) {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-6 flex items-start gap-4">
                   <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
@@ -947,13 +949,13 @@ export default function Settings({ session }: { session: any }) {
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Settings Overview</h1>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">Manage your account preferences and application configuration.</p>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
             {SETTINGS_SECTIONS.map((section) => {
               const Icon = section.icon;
               return (
-                <Card 
-                  key={section.id} 
+                <Card
+                  key={section.id}
                   onClick={() => setActiveTab(section.id)}
                   className="cursor-pointer border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-orange-500 dark:hover:border-orange-500/50 hover:shadow-md transition-all group"
                 >
@@ -974,9 +976,9 @@ export default function Settings({ session }: { session: any }) {
       ) : (
         <div className="space-y-6">
           <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              onClick={() => setActiveTab(null)} 
+            <Button
+              variant="ghost"
+              onClick={() => setActiveTab(null)}
               className="rounded-xl font-bold h-10 px-4 text-slate-500 hover:text-slate-900 dark:hover:text-white -ml-4"
             >
               <ChevronLeft className="h-5 w-5 mr-2" />

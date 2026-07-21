@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,8 +15,9 @@ import {
 } from 'lucide-react';
 import { AvatarUpload } from '@/components/profile/AvatarUpload';
 
-export default function EmployeeProfileEdit({ session, onNavigate }: { session?: any, onNavigate: (view: string) => void }) {
+export default function EmployeeProfileEdit() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const navigate = useNavigate();
   const { updateUser } = useUser();
   const [isSaving, setIsSaving] = useState(false);
   
@@ -79,14 +81,11 @@ export default function EmployeeProfileEdit({ session, onNavigate }: { session?:
     // Save profile data locally (skills, emergencyContact, bios)
     saveProfileData(user.email, updatedProfile);
 
-    // Save active user session details update
-    const sessionUser = {
-      ...user,
+    // 2. Update user context immediately so sidebar/topbar re-renders
+    updateUser({
       name: name.trim(),
-      department: department,
-      phone: phone.trim()
-    };
-    localStorage.setItem('hindustaan_user', JSON.stringify(sessionUser));
+      department: department
+    });
 
     // Update user context for name and department changes to immediately sync layout sidebar/topbar
     updateUser({
@@ -116,7 +115,7 @@ export default function EmployeeProfileEdit({ session, onNavigate }: { session?:
     }
     
     // Navigate back to view profile
-    onNavigate('My Profile');
+    navigate('/profile');
   };
 
   if (!profile) {
@@ -135,7 +134,7 @@ export default function EmployeeProfileEdit({ session, onNavigate }: { session?:
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => onNavigate('My Profile')} 
+          onClick={() => navigate('/profile')} 
           className="rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -238,14 +237,14 @@ export default function EmployeeProfileEdit({ session, onNavigate }: { session?:
               {/* Read-Only Professional details hint */}
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/20 dark:bg-slate-900/20 p-4 rounded-xl">
                 <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Read-Only Workplace Information</p>
-                <div className={`grid grid-cols-2 ${session?.user?.user_metadata?.role === 'manager' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4 text-xs font-semibold`}>
-                  {session?.user?.user_metadata?.role !== 'manager' && (
-                    <div>
+                <div className={`grid grid-cols-2 ${profile.role === 'manager' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4 text-xs font-semibold`}>
+                  {profile.role !== 'manager' && (
+                    <div className="space-y-1">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Manager</span>
                       <span className="text-slate-700 dark:text-slate-300">{profile.manager}</span>
                     </div>
                   )}
-                  <div>
+                  <div className="space-y-1">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Employment Type</span>
                     <span className="text-slate-700 dark:text-slate-300">{profile.employmentType}</span>
                   </div>
@@ -263,7 +262,7 @@ export default function EmployeeProfileEdit({ session, onNavigate }: { session?:
             <Button 
               type="button"
               variant="outline" 
-              onClick={() => onNavigate('My Profile')} 
+              onClick={() => navigate('/profile')} 
               className="rounded-xl font-bold border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               Cancel

@@ -42,96 +42,50 @@ import { Separator } from '@/components/ui/separator';
 import { AssignTaskDialog } from './AssignTaskDialog';
 import { useProjects } from '@/context/ProjectContext';
 import { useNotifications } from '@/context/NotificationContext';
+import { useSocket } from '@/context/SocketContext';
 
-// --- Mock Data ---
-const TEAM_MEMBERS = [
-  { id: '1', name: 'Amanda Smith', role: 'Frontend', status: 'online', initials: 'AS' },
-  { id: '2', name: 'Rahul Sharma', role: 'Backend', status: 'busy', initials: 'RS' },
-  { id: '3', name: 'Priya Patel', role: 'Data Sci', status: 'leave', initials: 'PP' },
-  { id: '4', name: 'Rohan Gupta', role: 'DevOps', status: 'online', initials: 'RG' },
-  { id: '5', name: 'Aiden Chen', role: 'Design', status: 'offline', initials: 'AC' },
-];
-
-const ONLINE_TEAM_MEMBERS_MANAGER = [
-  { id: 'u-1', name: 'Amanda Smith', initials: 'AS', role: 'Frontend Lead', color: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
-  { id: 'u-2', name: 'Rahul Sharma', initials: 'RS', role: 'Backend Developer', color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' },
-  { id: 'u-3', name: 'Priya Patel', initials: 'PP', role: 'Technical Writer', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' },
-  { id: 'u-4', name: 'Tanvy Pandey', initials: 'TP', role: 'Intern Developer', color: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400' },
-];
-
-const ACTIVITY_FEED_MOCK = [
-  { id: 'a1', user: 'Rahul Sharma', action: 'completed task', target: 'API Route Setup', time: '10m ago', timestamp: Date.now() - 10 * 60 * 1000, type: 'task' },
-  { id: 'a2', user: 'Amanda Smith', action: 'submitted work log', target: '8.5 hours', time: '1h ago', timestamp: Date.now() - 60 * 60 * 1000, type: 'log' },
-  { id: 'a3', user: 'System', action: 'created project', target: 'Dashboard UI Revamp', time: '2h ago', timestamp: Date.now() - 2 * 60 * 60 * 1000, type: 'project' },
-  { id: 'a4', user: 'Priya Patel', action: 'submitted standup', target: 'Daily Sync', time: '3h ago', timestamp: Date.now() - 3 * 60 * 60 * 1000, type: 'standup' },
-  { id: 'a5', user: 'Rohan Gupta', action: 'assigned task to', target: 'Aiden Chen', time: '4h ago', timestamp: Date.now() - 4 * 60 * 60 * 1000, type: 'assign' },
-];
-
-const NOTIFICATIONS = [
-  { id: 'n1', text: 'Dashboard UI Revamp is delayed.', unread: true },
-  { id: 'n2', text: 'New task assigned by Director.', unread: true },
-  { id: 'n3', text: 'Blocker reported by Priya.', unread: false },
-  { id: 'n4', text: 'Sarah joined the workspace.', unread: false },
-];
-
-const DEADLINES = [
-  { id: 'd1', task: 'Finalize Auth DB Schema', priority: 'High', assignee: 'Rahul Sharma' },
-  { id: 'd2', task: 'Design System Tokens', priority: 'Medium', assignee: 'Aiden Chen' },
-  { id: 'd3', task: 'Client Presentation', priority: 'High', assignee: 'Amanda Smith' },
-];
-
-const INITIAL_BLOCKERS = [
-  {
-    id: 'b1',
-    user: 'Amanda Smith',
-    initials: 'AS',
-    avatarColor: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
-    priority: 'High Priority',
-    priorityColor: 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border-rose-200 dark:border-rose-500/20',
-    bgColor: 'bg-rose-50/50 dark:bg-rose-500/5',
-    borderColor: 'border-rose-100 dark:border-rose-900/50',
-    textColor: 'text-rose-600 dark:text-rose-400',
-    hoverBgColor: 'hover:bg-rose-100 dark:hover:bg-rose-500/20',
-    hoverTextColor: 'hover:text-rose-700',
-    message: 'Figma API token expired and waiting for renewal. Cannot proceed with design implementation.',
-  },
-  {
-    id: 'b2',
-    user: 'Priya Patel',
-    initials: 'PP',
-    avatarColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-    priority: 'Blocked Task',
-    priorityColor: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
-    bgColor: 'bg-amber-50/50 dark:bg-amber-500/5',
-    borderColor: 'border-amber-100 dark:border-amber-900/50',
-    textColor: 'text-amber-600 dark:text-amber-400',
-    hoverBgColor: 'hover:bg-amber-100 dark:hover:bg-amber-500/20',
-    hoverTextColor: 'hover:text-amber-700',
-    message: 'Waiting for data engineering team to provide the cleaned dataset for ML model training.',
-  }
-];
-
+// --- Mock Data Removed ---
 const formatTime = (totalSeconds: number) => {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
+  if (h > 0) {
+    return `${h}h ${m}m`;
+  }
   const s = totalSeconds % 60;
-  return h.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+  if (m > 0) {
+    return `${m}m ${s}s`;
+  }
+  return `${s}s`;
 };
 
 const LiveTimer = ({ initialSeconds }: { initialSeconds: number }) => {
+  const [startClock, setStartClock] = React.useState(Date.now() - initialSeconds * 1000);
   const [seconds, setSeconds] = React.useState(initialSeconds);
+
   React.useEffect(() => {
-    const int = setInterval(() => setSeconds(s => s + 1), 1000);
+    if (Math.abs(initialSeconds - seconds) > 10) {
+      setStartClock(Date.now() - initialSeconds * 1000);
+      setSeconds(initialSeconds);
+    }
+  }, [initialSeconds, seconds]);
+
+  React.useEffect(() => {
+    const int = setInterval(() => {
+      setSeconds(Math.floor((Date.now() - startClock) / 1000));
+    }, 1000);
     return () => clearInterval(int);
-  }, []);
+  }, [startClock]);
+
   return <>{formatTime(seconds)}</>;
 };
 
 function ManagerDashboardInner() {
   const { projects } = useProjects();
   const { notifications } = useNotifications();
+  const { socket } = useSocket();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
+  const [isAllDeadlinesOpen, setIsAllDeadlinesOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [isActiveInternsModalOpen, setIsActiveInternsModalOpen] = useState(false);
   const [isAllProjectsOpen, setIsAllProjectsOpen] = useState(false);
@@ -139,41 +93,19 @@ function ManagerDashboardInner() {
   const [messageUser, setMessageUser] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
   const [isMessageSent, setIsMessageSent] = useState(false);
-  const [blockers, setBlockers] = useState(() => {
-    const saved = localStorage.getItem('hindustaan_blockers');
-    return saved ? JSON.parse(saved) : INITIAL_BLOCKERS;
-  });
+  const [activeInternsPage, setActiveInternsPage] = useState(1);
+  const internsPerPage = 5;
+  const [blockers, setBlockers] = useState<any[]>([]);
 
-  const [alerts, setAlerts] = useState(() => {
-    const saved = localStorage.getItem('hindustaan_notifications');
-    if (saved && saved !== 'null') {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return [];
-      }
-    }
-    return NOTIFICATIONS;
-  });
+  const [alerts, setAlerts] = useState<any[]>([]);
 
-  const [activityFeed, setActivityFeed] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_activity_feed');
-    return saved ? JSON.parse(saved) : ACTIVITY_FEED_MOCK;
-  });
+  const [activityFeed, setActivityFeed] = useState<any[]>([]);
 
-  const [tasks, setTasks] = useState<any[]>(() => {
-    const saved = localStorage.getItem('hindustaan_tasks_list');
-    try {
-      const parsed = saved ? JSON.parse(saved) : null;
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-      return [];
-    }
-  });
+  const [tasks, setTasks] = useState<any[]>([]);
 
   // Live dashboard stats from backend
   const [dashboardStats, setDashboardStats] = useState<any>(null);
-  const [liveTeamMembers, setLiveTeamMembers] = useState<any[]>(ONLINE_TEAM_MEMBERS_MANAGER);
+  const [liveTeamMembers, setLiveTeamMembers] = useState<any[]>([]);
   const lastDataRef = React.useRef<string | null>(null);
 
   const fetchDashboard = React.useCallback(async () => {
@@ -186,12 +118,10 @@ function ManagerDashboardInner() {
           lastDataRef.current = dataString;
           React.startTransition(() => {
             setDashboardStats(data);
-            if (data.liveTeamMembers && data.liveTeamMembers.length > 0) {
-              setLiveTeamMembers(data.liveTeamMembers);
-            }
-            if (data.activityFeed && data.activityFeed.length > 0) {
-              setActivityFeed(data.activityFeed);
-            }
+            setLiveTeamMembers(data.liveTeamMembers || []);
+            setActivityFeed(data.activityFeed || []);
+            setAlerts(data.recentAlerts || []);
+
             if (data.blockersList && data.blockersList.length > 0) {
               const savedMsgs = JSON.parse(localStorage.getItem('hindustaan_manager_messages') || '{}');
               const mappedBlockers = data.blockersList.map((b: any, i: number) => ({
@@ -216,6 +146,8 @@ function ManagerDashboardInner() {
                 managerMessage: savedMsgs[b.id] || undefined
               }));
               setBlockers(mappedBlockers);
+            } else {
+              setBlockers([]);
             }
           });
         }
@@ -228,7 +160,7 @@ function ManagerDashboardInner() {
           id: t.id,
           title: t.title,
           status: t.status === 'done' || t.status === 'completed' ? 'Done' :
-                  t.status === 'in-progress' ? 'In Progress' : 'To Do',
+            t.status === 'in-progress' ? 'In Progress' : 'To Do',
           priority: t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
           due_date: t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           assignee_name: t.assignees?.[0]?.user?.name || t.assignee?.name || 'Unassigned'
@@ -242,43 +174,33 @@ function ManagerDashboardInner() {
 
   useEffect(() => {
     fetchDashboard();
-    // Poll every 5 seconds for real-time updates
-    const intervalId = setInterval(fetchDashboard, 5000);
-    return () => clearInterval(intervalId);
-  }, [fetchDashboard]);
+    
+    if (socket) {
+      socket.on('dashboard_update', () => {
+        console.log('Received real-time dashboard update from server');
+        fetchDashboard();
+      });
+
+      return () => {
+        socket.off('dashboard_update');
+      };
+    }
+  }, [fetchDashboard, socket]);
 
 
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'hindustaan_tasks_list' && e.newValue) {
-        setTasks(JSON.parse(e.newValue));
-      } else if (e.key === 'hindustaan_activity_feed' && e.newValue) {
-        setActivityFeed(JSON.parse(e.newValue));
-      } else if (e.key === 'hindustaan_blockers' && e.newValue) {
-        setBlockers(JSON.parse(e.newValue));
-      } else if (e.key === 'hindustaan_notifications' && e.newValue) {
-        setAlerts(JSON.parse(e.newValue));
-      }
-    };
-
-    const handleLocalUpdate = (e: CustomEvent) => {
-      if (e.detail.key === 'hindustaan_tasks_list') {
-        setTasks(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : []);
-      } else if (e.detail.key === 'hindustaan_activity_feed') {
-        setActivityFeed(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : ACTIVITY_FEED_MOCK);
-      } else if (e.detail.key === 'hindustaan_blockers') {
-        setBlockers(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : INITIAL_BLOCKERS);
-      } else if (e.detail.key === 'hindustaan_notifications') {
-        setAlerts(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : NOTIFICATIONS);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    };
+    // ONE-TIME PURGE of legacy mock data from local storage
+    const legacyKeys = [
+      'hindustaan_calendar_events',
+      'hindustaan_activity_feed',
+      'hindustaan_blockers',
+      'hindustaan_tasks_list',
+      'hindustaan_notifications',
+      'hindustaan_standups',
+      'hindustaan_standup_history',
+      'hindustaan_manager_messages'
+    ];
+    legacyKeys.forEach(key => localStorage.removeItem(key));
   }, []);
 
   const dueTodayTasksCount = React.useMemo(() => {
@@ -295,14 +217,19 @@ function ManagerDashboardInner() {
   useEffect(() => {
     const updateSessions = () => {
       const sessions: { [key: string]: { time: number; isOnline: boolean } } = {};
+      const todayStr = new Date().toDateString();
+
       liveTeamMembers.forEach(member => {
-        const loginTimeStr = localStorage.getItem(`login_time_${member.id}`);
-        if (loginTimeStr) {
-          const startTime = parseInt(loginTimeStr, 10);
-          sessions[member.id] = { time: Math.floor((Date.now() - startTime) / 1000), isOnline: true };
-        } else {
-          sessions[member.id] = { time: 0, isOnline: false };
+        let activeSeconds = member.todayActiveSeconds || 0;
+        let isOnline = member.isOnline || false;
+
+        if (member.currentSessionStart) {
+          const start = new Date(member.currentSessionStart).getTime();
+          activeSeconds += Math.floor((Date.now() - start) / 1000);
+          isOnline = true;
         }
+
+        sessions[member.id] = { time: activeSeconds, isOnline };
       });
       setActiveSessions(sessions);
     };
@@ -335,22 +262,12 @@ function ManagerDashboardInner() {
       return dStr <= todayStr || rawDate.toLowerCase().includes('today');
     });
 
-    if (filtered.length === 0) {
-      return DEADLINES.map(d => ({
-        id: d.id,
-        task: d.task,
-        priority: d.priority,
-        assignee: d.assignee
-      }));
-    }
-
     return filtered
       .sort((a: any, b: any) => {
         if (a.priority === 'High' && b.priority !== 'High') return -1;
         if (b.priority === 'High' && a.priority !== 'High') return 1;
         return 0;
       })
-      .slice(0, 4)
       .map((t: any) => ({
         id: t.id,
         task: t.title || t.task,
@@ -401,7 +318,7 @@ function ManagerDashboardInner() {
         project={{
           ...selectedProject,
           deadline: selectedProject.dueDate,
-          manager: 'Aakash Gupta',
+          manager: currentUser?.name || 'Manager',
           strokeColor: '#f97316',
           iconColor: 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400'
         }}
@@ -416,13 +333,13 @@ function ManagerDashboardInner() {
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white wrap-break-word whitespace-normal">
             {greeting}, {userName} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
-          <p className="text-orange-500 font-medium tracking-wide mt-1 break-words whitespace-normal">
+          <p className="text-orange-500 font-medium tracking-wide mt-1 wrap-break-word whitespace-normal">
             {currentUser?.designation || "Product Manager"}
           </p>
-          <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-2 font-medium break-words whitespace-normal">
+          <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-2 font-medium wrap-break-word whitespace-normal">
             Manage projects, monitor team performance, and track progress from one place.
           </p>
         </div>
@@ -488,7 +405,7 @@ function ManagerDashboardInner() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">100% On</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.activeInternsCount ?? 30}</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.activeInternsCount ?? 0}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Active Interns</p>
             </div>
           </CardContent>
@@ -503,7 +420,7 @@ function ManagerDashboardInner() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10">Sync at 11</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.pendingStandupsCount ?? 6}</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.pendingStandupsCount ?? 0}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Pending Standups</p>
             </div>
           </CardContent>
@@ -543,7 +460,7 @@ function ManagerDashboardInner() {
           <ProjectCalendarWidget />
 
           {/* Project Progress Overview */}
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-[400px]">
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-100">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
                 <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
@@ -561,33 +478,38 @@ function ManagerDashboardInner() {
             <CardContent className="flex-1 overflow-hidden">
               <ScrollArea className="h-full pr-4">
                 <div className="space-y-6 pt-2">
-                  {mappedProjects.map((project: any) => (
-                    <div key={project?.id || Math.random()} className="group flex flex-col gap-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                            {project?.name}
-                          </span>
-                          <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", getStatusBadgeStyles(project?.status || 'Active'))}>
-                            {project?.status}
-                          </Badge>
-                        </div>
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Due: {project?.dueDate}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <Progress value={project?.progress || 0} className={cn("h-2 flex-1", project?.status === 'Aborted' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-700 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
-                        <div className="flex items-center gap-1 justify-end w-16 shrink-0">
-                          <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{project?.progress || 0}%</span>
-                          <button
-                            onClick={() => setSelectedProject(project)}
-                            className="flex items-center justify-center h-6 w-6 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-orange-600 transition-colors shrink-0"
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
+                  {mappedProjects.length === 0 ? (
+                    <div className="text-sm text-slate-500 italic p-4 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                      No active projects.
                     </div>
-                  ))}
+                  ) : (
+                    mappedProjects.map((project: any) => (
+                      <div key={project?.id || Math.random()} className="group flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                              {project?.name}
+                            </span>
+                            <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", getStatusBadgeStyles(project?.status || 'Active'))}>
+                              {project?.status}
+                            </Badge>
+                          </div>
+                          <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Due: {project?.dueDate}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Progress value={project?.progress || 0} className={cn("h-2 flex-1", project?.status === 'Aborted' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-700 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
+                          <div className="flex items-center gap-1 justify-end w-16 shrink-0">
+                            <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{project?.progress || 0}%</span>
+                            <button
+                              onClick={() => setSelectedProject(project)}
+                              className="flex items-center justify-center h-6 w-6 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-orange-600 transition-colors shrink-0"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )))}
                 </div>
               </ScrollArea>
             </CardContent>
@@ -690,7 +612,7 @@ function ManagerDashboardInner() {
         <div className="lg:col-span-4 space-y-8 flex flex-col">
 
           {/* Team Activity Feed */}
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-[350px]">
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-87.5">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
                 <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
@@ -703,28 +625,33 @@ function ManagerDashboardInner() {
             <CardContent className="flex-1 overflow-hidden">
               <ScrollArea className="h-full pr-4">
                 <div className="space-y-6 pt-2 pl-2 border-l-2 border-slate-100 dark:border-slate-800 ml-3">
-                  {activityFeed.map((activity) => (
-                    <div key={activity.id} className="relative pl-6">
-                      <div className="absolute -left-[25px] top-1.5 h-3 w-3 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-white dark:border-slate-950" />
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-8 w-8 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                            <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300 text-xs font-bold rounded-lg">
-                              {(activity.user || 'Unknown').split(' ').map((n: string) => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col">
-                            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-snug">
-                              <span className="font-bold text-slate-900 dark:text-white">{activity.user || 'Unknown User'}</span> {activity.action} <span className="font-bold text-slate-900 dark:text-white">{activity.target}</span>
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 whitespace-nowrap pt-1">
-                          {getRelativeTime(activity.timestamp || activity.time, true)}
-                        </span>
-                      </div>
+                  {activityFeed.length === 0 ? (
+                    <div className="text-sm text-slate-500 italic p-4 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl -ml-3">
+                      No activity to display.
                     </div>
-                  ))}
+                  ) : (
+                    activityFeed.map((activity) => (
+                      <div key={activity.id} className="relative pl-6">
+                        <div className="absolute -left-6.25 top-1.5 h-3 w-3 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-white dark:border-slate-950" />
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-8 w-8 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                              <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300 text-xs font-bold rounded-lg">
+                                {(activity.user || 'Unknown').split(' ').map((n: string) => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-snug">
+                                <span className="font-bold text-slate-900 dark:text-white">{activity.user || 'Unknown User'}</span> {activity.action} <span className="font-bold text-slate-900 dark:text-white">{activity.target}</span>
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 whitespace-nowrap pt-1">
+                            {getRelativeTime(activity.timestamp || activity.time, true)}
+                          </span>
+                        </div>
+                      </div>
+                    )))}
                 </div>
               </ScrollArea>
             </CardContent>
@@ -742,58 +669,90 @@ function ManagerDashboardInner() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {dynamicDeadlines.map((deadline) => (
-                  <div key={deadline.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
-                    <div className="flex flex-col gap-1.5">
-                      <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{deadline.task}</p>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-5 w-5 rounded-full">
-                          <AvatarFallback className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[8px] font-bold">
-                            {(deadline.assignee || 'Unassigned').split(' ').map((n: string) => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{deadline.assignee || 'Unassigned'}</span>
+                {dynamicDeadlines.length === 0 ? (
+                  <div className="p-4 text-sm text-slate-500 italic text-center">No impending deadlines.</div>
+                ) : (
+                  (isAllDeadlinesOpen ? dynamicDeadlines : dynamicDeadlines.slice(0, 4)).map((deadline) => (
+                    <div key={deadline.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                      <div className="flex flex-col gap-1.5">
+                        <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{deadline.task}</p>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-5 w-5 rounded-full">
+                            <AvatarFallback className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[8px] font-bold">
+                              {(deadline.assignee || 'Unassigned').split(' ').map((n: string) => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{deadline.assignee || 'Unassigned'}</span>
+                        </div>
                       </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-xl">
+                          <DropdownMenuItem onClick={() => { import('sonner').then(m => m.toast.info(`Viewing details for: ${deadline.task}`)) }} className="font-semibold text-xs cursor-pointer">View Details</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setIsAssignTaskOpen(true)} className="font-semibold text-xs cursor-pointer text-orange-600 dark:text-orange-400 focus:text-orange-600">Reassign</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="rounded-xl">
-                        <DropdownMenuItem onClick={() => { import('sonner').then(m => m.toast.info(`Viewing details for: ${deadline.task}`)) }} className="font-semibold text-xs cursor-pointer">View Details</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setIsAssignTaskOpen(true)} className="font-semibold text-xs cursor-pointer text-orange-600 dark:text-orange-400 focus:text-orange-600">Reassign</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                ))}
+                  )))}
               </div>
+              {dynamicDeadlines.length > 4 && (
+                <div className="p-3 border-t border-slate-100 dark:border-slate-800 flex justify-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsAllDeadlinesOpen(!isAllDeadlinesOpen)}
+                    className="text-xs font-semibold text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 cursor-pointer w-full"
+                  >
+                    {isAllDeadlinesOpen ? "View Less" : `View All (${dynamicDeadlines.length})`}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Live Active Sessions */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm shrink-0">
             <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-              <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
-                <Clock className="h-4 w-4 text-emerald-500 mr-2 animate-pulse" />
-                Live Active Sessions
-              </CardTitle>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <div className="relative flex h-3 w-3 mr-1">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                  </div>
+                  Live Active Sessions
+                </CardTitle>
+                {liveTeamMembers.length > 5 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsActiveInternsModalOpen(true)}
+                    className="text-xs h-7 px-3 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shrink-0"
+                  >
+                    View All
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {liveTeamMembers.map((member) => {
+                {liveTeamMembers.length === 0 && (
+                  <div className="p-4 text-sm text-slate-500 italic text-center">No team members active.</div>
+                )}
+                {liveTeamMembers.slice(0, 5).map((member) => {
                   const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
                   const currentUserObj = userStr ? JSON.parse(userStr) : null;
                   const currentUserId = currentUserObj?.id;
                   const currentUserEmail = currentUserObj?.email?.toLowerCase();
 
-                  const hasLoginTime = localStorage.getItem(`login_time_${member.id}`);
                   const isCurrentLoggedInUser = (currentUserId && currentUserId === member.id) ||
                     (currentUserEmail && member.email && currentUserEmail === member.email.toLowerCase()) ||
                     (currentUserObj?.name && member.name && currentUserObj.name.toLowerCase() === member.name.toLowerCase());
 
-                  const isOnline = !!(hasLoginTime || isCurrentLoggedInUser);
+                  const isOnline = !!(activeSessions[member.id]?.isOnline || isCurrentLoggedInUser);
                   const sessionTime = activeSessions[member.id]?.time || 0;
                   return (
                     <div key={member.id} className={cn("p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors", !isOnline && "opacity-75")}>
@@ -834,7 +793,7 @@ function ManagerDashboardInner() {
           </Card>
 
           {/* Recent Notifications */}
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm shrink-0 flex-1 flex flex-col min-h-[200px]">
+          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm shrink-0 flex-1 flex flex-col min-h-50">
             <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
               <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
                 <BellRing className="h-4 w-4 text-orange-600 dark:text-orange-400 mr-2" />
@@ -842,32 +801,35 @@ function ManagerDashboardInner() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0 flex-1 overflow-hidden">
-              <ScrollArea className="h-full max-h-[250px]">
+              <ScrollArea className="h-full max-h-62.5">
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {(notifications && notifications.length > 0 ? notifications.slice(0, 6) : alerts).map((notif: any) => (
-                    <div
-                      key={notif.id}
-                      onClick={() => { import('sonner').then(m => m.toast.info(`${notif.title || 'System Alert'}: ${notif.message || notif.text}`)) }}
-                      className={cn("p-4 flex gap-3 items-start transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/40 cursor-pointer", notif.unread ? 'bg-orange-50/30 dark:bg-orange-500/5' : '')}
-                    >
-                      <div className="mt-1 shrink-0">
-                        {notif.unread ? (
-                          <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
-                        ) : (
-                          <div className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-700" />
-                        )}
+                  {notifications.length === 0 && alerts.length === 0 ? (
+                    <div className="p-4 text-sm text-slate-500 italic text-center">No alerts.</div>
+                  ) : (
+                    (notifications && notifications.length > 0 ? notifications.slice(0, 6) : alerts).map((notif: any) => (
+                      <div
+                        key={notif.id}
+                        onClick={() => { import('sonner').then(m => m.toast.info(`${notif.title || 'System Alert'}: ${notif.message || notif.text}`)) }}
+                        className={cn("p-4 flex gap-3 items-start transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/40 cursor-pointer", notif.unread ? 'bg-orange-50/30 dark:bg-orange-500/5' : '')}
+                      >
+                        <div className="mt-1 shrink-0">
+                          {notif.unread ? (
+                            <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+                          ) : (
+                            <div className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-700" />
+                          )}
+                        </div>
+                        <div className="flex flex-col">
+                          {notif.title && (
+                            <p className="text-xs font-bold text-slate-900 dark:text-white mb-0.5">{notif.title}</p>
+                          )}
+                          <p className={cn("text-xs font-medium leading-snug", notif.unread ? "text-slate-800 dark:text-slate-200 font-semibold" : "text-slate-600 dark:text-slate-400")}>
+                            {notif.message || notif.text}
+                          </p>
+                          <span className="text-[10px] text-orange-500 font-bold mt-1 uppercase tracking-wider">{notif.time || 'Tap to view details'}</span>
+                        </div>
                       </div>
-                      <div className="flex flex-col">
-                        {notif.title && (
-                          <p className="text-xs font-bold text-slate-900 dark:text-white mb-0.5">{notif.title}</p>
-                        )}
-                        <p className={cn("text-xs font-medium leading-snug", notif.unread ? "text-slate-800 dark:text-slate-200 font-semibold" : "text-slate-600 dark:text-slate-400")}>
-                          {notif.message || notif.text}
-                        </p>
-                        <span className="text-[10px] text-orange-500 font-bold mt-1 uppercase tracking-wider">{notif.time || 'Tap to view details'}</span>
-                      </div>
-                    </div>
-                  ))}
+                    )))}
                 </div>
               </ScrollArea>
             </CardContent>
@@ -883,7 +845,7 @@ function ManagerDashboardInner() {
             className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => setIsActiveInternsModalOpen(false)}
           />
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-2xl w-full max-w-md overflow-hidden relative z-10 animate-in fade-in zoom-in duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border-slate-200 dark:border-slate-800/80 shadow-2xl w-full max-w-md overflow-hidden relative z-10 animate-in fade-in zoom-in duration-300">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Interns</h3>
@@ -897,40 +859,55 @@ function ManagerDashboardInner() {
               </button>
             </div>
 
-            <div className="p-6 max-h-[300px] overflow-y-auto space-y-4">
-              {ONLINE_TEAM_MEMBERS_MANAGER.map((member) => {
-                const isOnline = activeSessions[member.id]?.isOnline;
-                return (
-                  <div key={member.id} className={cn("flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all", !isOnline && "opacity-75 grayscale")}>
-                    <div className="flex items-center gap-3">
-                      <Avatar className={cn("h-9 w-9 border-2 border-white dark:border-slate-900", member.color)}>
-                        <AvatarFallback className="font-bold text-xs">{member.initials}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
-                        <span className="text-xs text-slate-500 font-medium">{member.role}</span>
+            <div className="p-6 max-h-75 overflow-y-auto space-y-4">
+              {liveTeamMembers.length === 0 ? (
+                <div className="text-sm text-slate-500 italic p-4 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                  No interns currently online.
+                </div>
+              ) : (
+                liveTeamMembers.slice((activeInternsPage - 1) * internsPerPage, activeInternsPage * internsPerPage).map((member) => {
+                  const isOnline = activeSessions[member.id]?.isOnline;
+                  return (
+                    <div key={member.id} className={cn("flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all", !isOnline && "opacity-75 grayscale")}>
+                      <div className="flex items-center gap-3">
+                        <Avatar className={cn("h-9 w-9 border-2 border-white dark:border-slate-900", member.color)}>
+                          <AvatarFallback className="font-bold text-xs">{member.initials}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
+                          <span className="text-xs text-slate-500 font-medium">{member.role}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {isOnline ? (
+                          <>
+                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Online</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600" />
+                            <span className="text-xs font-bold text-slate-500">Offline</span>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      {isOnline ? (
-                        <>
-                          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Online</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600" />
-                          <span className="text-xs font-bold text-slate-500">Offline</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                }))}
             </div>
 
-            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-              <Button onClick={() => setIsActiveInternsModalOpen(false)} className="rounded-xl bg-slate-900 dark:bg-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-white font-bold px-4 py-2 cursor-pointer">
+            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setActiveInternsPage(p => Math.max(1, p - 1))}
+                  disabled={activeInternsPage === 1}
+                  variant="outline" size="sm" className="h-8">Previous</Button>
+                <Button
+                  onClick={() => setActiveInternsPage(p => Math.min(Math.ceil(liveTeamMembers.length / internsPerPage), p + 1))}
+                  disabled={activeInternsPage >= Math.ceil(liveTeamMembers.length / internsPerPage)}
+                  variant="outline" size="sm" className="h-8">Next</Button>
+              </div>
+              <Button onClick={() => setIsActiveInternsModalOpen(false)} className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold px-6">
                 Close
               </Button>
             </div>
@@ -955,7 +932,7 @@ function ManagerDashboardInner() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-[425px] rounded-3xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-2xl p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-106.25 rounded-3xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-2xl p-0 overflow-hidden">
           {!isMessageSent ? (
             <>
               <div className="bg-orange-50/50 dark:bg-orange-500/10 p-6 pb-4 border-b border-orange-100 dark:border-orange-900/30">
@@ -980,7 +957,7 @@ function ManagerDashboardInner() {
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     placeholder={`Hey ${blockers.find((b: any) => b.id === messageUser)?.user?.split(' ')[0]}, how can I help unblock you with this?`}
-                    className="min-h-[120px] rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500 text-slate-900 dark:text-white resize-none text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    className="min-h-30 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500 text-slate-900 dark:text-white resize-none text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
               </div>
@@ -995,8 +972,8 @@ function ManagerDashboardInner() {
                     setBlockers((prev: any[]) => prev.map((b: any) => b.id === messageUser ? { ...b, managerMessage: messageText } : b));
                     const savedMsgs = JSON.parse(localStorage.getItem('hindustaan_manager_messages') || '{}');
                     if (messageUser) {
-                        savedMsgs[messageUser] = messageText;
-                        localStorage.setItem('hindustaan_manager_messages', JSON.stringify(savedMsgs));
+                      savedMsgs[messageUser] = messageText;
+                      localStorage.setItem('hindustaan_manager_messages', JSON.stringify(savedMsgs));
                     }
                     setIsMessageSent(true);
                   }}
@@ -1033,7 +1010,7 @@ function ManagerDashboardInner() {
 
       {/* All Projects Modal */}
       <Dialog open={isAllProjectsOpen} onOpenChange={setIsAllProjectsOpen}>
-        <DialogContent className="sm:max-w-[425px] md:max-w-[600px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-106.25 md:max-w-150 rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
               <Activity className="mr-2 h-5 w-5 text-orange-600 dark:text-orange-400" />
@@ -1044,31 +1021,31 @@ function ManagerDashboardInner() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <ScrollArea className="max-h-[400px] pr-4">
+            <ScrollArea className="max-h-100 pr-4">
               <div className="space-y-4">
-                {allMappedProjects.map((project: any) => (
-                  <div key={project?.id || Math.random()} className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200 dark:hover:border-orange-500/30 transition-all">
-                    <div className="flex flex-col gap-1.5 w-full">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-sm text-slate-900 dark:text-white">
-                          {project?.name}
-                        </span>
-                        <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", getStatusBadgeStyles(project?.status || 'Active'))}>
-                          {project?.status}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Progress value={project?.progress} className="h-1.5 flex-1 bg-slate-200 dark:bg-slate-700" />
-                        <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 w-8">{project?.progress}%</span>
+                {allMappedProjects.length === 0 ? (
+                  <div className="text-sm text-slate-500 italic p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                    No active projects.
+                  </div>
+                ) : (
+                  allMappedProjects.map((project: any) => (
+                    <div key={project?.id || Math.random()} className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200 dark:hover:border-orange-500/30 transition-all">
+                      <div className="flex flex-col gap-1.5 w-full">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-sm text-slate-900 dark:text-white">
+                            {project?.name}
+                          </span>
+                          <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", getStatusBadgeStyles(project?.status || 'Active'))}>
+                            {project?.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Progress value={project?.progress} className="h-1.5 flex-1 bg-slate-200 dark:bg-slate-700" />
+                          <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 w-8">{project?.progress}%</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-                {allMappedProjects.length === 0 && (
-                  <div className="text-sm text-slate-500 italic p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                    No active projects found.
-                  </div>
-                )}
+                  )))}
               </div>
             </ScrollArea>
           </div>
@@ -1077,7 +1054,7 @@ function ManagerDashboardInner() {
 
       {/* All Blockers Modal */}
       <Dialog open={isAllBlockersOpen} onOpenChange={setIsAllBlockersOpen}>
-        <DialogContent className="sm:max-w-[425px] md:max-w-[600px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-106.25 md:max-w-150 rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
               <AlertTriangle className="mr-2 h-5 w-5 text-rose-600 dark:text-orange-400" />
@@ -1088,39 +1065,39 @@ function ManagerDashboardInner() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <ScrollArea className="max-h-[400px] pr-4">
+            <ScrollArea className="max-h-100 pr-4">
               <div className="space-y-4">
-                {blockers.map((blocker: any) => {
-                  const isResolved = (blocker as any).resolved;
-                  return (
-                    <div key={blocker.id} className={cn("flex flex-col gap-2 p-3.5 rounded-xl border relative transition-all duration-300", isResolved ? "bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-900/50" : cn(blocker.borderColor, blocker.bgColor))}>
-                      {isResolved && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] dark:opacity-[0.02]">
-                          <CheckCircle2 className="w-24 h-24 text-emerald-600" />
-                        </div>
-                      )}
-                      <div className={cn("flex items-center justify-between", isResolved && "opacity-75")}>
-                        <div className="flex items-center gap-2">
-                          <Avatar className={cn("h-6 w-6", isResolved && "opacity-60 grayscale")}>
-                            <AvatarFallback className={cn("text-[10px] font-bold", isResolved ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : blocker.avatarColor)}>{blocker.initials}</AvatarFallback>
-                          </Avatar>
-                          <span className={cn("font-bold text-sm", isResolved ? "text-slate-500 dark:text-slate-400 line-through decoration-slate-300 dark:decoration-slate-600" : "text-slate-900 dark:text-white")}>{blocker.user}</span>
-                        </div>
-                        <Badge variant="outline" className={cn("text-[10px]", isResolved ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" : blocker.priorityColor)}>
-                          {isResolved ? "Resolved" : blocker.priority}
-                        </Badge>
-                      </div>
-                      <p className={cn("text-sm font-medium ml-8", isResolved ? "text-slate-400 dark:text-slate-500" : "text-slate-600 dark:text-slate-400")}>
-                        {blocker.message}
-                      </p>
-                    </div>
-                  )
-                })}
-                {blockers.length === 0 && (
+                {blockers.length === 0 ? (
                   <div className="text-sm text-slate-500 italic p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
                     No active blockers.
                   </div>
-                )}
+                ) : (
+                  blockers.map((blocker: any) => {
+                    const isResolved = (blocker as any).resolved;
+                    return (
+                      <div key={blocker.id} className={cn("flex flex-col gap-2 p-3.5 rounded-xl border relative transition-all duration-300", isResolved ? "bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-900/50" : cn(blocker.borderColor, blocker.bgColor))}>
+                        {isResolved && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] dark:opacity-[0.02]">
+                            <CheckCircle2 className="w-24 h-24 text-emerald-600" />
+                          </div>
+                        )}
+                        <div className={cn("flex items-center justify-between", isResolved && "opacity-75")}>
+                          <div className="flex items-center gap-2">
+                            <Avatar className={cn("h-6 w-6", isResolved && "opacity-60 grayscale")}>
+                              <AvatarFallback className={cn("text-[10px] font-bold", isResolved ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : blocker.avatarColor)}>{blocker.initials}</AvatarFallback>
+                            </Avatar>
+                            <span className={cn("font-bold text-sm", isResolved ? "text-slate-500 dark:text-slate-400 line-through decoration-slate-300 dark:decoration-slate-600" : "text-slate-900 dark:text-white")}>{blocker.user}</span>
+                          </div>
+                          <Badge variant="outline" className={cn("text-[10px]", isResolved ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" : blocker.priorityColor)}>
+                            {isResolved ? "Resolved" : blocker.priority}
+                          </Badge>
+                        </div>
+                        <p className={cn("text-sm font-medium ml-8", isResolved ? "text-slate-400 dark:text-slate-500" : "text-slate-600 dark:text-slate-400")}>
+                          {blocker.message}
+                        </p>
+                      </div>
+                    )
+                  }))}
               </div>
             </ScrollArea>
           </div>

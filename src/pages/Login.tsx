@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Mail, KeyRound, ArrowRight, Loader2, Compass, Sun, Moon, Eye, EyeOff, CheckSquare, Users, TrendingUp, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -13,14 +14,12 @@ import { BrandLogo } from '@/components/ui/BrandLogo';
 
 export default function Login({
   onMockLogin,
-  onNavigateToRegister,
   defaultEmail = '',
   defaultName = '',
   defaultRole = 'manager',
   isAdminLogin = false
 }: {
   onMockLogin?: (role: string, email?: string) => void,
-  onNavigateToRegister?: () => void,
   defaultEmail?: string,
   defaultName?: string,
   defaultRole?: string,
@@ -30,6 +29,7 @@ export default function Login({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Authentication Modes
   const [isOTPMode, setIsOTPMode] = useState(false);
@@ -105,7 +105,7 @@ export default function Login({
         if (onMockLogin) {
           onMockLogin('admin', email);
         } else {
-          window.location.reload();
+          window.location.href = '/';
         }
         return;
       }
@@ -136,19 +136,6 @@ export default function Login({
         // Track specific intern login for Manager Dashboard & WorkLogs
         localStorage.setItem(`login_time_${userId}`, Date.now().toString());
 
-        // Log activity to feed
-        const storedFeed = localStorage.getItem('hindustaan_activity_feed');
-        const feed = storedFeed ? JSON.parse(storedFeed) : [];
-        const newEvent = {
-          id: Date.now().toString(),
-          user: userName,
-          action: 'logged into',
-          target: 'Project OS',
-          time: 'Just now',
-          timestamp: Date.now(),
-          type: 'login'
-        };
-        localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newEvent, ...feed].slice(0, 20)));
       }
 
       toast.success('Access granted.', { description: 'Initializing workspaces...' });
@@ -157,7 +144,7 @@ export default function Login({
       if (onMockLogin) {
         onMockLogin(user.role, email);
       } else {
-        window.location.reload();
+        window.location.href = '/';
       }
     } catch (err: any) {
       if (err.message && err.message.includes('User not found')) {
@@ -260,7 +247,7 @@ export default function Login({
           if (onMockLogin) {
             onMockLogin(user.role, email);
           } else {
-            window.location.reload();
+            window.location.href = '/';
           }
         }
       } catch (err: any) {
@@ -272,10 +259,10 @@ export default function Login({
   return (
     <div className="relative flex min-h-screen lg:h-screen lg:max-h-screen w-full items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-500 font-sans">
 
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:32px_32px]"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px]"></div>
 
-      <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-orange-500/20 dark:bg-orange-600/20 blur-[120px] pointer-events-none transition-colors duration-500"></div>
-      <div className="absolute -bottom-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-green-500/20 dark:bg-green-600/10 blur-[120px] pointer-events-none transition-colors duration-500"></div>
+      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-orange-500/20 dark:bg-orange-600/20 blur-[120px] pointer-events-none transition-colors duration-500"></div>
+      <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] rounded-full bg-green-500/20 dark:bg-green-600/10 blur-[120px] pointer-events-none transition-colors duration-500"></div>
 
       <button
         onClick={() => setIsDark(!isDark)}
@@ -291,7 +278,7 @@ export default function Login({
         <div className="hidden lg:flex flex-col justify-center w-[45%] xl:w-[50%] p-12 xl:p-24 border-r border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-sm z-10">
           <div className="max-w-xl">
             <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 whitespace-nowrap">
-              Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-green-600">Project OS</span>
+              Welcome to <span className="text-transparent bg-clip-text bg-linear-to-r from-orange-500 to-green-600">Project OS</span>
             </h1>
 
             <p className="text-lg text-slate-600 dark:text-slate-400 mb-12 max-w-md font-medium leading-relaxed">
@@ -319,7 +306,7 @@ export default function Login({
         {/* Right Section - Login Form */}
         <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-4 xl:p-12 w-full lg:w-[55%] xl:w-[50%] z-10 lg:h-screen lg:overflow-hidden">
           <div className="w-full max-w-md">
-            <div className="rounded-[24px] border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 lg:p-5 lg:py-4 xl:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500">
+            <div className="rounded-3xl border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 lg:p-5 lg:py-4 xl:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500">
 
               <div className="flex flex-col items-center text-center mb-4 lg:mb-2.5">
                 <div className="hover:scale-[1.03] transition-all duration-300">
@@ -448,7 +435,7 @@ export default function Login({
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group relative flex w-full justify-center items-center space-x-2 rounded-xl bg-gradient-to-r from-orange-500 to-green-600 px-4 py-2.5 lg:py-2 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-green-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:opacity-70 disabled:hover:scale-100 transition-all duration-200 ease-out"
+                    className="group relative flex w-full justify-center items-center space-x-2 rounded-xl bg-linear-to-r from-orange-500 to-green-600 px-4 py-2.5 lg:py-2 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-green-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:opacity-70 disabled:hover:scale-100 transition-all duration-200 ease-out"
                   >
                     {loading ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
@@ -467,7 +454,7 @@ export default function Login({
                       <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Don't have an account? </span>
                       <button
                         type="button"
-                        onClick={onNavigateToRegister}
+                        onClick={() => navigate('/register')}
                         className="text-[13px] font-extrabold text-orange-600 hover:text-orange-700 hover:underline transition-all ml-1"
                       >
                         Create Account
@@ -477,7 +464,7 @@ export default function Login({
                       <button
                         type="button"
                         onClick={() => {
-                          window.location.href = '/admin/login';
+                          navigate('/admin/login');
                         }}
                         className="text-[11px] font-bold text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-all underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4"
                       >
@@ -490,7 +477,7 @@ export default function Login({
                     <button
                       type="button"
                       onClick={() => {
-                        window.location.href = '/login';
+                        navigate('/login');
                       }}
                       className="text-[11px] font-bold text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-all underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4"
                     >

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,8 +16,9 @@ import {
 } from 'lucide-react';
 import { AvatarUpload } from '@/components/profile/AvatarUpload';
 
-export default function ProfileEdit({ session, onNavigate }: { session?: any, onNavigate: (view: string) => void }) {
+export default function ProfileEdit() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const navigate = useNavigate();
   const { updateUser } = useUser();
   const [isSaving, setIsSaving] = useState(false);
   
@@ -82,23 +84,14 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
     // 1. Save extended profile data locally (skills, bio, social links — not in backend schema)
     saveProfileData(user.email, updatedProfile);
 
-    // 2. Update active user session in storage
-    const sessionUser = {
-      ...user,
-      name: name.trim(),
-      department: department,
-      phone: phone.trim()
-    };
-    localStorage.setItem('hindustaan_user', JSON.stringify(sessionUser));
-
-    // 3. Update user context immediately so sidebar/topbar re-renders
+    // 2. Update user context immediately so sidebar/topbar re-renders
     updateUser({
       name: name.trim(),
       department: department,
       avatar: avatar || null
     });
 
-    // 5. Persist to backend — only fields the backend schema supports
+    // 3. Persist to backend — only fields the backend schema supports
     if (user.id) {
       setIsSaving(true);
       try {
@@ -120,7 +113,7 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
     }
 
     // Navigate back to view profile
-    onNavigate('My Profile');
+    navigate('/profile');
   };
 
   if (!profile) {
@@ -139,7 +132,7 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => onNavigate('My Profile')} 
+          onClick={() => navigate('/profile')} 
           className="rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -242,18 +235,18 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
               {/* Read-Only Professional details hint */}
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/20 dark:bg-slate-900/20 p-4 rounded-xl">
                 <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Read-Only Workplace Information</p>
-                <div className={`grid grid-cols-2 ${session?.user?.user_metadata?.role === 'manager' || session?.user?.user_metadata?.role === 'admin' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4 text-xs font-semibold`}>
-                  {session?.user?.user_metadata?.role !== 'manager' && session?.user?.user_metadata?.role !== 'admin' && (
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Manager</span>
-                      <span className="text-slate-700 dark:text-slate-300">{profile.manager}</span>
+                <div className={`grid grid-cols-2 ${profile.role === 'manager' || profile.role === 'admin' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4 text-xs font-semibold`}>
+                  {profile.role !== 'manager' && profile.role !== 'admin' && (
+                    <div className="space-y-1">
+                      <span className="text-slate-400 uppercase tracking-wider">Reporting Manager</span>
+                      <p className="text-sm text-slate-800 dark:text-slate-200">{profile.manager}</p>
                     </div>
                   )}
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Employment Type</span>
-                    <span className="text-slate-700 dark:text-slate-300">
-                      {session?.user?.user_metadata?.role === 'admin' ? 'Admin' : profile.employmentType}
-                    </span>
+                  <div className="space-y-1">
+                    <span className="text-slate-400 uppercase tracking-wider">Employment Type</span>
+                    <p className="text-sm text-slate-800 dark:text-slate-200">
+                      {profile.role === 'admin' ? 'Admin' : profile.employmentType}
+                    </p>
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Joining Date</span>
@@ -269,7 +262,7 @@ export default function ProfileEdit({ session, onNavigate }: { session?: any, on
             <Button 
               type="button"
               variant="outline" 
-              onClick={() => onNavigate('My Profile')} 
+              onClick={() => navigate('/profile')} 
               className="rounded-xl font-bold border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               Cancel

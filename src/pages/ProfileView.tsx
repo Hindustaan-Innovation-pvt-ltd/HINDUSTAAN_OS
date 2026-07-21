@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,8 +12,9 @@ import {
   AlertCircle, ShieldCheck
 } from 'lucide-react';
 
-export default function ProfileView({ session, onNavigate }: { session?: any, onNavigate: (view: string) => void }) {
+export default function ProfileView() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const user = getCurrentUser();
@@ -59,7 +61,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
               
               {/* Edit Profile Button (Top Right) */}
               <button
-                onClick={() => onNavigate('Edit Profile')}
+                onClick={() => navigate('/profile/edit')}
                 className="absolute top-4 right-4 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-slate-600 dark:text-slate-300 transition-all shadow-sm flex items-center justify-center"
                 title="Edit Profile"
               >
@@ -135,7 +137,7 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {session?.user?.user_metadata?.role !== 'manager' && session?.user?.user_metadata?.role !== 'admin' && (
+                {profile.role !== 'manager' && profile.role !== 'admin' && (
                   <div className="space-y-1">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Reporting Manager</span>
                     <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.manager}</p>
@@ -144,10 +146,10 @@ export default function ProfileView({ session, onNavigate }: { session?: any, on
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Employment Type</span>
                   <p className="text-base font-bold text-slate-800 dark:text-slate-200">
-                    {session?.user?.user_metadata?.role === 'admin' ? 'Admin' : profile.employmentType}
+                    {profile.role === 'admin' ? 'Admin' : profile.employmentType}
                   </p>
                 </div>
-                {session?.user?.user_metadata?.role !== 'manager' && session?.user?.user_metadata?.role !== 'admin' && (
+                {profile.role !== 'manager' && profile.role !== 'admin' && (
                   <div className="space-y-1">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Team</span>
                     <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.team}</p>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './pages/Login';
 import DashboardShell from './components/layout/DashboardShell';
 import RoleBasedRouter from './components/dashboard/RoleBasedRouter';
@@ -30,140 +31,21 @@ import SystemNotificationsModule from '@/components/workspace-settings/SystemNot
 import DeliveryChannelsModule from '@/components/workspace-settings/DeliveryChannelsModule';
 import SecuritySettings from './pages/SecuritySettings';
 import Subscriptions from './pages/Subscriptions';
-// Supabase client removed for mock auth implementation
-import { logoutUser } from './lib/auth';
 
 import { ThemeProvider } from '@/context/ThemeContext';
 import { ProjectProvider } from '@/context/ProjectContext';
-import { UserProvider } from '@/context/UserContext';
+import { UserProvider, useUser } from '@/context/UserContext';
 import { NotificationProvider } from '@/context/NotificationContext';
 import { WorkspaceProvider } from '@/context/WorkspaceContext';
+import { SocketProvider } from '@/context/SocketContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 
 import { BrandLogo } from '@/components/ui/BrandLogo';
 
-
-function App() {
-  const [session, setSession] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [currentView, setCurrentView] = useState('Dashboard');
-  const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
-  const [authView, setAuthView] = useState<'login' | 'register'>('login');
-  const [prefilledEmail, setPrefilledEmail] = useState('');
-  const [prefilledName, setPrefilledName] = useState('');
-  const [prefilledRole, setPrefilledRole] = useState('manager');
-
-  // Router listener to synchronize pathname with React currentView state
-  useEffect(() => {
-    const handleLocationChange = () => {
-      const path = window.location.pathname;
-      if (path === '/profile') {
-        setCurrentView('My Profile');
-      } else if (path === '/profile/edit') {
-        setCurrentView('Edit Profile');
-      } else if (path === '/manager/leave-management' || path === '/employee/leave') {
-        setCurrentView('Leave Management');
-      } else if (path === '/admin/subscriptions') {
-        setCurrentView('Subscription Management');
-      } else if (path.includes('/dashboard') || path === '/') {
-        setCurrentView('Dashboard');
-      }
-    };
-
-    const handleCustomNavigation = (e: CustomEvent) => {
-      if (e.detail && e.detail.view) {
-        handleNavigate(e.detail.view);
-      }
-    };
-
-    window.addEventListener('popstate', handleLocationChange);
-    window.addEventListener('navigate-to-view', handleCustomNavigation as EventListener);
-    handleLocationChange(); // run once on mount
-    return () => {
-      window.removeEventListener('popstate', handleLocationChange);
-      window.removeEventListener('navigate-to-view', handleCustomNavigation as EventListener);
-    };
-  }, []);
-
-  const handleNavigate = (view: string) => {
-    const role = session?.user?.user_metadata?.role || 'employee';
-    if (view === 'My Profile') {
-      window.history.pushState({}, '', '/profile');
-      setCurrentView('My Profile');
-    } else if (view === 'Edit Profile') {
-      window.history.pushState({}, '', '/profile/edit');
-      setCurrentView('Edit Profile');
-    } else if (view === 'Leave Management') {
-      window.history.pushState({}, '', ['manager', 'admin'].includes(role) ? '/manager/leave-management' : '/employee/leave');
-      setCurrentView('Leave Management');
-    } else if (view === 'Subscription Management') {
-      window.history.pushState({}, '', '/admin/subscriptions');
-      setCurrentView('Subscription Management');
-    } else if (view === 'Dashboard') {
-      window.history.pushState({}, '', `/${role}/dashboard`);
-      setCurrentView('Dashboard');
-    } else {
-      if (window.location.pathname === '/' || window.location.pathname === '/login') {
-        window.history.pushState({}, '', `/${role}/dashboard`);
-      }
-      setCurrentView(view);
-    }
-  };
-
-  useEffect(() => {
-    const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        setSession({ user: { email: user.email, user_metadata: { role: user.role, name: user.name, department: user.department } } });
-
-        // Ensure login time is tracked for employee
-        if (user.role === 'employee') {
-          let userId = 'u-4';
-          const email = user.email || '';
-          if (email.toLowerCase().includes('amanda')) {
-            userId = 'u-1';
-          } else if (email.toLowerCase().includes('rahul')) {
-            userId = 'u-2';
-          } else if (email.toLowerCase().includes('priya')) {
-            userId = 'u-3';
-          }
-          const loginKey = `login_time_${userId}`;
-          if (!localStorage.getItem(loginKey)) {
-            localStorage.setItem(loginKey, Date.now().toString());
-          }
-        }
-
-        // Role-based Redirect Logic on Page Refresh
-        const path = window.location.pathname;
-        if (path === '/' || path === '/login' || path === '/admin/login') {
-          window.history.replaceState({}, '', `/${user.role}/dashboard`);
-        } else if (path.startsWith('/admin') && user.role !== 'admin') {
-          localStorage.removeItem('hindustaan_user');
-          sessionStorage.removeItem('hindustaan_user');
-          setSession(null);
-          window.history.replaceState({}, '', `/login`);
-        } else if (path.startsWith('/manager') && !['manager', 'admin'].includes(user.role)) {
-          localStorage.removeItem('hindustaan_user');
-          sessionStorage.removeItem('hindustaan_user');
-          setSession(null);
-          window.history.replaceState({}, '', `/login`);
-        }
-      } catch (e) {
-        localStorage.removeItem('hindustaan_user');
-        sessionStorage.removeItem('hindustaan_user');
-      }
-    }
-    setLoading(false);
-
-    const handleAuthLogout = () => {
-      setSession(null);
-      setCurrentView('Dashboard');
-    };
-    window.addEventListener('auth-logout', handleAuthLogout);
-    return () => window.removeEventListener('auth-logout', handleAuthLogout);
-  }, []);
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useUser();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -178,277 +60,97 @@ function App() {
     );
   }
 
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function AppRoutes() {
+  const { user } = useUser();
+  const role = user?.role || 'employee';
+  const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
+
+  const handleSignOut = () => {
+    // Clear legacy storage for safety if there's any left
+    localStorage.removeItem('hindustaan_user');
+    sessionStorage.removeItem('hindustaan_user');
+    window.dispatchEvent(new Event('auth-logout'));
+    window.location.href = '/login';
+  };
+
+  return (
+    <Routes>
+      <Route path="/login" element={<Login defaultRole="manager" />} />
+      <Route path="/admin/login" element={<Login isAdminLogin={true} defaultRole="admin" />} />
+      <Route path="/register" element={<Register />} />
+
+      {/* Protected Layout */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <DashboardShell
+              isMinimized={isSidebarMinimized}
+              onMinimizeChange={setIsSidebarMinimized}
+              onSignOut={handleSignOut}
+            />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/" element={<Navigate to={`/${role}/dashboard`} replace />} />
+        <Route path="/employee/dashboard" element={<RoleBasedRouter />} />
+        <Route path="/manager/dashboard" element={<RoleBasedRouter />} />
+        <Route path="/admin/dashboard" element={<RoleBasedRouter />} />
+        <Route path="/tasks" element={<TaskBoard />} />
+        <Route path="/time-tracking" element={<TimeAndStandup />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/timeline" element={<GanttTimeline />} />
+        <Route path="/performance" element={<ProgressTracker />} />
+        <Route path="/milestones" element={<Milestones />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/team" element={<TeamMembers />} />
+        <Route path="/roles" element={<RolesAndPermissions />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/profile" element={['manager', 'admin'].includes(role) ? <ProfileView /> : <EmployeeProfileView />} />
+        <Route path="/profile/edit" element={['manager', 'admin'].includes(role) ? <ProfileEdit /> : <EmployeeProfileEdit />} />
+        <Route path="/manager/leave-management" element={<LeaveManagement />} />
+        <Route path="/employee/leave" element={<LeaveManagement />} />
+        <Route path="/help" element={<HelpSupport />} />
+        <Route path="/security" element={<SecuritySettings />} />
+        <Route path="/admin/workspace/general" element={<WorkspaceSettings />} />
+        <Route path="/admin/workspace/email" element={<EmailLogsModule />} />
+        <Route path="/admin/workspace/announcements" element={<AnnouncementCenterModule />} />
+        <Route path="/admin/workspace/notifications" element={<SystemNotificationsModule />} />
+        <Route path="/admin/workspace/channels" element={<DeliveryChannelsModule />} />
+        <Route path="/admin/subscriptions" element={<Subscriptions />} />
+        <Route path="/work-logs" element={<WorkLogs />} />
+        <Route path="/daily-standups" element={<DailyStandups />} />
+        <Route path="/contribution-scores" element={<ContributionScores />} />
+      </Route>
+      
+      <Route path="*" element={<Navigate to={`/${role}/dashboard`} replace />} />
+    </Routes>
+  );
+}
+
+function App() {
   return (
     <ThemeProvider>
       <WorkspaceProvider>
         <NotificationProvider>
-          <ProjectProvider key={session?.user?.email || 'guest'}>
-            <UserProvider key={session?.user?.email || 'guest'}>
-              <TooltipProvider>
-              {!session ? (
-                window.location.pathname === '/admin/login' ? (
-                  <Login
-                    isAdminLogin={true}
-                    defaultEmail=""
-                    defaultName=""
-                    defaultRole="admin"
-                    onMockLogin={(role, email) => {
-                      const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
-                      if (userStr) {
-                        const user = JSON.parse(userStr);
-                        setSession({ user: { email: user.email, user_metadata: { role: user.role, name: user.name, department: user.department } } });
-                        window.history.pushState({}, '', `/admin/dashboard`);
-                        setCurrentView('Dashboard');
-                      }
-                    }}
-                  />
-                ) : authView === 'login' ? (
-                  <Login
-                    defaultEmail={prefilledEmail}
-                    defaultName={prefilledName}
-                    defaultRole={prefilledRole}
-                    onMockLogin={(role, email) => {
-                      const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
-                      if (userStr) {
-                        const user = JSON.parse(userStr);
-                        setSession({ user: { email: user.email, user_metadata: { role: user.role, name: user.name, department: user.department } } });
-                        window.history.pushState({}, '', `/${user.role}/dashboard`);
-                        setCurrentView('Dashboard');
-                      }
-                    }}
-                    onNavigateToRegister={() => {
-                      setPrefilledEmail('');
-                      setPrefilledName('');
-                      setPrefilledRole('manager');
-                      setAuthView('register');
-                    }}
-                  />
-                ) : (
-                  <Register
-                    onNavigateToLogin={(email, name, role) => {
-                      if (email) setPrefilledEmail(email);
-                      if (name) setPrefilledName(name);
-                      if (role) setPrefilledRole(role);
-                      setAuthView('login');
-                    }}
-                  />
-                )
-              ) : (
-                <DashboardShell
-                  currentView={currentView}
-                  onNavigate={handleNavigate}
-                  role={session.user?.user_metadata?.role || 'employee'}
-                  isMinimized={isSidebarMinimized}
-                  onMinimizeChange={setIsSidebarMinimized}
-                  onSignOut={async () => {
-                    console.log('[onSignOut] Logout initiated');
-                    try {
-                      // 1. Calculate and save work log for current session before clearing
-                      const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
-                      let role = 'employee';
-                      let email = 'user@hindustaan.in';
-                      let userName = 'Tanvy Pandey';
-
-                      if (userStr) {
-                        try {
-                          const user = JSON.parse(userStr);
-                          role = user.role || 'employee';
-                          email = user.email || 'user@hindustaan.in';
-                          userName = user.name || 'Tanvy Pandey';
-                          console.log('[onSignOut] Logged-in user found:', user);
-                        } catch (e) {
-                          console.error('[onSignOut] Error parsing user details:', e);
-                        }
-                      }
-
-                      if (role === 'employee') {
-                        let currentUserId = 'u-4';
-                        let currentUserName = userName;
-                        let currentProject = 'Frontend Core';
-                        let currentTask = 'Kanban Board & Work Logs';
-
-                        if (email.toLowerCase().includes('amanda')) {
-                          currentUserId = 'u-1';
-                          currentUserName = 'Amanda Smith';
-                          currentProject = 'Frontend Core';
-                          currentTask = 'Component Refactoring';
-                        } else if (email.toLowerCase().includes('rahul')) {
-                          currentUserId = 'u-2';
-                          currentUserName = 'Rahul Sharma';
-                          currentProject = 'Backend Core';
-                          currentTask = 'Database Optimization';
-                        } else if (email.toLowerCase().includes('priya')) {
-                          currentUserId = 'u-3';
-                          currentUserName = 'Priya Patel';
-                          currentProject = 'Documentation';
-                          currentTask = 'API Documentation V2';
-                        }
-
-                        // Determine active task in-progress dynamically
-                        const savedTasksStr = localStorage.getItem('hindustaan_tasks_list');
-                        if (savedTasksStr) {
-                          try {
-                            const allTasks = JSON.parse(savedTasksStr);
-                            const inProgressTask = allTasks.find((t: any) =>
-                              (t.assignee_id === currentUserId ||
-                                t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())) &&
-                              t.status === 'In Progress'
-                            );
-                            if (inProgressTask) {
-                              currentProject = inProgressTask.project_tag;
-                              currentTask = inProgressTask.title;
-                              console.log('[onSignOut] Dynamic active task detected:', inProgressTask);
-                            }
-                          } catch (e) {
-                            console.error('[onSignOut] Error detecting active task:', e);
-                          }
-                        }
-
-                        const loginTimeStr = localStorage.getItem(`login_time_${currentUserId}`);
-                        console.log('[onSignOut] login_time key:', `login_time_${currentUserId}`, 'value:', loginTimeStr);
-                        if (loginTimeStr) {
-                          const startTime = parseInt(loginTimeStr, 10);
-                          const secondsElapsed = Math.floor((Date.now() - startTime) / 1000);
-
-                          // Convert to hours (with minimum of 0.1 hours so short demo sessions show up nicely)
-                          const hours = Math.max(0.1, Math.round((secondsElapsed / 3600) * 10) / 10);
-
-                          const initials = currentUserName.split(' ').map((n: string) => n[0]).join('').toUpperCase();
-                          const newLog = {
-                            id: `session-${Date.now()}`,
-                            name: currentUserName,
-                            initials: initials,
-                            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                            hours: hours,
-                            task: currentTask,
-                            project: currentProject,
-                            status: 'Pending'
-                          };
-
-                          console.log('[onSignOut] Logging new work log entry:', newLog);
-
-                          // Load existing logs, prepend new log, and save back
-                          const existingLogsStr = localStorage.getItem('work_logs_list');
-                          let logsList = existingLogsStr ? JSON.parse(existingLogsStr) : [];
-                          logsList = [newLog, ...logsList];
-                          localStorage.setItem('work_logs_list', JSON.stringify(logsList));
-
-                          // Also log to work_logs_list_v4
-                          const existingLogsV4Str = localStorage.getItem('work_logs_list_v4');
-                          let logsListV4;
-                          if (existingLogsV4Str) {
-                            logsListV4 = JSON.parse(existingLogsV4Str);
-                          } else {
-                            logsListV4 = [];
-                          }
-                          const newV4Log = {
-                            id: newLog.id,
-                            name: newLog.name,
-                            initials: newLog.initials,
-                            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                            rawDate: new Date().toISOString(),
-                            project: newLog.project,
-                            task: newLog.task,
-                            hours: newLog.hours,
-                            status: newLog.status
-                          };
-                          logsListV4 = [newV4Log, ...logsListV4];
-                          localStorage.setItem('work_logs_list_v4', JSON.stringify(logsListV4));
-                          console.log('[onSignOut] Successfully logged to work_logs_list_v4');
-                        } else {
-                          console.warn('[onSignOut] Bypassing work log save: No login_time tracking value found in localStorage');
-                        }
-
-                        localStorage.removeItem(`login_time_${currentUserId}`);
-                      }
-                    } catch (err) {
-                      console.error('[onSignOut] Fatal error during work log recording:', err);
-                    }
-
-                    try {
-                      await logoutUser();
-                    } catch (e) {
-                      console.error('Logout failed:', e);
-                    }
-                    localStorage.removeItem('hindustaan_user');
-                    sessionStorage.removeItem('hindustaan_user');
-                    window.history.pushState({}, '', '/');
-                    setCurrentView('Dashboard');
-                    setSession(null);
-                  }}
-                >
-                  {currentView === 'Dashboard' && <RoleBasedRouter session={session} onNavigate={handleNavigate} />}
-                  {currentView === 'Interns' && (
-                    <AdminDashboard showOnlyRole="employee" />
-                  )}
-                  {currentView === 'Managers' && (
-                    <AdminDashboard showOnlyRole="manager" />
-                  )}
-                  {currentView === 'Roles & Permissions' && (
-                    <RolesAndPermissions />
-                  )}
-                  {(currentView === 'Tasks' || currentView === 'My Tasks') && (
-                    <TaskBoard session={session} isSidebarMinimized={isSidebarMinimized} />
-                  )}
-                  {currentView === 'Time Tracking' && <TimeAndStandup session={session} />}
-                  {currentView === 'Milestones' && <Milestones session={session} />}
-                  {(currentView === 'Projects' || currentView === 'My Projects') && <Projects session={session} />}
-                  {currentView === 'About Us' && <AboutUs />}
-                  {currentView === 'Settings' && <Settings session={session} />}
-                  {currentView === 'My Profile' && (
-                    session?.user?.user_metadata?.role === 'admin' ? (
-                      <ProfileView session={session} onNavigate={handleNavigate} />
-                    ) : (
-                      <EmployeeProfileView session={session} onNavigate={handleNavigate} />
-                    )
-                  )}
-                  {currentView === 'Edit Profile' && (
-                    session?.user?.user_metadata?.role === 'admin' ? (
-                      <ProfileEdit session={session} onNavigate={handleNavigate} />
-                    ) : (
-                      <EmployeeProfileEdit session={session} onNavigate={handleNavigate} />
-                    )
-                  )}
-                  {currentView === 'Team Members' && <TeamMembers />}
-
-                  {/* New Pages */}
-                  {currentView === 'Gantt Timeline' && <GanttTimeline session={session} />}
-                  {currentView === 'Progress Tracker' && <ProgressTracker session={session} />}
-                  {currentView === 'Work Logs' && <WorkLogs session={session} />}
-                  {(currentView === 'Daily Standups' || currentView === 'Daily Standup') && <DailyStandups session={session} />}
-                  {currentView === 'Contribution Scores' || currentView === 'My Performance' ? <ContributionScores session={session} /> : null}
-                  {currentView === 'Leave Management' && <LeaveManagement session={session} />}
-                  {currentView === 'Help & Support' && <HelpSupport session={session} />}
-                  {(currentView === 'Workspace Settings - General' || currentView === 'Workspace Settings - Projects' || currentView === 'Workspace Settings - Appearance') && <WorkspaceSettings onNavigate={handleNavigate} currentView={currentView} />}
-                  {currentView === 'Workspace Settings - Security & Access' && <SecuritySettings session={session} />}
-                  {currentView === 'Email Logs' && <EmailLogsModule />}
-                  {currentView === 'Announcement Center' && <AnnouncementCenterModule />}
-                  {currentView === 'System Notifications' && <SystemNotificationsModule />}
-                  {currentView === 'Delivery Channels' && <DeliveryChannelsModule />}
-
-                  {currentView === 'Subscription Management' && (
-                    <Subscriptions session={session} onBack={() => handleNavigate('Dashboard')} />
-                  )}
-
-                  {/* Fallback for anything else */}
-                  {![
-                    'Dashboard', 'Tasks', 'My Tasks', 'Time Tracking', 'Milestones',
-                    'Projects', 'My Projects', 'About Us', 'Settings', 'My Profile', 'Edit Profile', 'Team Members',
-                    'Gantt Timeline', 'Progress Tracker', 'Work Logs', 'Daily Standups', 'Daily Standup',
-                    'Contribution Scores', 'My Performance', 'Leave Management', 'Help & Support', 'Workspace Settings - Security & Access',
-                    'Workspace Settings - General', 'Workspace Settings - Projects', 'Workspace Settings - Appearance', 'Subscription Management', 'Interns', 'Managers', 'Roles & Permissions',
-                    'Email Logs', 'Announcement Center', 'System Notifications', 'Delivery Channels'
-                  ].includes(currentView) && (
-                      <div className="flex h-100 items-center justify-center text-slate-400 dark:text-slate-500">
-                        <p className="text-lg font-bold">This section is coming soon.</p>
-                      </div>
-                    )}
-                </DashboardShell>
-              )}
-              <Toaster position="top-right" duration={4000} richColors closeButton expand />
-              </TooltipProvider>
-            </UserProvider>
-          </ProjectProvider>
+          <UserProvider>
+            <ProjectProvider>
+              <SocketProvider>
+                <TooltipProvider>
+                  <BrowserRouter>
+                    <AppRoutes />
+                  </BrowserRouter>
+                  <Toaster position="top-right" duration={4000} richColors closeButton expand />
+                </TooltipProvider>
+              </SocketProvider>
+            </ProjectProvider>
+          </UserProvider>
         </NotificationProvider>
       </WorkspaceProvider>
     </ThemeProvider>
