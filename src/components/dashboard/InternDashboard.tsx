@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  CheckCircle2, Clock, Calendar as CalendarIcon, Flag, Activity, 
+import {
+  CheckCircle2, Clock, Calendar as CalendarIcon, Flag, Activity,
   ArrowRight, MoreVertical, PlayCircle, Trophy, Target, AlertCircle, Sparkles, LayoutDashboard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -28,20 +28,18 @@ import { useUser } from '@/context/UserContext';
 import api from '@/lib/api';
 
 
-interface InternDashboardProps {
-  session?: any;
-}
+interface InternDashboardProps { }
 
 // Monkey-patch localStorage.setItem ONCE globally for this module
 // so that different components/hooks can listen to same-tab storage events.
 const originalSetItem = localStorage.setItem;
-localStorage.setItem = function(key, value) {
+localStorage.setItem = function (key, value) {
   originalSetItem.apply(this, arguments as any);
   // Dispatch a custom event for same-tab updates
   window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key, value } }));
 };
 
-export default function InternDashboard({ session }: InternDashboardProps) {
+export default function InternDashboard({ }: InternDashboardProps) {
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   const [isFigjamOpen, setIsFigjamOpen] = useState(false);
   const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
@@ -53,11 +51,9 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const [extensionDays, setExtensionDays] = useState(1);
   const [extensionReason, setExtensionReason] = useState('');
 
-  // Resolve current user based on session
-  const role = session?.user?.user_metadata?.role || 'intern';
-  const email = session?.user?.email || 'user@hindustaan.in';
-  
   const { user: contextUser } = useUser();
+  const role = contextUser?.role || 'intern';
+  const email = contextUser?.email || 'user@hindustaan.in';
   const user = getCurrentUser();
   let currentUserId = user?.id || '';
   let currentUserName = contextUser?.name || user?.name || 'User';
@@ -78,7 +74,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       return new Date().toISOString().split('T')[0];
     }
   };
-  
+
   // Dynamic tasks state fetched strictly from DB API
   const [tasks, setTasks] = useState<any[]>([]);
 
@@ -100,10 +96,10 @@ export default function InternDashboard({ session }: InternDashboardProps) {
           priority: t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
           due_date: formatDateSafely(t.due_date || t.dueDate),
           status: t.status === 'done' || t.status === 'completed' ? 'Done' :
-                  t.status === 'in-progress' ? 'In Progress' :
-                  t.status === 'in-review' ? 'In Review' : 'To Do'
+            t.status === 'in-progress' ? 'In Progress' :
+              t.status === 'in-review' ? 'In Review' : 'To Do'
         }));
-        
+
         console.log('[DEBUG API] Mapped DB Tasks:', mapped);
         setTasks(mapped);
       }
@@ -176,7 +172,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
     window.addEventListener('tasks-updated', handleTasksUpdatedEvent);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
@@ -264,7 +260,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const employeeUpcomingEvents = useMemo(() => {
     const today = new Date();
     const cutoffDate = startOfDay(today);
-    
+
     // 1. Task Deadlines
     const taskEvents = tasks
       .filter((t: any) => t && t.status !== 'Done' && t.status !== 'completed' && t.due_date)
@@ -350,8 +346,8 @@ export default function InternDashboard({ session }: InternDashboardProps) {
           dueDate = new Date();
         }
         const todayDate = new Date();
-        todayDate.setHours(0,0,0,0);
-        dueDate.setHours(0,0,0,0);
+        todayDate.setHours(0, 0, 0, 0);
+        dueDate.setHours(0, 0, 0, 0);
         const isOverdue = dueDate < todayDate;
         const isToday = dueDate.getTime() === todayDate.getTime();
         return {
@@ -361,8 +357,8 @@ export default function InternDashboard({ session }: InternDashboardProps) {
           project_tag: t.project?.name || 'General',
           due_date: formatDateSafely(t.dueDate),
           status: t.status === 'done' || t.status === 'completed' ? 'Done' :
-                  t.status === 'in-progress' ? 'In Progress' :
-                  t.status === 'in-review' ? 'In Review' : 'To Do',
+            t.status === 'in-progress' ? 'In Progress' :
+              t.status === 'in-review' ? 'In Review' : 'To Do',
           isOverdue,
           isToday
         };
@@ -374,7 +370,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
       .map((t: any) => {
         let dueDate: Date | null = null;
         const rawDate = t.due_date.toLowerCase().trim();
-        
+
         if (rawDate === 'today') {
           dueDate = new Date();
         } else if (rawDate === 'tomorrow') {
@@ -383,15 +379,15 @@ export default function InternDashboard({ session }: InternDashboardProps) {
         } else {
           dueDate = new Date(t.due_date);
         }
-        
+
         return { ...t, parsedDate: dueDate };
       })
       .filter((t: any) => t.parsedDate && !isNaN(t.parsedDate.getTime()))
       .map((t: any) => {
         const dueDate = t.parsedDate;
         const todayDate = new Date();
-        todayDate.setHours(0,0,0,0);
-        dueDate.setHours(0,0,0,0);
+        todayDate.setHours(0, 0, 0, 0);
+        dueDate.setHours(0, 0, 0, 0);
         const isOverdue = dueDate < todayDate;
         const isToday = dueDate.getTime() === todayDate.getTime();
         return { ...t, isOverdue, isToday };
@@ -408,11 +404,11 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const dueTodayCount = typeof dashboardData?.dueTodayCount === 'number'
     ? dashboardData.dueTodayCount
     : tasks.filter((t: any) => {
-        if (!t.due_date) return false;
-        const dStr = t.due_date.includes('T') ? t.due_date.split('T')[0] : t.due_date;
-        const todayStr = new Date().toISOString().split('T')[0];
-        return dStr <= todayStr && t.status !== 'Done' && t.status !== 'completed' && t.status !== 'done';
-      }).length;
+      if (!t.due_date) return false;
+      const dStr = t.due_date.includes('T') ? t.due_date.split('T')[0] : t.due_date;
+      const todayStr = new Date().toISOString().split('T')[0];
+      return dStr <= todayStr && t.status !== 'Done' && t.status !== 'completed' && t.status !== 'done';
+    }).length;
 
   const displayedTodayTasks = useMemo(() => {
     if (dashboardData?.todayTasks && dashboardData.todayTasks.length > 0) {
@@ -423,11 +419,11 @@ export default function InternDashboard({ session }: InternDashboardProps) {
         project_tag: t.project?.name || 'General',
         due_date: formatDateSafely(t.dueDate),
         status: t.status === 'done' || t.status === 'completed' ? 'Done' :
-                t.status === 'in-progress' ? 'In Progress' :
-                t.status === 'in-review' ? 'In Review' : 'To Do',
+          t.status === 'in-progress' ? 'In Progress' :
+            t.status === 'in-review' ? 'In Review' : 'To Do',
         progress: t.status === 'done' || t.status === 'completed' ? 100 :
-                  t.status === 'in-progress' ? 50 :
-                  t.status === 'in-review' ? 85 : 0
+          t.status === 'in-progress' ? 50 :
+            t.status === 'in-review' ? 85 : 0
       }));
     }
     return tasks;
@@ -525,24 +521,24 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   } else {
     greeting = 'Good evening';
   }
-  
+
   const [selectedMonth, setSelectedMonth] = useState<Date>(today);
   const startDate = new Date(2026, 6, 1);
   const endDate = new Date(2026, 9, 1);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-4 md:space-y-5 animate-in fade-in duration-500 min-h-screen">
-      
+
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-page-title font-bold tracking-tight text-slate-900 dark:text-white break-words whitespace-normal">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-page-title font-bold tracking-tight text-slate-900 dark:text-white wrap-break-word whitespace-normal">
             {greeting}, {currentUserName} <span className="inline-block animate-wave origin-bottom-right">👋</span>
           </h1>
-          <p className="text-base sm:text-lg font-medium text-orange-600 dark:text-orange-400 mt-1 break-words whitespace-normal">
+          <p className="text-base sm:text-lg font-medium text-orange-600 dark:text-orange-400 mt-1 wrap-break-word whitespace-normal">
             {user?.designation || (user?.role === 'manager' ? 'Product Manager' : 'Frontend Developer Intern')}
           </p>
-          <p className="text-sm sm:text-base font-medium text-slate-500 dark:text-slate-400 mt-2 break-words whitespace-normal">
+          <p className="text-sm sm:text-base font-medium text-slate-500 dark:text-slate-400 mt-2 wrap-break-word whitespace-normal">
             You have <strong className="text-slate-700 dark:text-slate-200">{activeTasksCount} active tasks</strong>, <strong className="text-rose-600 dark:text-rose-400">{dueTodayCount} due today</strong>, and <strong>{loggedHours.toFixed(1)} hours</strong> logged total.
           </p>
         </div>
@@ -641,10 +637,10 @@ export default function InternDashboard({ session }: InternDashboardProps) {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5">
-        
+
         {/* Left Column (8) */}
         <div className="lg:col-span-8 flex flex-col gap-4 md:gap-5">
-          
+
           {/* My Today's Tasks */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-full">
             <CardHeader className="flex flex-row items-center justify-between p-4 md:p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -658,21 +654,21 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             </CardHeader>
             <CardContent className="p-0 flex-1 flex flex-col">
               <div className="divide-y divide-slate-100 dark:divide-slate-800 flex-1 flex flex-col justify-center">
-                 {displayedTodayTasks.length > 0 ? displayedTodayTasks.map((task: any) => (
-                    <div key={task.id} className={cn(
-                      "p-4 md:p-5 py-2.5 md:py-3 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group",
-                      task.project_status === 'aborted' ? "opacity-75 grayscale bg-slate-50 dark:bg-slate-900/40 cursor-not-allowed" : "hover:bg-slate-50 dark:hover:bg-slate-900/50"
-                    )}>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-1.5">
-                          <h4 className={cn("text-base font-bold transition-colors truncate",
-                            task.project_status === 'aborted' ? "text-slate-500 dark:text-slate-400 line-through" : "text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400"
-                          )}>{task.title}</h4>
+                {displayedTodayTasks.length > 0 ? displayedTodayTasks.map((task: any) => (
+                  <div key={task.id} className={cn(
+                    "p-4 md:p-5 py-2.5 md:py-3 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group",
+                    task.project_status === 'aborted' ? "opacity-75 grayscale bg-slate-50 dark:bg-slate-900/40 cursor-not-allowed" : "hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                  )}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1.5">
+                        <h4 className={cn("text-base font-bold transition-colors truncate",
+                          task.project_status === 'aborted' ? "text-slate-500 dark:text-slate-400 line-through" : "text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400"
+                        )}>{task.title}</h4>
                         <Badge variant="outline" className={cn(
                           "text-[10px] uppercase tracking-wider font-bold rounded",
-                          task.priority === 'High' ? "border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-500/10" : 
-                          task.priority === 'Normal' || task.priority === 'Medium' ? "border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:bg-amber-500/10" : 
-                          "border-slate-200 text-slate-600 bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:bg-slate-800"
+                          task.priority === 'High' ? "border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-500/10" :
+                            task.priority === 'Normal' || task.priority === 'Medium' ? "border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:bg-amber-500/10" :
+                              "border-slate-200 text-slate-600 bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:bg-slate-800"
                         )}>{task.priority}</Badge>
                         {task.project_status === 'aborted' && (
                           <Badge variant="destructive" className="text-[10px] uppercase tracking-wider font-bold rounded bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200/50">Aborted</Badge>
@@ -709,8 +705,8 @@ export default function InternDashboard({ session }: InternDashboardProps) {
               </div>
             </CardContent>
           </Card>
-          </div>
-        
+        </div>
+
         {/* Right Column (4) */}
         <div className="lg:col-span-4 flex flex-col gap-4 md:gap-5">
           {/* Upcoming Events (read-only) */}
@@ -738,11 +734,11 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                         <div className="flex items-center gap-1.5 mt-1">
                           <div className={cn("h-1.5 w-1.5 rounded-full",
                             evt.type === 'deadline' ? 'bg-rose-500' :
-                            evt.type === 'milestone' ? 'bg-purple-500' :
-                            evt.type === 'completed' ? 'bg-emerald-500' :
-                            evt.type === 'leave' ? 'bg-amber-500' :
-                            evt.type === 'meeting' ? 'bg-blue-500' :
-                            'bg-slate-500'
+                              evt.type === 'milestone' ? 'bg-purple-500' :
+                                evt.type === 'completed' ? 'bg-emerald-500' :
+                                  evt.type === 'leave' ? 'bg-amber-500' :
+                                    evt.type === 'meeting' ? 'bg-blue-500' :
+                                      'bg-slate-500'
                           )} />
                           <span className="text-[10px] font-semibold text-slate-500 capitalize">{evt.type}</span>
                         </div>
@@ -760,7 +756,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
 
       {/* 3-Column Grid for Metrics and Sidebar */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 items-start mt-4 md:mt-5">
-            
+
         <div className="space-y-4 md:space-y-5 h-full">
           {/* Contribution Progress */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-full">
@@ -814,8 +810,8 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             <CardContent className="pt-4 flex-1 flex flex-col">
               {role !== 'manager' && (
                 <div className="flex justify-end mb-3">
-                  <Button 
-                    onClick={() => setIsExtensionModalOpen(true)} 
+                  <Button
+                    onClick={() => setIsExtensionModalOpen(true)}
                     size="sm"
                     className="h-8 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm border border-indigo-600 hover:border-indigo-700 text-xs transition-all duration-200"
                   >
@@ -865,8 +861,8 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                           <Badge className={cn(
                             "text-[10px] font-black border-0 uppercase tracking-wider",
                             task.priority === 'High' ? "bg-rose-100 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400" :
-                            task.priority === 'Normal' ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400" :
-                            "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                              task.priority === 'Normal' ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400" :
+                                "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                           )}>
                             {task.priority}
                           </Badge>
@@ -896,7 +892,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
           </DialogHeader>
           <div className="py-2">
             <p className="text-sm text-slate-500 mb-4">You currently have <strong>{activeTasksCount}</strong> active tasks.</p>
-            <ScrollArea className="h-[300px] pr-4">
+            <ScrollArea className="h-75 pr-4">
               <div className="space-y-3">
                 {tasks.filter(t => t.status !== 'Done').map(task => (
                   <div key={task.id} className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg flex justify-between items-center border border-slate-100 dark:border-slate-800">
@@ -916,7 +912,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
         </DialogContent>
       </Dialog>
 
-      <TotalHoursModal 
+      <TotalHoursModal
         isOpen={isHoursModalOpen}
         onOpenChange={setIsHoursModalOpen}
         logs={allLogs}
@@ -949,12 +945,12 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             <div className={cn("h-20 w-20 rounded-full flex items-center justify-center mb-4", todaysStandup ? "bg-emerald-50 dark:bg-emerald-500/10" : "bg-rose-50 dark:bg-rose-500/10")}>
               {todaysStandup ? <CheckCircle2 className="h-10 w-10 text-emerald-500" /> : <AlertCircle className="h-10 w-10 text-rose-500" />}
             </div>
-            
+
             {todaysStandup ? (
               <>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">Standup Submitted</h3>
                 <p className="text-sm text-slate-500 mt-2">Logged today at {todaysStandup.time}</p>
-                
+
                 <div className="mt-6 w-full text-left bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-3">
                   <div>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Yesterday</p>
@@ -990,7 +986,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
 
       {/* Deadline Extension Dialog */}
       <Dialog open={isExtensionModalOpen} onOpenChange={setIsExtensionModalOpen}>
-        <DialogContent className="sm:max-w-[450px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-112.5 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-0 overflow-hidden">
           <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
             <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">Request Deadline Extension</DialogTitle>
           </DialogHeader>
@@ -1018,12 +1014,12 @@ export default function InternDashboard({ session }: InternDashboardProps) {
                 </div>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Days Extension Required</label>
-              <input 
-                type="number" 
-                min="1" 
+              <input
+                type="number"
+                min="1"
                 max="30"
                 value={extensionDays}
                 onChange={(e) => setExtensionDays(Math.max(1, Number(e.target.value)))}
@@ -1033,7 +1029,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
 
             <div className="space-y-2">
               <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Reason for Extension</label>
-              <textarea 
+              <textarea
                 value={extensionReason}
                 onChange={(e) => setExtensionReason(e.target.value)}
                 placeholder="Please state why you need this extension..."
@@ -1042,20 +1038,20 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             </div>
 
             <div className="pt-2 flex justify-between gap-3">
-              <Button 
+              <Button
                 onClick={() => {
                   setIsExtensionModalOpen(false);
                   setSelectedTaskId('');
                   setExtensionDays(1);
                   setExtensionReason('');
-                }} 
-                variant="outline" 
+                }}
+                variant="outline"
                 className="flex-1 h-11 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold"
               >
                 Cancel
               </Button>
-              <Button 
-                onClick={handleExtensionSubmit} 
+              <Button
+                onClick={handleExtensionSubmit}
                 disabled={upcomingDeadlines.length === 0}
                 className="flex-1 h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold shadow-sm"
               >

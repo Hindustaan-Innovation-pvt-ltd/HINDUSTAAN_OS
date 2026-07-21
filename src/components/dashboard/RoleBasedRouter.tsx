@@ -2,14 +2,13 @@ import React from 'react';
 import ManagerDashboard from './ManagerDashboard';
 import InternDashboard from './InternDashboard';
 import AdminDashboard from '../../pages/AdminDashboard';
+import { useUser } from '@/context/UserContext';
 
-interface RoleBasedRouterProps {
-  session: any;
-  onNavigate?: (view: string) => void;
-}
+interface RoleBasedRouterProps {}
 
-export default function RoleBasedRouter({ session, onNavigate }: RoleBasedRouterProps) {
-  const role = session?.user?.user_metadata?.role || 'manager';
+export default function RoleBasedRouter({}: RoleBasedRouterProps) {
+  const { user } = useUser();
+  const role = user?.role || 'manager';
 
   if (role === 'admin') {
     return <AdminDashboard />;
@@ -19,6 +18,6 @@ export default function RoleBasedRouter({ session, onNavigate }: RoleBasedRouter
     return <ManagerDashboard />;
   }
 
-  return <InternDashboard session={session} />;
+  return <InternDashboard />;
 }
 // Force re-eval

@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { getCurrentUser, fetchProfileFromBackend } from '@/lib/auth';
 import { getProfileData, type ProfileData } from '@/lib/profile';
-import { 
-  User, Mail, Phone, Shield, Briefcase, Calendar, MapPin, 
+import {
+  User, Mail, Phone, Shield, Briefcase, Calendar, MapPin,
   Globe, Building, Clock, Edit, CheckCircle2,
   AlertCircle, ShieldCheck
 } from 'lucide-react';
 
-export default function EmployeeProfileView({ session, onNavigate }: { session?: any, onNavigate: (view: string) => void }) {
+export default function EmployeeProfileView() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const user = getCurrentUser();
@@ -32,14 +34,14 @@ export default function EmployeeProfileView({ session, onNavigate }: { session?:
 
   if (!profile) {
     return (
-      <div className="flex h-[400px] items-center justify-center text-slate-400 dark:text-slate-500">
+      <div className="flex h-100 items-center justify-center text-slate-400 dark:text-slate-500">
         <p>Loading Profile...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1400px] mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-350 mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -55,19 +57,19 @@ export default function EmployeeProfileView({ session, onNavigate }: { session?:
 
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
+
         {/* Left Column (Main Card, Skills, Social Links) */}
         <div className="lg:col-span-4 space-y-6">
           {/* Hero Profile Card */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
             {/* Background Accent Gradient */}
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-500 to-green-600"></div>
-            
+            <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-orange-500 to-green-600"></div>
+
             <CardContent className="p-6 pt-8 flex flex-col items-center text-center relative">
-              
+
               {/* Edit Profile Button (Top Right) */}
               <button
-                onClick={() => onNavigate('Edit Profile')}
+                onClick={() => navigate('/profile/edit')}
                 className="absolute top-4 right-4 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-slate-600 dark:text-slate-300 transition-all shadow-sm flex items-center justify-center"
                 title="Edit Profile"
               >
@@ -149,7 +151,7 @@ export default function EmployeeProfileView({ session, onNavigate }: { session?:
 
         {/* Right Column (Personal, Professional, Account Details) */}
         <div className="lg:col-span-8 space-y-6">
-          
+
           {/* Personal Information */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
             <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800/60">
@@ -197,7 +199,7 @@ export default function EmployeeProfileView({ session, onNavigate }: { session?:
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {session?.user?.user_metadata?.role !== 'manager' && (
+                {profile.role !== 'manager' && (
                   <div className="space-y-1">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Reporting Manager</span>
                     <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.manager}</p>
@@ -207,7 +209,7 @@ export default function EmployeeProfileView({ session, onNavigate }: { session?:
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Employment Type</span>
                   <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.employmentType}</p>
                 </div>
-                {session?.user?.user_metadata?.role !== 'manager' && (
+                {profile.role !== 'manager' && (
                   <div className="space-y-1">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Team</span>
                     <p className="text-base font-bold text-slate-800 dark:text-slate-200">{profile.team}</p>

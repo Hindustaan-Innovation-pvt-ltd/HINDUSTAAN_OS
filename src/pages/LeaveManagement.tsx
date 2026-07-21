@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useUser } from '@/context/UserContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  CalendarDays, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  CalendarDays,
+  Clock,
+  CheckCircle2,
+  XCircle,
   AlertCircle,
   FileText,
   UploadCloud,
@@ -59,7 +60,7 @@ const parseLocalDate = (dateStr: string) => {
 const mapBackendLeave = (l: any) => {
   const start = l.startDate ? l.startDate.split('T')[0] : '';
   const end = l.endDate ? l.endDate.split('T')[0] : '';
-  
+
   const diffTime = l.startDate && l.endDate ? Math.abs(new Date(l.endDate).getTime() - new Date(l.startDate).getTime()) : 0;
   const diffDays = l.startDate && l.endDate ? Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1 : 1;
 
@@ -79,8 +80,9 @@ const mapBackendLeave = (l: any) => {
   };
 };
 
-export default function LeaveManagement({ session }: { session: any }) {
-  const role = session?.user?.user_metadata?.role || 'manager';
+export default function LeaveManagement() {
+  const { user } = useUser();
+  const role = user?.role || 'manager';
   const isManager = role === 'manager' || role === 'admin';
 
   const [activeTab, setActiveTab] = useState(isManager ? 'requests' : 'apply');
@@ -171,7 +173,7 @@ export default function LeaveManagement({ session }: { session: any }) {
 
   // Calendar State
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  
+
   // Comment Modal State
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
@@ -272,7 +274,7 @@ export default function LeaveManagement({ session }: { session: any }) {
     setCommentModalOpen(false);
     setHighlightedRequestId(null);
     toast.success('Comment saved.');
-    
+
     // Add comment notification for the employee
     const req = leaveData.find((l: any) => l.id === activeRequestId);
     if (req) {
@@ -293,7 +295,7 @@ export default function LeaveManagement({ session }: { session: any }) {
       const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
       let empNotifications = [];
       if (savedEmpNotifications) {
-        try { empNotifications = JSON.parse(savedEmpNotifications); } catch (e) {}
+        try { empNotifications = JSON.parse(savedEmpNotifications); } catch (e) { }
       }
       localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
       window.dispatchEvent(new Event('employee-notifications-updated'));
@@ -306,19 +308,19 @@ export default function LeaveManagement({ session }: { session: any }) {
     if (l.status === 'Rejected') return false;
     const start = parseLocalDate(l.start);
     const end = parseLocalDate(l.end);
-    end.setHours(23,59,59,999);
+    end.setHours(23, 59, 59, 999);
     return selectedDate >= start && selectedDate <= end;
   }) : [];
 
   // Statistics
   const pendingRequestsCount = leaveData.filter((l: any) => l.status === 'Pending').length;
   const approvedThisMonthCount = leaveData.filter((l: any) => l.status === 'Approved' && new Date(l.appliedOn).getMonth() === new Date().getMonth()).length;
-  
+
   const todayLeavesCount = leaveData.filter((l: any) => {
     if (l.status !== 'Approved') return false;
     const start = parseLocalDate(l.start);
     const end = parseLocalDate(l.end);
-    end.setHours(23,59,59,999);
+    end.setHours(23, 59, 59, 999);
     const now = new Date();
     return now >= start && now <= end;
   }).length;
@@ -328,7 +330,7 @@ export default function LeaveManagement({ session }: { session: any }) {
   return (
     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 pb-20 w-full p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-black bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-black bg-linear-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
           Leave Management
         </h1>
         <p className="text-slate-500 dark:text-slate-400 font-medium">
@@ -338,7 +340,7 @@ export default function LeaveManagement({ session }: { session: any }) {
 
       {isManager && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="rounded-2xl border-white/40 dark:border-slate-800/60 bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/10 backdrop-blur-xl shadow-sm border">
+          <Card className="rounded-2xl border-white/40 dark:border-slate-800/60 bg-linear-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/10 backdrop-blur-xl shadow-sm border">
             <CardContent className="p-4 flex items-center gap-4">
               <div className="p-3 rounded-xl bg-amber-500/20 shrink-0">
                 <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
@@ -349,7 +351,7 @@ export default function LeaveManagement({ session }: { session: any }) {
               </div>
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border-white/40 dark:border-slate-800/60 bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/10 backdrop-blur-xl shadow-sm border">
+          <Card className="rounded-2xl border-white/40 dark:border-slate-800/60 bg-linear-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/10 backdrop-blur-xl shadow-sm border">
             <CardContent className="p-4 flex items-center gap-4">
               <div className="p-3 rounded-xl bg-emerald-500/20 shrink-0">
                 <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -360,7 +362,7 @@ export default function LeaveManagement({ session }: { session: any }) {
               </div>
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border-white/40 dark:border-slate-800/60 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/10 backdrop-blur-xl shadow-sm border">
+          <Card className="rounded-2xl border-white/40 dark:border-slate-800/60 bg-linear-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/10 backdrop-blur-xl shadow-sm border">
             <CardContent className="p-4 flex items-center gap-4">
               <div className="p-3 rounded-xl bg-purple-500/20 shrink-0">
                 <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -371,7 +373,7 @@ export default function LeaveManagement({ session }: { session: any }) {
               </div>
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border-white/40 dark:border-slate-800/60 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/10 backdrop-blur-xl shadow-sm border">
+          <Card className="rounded-2xl border-white/40 dark:border-slate-800/60 bg-linear-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/10 backdrop-blur-xl shadow-sm border">
             <CardContent className="p-4 flex items-center gap-4">
               <div className="p-3 rounded-xl bg-blue-500/20 shrink-0">
                 <CalendarDays className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -453,7 +455,7 @@ export default function LeaveManagement({ session }: { session: any }) {
           {/* Employee: Leave Balance */}
           <TabsContent value="balance">
             <div className="space-y-8 animate-in fade-in duration-300">
-              
+
               {/* Stat Summary Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 <Card className="rounded-3xl border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-950/40 backdrop-blur-2xl shadow-xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-all duration-300">
@@ -511,13 +513,13 @@ export default function LeaveManagement({ session }: { session: any }) {
 
               {/* Detailed Breakdown Section */}
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                
+
                 {/* Leave Types Progress Bars */}
                 <div className="xl:col-span-2 space-y-6">
                   <Card className="rounded-3xl border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-950/40 backdrop-blur-2xl shadow-xl p-6 sm:p-8">
                     <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6">Leave Categories</h3>
                     <div className="space-y-6">
-                      
+
                       {/* Casual Leave */}
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
@@ -528,7 +530,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                           <span className="font-extrabold text-slate-500 dark:text-slate-400">{balances.casual.used.toFixed(1)} / {balances.casual.total.toFixed(1)} Days Used</span>
                         </div>
                         <div className="h-3 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-800/50">
-                          <div className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full" style={{ width: `${(balances.casual.used / balances.casual.total) * 100}%` }} />
+                          <div className="h-full bg-linear-to-r from-orange-500 to-amber-500 rounded-full" style={{ width: `${(balances.casual.used / balances.casual.total) * 100}%` }} />
                         </div>
                         <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Mainly for short-duration personal purposes. Accrues 1.0 day/month.</p>
                       </div>
@@ -543,7 +545,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                           <span className="font-extrabold text-slate-500 dark:text-slate-400">{balances.sick.used.toFixed(1)} / {balances.sick.total.toFixed(1)} Days Used</span>
                         </div>
                         <div className="h-3 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-800/50">
-                          <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style={{ width: `${(balances.sick.used / balances.sick.total) * 100}%` }} />
+                          <div className="h-full bg-linear-to-r from-emerald-500 to-teal-500 rounded-full" style={{ width: `${(balances.sick.used / balances.sick.total) * 100}%` }} />
                         </div>
                         <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">To be availed on medical grounds only. Doctor certificate required for &gt; 2 days.</p>
                       </div>
@@ -558,7 +560,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                           <span className="font-extrabold text-slate-500 dark:text-slate-400">0.0 / 6.0 Days Used</span>
                         </div>
                         <div className="h-3 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-800/50">
-                          <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style={{ width: '0%' }} />
+                          <div className="h-full bg-linear-to-r from-blue-500 to-indigo-500 rounded-full" style={{ width: '0%' }} />
                         </div>
                         <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Accumulated leaves carried forward or encashable at year end.</p>
                       </div>
@@ -573,7 +575,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                           <span className="font-extrabold text-slate-500 dark:text-slate-400">0.0 Days Used</span>
                         </div>
                         <div className="h-3 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-800/50">
-                          <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" style={{ width: '0%' }} />
+                          <div className="h-full bg-linear-to-r from-purple-500 to-pink-500 rounded-full" style={{ width: '0%' }} />
                         </div>
                         <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Granted in bereavement or critical circumstances. HR approval required.</p>
                       </div>
@@ -584,12 +586,12 @@ export default function LeaveManagement({ session }: { session: any }) {
 
                 {/* Policy and Ledger Panel */}
                 <div className="space-y-6">
-                  
+
                   {/* Leave Log / Ledger */}
                   <Card className="rounded-3xl border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-950/40 backdrop-blur-2xl shadow-xl p-6">
                     <h4 className="font-black text-slate-900 dark:text-white text-md mb-4">Activity Log</h4>
                     <div className="space-y-4">
-                      
+
                       <div className="flex items-start gap-3 border-l-2 border-orange-500 pl-3 py-1">
                         <div className="flex-1">
                           <span className="block text-xs font-bold text-slate-700 dark:text-slate-300">Casual Leave Applied</span>
@@ -626,7 +628,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                   </Card>
 
                   {/* Policy Info Card */}
-                  <Card className="rounded-3xl border-slate-200/60 dark:border-slate-800/60 bg-gradient-to-br from-blue-50/50 to-indigo-50/30 dark:from-blue-950/20 dark:to-slate-900/10 border p-6">
+                  <Card className="rounded-3xl border-slate-200/60 dark:border-slate-800/60 bg-linear-to-br from-blue-50/50 to-indigo-50/30 dark:from-blue-950/20 dark:to-slate-900/10 border p-6">
                     <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-3">
                       <Info className="w-5 h-5" />
                       <h4 className="font-bold text-sm">Leave Policy Guidelines</h4>
@@ -660,7 +662,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                   </motion.div>
                 ) : (
                   leaveData.filter((l: any) => l.status === 'Pending').map((req: any) => (
-                    <motion.div 
+                    <motion.div
                       key={req.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -675,7 +677,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                       }}
                     >
                       <div className="flex flex-col lg:flex-row lg:items-stretch">
-                        
+
                         {/* Employee Info Section */}
                         <div className="p-6 lg:p-8 flex-1 flex flex-col md:flex-row gap-6 border-b lg:border-b-0 lg:border-r border-slate-100 dark:border-slate-800">
                           <Avatar className="h-16 w-16 border-4 border-white dark:border-slate-900 shadow-md">
@@ -694,7 +696,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                               </div>
                               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Applied on {req.appliedOn}</p>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-4 flex flex-col gap-1 border border-slate-100 dark:border-slate-800 shadow-sm">
                                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Leave Details</span>
@@ -707,7 +709,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                                 </div>
                                 <span className="text-sm font-medium text-slate-600 dark:text-slate-400 mt-1">{req.start} <span className="text-slate-400 mx-1">→</span> {req.end}</span>
                               </div>
-                              
+
                               <div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-2xl p-4 flex flex-col gap-1 border border-amber-100/50 dark:border-amber-900/30 shadow-sm">
                                 <span className="text-[10px] font-black uppercase tracking-wider text-amber-600/70 dark:text-amber-500/70">Reason</span>
                                 <p className="text-sm font-medium text-amber-900 dark:text-amber-200 mt-1 leading-snug italic">
@@ -717,11 +719,11 @@ export default function LeaveManagement({ session }: { session: any }) {
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Actions Section */}
-                        <div className="p-6 lg:p-8 flex flex-col gap-3 justify-center w-full lg:w-[280px] bg-slate-50/50 dark:bg-slate-900/30">
-                          <Button 
-                            className="w-full rounded-xl h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20" 
+                        <div className="p-6 lg:p-8 flex flex-col gap-3 justify-center w-full lg:w-70 bg-slate-50/50 dark:bg-slate-900/30">
+                          <Button
+                            className="w-full rounded-xl h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleApprove(req.id);
@@ -730,9 +732,9 @@ export default function LeaveManagement({ session }: { session: any }) {
                           >
                             {approvingId === req.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="h-5 w-5 mr-2" /> Approve Leave</>}
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            className="w-full rounded-xl h-12 font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 dark:border-rose-900/50 dark:hover:bg-rose-900/20 shadow-sm" 
+                          <Button
+                            variant="outline"
+                            className="w-full rounded-xl h-12 font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 dark:border-rose-900/50 dark:hover:bg-rose-900/20 shadow-sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleReject(req.id);
@@ -749,9 +751,9 @@ export default function LeaveManagement({ session }: { session: any }) {
                               <span className="bg-slate-50 dark:bg-[#0B1120] px-2 text-slate-500 font-bold">Or</span>
                             </div>
                           </div>
-                          <Button 
-                            variant="ghost" 
-                            className="w-full rounded-xl h-11 font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 mt-2" 
+                          <Button
+                            variant="ghost"
+                            className="w-full rounded-xl h-11 font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 mt-2"
                             onClick={(e) => {
                               e.stopPropagation();
                               openCommentModal(req.id);
@@ -774,7 +776,7 @@ export default function LeaveManagement({ session }: { session: any }) {
           <TabsContent value="calendar">
             <Card className="border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-950/40 backdrop-blur-2xl shadow-xl rounded-3xl p-4 md:p-8 overflow-hidden">
               <div className="flex flex-col xl:flex-row gap-8 lg:gap-12">
-                
+
                 {/* Calendar Section */}
                 <div className="w-full xl:w-2/3 shrink-0">
                   <LeaveCalendar
@@ -783,19 +785,19 @@ export default function LeaveManagement({ session }: { session: any }) {
                     onSelectDate={setSelectedDate}
                   />
                 </div>
-                
+
                 {/* Day Details Section */}
                 <div className="w-full xl:w-1/3 flex flex-col pt-2 sm:pt-14">
                   <div className="bg-slate-50 dark:bg-slate-900/80 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex-1">
                     <h3 className="text-2xl font-black mb-1 text-slate-900 dark:text-white">
                       {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : 'Select a date'}
                     </h3>
-                    
+
                     <div className="mt-8">
                       <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 border-b border-slate-200 dark:border-slate-800 pb-2">
                         Employees on Leave
                       </p>
-                      
+
                       <div className="space-y-4">
                         {selectedDateLeaves.length > 0 ? (
                           selectedDateLeaves.map((leave: any, i: number) => (
@@ -840,7 +842,7 @@ export default function LeaveManagement({ session }: { session: any }) {
 
       {/* Comment Modal */}
       <Dialog open={commentModalOpen} onOpenChange={setCommentModalOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-3xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl">
+        <DialogContent className="sm:max-w-106.25 rounded-3xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center">
               <MessageSquare className="h-5 w-5 mr-2 text-blue-500" />
@@ -851,11 +853,11 @@ export default function LeaveManagement({ session }: { session: any }) {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Textarea 
+            <Textarea
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder="Type your comment here..."
-              className="min-h-[120px] rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 resize-none font-medium text-sm focus:ring-2 focus:ring-blue-500/50 shadow-inner text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              className="min-h-30 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 resize-none font-medium text-sm focus:ring-2 focus:ring-blue-500/50 shadow-inner text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
           </div>
           <DialogFooter>

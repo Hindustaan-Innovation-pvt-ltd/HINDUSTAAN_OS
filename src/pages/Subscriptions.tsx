@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 
-export default function Subscriptions({ session, onBack }: { session: any, onBack?: () => void }) {
+export default function Subscriptions() {
   const [currentPlan, setCurrentPlan] = useState<'Standard' | 'Pro Enterprise' | 'Ultimate'>('Pro Enterprise');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('annually');
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
@@ -133,16 +133,6 @@ export default function Subscriptions({ session, onBack }: { session: any, onBac
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              {onBack && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={onBack}
-                  className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 mr-1"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              )}
               <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Subscription Management</h1>
             </div>
             <p className="text-slate-500 dark:text-slate-400 mt-1">Review billing settings, active licenses, and resource utilization.</p>
@@ -202,7 +192,7 @@ export default function Subscriptions({ session, onBack }: { session: any, onBac
               </div>
               <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full mt-3 overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-[#5B7CFF] to-[#A855F7] transition-all duration-500" 
+                  className="h-full bg-linear-to-r from-[#5B7CFF] to-[#A855F7] transition-all duration-500" 
                   style={{ width: `${(storageUsed / maxStorage) * 100}%` }}
                 />
               </div>

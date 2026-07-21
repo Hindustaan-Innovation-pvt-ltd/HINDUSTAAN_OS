@@ -31,12 +31,7 @@ import { format, subDays, startOfMonth, parseISO, isSameDay, startOfWeek, addDay
 import api from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
 
-const ONLINE_TEAM_MEMBERS = [
-  { id: 'u-1', name: 'Amanda Smith', initials: 'AS', role: 'Frontend Lead', task: 'Component Refactoring', project: 'Frontend Core', color: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' },
-  { id: 'u-2', name: 'Rahul Sharma', initials: 'RS', role: 'Backend Developer', task: 'Database Optimization', project: 'Backend Core', color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' },
-  { id: 'u-3', name: 'Priya Patel', initials: 'PP', role: 'Technical Writer', task: 'API Documentation V2', project: 'Documentation', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' },
-  { id: 'u-4', name: 'Tanvy Pandey', initials: 'TP', role: 'Intern Developer', task: 'Kanban Board & Work Logs', project: 'Frontend Core', color: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400' },
-];
+// Removed ONLINE_TEAM_MEMBERS in favor of dynamically loaded teamMembers
 
 const getProjectColor = (project: string) => {
   const p = project.toLowerCase();
@@ -71,7 +66,7 @@ function ActiveSessionWidget({ secondsElapsed, formatTime, currentUser }: Active
 
   return (
     <div className="mb-8 rounded-2xl overflow-hidden shadow-xl shadow-indigo-500/10 border border-indigo-200/40 dark:border-indigo-500/20 w-full">
-      <div className="bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-600 p-4 sm:p-6 text-white relative overflow-hidden">
+      <div className="bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 p-4 sm:p-6 text-white relative overflow-hidden">
         <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -left-8 -bottom-8 w-36 h-36 bg-purple-300/20 rounded-full blur-2xl pointer-events-none" />
 
@@ -209,37 +204,36 @@ export default function WorkLogs({ session }: { session?: any }) {
 
   const [activeSessions, setActiveSessions] = useState<{ [key: string]: { time: number; isOnline: boolean } }>({});
 
-  // Simulated base offsets so all team members appear online (in seconds)
-  const SIMULATED_OFFSETS: Record<string, number> = {
-    'u-1': 2 * 3600 + 15 * 60 + 30, // Amanda Smith – 2h 15m 30s
-    'u-2': 3600 + 48 * 60 + 12,      // Rahul Sharma  – 1h 48m 12s
-    'u-3': 45 * 60 + 5,              // Priya Patel   – 45m 5s
-    'u-4': 3 * 3600 + 10 * 60 + 40, // Tanvy Pandey  – 3h 10m 40s
-  };
-
   useEffect(() => {
     const updateSessions = () => {
       const sessions: { [key: string]: { time: number; isOnline: boolean } } = {};
-      ONLINE_TEAM_MEMBERS.forEach(member => {
+      teamMembers.forEach(member => {
         const isCurrentUserEmployee = member.id === currentUser.id && currentUser.role === 'employee';
         const loginTimeStr = localStorage.getItem(`login_time_${member.id}`);
-        if (isCurrentUserEmployee) {
-          sessions[member.id] = { time: secondsElapsed, isOnline: true };
-        } else if (loginTimeStr) {
-          const startTime = parseInt(loginTimeStr, 10);
-          sessions[member.id] = { time: Math.floor((Date.now() - startTime) / 1000), isOnline: true };
-        } else {
-          // Simulate an incrementing online session for all team members
-          const base = SIMULATED_OFFSETS[member.id] || 1800;
-          sessions[member.id] = { time: base + Math.floor(Date.now() / 1000) % 3600, isOnline: true };
+        
+        let seconds = member.todayActiveSeconds || 0;
+        let isOnline = false;
+        
+        if (member.currentSessionStart) {
+          isOnline = true;
+          const start = new Date(member.currentSessionStart).getTime();
+          seconds += Math.floor((Date.now() - start) / 1000);
         }
+        
+        if (isCurrentUserEmployee && loginTimeStr) {
+           isOnline = true;
+           const startTime = parseInt(loginTimeStr, 10);
+           seconds = Math.floor((Date.now() - startTime) / 1000);
+        }
+        
+        sessions[member.id] = { time: seconds, isOnline };
       });
       setActiveSessions(sessions);
     };
     updateSessions();
     const interval = setInterval(updateSessions, 1000);
     return () => clearInterval(interval);
-  }, [currentUser.id, secondsElapsed, currentUser.role]);
+  }, [currentUser.id, secondsElapsed, currentUser.role, teamMembers]);
 
   const formatTime = (totalSeconds: number) => {
     const h = Math.floor(totalSeconds / 3600);
@@ -386,7 +380,7 @@ export default function WorkLogs({ session }: { session?: any }) {
           <PopoverTrigger asChild>
             <Button variant="outline" className={cn(
               "rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0F172A] dark:text-white justify-start hover:bg-[#F1F5F9] dark:hover:bg-slate-800 transition-colors shadow-sm",
-              isEmployee ? "w-[140px] h-8" : "w-[160px] h-9"
+              isEmployee ? "w-35 h-8" : "w-40 h-9"
             )}>
               <CalendarIcon className="mr-2 h-4 w-4 text-[#6366F1]" />
               {dateFilter ? format(dateFilter, "do MMMM") : <span>All Dates</span>}
@@ -404,7 +398,7 @@ export default function WorkLogs({ session }: { session?: any }) {
 
         {currentUser.role === 'manager' && (
           <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-            <SelectTrigger className="w-[160px] h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
+            <SelectTrigger className="w-40 h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
               <SelectValue placeholder="Employee" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
@@ -417,7 +411,7 @@ export default function WorkLogs({ session }: { session?: any }) {
         <Select value={projectFilter} onValueChange={setProjectFilter}>
           <SelectTrigger className={cn(
             "rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]",
-            isEmployee ? "w-[140px] h-8" : "w-[160px] h-9"
+            isEmployee ? "w-35 h-8" : "w-40 h-9"
           )}>
             <SelectValue placeholder="Project" />
           </SelectTrigger>
@@ -430,7 +424,7 @@ export default function WorkLogs({ session }: { session?: any }) {
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className={cn(
             "rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]",
-            isEmployee ? "w-[120px] h-8" : "w-[140px] h-9"
+            isEmployee ? "w-30 h-8" : "w-35 h-9"
           )}>
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -519,14 +513,14 @@ export default function WorkLogs({ session }: { session?: any }) {
           <p className="text-4xl font-black text-[#0F172A] dark:text-white">
             {currentUser.role === 'manager' 
               ? activeStaff 
-              : (Object.values(activeSessions).filter((s: any) => s.isOnline).length || ONLINE_TEAM_MEMBERS.length)
+              : Object.values(activeSessions).filter((s: any) => s.isOnline).length
             }
           </p>
         </div>
       </div>
 
       {/* Heatmap Section */}
-      <div className="relative bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-200/60 dark:border-slate-700/40 shadow-sm overflow-hidden mb-6 group">
+      <div className="relative bg-white dark:bg-slate-900 rounded-4xl p-8 border border-slate-200/60 dark:border-slate-700/40 shadow-sm overflow-hidden mb-6 group">
         {/* Glassy Orbs in Background */}
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 dark:bg-indigo-500/20 blur-[80px] rounded-full pointer-events-none transition-transform duration-1000 group-hover:scale-150" />
         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-emerald-500/10 dark:bg-emerald-500/20 blur-[80px] rounded-full pointer-events-none transition-transform duration-1000 group-hover:scale-150" />
@@ -570,7 +564,7 @@ export default function WorkLogs({ session }: { session?: any }) {
         </div>
 
         <div className="overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 hide-scrollbar">
-          <div className="min-w-[700px]">
+          <div className="min-w-175">
             {/* Days Header */}
             <div className="flex mb-4 relative z-10">
               <div className="w-56 shrink-0"></div>
@@ -600,10 +594,10 @@ export default function WorkLogs({ session }: { session?: any }) {
             </div>
             
             {/* Users Rows */}
-            <div className="space-y-3 relative z-10 max-h-[220px] overflow-y-auto pr-2 hide-scrollbar">
+            <div className="space-y-3 relative z-10 max-h-55 overflow-y-auto pr-2 hide-scrollbar">
               {heatmapData.users.map((user, rowIdx) => {
                 const totalWeekHours = weekDays.reduce((sum, day) => sum + (heatmapData.data[user][format(day, 'yyyy-MM-dd')] || 0), 0);
-                const memberData = ONLINE_TEAM_MEMBERS.find(m => m.name === user);
+                const memberData = teamMembers.find(m => m.name === user);
                 
                 return (
                   <div 
@@ -705,7 +699,7 @@ export default function WorkLogs({ session }: { session?: any }) {
                 {/* Left side: Avatar + Info */}
                 <div className="flex items-start md:items-center gap-4 flex-1">
                   <Avatar className="h-12 w-12 border-2 border-white dark:border-slate-900 shadow-sm shrink-0">
-                    <AvatarFallback className="bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] text-white font-bold text-sm">
+                    <AvatarFallback className="bg-linear-to-br from-[#6366F1] to-[#8B5CF6] text-white font-bold text-sm">
                       {log.initials}
                     </AvatarFallback>
                   </Avatar>
@@ -720,14 +714,14 @@ export default function WorkLogs({ session }: { session?: any }) {
                         {log.project}
                       </Badge>
                     </div>
-                    <p className="text-sm font-medium text-[#64748B] dark:text-slate-300 break-words line-clamp-2 sm:line-clamp-none">
+                    <p className="text-sm font-medium text-[#64748B] dark:text-slate-300 wrap-break-word line-clamp-2 sm:line-clamp-none">
                       {log.task}
                     </p>
                   </div>
                 </div>
 
                 {/* Right side: Badges and Actions */}
-                <div className="flex items-center justify-between md:justify-end gap-4 shrink-0 pl-[64px] md:pl-0 border-t border-[#E2E8F0] dark:border-slate-800 md:border-0 pt-3 md:pt-0">
+                <div className="flex items-center justify-between md:justify-end gap-4 shrink-0 pl-16 md:pl-0 border-t border-[#E2E8F0] dark:border-slate-800 md:border-0 pt-3 md:pt-0">
                   <Badge variant="outline" className={cn("text-xs font-black tracking-wider px-2.5 py-1", getHoursColor(log.hours))}>
                     <Clock className="h-3 w-3 mr-1.5" /> {log.hours.toFixed(1)}h
                   </Badge>
@@ -794,18 +788,19 @@ export default function WorkLogs({ session }: { session?: any }) {
               </button>
             </div>
             
-            <div className="p-6 max-h-[300px] overflow-y-auto space-y-4">
-              {ONLINE_TEAM_MEMBERS.map((member) => {
+            <div className="p-6 max-h-75 overflow-y-auto space-y-4">
+              {teamMembers.map((member) => {
                 const isOnline = activeSessions[member.id]?.isOnline;
+                const initials = (member.name || 'U').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
                 return (
                 <div key={member.id} className={cn("flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-800 transition-all", !isOnline && "opacity-75 grayscale")}>
                   <div className="flex items-center gap-3">
-                    <Avatar className={cn("h-9 w-9 border-2 border-white dark:border-slate-900", member.color)}>
-                      <AvatarFallback className="font-bold text-xs">{member.initials}</AvatarFallback>
+                    <Avatar className={cn("h-9 w-9 border-2 border-white dark:border-slate-900 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300")}>
+                      <AvatarFallback className="font-bold text-xs">{initials}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
-                      <span className="text-xs text-slate-500 font-medium">{member.role}</span>
+                      <span className="text-xs text-slate-500 font-medium capitalize">{member.designation || member.role}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">

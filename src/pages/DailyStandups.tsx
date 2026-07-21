@@ -16,7 +16,7 @@ import api from '@/lib/api';
 
 const WhatsappIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.086 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.086 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
   </svg>
 );
 
@@ -130,7 +130,7 @@ export default function DailyStandups({ session }: { session?: any }) {
   const currentUser = getCurrentUser();
   const role = session?.user?.user_metadata?.role || currentUser?.role || 'employee';
   const email = session?.user?.email || currentUser?.email || 'user@hindustaan.in';
-  
+
   const currentUserName = session?.user?.user_metadata?.name || currentUser?.name || 'Employee';
   const firstName = (currentUserName || '').split(' ')[0].toLowerCase();
 
@@ -256,10 +256,10 @@ export default function DailyStandups({ session }: { session?: any }) {
   const [formData, setFormData] = useState({ yesterday: '', today: '', blockers: '', notes: '' });
   const [sentReminders, setSentReminders] = useState<Set<string>>(new Set());
   const [viewingStandup, setViewingStandup] = useState<any | null>(null);
-  
+
   const [replyStandupId, setReplyStandupId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
-  const [editingReply, setEditingReply] = useState<{standupId: string, replyId: string, text: string} | null>(null);
+  const [editingReply, setEditingReply] = useState<{ standupId: string, replyId: string, text: string } | null>(null);
 
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
   const [isSchedulingMeeting, setIsSchedulingMeeting] = useState(false);
@@ -267,7 +267,7 @@ export default function DailyStandups({ session }: { session?: any }) {
   const [meetingLink, setMeetingLink] = useState('https://meet.google.com/new');
   const [meetingMessage, setMeetingMessage] = useState('Hi team, please join the daily standup meeting now!');
   const [selectedMeetingParticipants, setSelectedMeetingParticipants] = useState<string[]>([]);
-  
+
   const EMPLOYEES = [
     { id: 'u2', name: 'Rahul Sharma', role: 'Backend Developer' },
     { id: 'u3', name: 'Priya Patel', role: 'Technical Writer' },
@@ -277,7 +277,7 @@ export default function DailyStandups({ session }: { session?: any }) {
     { id: 'u1', name: 'Amanda Smith', role: 'Frontend Lead' },
     { id: 'u5', name: 'Rohan Gupta', role: 'Project Manager' },
   ];
-  
+
   const [empExpanded, setEmpExpanded] = useState(false);
   const [mgrExpanded, setMgrExpanded] = useState(false);
 
@@ -352,7 +352,7 @@ export default function DailyStandups({ session }: { session?: any }) {
 
   const handleSendReply = () => {
     if (!replyText.trim() || !replyStandupId) return;
-    
+
     const newReply = {
       id: `r-${Date.now()}`,
       user: currentUserName,
@@ -362,7 +362,7 @@ export default function DailyStandups({ session }: { session?: any }) {
 
     setStandups(prev => prev.map(s => s.id === replyStandupId ? { ...s, replies: [...(s.replies || []), newReply] } : s));
     setHistory(prev => prev.map(s => s.id === replyStandupId ? { ...s, replies: [...(s.replies || []), newReply] } : s));
-    
+
     addNotification({
       type: 'message',
       category: 'Team',
@@ -384,7 +384,7 @@ export default function DailyStandups({ session }: { session?: any }) {
         category: 'Standups',
         icon: '💬',
         title: 'Manager Replied to Your Standup',
-        message: `${currentUserName} replied: "${replyText.trim().slice(0, 80)}${replyText.trim().length > 80 ? '...' : ''}"`  ,
+        message: `${currentUserName} replied: "${replyText.trim().slice(0, 80)}${replyText.trim().length > 80 ? '...' : ''}"`,
         time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
         unread: true,
         group: 'Today',
@@ -401,12 +401,12 @@ export default function DailyStandups({ session }: { session?: any }) {
 
   const handleEditReplySubmit = () => {
     if (!editingReply || !editingReply.text.trim()) return;
-    
+
     const updateReplies = (prev: any[]) => prev.map(s => {
       if (s.id === editingReply.standupId && s.replies) {
         return {
           ...s,
-          replies: s.replies.map((r: any) => 
+          replies: s.replies.map((r: any) =>
             r.id === editingReply.replyId ? { ...r, text: editingReply.text.trim() } : r
           )
         };
@@ -618,7 +618,7 @@ export default function DailyStandups({ session }: { session?: any }) {
   const approvedExtensions: any[] = (savedApprovedExtensions && savedApprovedExtensions !== 'null')
     ? (() => { try { return JSON.parse(savedApprovedExtensions); } catch { return []; } })()
     : [];
-  
+
   const myTasks = allTasksArray.filter((t: any) =>
     t && (
       t.assignee_id === currentUser?.id ||
@@ -630,7 +630,7 @@ export default function DailyStandups({ session }: { session?: any }) {
 
   const tasksCompletedCount = myTasks.filter((t: any) => t && t.status === 'Done').length;
   const tasksPendingCount = myTasks.filter((t: any) => t && t.status !== 'Done').length;
-  const sprintProgress = myTasks.length > 0 
+  const sprintProgress = myTasks.length > 0
     ? Math.round((tasksCompletedCount / myTasks.length) * 100)
     : 0;
 
@@ -649,7 +649,7 @@ export default function DailyStandups({ session }: { session?: any }) {
   const savedLogs = localStorage.getItem('work_logs_list');
   const allLogs = (savedLogs && savedLogs !== 'null') ? JSON.parse(savedLogs) : [];
   const allLogsArray = Array.isArray(allLogs) ? allLogs : [];
-  
+
   const todayStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const hoursLoggedToday = allLogsArray
     .filter((l: any) => l && l.name?.toLowerCase().includes(firstName) && l.date === todayStr)
@@ -661,8 +661,8 @@ export default function DailyStandups({ session }: { session?: any }) {
     .map((t: any) => {
       const dueDate = new Date(t.due_date);
       const todayDate = new Date();
-      todayDate.setHours(0,0,0,0);
-      dueDate.setHours(0,0,0,0);
+      todayDate.setHours(0, 0, 0, 0);
+      dueDate.setHours(0, 0, 0, 0);
       const isOverdue = dueDate < todayDate;
       const isToday = dueDate.getTime() === todayDate.getTime();
       return {
@@ -698,7 +698,7 @@ export default function DailyStandups({ session }: { session?: any }) {
     e.preventDefault();
     if (!formData.yesterday || !formData.today) return;
     const user = getCurrentUser();
-    
+
     const newStandup = {
       id: `s-${Date.now()}`,
       user: currentUserName,
@@ -710,7 +710,7 @@ export default function DailyStandups({ session }: { session?: any }) {
       blockers: formData.blockers || 'None.',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
-    
+
     // Update local state optimistically
     setStandups(prev => [newStandup, ...prev.filter(s => s.user !== currentUserName)]);
     const historyEntry = { ...newStandup, dateGroup: 'Today' };
@@ -738,7 +738,7 @@ export default function DailyStandups({ session }: { session?: any }) {
 
     // Add to employee's own notification panel
     pushEmployeeStandupNotification('Standup Submitted', `Your daily standup was submitted successfully at ${newStandup.time}.`);
-    
+
     addNotification({
       type: 'success',
       category: 'Team',
@@ -769,7 +769,7 @@ export default function DailyStandups({ session }: { session?: any }) {
         return new Date(timestamp).toISOString().split('T')[0];
       }
     }
-    
+
     const today = new Date();
     if (h.dateGroup === 'Today') {
       return today.toISOString().split('T')[0];
@@ -812,9 +812,9 @@ export default function DailyStandups({ session }: { session?: any }) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowHistory(false)}
                 className="h-8 px-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white font-bold"
               >
@@ -840,9 +840,9 @@ export default function DailyStandups({ session }: { session?: any }) {
                 className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none text-[#0F172A] dark:text-white focus:ring-2 focus:ring-orange-500/50 [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:cursor-pointer dark:[&::-webkit-calendar-picker-indicator]:invert dark:[&::-webkit-calendar-picker-indicator]:opacity-80 dark:[&::-webkit-calendar-picker-indicator]:hover:opacity-100"
               />
               {historyDateFilter && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setHistoryDateFilter('')}
                   className="h-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold"
                 >
@@ -874,8 +874,8 @@ export default function DailyStandups({ session }: { session?: any }) {
               <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{dateGroup}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {items.map((standup: any) => (
-                  <div 
-                    key={standup.id} 
+                  <div
+                    key={standup.id}
                     onClick={() => setViewingStandup(standup)}
                     className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden flex flex-col group transition-all hover:shadow-md cursor-pointer hover:border-orange-500/40 animate-in fade-in"
                   >
@@ -923,7 +923,7 @@ export default function DailyStandups({ session }: { session?: any }) {
 
         {/* Re-use Dialog for Details view in History */}
         <Dialog open={!!viewingStandup} onOpenChange={(open) => !open && setViewingStandup(null)}>
-          <DialogContent className="sm:max-w-[500px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-0 overflow-hidden">
+          <DialogContent className="sm:max-w-125 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-0 overflow-hidden">
             {viewingStandup && (
               <>
                 <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50 flex flex-row items-center gap-3">
@@ -968,7 +968,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                       {viewingStandup.blockers || 'None.'}
                     </p>
                   </div>
-                  
+
                   {viewingStandup.replies && viewingStandup.replies.length > 0 && (
                     <div className="space-y-3 pt-2">
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Replies</span>
@@ -985,7 +985,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                                 <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{reply.user}</span>
                                 <span className="text-[10px] font-semibold text-slate-400 shrink-0">{reply.time}</span>
                               </div>
-                              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 break-words">{reply.text}</p>
+                              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 wrap-break-word">{reply.text}</p>
                             </div>
                           </div>
                         ))}
@@ -1014,16 +1014,16 @@ export default function DailyStandups({ session }: { session?: any }) {
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Daily Standups</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {role !== 'manager' 
-              ? 'Review your logged daily standup report for today.' 
+            {role !== 'manager'
+              ? 'Review your logged daily standup report for today.'
               : "Review your team's async standup reports for today."}
           </p>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-3">
           {role !== 'manager' && (
-            <Button 
-              onClick={handleOpenVoiceStandup} 
+            <Button
+              onClick={handleOpenVoiceStandup}
               className="h-10 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold shadow-md shadow-indigo-500/20 border-0 transition-all"
             >
               <Mic className="h-4 w-4 mr-2" /> Submit Update
@@ -1031,16 +1031,16 @@ export default function DailyStandups({ session }: { session?: any }) {
           )}
 
           {role === 'manager' && (
-            <Button 
-              onClick={() => setIsMeetingModalOpen(true)} 
-              className="h-10 rounded-xl bg-gradient-to-r from-orange-600 to-rose-600 hover:from-orange-700 hover:to-rose-700 text-white font-bold shadow-md shadow-orange-500/20 border-0 transition-all"
+            <Button
+              onClick={() => setIsMeetingModalOpen(true)}
+              className="h-10 rounded-xl bg-linear-to-r from-orange-600 to-rose-600 hover:from-orange-700 hover:to-rose-700 text-white font-bold shadow-md shadow-orange-500/20 border-0 transition-all"
             >
               <Video className="h-4 w-4 mr-2" /> Start Meeting
             </Button>
           )}
 
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => setShowHistory(true)}
             className="h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
           >
@@ -1082,7 +1082,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               standup.status === 'Submitted' && "cursor-pointer hover:border-orange-500/40"
             )}
           >
-            
+
             {/* Card Header */}
             <div className="p-5 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50 flex items-start justify-between">
               <div className="flex items-center gap-3">
@@ -1134,9 +1134,9 @@ export default function DailyStandups({ session }: { session?: any }) {
                   </div>
                   <p className={cn("text-sm font-semibold text-slate-500 dark:text-slate-400", role === 'manager' && "mb-4")}>Has not submitted yet.</p>
                   {role === 'manager' && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleSendReminder(standup)}
                       disabled={sentReminders.has(standup.id)}
                       className="h-8 rounded-lg font-bold border-orange-200 text-orange-600 dark:border-orange-900/50 dark:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10 disabled:opacity-50 disabled:border-slate-200 disabled:text-slate-500 dark:disabled:border-slate-800 dark:disabled:text-slate-500"
@@ -1179,13 +1179,13 @@ export default function DailyStandups({ session }: { session?: any }) {
                           <span className="text-[10px] font-semibold text-slate-400 shrink-0">{reply.time}</span>
                         </div>
                       </div>
-                      <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 break-words">{reply.text}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 wrap-break-word">{reply.text}</p>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-            
+
             {/* Card Footer */}
             {standup.status === 'Submitted' && (
               <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/50 flex items-center justify-between transition-opacity">
@@ -1197,14 +1197,14 @@ export default function DailyStandups({ session }: { session?: any }) {
                     </Button>
                   )}
                   {role !== 'manager' && standup.user === currentUserName && !isDeadlinePassed() && (
-                    <Button 
+                    <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         setFormData({ yesterday: standup.yesterday, today: standup.today, blockers: standup.blockers, notes: '' });
                         setIsModalOpen(true);
                       }}
-                      variant="ghost" 
-                      size="sm" 
+                      variant="ghost"
+                      size="sm"
                       className="h-7 text-xs font-bold text-slate-500 hover:text-indigo-600"
                     >
                       <Edit3 className="h-3 w-3 mr-1.5" /> Edit
@@ -1221,214 +1221,214 @@ export default function DailyStandups({ session }: { session?: any }) {
         <div className="mt-12 space-y-8 animate-in fade-in duration-700">
           <div className="border-t border-slate-200 dark:border-slate-800 pt-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Left side (8 cols): Upcoming Deadlines + Weekly Standup Activity */}
-            <div className="lg:col-span-8 space-y-8">
-              
-              {/* Upcoming Deadlines (shown only for manager - employee sees it on their Dashboard) */}
-              {role === 'manager' && (
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm">
-                <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base flex items-center">
-                      <Calendar className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
-                      Upcoming Deadlines
-                    </CardTitle>
-                    <CardDescription>Track key milestones and scheduled due dates.</CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                    {upcomingDeadlines.length > 0 ? (
-                      upcomingDeadlines.map((task: any) => {
-                        let colorClass = "text-slate-600 dark:text-slate-400";
-                        if (task.isOverdue) {
-                          colorClass = "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20 px-2 py-0.5 rounded";
-                        } else if (task.isToday) {
-                          colorClass = "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 px-2 py-0.5 rounded";
-                        }
+              {/* Left side (8 cols): Upcoming Deadlines + Weekly Standup Activity */}
+              <div className="lg:col-span-8 space-y-8">
 
-                        // Check if this task has an approved extension
-                        const approvedExt = approvedExtensions.find((ex: any) => String(ex.taskId) === String(task.id));
-
-                        return (
-                          <div key={task.id} className="py-3 flex items-center justify-between first:pt-0 last:pb-0">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-bold text-slate-900 dark:text-white">{task.title}</span>
-                              <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-0.5">{task.project_tag}</span>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              {approvedExt ? (
-                                // Show both original and extended deadline
-                                <div className="flex flex-col items-end gap-0.5">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[10px] text-slate-400 font-semibold">Original:</span>
-                                    <span className="text-xs font-bold font-mono text-slate-500 dark:text-slate-400 line-through">
-                                      {approvedExt.originalDueDate}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Extended:</span>
-                                    <span className={cn("text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400")}>
-                                      {approvedExt.extendedDueDate}
-                                    </span>
-                                  </div>
-                                </div>
-                              ) : (
-                                <span className={cn("text-xs font-bold font-mono", colorClass)}>
-                                  {task.due_date}
-                                </span>
-                              )}
-                              <Badge className={cn(
-                                "text-[10px] font-black border-0 uppercase tracking-wider",
-                                task.priority === 'High' ? "bg-rose-100 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400" :
-                                task.priority === 'Normal' ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400" :
-                                "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                              )}>
-                                {task.priority}
-                              </Badge>
-                            </div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="py-6 text-center text-slate-400 font-medium text-sm">No upcoming deadlines. All caught up!</div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-              )}
-
-              {/* Weekly Standup Activity */}
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm h-[320px] flex flex-col">
-                <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <CardTitle className="text-base flex items-center">
-                    <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
-                    Weekly Standup Activity
-                  </CardTitle>
-                  <CardDescription>Standups submitted over the last 7 days.</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6 flex-1 min-h-0">
-                  <div className="h-full w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={[
-                        { day: 'Mon', submitted: 1 },
-                        { day: 'Tue', submitted: 1 },
-                        { day: 'Wed', submitted: 0 },
-                        { day: 'Thu', submitted: 1 },
-                        { day: 'Fri', submitted: 1 },
-                        { day: 'Sat', submitted: 0 },
-                        { day: 'Sun', submitted: 0 },
-                      ]} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
-                        <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} allowDecimals={false} domain={[0, 1]} />
-                        <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px', backgroundColor: isDarkMode ? '#0f172a' : '#fff', color: isDarkMode ? '#f8fafc' : '#0f172a', borderColor: isDarkMode ? '#1e293b' : '#e2e8f0' }} />
-                        <Bar dataKey="submitted" fill="#f97316" radius={[4, 4, 0, 0]} barSize={20} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Current Top Priority Task */}
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm">
-                <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <CardTitle className="text-base flex items-center">
-                    <Target className="h-5 w-5 text-indigo-600 dark:text-indigo-400 mr-2" />
-                    Current Top Priority
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-5">
-                  {topPriorityTask ? (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                {/* Upcoming Deadlines (shown only for manager - employee sees it on their Dashboard) */}
+                {role === 'manager' && (
+                  <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm">
+                    <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
                       <div>
-                        <h4 className="font-bold text-slate-900 dark:text-white text-lg mb-1">{topPriorityTask.title}</h4>
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50 font-black uppercase text-[10px]">
-                            {topPriorityTask.priority} Priority
-                          </Badge>
-                          <span className="text-xs font-semibold text-slate-500 flex items-center">
-                            <Clock className="h-3 w-3 mr-1" /> Due: {topPriorityTask.due_date}
-                          </span>
-                        </div>
+                        <CardTitle className="text-base flex items-center">
+                          <Calendar className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
+                          Upcoming Deadlines
+                        </CardTitle>
+                        <CardDescription>Track key milestones and scheduled due dates.</CardDescription>
                       </div>
-                      <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 font-bold px-3 py-1.5 cursor-default">
-                        {topPriorityTask.status}
-                      </Badge>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                        {upcomingDeadlines.length > 0 ? (
+                          upcomingDeadlines.map((task: any) => {
+                            let colorClass = "text-slate-600 dark:text-slate-400";
+                            if (task.isOverdue) {
+                              colorClass = "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20 px-2 py-0.5 rounded";
+                            } else if (task.isToday) {
+                              colorClass = "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 px-2 py-0.5 rounded";
+                            }
+
+                            // Check if this task has an approved extension
+                            const approvedExt = approvedExtensions.find((ex: any) => String(ex.taskId) === String(task.id));
+
+                            return (
+                              <div key={task.id} className="py-3 flex items-center justify-between first:pt-0 last:pb-0">
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-bold text-slate-900 dark:text-white">{task.title}</span>
+                                  <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-0.5">{task.project_tag}</span>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  {approvedExt ? (
+                                    // Show both original and extended deadline
+                                    <div className="flex flex-col items-end gap-0.5">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] text-slate-400 font-semibold">Original:</span>
+                                        <span className="text-xs font-bold font-mono text-slate-500 dark:text-slate-400 line-through">
+                                          {approvedExt.originalDueDate}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Extended:</span>
+                                        <span className={cn("text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400")}>
+                                          {approvedExt.extendedDueDate}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <span className={cn("text-xs font-bold font-mono", colorClass)}>
+                                      {task.due_date}
+                                    </span>
+                                  )}
+                                  <Badge className={cn(
+                                    "text-[10px] font-black border-0 uppercase tracking-wider",
+                                    task.priority === 'High' ? "bg-rose-100 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400" :
+                                      task.priority === 'Normal' ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400" :
+                                        "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                                  )}>
+                                    {task.priority}
+                                  </Badge>
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="py-6 text-center text-slate-400 font-medium text-sm">No upcoming deadlines. All caught up!</div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Weekly Standup Activity */}
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm h-80 flex flex-col">
+                  <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <CardTitle className="text-base flex items-center">
+                      <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
+                      Weekly Standup Activity
+                    </CardTitle>
+                    <CardDescription>Standups submitted over the last 7 days.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6 flex-1 min-h-0">
+                    <div className="h-full w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={[
+                          { day: 'Mon', submitted: 1 },
+                          { day: 'Tue', submitted: 1 },
+                          { day: 'Wed', submitted: 0 },
+                          { day: 'Thu', submitted: 1 },
+                          { day: 'Fri', submitted: 1 },
+                          { day: 'Sat', submitted: 0 },
+                          { day: 'Sun', submitted: 0 },
+                        ]} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                          <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: tickColor }} allowDecimals={false} domain={[0, 1]} />
+                          <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px', backgroundColor: isDarkMode ? '#0f172a' : '#fff', color: isDarkMode ? '#f8fafc' : '#0f172a', borderColor: isDarkMode ? '#1e293b' : '#e2e8f0' }} />
+                          <Bar dataKey="submitted" fill="#f97316" radius={[4, 4, 0, 0]} barSize={20} />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-center py-4 text-sm font-medium text-slate-400">
-                      No active tasks right now. You're all caught up!
+                  </CardContent>
+                </Card>
+
+                {/* Current Top Priority Task */}
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm">
+                  <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <CardTitle className="text-base flex items-center">
+                      <Target className="h-5 w-5 text-indigo-600 dark:text-indigo-400 mr-2" />
+                      Current Top Priority
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-5">
+                    {topPriorityTask ? (
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <h4 className="font-bold text-slate-900 dark:text-white text-lg mb-1">{topPriorityTask.title}</h4>
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50 font-black uppercase text-[10px]">
+                              {topPriorityTask.priority} Priority
+                            </Badge>
+                            <span className="text-xs font-semibold text-slate-500 flex items-center">
+                              <Clock className="h-3 w-3 mr-1" /> Due: {topPriorityTask.due_date}
+                            </span>
+                          </div>
+                        </div>
+                        <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 font-bold px-3 py-1.5 cursor-default">
+                          {topPriorityTask.status}
+                        </Badge>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center py-4 text-sm font-medium text-slate-400">
+                        No active tasks right now. You're all caught up!
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+              </div>
+
+              {/* Right side (4 cols): Productivity Insights + Quick Notes */}
+              <div className="lg:col-span-4 space-y-8">
+
+                {/* Productivity Insights */}
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm">
+                  <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <CardTitle className="text-base flex items-center">
+                      <Sparkles className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
+                      Productivity Insights
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Average Hours Worked</span>
+                      <span className="text-sm font-black text-slate-900 dark:text-white">6.4 hrs/day</span>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                    <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Standup Streak</span>
+                      <span className="text-sm font-black text-orange-600 flex items-center gap-1">
+                        <Flame className="h-4 w-4 fill-orange-500 text-orange-500" />
+                        5 Days
+                      </span>
+                    </div>
+                    <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Completion Rate</span>
+                      <span className="text-sm font-black text-slate-900 dark:text-white">{sprintProgress}%</span>
+                    </div>
+                    <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tasks Finished This Week</span>
+                      <span className="text-sm font-black text-slate-900 dark:text-white">{tasksCompletedCount}</span>
+                    </div>
+                  </CardContent>
+                </Card>
 
+                {/* Quick Notes */}
+                <Card className="rounded-2xl border-amber-200 dark:border-amber-800/60 shadow-sm bg-amber-50/40 dark:bg-amber-950/15 overflow-hidden h-80 flex flex-col">
+                  <CardHeader className="pb-3 border-b border-amber-100 dark:border-amber-900/30">
+                    <CardTitle className="text-base flex items-center text-amber-900 dark:text-amber-300">
+                      <Edit3 className="h-5 w-5 text-amber-600 dark:text-amber-400 mr-2" />
+                      Quick Notes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4 flex-1 min-h-0">
+                    <textarea
+                      value={note}
+                      onChange={handleNoteChange}
+                      placeholder="Write a sticky note for today's goals or ideas..."
+                      className="w-full h-full bg-transparent border-none outline-none resize-none text-sm text-slate-800 dark:text-slate-300 placeholder:text-amber-600/40 dark:placeholder:text-amber-400/30 leading-relaxed font-medium"
+                    />
+                  </CardContent>
+                </Card>
+
+              </div>
             </div>
-
-            {/* Right side (4 cols): Productivity Insights + Quick Notes */}
-            <div className="lg:col-span-4 space-y-8">
-              
-              {/* Productivity Insights */}
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm">
-                <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <CardTitle className="text-base flex items-center">
-                    <Sparkles className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
-                    Productivity Insights
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Average Hours Worked</span>
-                    <span className="text-sm font-black text-slate-900 dark:text-white">6.4 hrs/day</span>
-                  </div>
-                  <div className="h-[1px] bg-slate-100 dark:bg-slate-800" />
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Standup Streak</span>
-                    <span className="text-sm font-black text-orange-600 flex items-center gap-1">
-                      <Flame className="h-4 w-4 fill-orange-500 text-orange-500" />
-                      5 Days
-                    </span>
-                  </div>
-                  <div className="h-[1px] bg-slate-100 dark:bg-slate-800" />
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Completion Rate</span>
-                    <span className="text-sm font-black text-slate-900 dark:text-white">{sprintProgress}%</span>
-                  </div>
-                  <div className="h-[1px] bg-slate-100 dark:bg-slate-800" />
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tasks Finished This Week</span>
-                    <span className="text-sm font-black text-slate-900 dark:text-white">{tasksCompletedCount}</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Notes */}
-              <Card className="rounded-2xl border-amber-200 dark:border-amber-800/60 shadow-sm bg-amber-50/40 dark:bg-amber-950/15 overflow-hidden h-[320px] flex flex-col">
-                <CardHeader className="pb-3 border-b border-amber-100 dark:border-amber-900/30">
-                  <CardTitle className="text-base flex items-center text-amber-900 dark:text-amber-300">
-                    <Edit3 className="h-5 w-5 text-amber-600 dark:text-amber-400 mr-2" />
-                    Quick Notes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4 flex-1 min-h-0">
-                  <textarea
-                    value={note}
-                    onChange={handleNoteChange}
-                    placeholder="Write a sticky note for today's goals or ideas..."
-                    className="w-full h-full bg-transparent border-none outline-none resize-none text-sm text-slate-800 dark:text-slate-300 placeholder:text-amber-600/40 dark:placeholder:text-amber-400/30 leading-relaxed font-medium"
-                  />
-                </CardContent>
-              </Card>
-
-            </div>
-          </div>
           </div>
         </div>
       )}
 
       <Dialog open={!!viewingStandup} onOpenChange={(open) => !open && setViewingStandup(null)}>
-        <DialogContent className="sm:max-w-[500px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-125 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-0 overflow-hidden">
           {viewingStandup && (
             <>
               <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50 flex flex-row items-center gap-3">
@@ -1486,7 +1486,7 @@ export default function DailyStandups({ session }: { session?: any }) {
 
       {/* Submit Update Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] overflow-hidden rounded-2xl shadow-2xl">
+        <DialogContent className="sm:max-w-125 p-0 border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] overflow-hidden rounded-2xl shadow-2xl">
           <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50">
             <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center justify-between">
               Daily Standup
@@ -1504,10 +1504,10 @@ export default function DailyStandups({ session }: { session?: any }) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
-                <Button 
+                <Button
                   type="button"
-                  variant="ghost" 
-                  size="sm" 
+                  variant="ghost"
+                  size="sm"
                   onClick={() => startListeningForField('yesterday')}
                   className={cn(
                     "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
@@ -1517,9 +1517,9 @@ export default function DailyStandups({ session }: { session?: any }) {
                   <Mic className="h-3.5 w-3.5" />
                 </Button>
               </div>
-              <textarea 
+              <textarea
                 value={formData.yesterday}
-                onChange={(e) => setFormData({...formData, yesterday: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, yesterday: e.target.value })}
                 placeholder="e.g. Completed the UI for the dashboard..."
                 className="w-full h-20 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
@@ -1527,10 +1527,10 @@ export default function DailyStandups({ session }: { session?: any }) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What will you do today?</label>
-                <Button 
+                <Button
                   type="button"
-                  variant="ghost" 
-                  size="sm" 
+                  variant="ghost"
+                  size="sm"
                   onClick={() => startListeningForField('today')}
                   className={cn(
                     "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
@@ -1540,9 +1540,9 @@ export default function DailyStandups({ session }: { session?: any }) {
                   <Mic className="h-3.5 w-3.5" />
                 </Button>
               </div>
-              <textarea 
+              <textarea
                 value={formData.today}
-                onChange={(e) => setFormData({...formData, today: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, today: e.target.value })}
                 placeholder="e.g. Start integrating the API endpoints..."
                 className="w-full h-20 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
@@ -1550,10 +1550,10 @@ export default function DailyStandups({ session }: { session?: any }) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Any blockers? (Optional)</label>
-                <Button 
+                <Button
                   type="button"
-                  variant="ghost" 
-                  size="sm" 
+                  variant="ghost"
+                  size="sm"
                   onClick={() => startListeningForField('blockers')}
                   className={cn(
                     "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
@@ -1563,9 +1563,9 @@ export default function DailyStandups({ session }: { session?: any }) {
                   <Mic className="h-3.5 w-3.5" />
                 </Button>
               </div>
-              <textarea 
+              <textarea
                 value={formData.blockers}
-                onChange={(e) => setFormData({...formData, blockers: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, blockers: e.target.value })}
                 placeholder="e.g. Waiting for backend team to fix the auth endpoint..."
                 className="w-full h-16 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
@@ -1573,10 +1573,10 @@ export default function DailyStandups({ session }: { session?: any }) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Additional Notes (Optional)</label>
-                <Button 
+                <Button
                   type="button"
-                  variant="ghost" 
-                  size="sm" 
+                  variant="ghost"
+                  size="sm"
                   onClick={() => startListeningForField('notes')}
                   className={cn(
                     "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
@@ -1586,9 +1586,9 @@ export default function DailyStandups({ session }: { session?: any }) {
                   <Mic className="h-3.5 w-3.5" />
                 </Button>
               </div>
-              <textarea 
+              <textarea
                 value={formData.notes}
-                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="Any extra info..."
                 className="w-full h-16 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none font-medium text-sm"
               />
@@ -1607,7 +1607,7 @@ export default function DailyStandups({ session }: { session?: any }) {
 
       {/* Deadline Extension Dialog */}
       <Dialog open={isExtensionModalOpen} onOpenChange={setIsExtensionModalOpen}>
-        <DialogContent className="sm:max-w-[450px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-112.5 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-0 overflow-hidden">
           <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
             <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">Request Deadline Extension</DialogTitle>
           </DialogHeader>
@@ -1635,12 +1635,12 @@ export default function DailyStandups({ session }: { session?: any }) {
                 </div>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Days Extension Required</label>
-              <input 
-                type="number" 
-                min="1" 
+              <input
+                type="number"
+                min="1"
                 max="30"
                 value={extensionDays}
                 onChange={(e) => setExtensionDays(Math.max(1, Number(e.target.value)))}
@@ -1650,7 +1650,7 @@ export default function DailyStandups({ session }: { session?: any }) {
 
             <div className="space-y-2">
               <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Reason for Extension</label>
-              <textarea 
+              <textarea
                 value={extensionReason}
                 onChange={(e) => setExtensionReason(e.target.value)}
                 placeholder="Please state why you need this extension..."
@@ -1659,20 +1659,20 @@ export default function DailyStandups({ session }: { session?: any }) {
             </div>
 
             <div className="pt-2 flex justify-between gap-3">
-              <Button 
+              <Button
                 onClick={() => {
                   setIsExtensionModalOpen(false);
                   setSelectedTaskId('');
                   setExtensionDays(1);
                   setExtensionReason('');
-                }} 
-                variant="outline" 
+                }}
+                variant="outline"
                 className="flex-1 h-11 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold"
               >
                 Cancel
               </Button>
-              <Button 
-                onClick={handleExtensionSubmit} 
+              <Button
+                onClick={handleExtensionSubmit}
                 disabled={upcomingDeadlines.length === 0}
                 className="flex-1 h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold shadow-sm"
               >
@@ -1685,7 +1685,7 @@ export default function DailyStandups({ session }: { session?: any }) {
 
       {/* Reply Dialog */}
       <Dialog open={!!replyStandupId} onOpenChange={(open) => !open && setReplyStandupId(null)}>
-        <DialogContent className="sm:max-w-[425px] border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 rounded-2xl shadow-xl">
+        <DialogContent className="sm:max-w-106.25 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 rounded-2xl shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-orange-500" />
@@ -1703,8 +1703,8 @@ export default function DailyStandups({ session }: { session?: any }) {
           </div>
           <div className="flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
             <Button variant="ghost" onClick={() => setReplyStandupId(null)} className="rounded-xl font-bold">Cancel</Button>
-            <Button 
-              className="bg-orange-600 text-white hover:bg-orange-700 rounded-xl font-bold shadow-md shadow-orange-500/20" 
+            <Button
+              className="bg-orange-600 text-white hover:bg-orange-700 rounded-xl font-bold shadow-md shadow-orange-500/20"
               onClick={handleSendReply}
               disabled={!replyText.trim()}
             >
@@ -1716,7 +1716,7 @@ export default function DailyStandups({ session }: { session?: any }) {
 
       {/* Edit Reply Dialog */}
       <Dialog open={!!editingReply} onOpenChange={(open) => !open && setEditingReply(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-106.25 rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
               <Edit3 className="mr-2 h-5 w-5 text-orange-500" />
@@ -1726,7 +1726,7 @@ export default function DailyStandups({ session }: { session?: any }) {
           <div className="space-y-4 pt-4">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Your Message</label>
-              <textarea 
+              <textarea
                 value={editingReply?.text || ''}
                 onChange={(e) => setEditingReply(prev => prev ? { ...prev, text: e.target.value } : null)}
                 className="w-full h-32 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-orange-500 resize-none"
@@ -1734,7 +1734,7 @@ export default function DailyStandups({ session }: { session?: any }) {
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
               <Button variant="ghost" onClick={() => setEditingReply(null)} className="rounded-xl font-bold">Cancel</Button>
-              <Button 
+              <Button
                 className="bg-orange-600 text-white hover:bg-orange-700 rounded-xl font-bold shadow-md shadow-orange-500/20"
                 onClick={handleEditReplySubmit}
                 disabled={!editingReply?.text?.trim()}
@@ -1748,38 +1748,38 @@ export default function DailyStandups({ session }: { session?: any }) {
 
       {/* Start & Share Meeting Dialog */}
       <Dialog open={isMeetingModalOpen} onOpenChange={setIsMeetingModalOpen}>
-        <DialogContent className="sm:max-w-[480px] rounded-3xl bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80 p-0 overflow-hidden flex flex-col shadow-2xl">
-          <div className="relative px-8 py-6 border-b border-slate-100 dark:border-slate-800/60 bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
+        <DialogContent className="sm:max-w-120 rounded-3xl bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80 p-0 overflow-hidden flex flex-col shadow-2xl">
+          <div className="relative px-8 py-6 border-b border-slate-100 dark:border-slate-800/60 bg-linear-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
             <div className="absolute top-0 right-0 p-4 opacity-10 blur-xl pointer-events-none">
               <div className="h-24 w-24 rounded-full bg-orange-500"></div>
             </div>
             <DialogTitle className="relative text-2xl font-black text-slate-900 dark:text-white flex items-center tracking-tight">
-              <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 text-white flex items-center justify-center mr-4 shadow-lg shadow-orange-500/20">
+              <div className="h-10 w-10 rounded-2xl bg-linear-to-br from-orange-400 to-orange-600 text-white flex items-center justify-center mr-4 shadow-lg shadow-orange-500/20">
                 <Video className="h-5 w-5" />
               </div>
               Schedule Quick Sync
             </DialogTitle>
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 font-medium">Instantly share a meeting link across the workspace.</p>
           </div>
-          
+
           <div className="px-8 py-6 space-y-6 overflow-y-auto max-h-[60vh] bg-white dark:bg-slate-950 relative z-10">
-            
+
             {/* Participant Selection */}
             <div className="space-y-3">
               <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
                 <CheckSquare className="h-3.5 w-3.5 mr-1.5" /> Target Audience
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
+
                 {/* Employees Group */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button 
+                    <button
                       type="button"
                       className={cn(
-                        "flex items-center justify-between w-full border rounded-3xl p-4 transition-all duration-300 group outline-none focus:ring-2", 
+                        "flex items-center justify-between w-full border rounded-3xl p-4 transition-all duration-300 group outline-none focus:ring-2",
                         selectedMeetingParticipants.includes('all_emp') || EMPLOYEES.some(e => selectedMeetingParticipants.includes(e.id))
-                          ? "border-indigo-400 shadow-md bg-gradient-to-r from-indigo-50/50 to-white dark:from-indigo-500/10 dark:to-slate-900 ring-2 ring-indigo-500/10" 
+                          ? "border-indigo-400 shadow-md bg-linear-to-r from-indigo-50/50 to-white dark:from-indigo-500/10 dark:to-slate-900 ring-2 ring-indigo-500/10"
                           : "border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm"
                       )}
                     >
@@ -1795,10 +1795,10 @@ export default function DailyStandups({ session }: { session?: any }) {
                         <div className="flex flex-col items-start text-left">
                           <span className="text-[15px] font-black text-slate-900 dark:text-white leading-tight">Employees</span>
                           <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">
-                            {selectedMeetingParticipants.includes('all_emp') 
-                              ? "All Selected" 
-                              : EMPLOYEES.filter(e => selectedMeetingParticipants.includes(e.id)).length > 0 
-                                ? `${EMPLOYEES.filter(e => selectedMeetingParticipants.includes(e.id)).length} Selected` 
+                            {selectedMeetingParticipants.includes('all_emp')
+                              ? "All Selected"
+                              : EMPLOYEES.filter(e => selectedMeetingParticipants.includes(e.id)).length > 0
+                                ? `${EMPLOYEES.filter(e => selectedMeetingParticipants.includes(e.id)).length} Selected`
                                 : "Select participants"}
                           </span>
                         </div>
@@ -1832,7 +1832,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                       >
                         <div className="flex items-center ml-2">
                           <Avatar className="h-6 w-6 mr-2 border border-slate-200 dark:border-slate-700">
-                            <AvatarFallback className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{member.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                            <AvatarFallback className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col">
                             <span>{member.name}</span>
@@ -1847,12 +1847,12 @@ export default function DailyStandups({ session }: { session?: any }) {
                 {/* Managers Group */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button 
+                    <button
                       type="button"
                       className={cn(
-                        "flex items-center justify-between w-full border rounded-3xl p-4 transition-all duration-300 group outline-none focus:ring-2", 
+                        "flex items-center justify-between w-full border rounded-3xl p-4 transition-all duration-300 group outline-none focus:ring-2",
                         selectedMeetingParticipants.includes('all_mgr') || MANAGERS.some(m => selectedMeetingParticipants.includes(m.id))
-                          ? "border-slate-400 shadow-md bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-900 ring-2 ring-slate-400/20" 
+                          ? "border-slate-400 shadow-md bg-linear-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-900 ring-2 ring-slate-400/20"
                           : "border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm"
                       )}
                     >
@@ -1868,10 +1868,10 @@ export default function DailyStandups({ session }: { session?: any }) {
                         <div className="flex flex-col items-start text-left">
                           <span className="text-[15px] font-black text-slate-900 dark:text-white leading-tight">Managers</span>
                           <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">
-                            {selectedMeetingParticipants.includes('all_mgr') 
-                              ? "All Selected" 
-                              : MANAGERS.filter(m => selectedMeetingParticipants.includes(m.id)).length > 0 
-                                ? `${MANAGERS.filter(m => selectedMeetingParticipants.includes(m.id)).length} Selected` 
+                            {selectedMeetingParticipants.includes('all_mgr')
+                              ? "All Selected"
+                              : MANAGERS.filter(m => selectedMeetingParticipants.includes(m.id)).length > 0
+                                ? `${MANAGERS.filter(m => selectedMeetingParticipants.includes(m.id)).length} Selected`
                                 : "Select participants"}
                           </span>
                         </div>
@@ -1905,7 +1905,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                       >
                         <div className="flex items-center ml-2">
                           <Avatar className="h-6 w-6 mr-2 border border-slate-200 dark:border-slate-700">
-                            <AvatarFallback className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{member.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                            <AvatarFallback className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col">
                             <span>{member.name}</span>
@@ -1929,7 +1929,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                   <Edit3 className="h-4 w-4" />
                 </div>
-                <input 
+                <input
                   value={meetingTitle}
                   onChange={(e) => setMeetingTitle(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all placeholder:text-slate-400"
@@ -1947,7 +1947,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
                   <Video className="h-4 w-4" />
                 </div>
-                <input 
+                <input
                   value={meetingLink}
                   onChange={(e) => setMeetingLink(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all placeholder:text-slate-400"
@@ -1961,14 +1961,14 @@ export default function DailyStandups({ session }: { session?: any }) {
               <label className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
                 <MessageCircle className="h-3.5 w-3.5 mr-1.5" /> Announcement Message
               </label>
-              <textarea 
+              <textarea
                 value={meetingMessage}
                 onChange={(e) => setMeetingMessage(e.target.value)}
                 className="w-full h-24 bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 resize-none transition-all placeholder:text-slate-400 leading-relaxed"
                 placeholder="Type your message here..."
               />
             </div>
-            
+
             {/* Open Meeting Room Button */}
             <div className="pt-2">
               <Button
@@ -1985,22 +1985,22 @@ export default function DailyStandups({ session }: { session?: any }) {
 
           {/* Action Bar */}
           <div className="px-8 py-5 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900 flex gap-3 items-center justify-end relative z-10">
-            <Button 
-              variant="ghost" 
-              onClick={() => setIsMeetingModalOpen(false)} 
+            <Button
+              variant="ghost"
+              onClick={() => setIsMeetingModalOpen(false)}
               className="px-6 rounded-2xl font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={() => {
                 if (selectedMeetingParticipants.length === 0) {
                   toast.error("Please select a target audience.");
                   return;
                 }
-                
+
                 setIsSchedulingMeeting(true);
-                
+
                 // Simulate backend WhatsApp API delay
                 setTimeout(() => {
                   // Add Notification to Dashboard Alerts (Manager side alert)
@@ -2032,47 +2032,6 @@ export default function DailyStandups({ session }: { session?: any }) {
                   localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotif, ...empNotifs]));
                   window.dispatchEvent(new CustomEvent('employee-notifications-updated'));
 
-                  // Add to Activity Feed
-                  const storedFeed = localStorage.getItem('hindustaan_activity_feed');
-                  const feed = storedFeed ? JSON.parse(storedFeed) : [];
-                  const newActivity = {
-                    id: `a${Date.now()}`,
-                    user: currentUser?.name || 'Manager',
-                    action: 'scheduled a',
-                    target: 'Quick Meeting',
-                    time: 'Just now',
-                    timestamp: Date.now(),
-                    type: 'meeting'
-                  };
-                  localStorage.setItem('hindustaan_activity_feed', JSON.stringify([newActivity, ...feed]));
-                  window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_activity_feed', value: JSON.stringify([newActivity, ...feed]) } }));
-
-                  // Add to Upcoming Events (ProjectCalendarWidget)
-                  const storedEvents = localStorage.getItem('hindustaan_calendar_events');
-                  let calendarEvents = [];
-                  try {
-                    calendarEvents = storedEvents ? JSON.parse(storedEvents) : [];
-                  } catch (e) {}
-                  
-                  const newCalendarEvent = {
-                    id: `evt_${Date.now()}`,
-                    date: new Date().toISOString(),
-                    type: 'meeting',
-                    title: meetingTitle || 'Quick Sync Meeting',
-                    description: `${meetingMessage}\nLink: ${meetingLink}`,
-                    time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                    assignees: selectedMeetingParticipants.map(id => {
-                      if (id === 'all_emp') return { name: 'All Employees', initials: 'AE' };
-                      if (id === 'all_mgr') return { name: 'All Managers', initials: 'AM' };
-                      const member = [...EMPLOYEES, ...MANAGERS].find(m => m.id === id);
-                      return { name: member?.name || 'Group', initials: (member?.name || 'G').substring(0,2).toUpperCase() };
-                    }).filter((v, i, a) => a.findIndex(t => (t.name === v.name)) === i) // deduplicate
-                  };
-                  
-                  const newCalendarEventsArray = [...calendarEvents, newCalendarEvent];
-                  localStorage.setItem('hindustaan_calendar_events', JSON.stringify(newCalendarEventsArray));
-                  window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key: 'hindustaan_calendar_events', value: JSON.stringify(newCalendarEventsArray) } }));
-
                   // DISPATCH TO NOTIFICATION CONTEXT (This syncs across tabs now!)
                   addNotification({
                     title: 'New Meeting Scheduled',
@@ -2082,14 +2041,14 @@ export default function DailyStandups({ session }: { session?: any }) {
                     category: 'Messages',
                     group: 'Today'
                   });
-                  
+
                   setIsSchedulingMeeting(false);
-                  
+
                   toast.success('WhatsApp API: Invitations Dispatched', {
                     description: `Meeting links securely delivered to ${selectedMeetingParticipants.length} participants via WhatsApp.`,
                     duration: 5000
                   });
-                  
+
                   setIsMeetingModalOpen(false);
                   setSelectedMeetingParticipants([]);
                   setMeetingTitle('Quick Sync Meeting');
@@ -2098,7 +2057,7 @@ export default function DailyStandups({ session }: { session?: any }) {
                 }, 1500); // Simulate network latency
               }}
               disabled={isSchedulingMeeting}
-              className="px-8 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-black transition-all shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              className="px-8 rounded-2xl bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-black transition-all shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               {isSchedulingMeeting ? (
                 <>
