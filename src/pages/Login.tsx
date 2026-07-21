@@ -105,7 +105,7 @@ export default function Login({
         if (onMockLogin) {
           onMockLogin('admin', email);
         } else {
-          window.location.href = '/';
+          window.location.href = '/admin/dashboard';
         }
         return;
       }
@@ -144,7 +144,7 @@ export default function Login({
       if (onMockLogin) {
         onMockLogin(user.role, email);
       } else {
-        window.location.href = '/';
+        window.location.href = `/${user.role}/dashboard`;
       }
     } catch (err: any) {
       if (err.message && err.message.includes('User not found')) {

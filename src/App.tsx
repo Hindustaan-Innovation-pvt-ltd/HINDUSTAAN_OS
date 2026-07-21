@@ -89,7 +89,6 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/logout" element={<Logout />} />
       <Route path="/login" element={<Login defaultRole="manager" />} />
       <Route path="/admin/login" element={<Login isAdminLogin={true} defaultRole="admin" />} />
@@ -107,6 +106,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
+        <Route path="/" element={<Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/employee/dashboard" element={['employee', 'intern'].includes(role) ? <RoleBasedRouter /> : <Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/manager/dashboard" element={role === 'manager' ? <RoleBasedRouter /> : <Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/admin/dashboard" element={role === 'admin' ? <RoleBasedRouter /> : <Navigate to={`/${role}/dashboard`} replace />} />
