@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
+import { useSocket } from './SocketContext';
 
 export type NotificationType = 'task' | 'success' | 'alert' | 'warning' | 'info' | 'user' | 'request' | 'danger' | 'file' | 'meeting' | 'message';
 
@@ -41,6 +42,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const { socket } = useSocket();
 
   const fetchNotifications = async () => {
     // Only fetch if a user session exists in local/session storage
@@ -51,7 +53,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const res = await api.get('/notifications');
-      if (res.data?.success) {
+      if (res.data?.success && Array.isArray(res.data.data)) {
         const mapped = res.data.data.map((n: any) => {
           // Format date to readable time
           const date = new Date(n.createdAt);
@@ -64,21 +66,31 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
           else if (diffMins >= 60 && diffMins < 1440) timeStr = `${Math.floor(diffMins / 60)} hours ago`;
           else if (diffMins >= 1440) timeStr = `${Math.floor(diffMins / 1440)} days ago`;
 
-          // Map types to icons and categories (simplified)
+          // Map types and titles to icons and categories
           let icon = '🔔';
           let category = 'System';
           
-          if (n.type === 'task') { icon = '📋'; category = 'Tasks'; }
-          if (n.type === 'alert') { icon = '🚨'; category = 'Alerts'; }
-          if (n.type === 'info') { icon = 'ℹ️'; category = 'Info'; }
-          if (n.type === 'success') { icon = '✅'; category = 'Success'; }
+          const typeStr = (n.type || '').toLowerCase();
+          const titleStr = (n.title || '').toLowerCase();
+
+          if (typeStr === 'task' || titleStr.includes('task')) { 
+            icon = '📋'; category = 'Tasks'; 
+          } else if (typeStr === 'project' || titleStr.includes('project')) { 
+            icon = '📁'; category = 'Projects'; 
+          } else if (typeStr === 'team' || titleStr.includes('assignee') || titleStr.includes('team') || titleStr.includes('member')) { 
+            icon = '👥'; category = 'Team'; 
+          } else if (typeStr === 'alert') { 
+            icon = '🚨'; category = 'System'; 
+          } else if (typeStr === 'success') { 
+            icon = '✅'; category = 'System'; 
+          }
 
           return {
             id: n.id,
             type: n.type || 'info',
             category,
             icon,
-            title: n.title,
+            title: n.title || 'Notification',
             message: n.message || n.description || n.text || '',
             time: timeStr,
             timestamp: date.getTime(),
@@ -95,12 +107,23 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     fetchNotifications();
-    // Poll every 60 seconds
-    const interval = setInterval(fetchNotifications, 60000);
+    // Poll every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  const addNotification = (notif: Omit<NotificationItem, 'id' | 'time' | 'unread'>) => {
+  useEffect(() => {
+    if (socket) {
+      socket.on('new_notification', () => {
+        fetchNotifications();
+      });
+      return () => {
+        socket.off('new_notification');
+      };
+    }
+  }, [socket]);
+
+  const addNotification = async (notif: Omit<NotificationItem, 'id' | 'time' | 'unread'>) => {
     const newNotification: NotificationItem = {
       ...notif,
       id: Date.now(),
@@ -109,6 +132,18 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       unread: true,
     };
     setNotifications(prev => [newNotification, ...prev]);
+
+    try {
+      await api.post('/notifications', {
+        title: notif.title,
+        message: notif.message,
+        type: notif.type || 'info',
+        broadcast: true,
+      });
+      fetchNotifications();
+    } catch (err) {
+      console.error("Failed to persist notification to backend", err);
+    }
   };
 
   const markAsRead = async (id: string | number) => {

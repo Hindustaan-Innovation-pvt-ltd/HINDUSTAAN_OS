@@ -161,6 +161,9 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         payload.status = updateData.status === 'Completed' ? 'completed' :
                          updateData.status === 'Aborted' ? 'aborted' :
                          updateData.status === 'On Hold' ? 'on_hold' : 'active';
+        
+        // Optimistic UI update so status changes reflect immediately
+        setProjects(prev => prev.map(p => p.id === id ? { ...p, status: updateData.status } : p));
       }
       if (updateData.budget !== undefined) payload.budget = updateData.budget;
       if (updateData.managerId !== undefined) payload.managerId = updateData.managerId;
