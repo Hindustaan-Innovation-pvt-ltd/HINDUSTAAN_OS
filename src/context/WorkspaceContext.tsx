@@ -93,6 +93,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           workspaceName: d.companyName || prev.workspaceName,
           supportEmail: d.supportEmail || prev.supportEmail,
           themeMode: d.primaryTheme || prev.themeMode,
+          workspaceLogo: d.workspaceLogo !== undefined && d.workspaceLogo !== null ? d.workspaceLogo : prev.workspaceLogo,
+          address: d.address || prev.address,
+          defaultTimezone: d.defaultTimezone || prev.defaultTimezone,
+          currency: d.currency || prev.currency,
           smtpHost: d.smtpHost || '',
           smtpPort: d.smtpPort || undefined,
           smtpUser: d.smtpUser || '',
@@ -113,18 +117,24 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateConfig = async (newConfig: Partial<WorkspaceConfig>) => {
+    let mergedConfig: WorkspaceConfig = config;
     setConfig(prev => {
       const updated = { ...prev, ...newConfig };
+      mergedConfig = updated;
       localStorage.setItem('workspace_config_v2', JSON.stringify(updated));
       return updated;
     });
 
     try {
-      if ('workspaceName' in newConfig || 'supportEmail' in newConfig || 'themeMode' in newConfig) {
+      if ('workspaceName' in newConfig || 'supportEmail' in newConfig || 'themeMode' in newConfig || 'workspaceLogo' in newConfig || 'address' in newConfig || 'defaultTimezone' in newConfig || 'currency' in newConfig) {
         await api.put('/settings/workspace', {
-          companyName: newConfig.workspaceName,
-          supportEmail: newConfig.supportEmail,
-          primaryTheme: newConfig.themeMode
+          companyName: mergedConfig.workspaceName,
+          supportEmail: mergedConfig.supportEmail,
+          primaryTheme: mergedConfig.themeMode,
+          workspaceLogo: mergedConfig.workspaceLogo || "",
+          address: mergedConfig.address || "",
+          defaultTimezone: mergedConfig.defaultTimezone || "Asia/Kolkata",
+          currency: mergedConfig.currency || "INR",
         });
       }
       const hasChannels = 'smtpHost' in newConfig || 'smtpPort' in newConfig || 'smtpUser' in newConfig || 'smtpPass' in newConfig || 'whatsappWebhook' in newConfig;
