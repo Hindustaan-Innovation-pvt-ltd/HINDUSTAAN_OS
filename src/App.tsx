@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './pages/Login';
+import Logout from './pages/Logout';
 import DashboardShell from './components/layout/DashboardShell';
 import RoleBasedRouter from './components/dashboard/RoleBasedRouter';
 import AdminDashboard from './pages/AdminDashboard';
@@ -72,16 +73,23 @@ function AppRoutes() {
   const role = user?.role || 'employee';
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
 
-  const handleSignOut = () => {
-    // Clear legacy storage for safety if there's any left
-    localStorage.removeItem('hindustaan_user');
-    sessionStorage.removeItem('hindustaan_user');
-    window.dispatchEvent(new Event('auth-logout'));
-    window.location.href = '/login';
+  const handleSignOut = async () => {
+    try {
+      const { logoutUser } = await import('@/lib/auth');
+      await logoutUser();
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      localStorage.removeItem('hindustaan_user');
+      sessionStorage.removeItem('hindustaan_user');
+      window.dispatchEvent(new Event('auth-logout'));
+      window.location.href = '/login';
+    }
   };
 
   return (
     <Routes>
+      <Route path="/logout" element={<Logout />} />
       <Route path="/login" element={<Login defaultRole="manager" />} />
       <Route path="/admin/login" element={<Login isAdminLogin={true} defaultRole="admin" />} />
       <Route path="/register" element={<Register />} />
@@ -128,7 +136,7 @@ function AppRoutes() {
         <Route path="/daily-standups" element={<DailyStandups />} />
         <Route path="/contribution-scores" element={<ContributionScores />} />
       </Route>
-      
+
       <Route path="*" element={<Navigate to={`/${role}/dashboard`} replace />} />
     </Routes>
   );

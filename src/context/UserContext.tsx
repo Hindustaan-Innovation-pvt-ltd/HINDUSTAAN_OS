@@ -28,6 +28,13 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const fetchUser = async () => {
+      const hasStoredUser = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
+      if (!hasStoredUser && ['/login', '/register', '/admin/login'].includes(window.location.pathname)) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
       try {
         // We use our new /api/auth/me endpoint to enforce JWT flow
         const api = (await import('@/lib/api')).default;
@@ -45,8 +52,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         } else {
           setUser(null);
         }
-      } catch (err) {
-        console.warn('Failed to fetch user from /api/auth/me:', err);
+      } catch (err: any) {
+        if (err?.response?.status !== 401 && err?.response?.status !== 400) {
+          console.warn('Failed to fetch user from /api/auth/me:', err);
+        }
         // Fallback for mock if needed, but we aim to rely strictly on backend
         setUser(null);
       } finally {
