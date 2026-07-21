@@ -106,7 +106,6 @@ const adminNavigationGroups = [
     icon: Settings,
     items: [
       { name: 'General', id: 'Workspace Settings - General', icon: Settings },
-      { name: 'Projects', id: 'Workspace Settings - Projects', icon: FolderKanban },
       { name: 'Security & Access', id: 'Workspace Settings - Security & Access', icon: ShieldCheck },
       { name: 'Appearance', id: 'Workspace Settings - Appearance', icon: Settings }
     ]
@@ -418,8 +417,7 @@ export default function DashboardShell({
       case 'Time Tracking': navigate('/time-tracking'); break;
       case 'Tasks':
       case 'My Tasks': navigate('/tasks'); break;
-      case 'Projects':
-      case 'Workspace Settings - Projects': navigate('/projects'); break;
+      case 'Projects': navigate('/projects'); break;
       case 'Gantt Timeline':
       case 'Timeline': navigate('/timeline'); break;
       case 'Progress Tracker':
