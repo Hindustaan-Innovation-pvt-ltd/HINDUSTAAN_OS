@@ -26,8 +26,20 @@ import { AssignTaskDialog } from '@/components/dashboard/AssignTaskDialog';
 
 // Removed generateMockInterns as we only use API now
 
+const formatCheckTime = (timeStr?: string | Date | null) => {
+  if (!timeStr) return '--:--';
+  try {
+    const d = new Date(timeStr);
+    if (isNaN(d.getTime())) return '--:--';
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    return '--:--';
+  }
+};
+
 export default function TeamMembers() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
   const [deptFilter, setDeptFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
@@ -89,18 +101,19 @@ export default function TeamMembers() {
   const [activeProjects, setActiveProjects] = useState<any[]>([]);
 
   const mapBackendMember = (m: any) => {
-    const depts = ['Frontend', 'Backend', 'AI/ML', 'UI/UX'];
-    const matchedDept = depts.find(d => d.toLowerCase() === (m.department || '').toLowerCase()) || m.department || 'Frontend';
+    const depts = ['Frontend', 'Backend', 'AI/ML', 'UI/UX', 'Management', 'Administration', 'Engineering'];
+    const matchedDept = depts.find(d => d.toLowerCase() === (m.department || '').toLowerCase()) || m.department || 'Engineering';
 
     return {
       id: m.id || m.empId || '',
       empId: m.empId || (typeof m.id === 'string' && m.id.startsWith('INT-') ? m.id : `EMP-${(m.id || '').slice(0, 4).toUpperCase()}`),
-      name: m.name || 'Unknown Intern',
+      name: m.name || 'Unknown User',
       email: m.email || '',
       phone: m.phone || 'No phone recorded',
       college: m.college || '',
       degree: m.degree || '',
       role: m.role || 'Intern',
+      userRole: m.userRole || (m.role?.toLowerCase()?.includes('manager') ? 'manager' : m.role?.toLowerCase()?.includes('admin') ? 'admin' : 'intern'),
       department: matchedDept,
       manager: m.manager || 'Assigned Manager',
       project: m.project || 'Bench',
@@ -109,6 +122,7 @@ export default function TeamMembers() {
       currentTask: m.currentTask || 'No active task',
       hoursLogged: typeof m.hoursLogged === 'string' ? parseFloat(m.hoursLogged) || 0 : m.hoursLogged ?? 0,
       status: m.status || 'Offline',
+      isOnline: m.isOnline || m.status === 'Online',
       joiningDate: m.joiningDate || 'June 1, 2026',
       expectedEndDate: m.expectedEndDate || 'Sept 1, 2026',
       skills: Array.isArray(m.skills) && m.skills.length > 0 ? m.skills : [],
@@ -189,6 +203,9 @@ export default function TeamMembers() {
       intern.email.toLowerCase().includes(searchLower) ||
       intern.skills.some((skill: string) => skill.toLowerCase().includes(searchLower));
     
+    // Role Filter
+    const matchesRole = roleFilter === 'all' || intern.userRole === roleFilter;
+
     // Department Filter
     let matchesDept = false;
     if (deptFilter === 'all') matchesDept = true;
@@ -196,6 +213,9 @@ export default function TeamMembers() {
     else if (deptFilter === 'backend' && intern.department === 'Backend') matchesDept = true;
     else if (deptFilter === 'aiml' && intern.department === 'AI/ML') matchesDept = true;
     else if (deptFilter === 'uiux' && intern.department === 'UI/UX') matchesDept = true;
+    else if (deptFilter === 'management' && intern.department === 'Management') matchesDept = true;
+    else if (deptFilter === 'engineering' && intern.department === 'Engineering') matchesDept = true;
+    else if (intern.department.toLowerCase() === deptFilter) matchesDept = true;
 
     // Status Filter
     const matchesStatus = statusFilter === 'all' || intern.status.toLowerCase() === statusFilter;
@@ -203,10 +223,10 @@ export default function TeamMembers() {
     // Project Filter
     const matchesProject = projectFilter === 'all' || intern.project === projectFilter;
 
-    return matchesSearch && matchesDept && matchesStatus && matchesProject;
+    return matchesSearch && matchesRole && matchesDept && matchesStatus && matchesProject;
   });
 
-  const hasActiveFilters = searchTerm !== '' || deptFilter !== 'all' || statusFilter !== 'all' || projectFilter !== 'all';
+  const hasActiveFilters = searchTerm !== '' || roleFilter !== 'all' || deptFilter !== 'all' || statusFilter !== 'all' || projectFilter !== 'all';
 
   // Handlers
   const handleInviteSubmit = (e: React.FormEvent) => {
@@ -350,7 +370,7 @@ export default function TeamMembers() {
             Team Members
           </h2>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
-            Manage interns, onboarding, assignments, and performance.
+            Manage team members, onboarding, assignments, and performance.
           </p>
         </div>
         
@@ -363,7 +383,7 @@ export default function TeamMembers() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
           <CardContent className="p-5 flex flex-col gap-1">
-            <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Total Interns</span>
+            <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Total Employees</span>
             <span className="text-3xl font-black text-slate-900 dark:text-white">{totalInterns}</span>
           </CardContent>
         </Card>
@@ -435,6 +455,17 @@ export default function TeamMembers() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <Select value={roleFilter} onValueChange={setRoleFilter}>
+                    <SelectTrigger className="w-[125px] rounded-xl bg-slate-50 dark:bg-slate-900/50">
+                      <SelectValue placeholder="Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value="manager">Managers</SelectItem>
+                      <SelectItem value="intern">Interns</SelectItem>
+                      <SelectItem value="admin">Admins</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <Select value={deptFilter} onValueChange={setDeptFilter}>
                     <SelectTrigger className="w-[140px] rounded-xl bg-slate-50 dark:bg-slate-900/50">
                       <SelectValue placeholder="Department" />
@@ -445,6 +476,8 @@ export default function TeamMembers() {
                       <SelectItem value="backend">Backend</SelectItem>
                       <SelectItem value="aiml">AI/ML</SelectItem>
                       <SelectItem value="uiux">UI/UX</SelectItem>
+                      <SelectItem value="management">Management</SelectItem>
+                      <SelectItem value="engineering">Engineering</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -485,6 +518,7 @@ export default function TeamMembers() {
                     className={cn("rounded-xl shrink-0 transition-colors", hasActiveFilters && "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 border-0")}
                     onClick={() => {
                       setSearchTerm('');
+                      setRoleFilter('all');
                       setDeptFilter('all');
                       setStatusFilter('all');
                       setProjectFilter('all');
@@ -527,12 +561,39 @@ export default function TeamMembers() {
                             )} />
                           </div>
                           <div>
-                            <CardTitle className="text-base font-bold text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                              {intern.name}
-                            </CardTitle>
-                            <CardDescription className="text-xs font-semibold text-slate-500 line-clamp-1 mt-0.5">
-                              {intern.role}
-                            </CardDescription>
+                            <div className="flex items-center gap-2">
+                              <CardTitle className="text-base font-bold text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                                {intern.name}
+                              </CardTitle>
+                              <Badge variant="outline" className={cn(
+                                "text-[10px] font-black px-1.5 py-0 rounded uppercase",
+                                intern.userRole === 'manager' || intern.role?.toLowerCase()?.includes('manager')
+                                  ? "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/30"
+                                  : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30"
+                              )}>
+                                {intern.userRole === 'manager' || intern.role?.toLowerCase()?.includes('manager') ? 'MANAGER' : 'INTERN'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <CardDescription className="text-xs font-semibold text-slate-500 line-clamp-1">
+                                {intern.role}
+                              </CardDescription>
+                              <span className="text-slate-300 dark:text-slate-700">•</span>
+                              <span className={cn(
+                                "text-xs font-bold flex items-center gap-1",
+                                intern.status === 'Online' ? "text-emerald-600 dark:text-emerald-400" :
+                                intern.status === 'Leave' ? "text-amber-600 dark:text-amber-400" :
+                                "text-slate-400 dark:text-slate-500"
+                              )}>
+                                <span className={cn(
+                                  "h-1.5 w-1.5 rounded-full",
+                                  intern.status === 'Online' ? "bg-emerald-500" :
+                                  intern.status === 'Leave' ? "bg-amber-500" :
+                                  "bg-slate-400"
+                                )} />
+                                {intern.status}
+                              </span>
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -561,17 +622,23 @@ export default function TeamMembers() {
                     </CardHeader>
                     <CardContent className="p-5 flex-1 flex flex-col gap-4">
                       
-                      <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3">
+                      <div className="grid grid-cols-3 gap-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 text-center">
                         <div>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Score</p>
-                          <p className="text-sm font-black text-slate-900 dark:text-white flex items-center">
-                            <Trophy className="h-3 w-3 text-orange-500 mr-1" /> {intern.score}%
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Check In</p>
+                          <p className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">
+                            {formatCheckTime(intern.checkinTime || intern.todayFirstLogin || intern.currentSessionStart)}
+                          </p>
+                        </div>
+                        <div className="border-x border-slate-200 dark:border-slate-800 px-1">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Check Out</p>
+                          <p className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">
+                            {intern.isOnline || intern.status === 'Online' ? <span className="text-blue-500 font-sans">Active</span> : formatCheckTime(intern.checkoutTime || intern.todayCheckoutTime)}
                           </p>
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Logged</p>
-                          <p className="text-sm font-black text-slate-900 dark:text-white flex items-center">
-                            <Clock className="h-3 w-3 text-blue-500 mr-1" /> {intern.hoursLogged} hrs
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Logged</p>
+                          <p className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-center">
+                            <Clock className="h-3 w-3 text-blue-500 mr-1 shrink-0" /> {intern.hoursLogged}
                           </p>
                         </div>
                       </div>

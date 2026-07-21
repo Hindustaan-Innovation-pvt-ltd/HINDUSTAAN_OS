@@ -58,16 +58,41 @@ const formatTime = (totalSeconds: number) => {
   return `${s}s`;
 };
 
-const LiveTimer = ({ initialSeconds }: { initialSeconds: number }) => {
-  const [startClock, setStartClock] = React.useState(Date.now() - initialSeconds * 1000);
-  const [seconds, setSeconds] = React.useState(initialSeconds);
+const formatCheckTime = (timeStr?: string | Date | null) => {
+  if (!timeStr) return '--:--';
+  try {
+    const d = new Date(timeStr);
+    if (isNaN(d.getTime())) return '--:--';
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    return '--:--';
+  }
+};
+
+const LiveTimer = ({ initialSeconds, sessionStart, isOnline }: { initialSeconds: number; sessionStart?: string | Date | null; isOnline?: boolean }) => {
+  const computedInitial = React.useMemo(() => {
+    if (isOnline && sessionStart) {
+      try {
+        const startMs = new Date(sessionStart).getTime();
+        const nowMs = Date.now();
+        if (startMs <= nowMs && !isNaN(startMs)) {
+          const elapsed = Math.floor((nowMs - startMs) / 1000);
+          return Math.max(initialSeconds, elapsed);
+        }
+      } catch (e) {}
+    }
+    return initialSeconds;
+  }, [initialSeconds, sessionStart, isOnline]);
+
+  const [startClock, setStartClock] = React.useState(Date.now() - computedInitial * 1000);
+  const [seconds, setSeconds] = React.useState(computedInitial);
 
   React.useEffect(() => {
-    if (Math.abs(initialSeconds - seconds) > 10) {
-      setStartClock(Date.now() - initialSeconds * 1000);
-      setSeconds(initialSeconds);
+    if (Math.abs(computedInitial - seconds) > 15) {
+      setStartClock(Date.now() - computedInitial * 1000);
+      setSeconds(computedInitial);
     }
-  }, [initialSeconds, seconds]);
+  }, [computedInitial, seconds]);
 
   React.useEffect(() => {
     const int = setInterval(() => {
@@ -343,6 +368,43 @@ function ManagerDashboardInner() {
             Manage projects, monitor team performance, and track progress from one place.
           </p>
         </div>
+
+        {/* Check-in / Check-out Status & Live Duration Card */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl shadow-sm shrink-0">
+          <div className="flex items-center gap-3 pr-3 border-r border-slate-200 dark:border-slate-800">
+            <div className={cn("h-3 w-3 rounded-full shrink-0", (dashboardStats?.isOnline || dashboardStats?.checkinTime) ? "bg-emerald-500 animate-pulse" : "bg-slate-400")} />
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</p>
+              <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200">
+                {(dashboardStats?.isOnline || dashboardStats?.checkinTime) ? "Checked In" : "Offline"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 px-2">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Check In</p>
+              <p className="text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                {formatCheckTime(dashboardStats?.checkinTime || dashboardStats?.todayFirstLogin || dashboardStats?.currentSessionStart)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Check Out</p>
+              <p className="text-sm font-mono font-bold text-slate-700 dark:text-slate-300">
+                {dashboardStats?.checkoutTime ? formatCheckTime(dashboardStats.checkoutTime) : (dashboardStats?.isOnline || dashboardStats?.currentSessionStart) ? <span className="text-amber-500 text-xs uppercase font-extrabold">Working</span> : "--:--"}
+              </p>
+            </div>
+          </div>
+          <div className="pl-3 border-l border-slate-200 dark:border-slate-800">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Duration</p>
+            <p className="text-sm font-mono font-black text-orange-600 dark:text-orange-400">
+              {(dashboardStats?.isOnline || dashboardStats?.currentSessionStart) ? (
+                <LiveTimer initialSeconds={dashboardStats?.todayActiveSeconds || 0} sessionStart={dashboardStats?.currentSessionStart} isOnline={dashboardStats?.isOnline} />
+              ) : (
+                formatTime(dashboardStats?.todayActiveSeconds || 0)
+              )}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -402,11 +464,18 @@ function ManagerDashboardInner() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
                 <Users className="h-5 w-5" />
               </div>
-              <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">100% On</Badge>
+              <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">
+                {(() => {
+                  const online = dashboardStats?.liveTeamMembers?.filter((m: any) => m.isOnline || !!m.currentSessionStart)?.length || 0;
+                  return `${online} Online`;
+                })()}
+              </Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.activeInternsCount ?? 0}</p>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Active Interns</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">
+                {dashboardStats?.liveTeamMembers?.length || dashboardStats?.activeInternsCount || 0}
+              </p>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Active Employees</p>
             </div>
           </CardContent>
         </Card>
@@ -752,7 +821,7 @@ function ManagerDashboardInner() {
                     (currentUserEmail && member.email && currentUserEmail === member.email.toLowerCase()) ||
                     (currentUserObj?.name && member.name && currentUserObj.name.toLowerCase() === member.name.toLowerCase());
 
-                  const isOnline = !!(activeSessions[member.id]?.isOnline || isCurrentLoggedInUser);
+                  const isOnline = !!(activeSessions[member.id]?.isOnline || member.isOnline || isCurrentLoggedInUser);
                   const sessionTime = activeSessions[member.id]?.time || 0;
                   return (
                     <div key={member.id} className={cn("p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors", !isOnline && "opacity-75")}>
@@ -770,21 +839,46 @@ function ManagerDashboardInner() {
                           )}
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
+                            <Badge variant="outline" className={cn(
+                              "text-[9px] font-black px-1 py-0 rounded uppercase border",
+                              member.userRole === 'manager' || member.role?.toLowerCase()?.includes('manager')
+                                ? "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/30"
+                                : member.userRole === 'admin' || member.role?.toLowerCase()?.includes('admin')
+                                ? "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30"
+                                : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30"
+                            )}>
+                              {member.userRole === 'manager' || member.role?.toLowerCase()?.includes('manager') ? 'MGR' : member.userRole === 'admin' || member.role?.toLowerCase()?.includes('admin') ? 'ADM' : 'EMP'}
+                            </Badge>
+                          </div>
                           <span className="text-[10px] text-slate-500 font-semibold">{member.role}</span>
                         </div>
                       </div>
-                      {isOnline ? (
-                        <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold animate-pulse">
-                          <Timer className="h-3.5 w-3.5 text-emerald-500" />
-                          <span><LiveTimer initialSeconds={sessionTime} /></span>
-                        </div>
-                      ) : (
-                        <div className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold">
-                          <Timer className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" />
-                          <span className="uppercase tracking-wider text-[10px]">Offline</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-3 shrink-0">
+                        {isOnline ? (
+                          <Badge variant="outline" className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-500/30 text-[11px] font-bold flex items-center gap-1.5 hidden sm:flex">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
+                            <span>Online</span>
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 text-[11px] font-bold flex items-center gap-1.5 hidden sm:flex">
+                            <span className="h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                            <span>Offline</span>
+                          </Badge>
+                        )}
+                        {isOnline ? (
+                          <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold animate-pulse" title="Check-in Duration Today">
+                            <Timer className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                            <span><LiveTimer initialSeconds={sessionTime || member.todayActiveSeconds || 0} sessionStart={member.currentSessionStart} isOnline={isOnline} /></span>
+                          </div>
+                        ) : (
+                          <div className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold" title="Check-in Duration Today">
+                            <Timer className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                            <span>{formatTime(sessionTime || member.todayActiveSeconds || 0)}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
@@ -838,7 +932,7 @@ function ManagerDashboardInner() {
         </div>
       </div>
 
-      {/* Active Interns Modal */}
+      {/* Active Employees Modal */}
       {isActiveInternsModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
@@ -848,8 +942,8 @@ function ManagerDashboardInner() {
           <div className="bg-white dark:bg-slate-900 rounded-2xl border-slate-200 dark:border-slate-800/80 shadow-2xl w-full max-w-md overflow-hidden relative z-10 animate-in fade-in zoom-in duration-300">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Interns</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Names and online status of active interns</p>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Employees</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Names and online status of active employees</p>
               </div>
               <button
                 onClick={() => setIsActiveInternsModalOpen(false)}
@@ -862,11 +956,16 @@ function ManagerDashboardInner() {
             <div className="p-6 max-h-75 overflow-y-auto space-y-4">
               {liveTeamMembers.length === 0 ? (
                 <div className="text-sm text-slate-500 italic p-4 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                  No interns currently online.
+                  No employees currently online.
                 </div>
               ) : (
                 liveTeamMembers.slice((activeInternsPage - 1) * internsPerPage, activeInternsPage * internsPerPage).map((member) => {
-                  const isOnline = activeSessions[member.id]?.isOnline;
+                  const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
+                  const currentUserObj = userStr ? JSON.parse(userStr) : null;
+                  const currentUserId = currentUserObj?.id;
+                  const isCurrentLoggedInUser = (currentUserId && currentUserId === member.id);
+
+                  const isOnline = !!(activeSessions[member.id]?.isOnline || member.isOnline || isCurrentLoggedInUser);
                   return (
                     <div key={member.id} className={cn("flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-850 transition-all", !isOnline && "opacity-75 grayscale")}>
                       <div className="flex items-center gap-3">
@@ -874,22 +973,47 @@ function ManagerDashboardInner() {
                           <AvatarFallback className="font-bold text-xs">{member.initials}</AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
-                          <span className="text-xs text-slate-500 font-medium">{member.role}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{member.name}</span>
+                            <Badge variant="outline" className={cn(
+                              "text-[9px] font-black px-1.5 py-0 rounded uppercase border",
+                              member.userRole === 'manager' || member.role?.toLowerCase()?.includes('manager')
+                                ? "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/30"
+                                : member.userRole === 'admin' || member.role?.toLowerCase()?.includes('admin')
+                                ? "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30"
+                                : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30"
+                            )}>
+                              {member.userRole === 'manager' || member.role?.toLowerCase()?.includes('manager') ? 'MANAGER' : member.userRole === 'admin' || member.role?.toLowerCase()?.includes('admin') ? 'ADMIN' : 'EMPLOYEE'}
+                            </Badge>
+                          </div>
+                          <span className="text-xs text-slate-500 font-medium mt-0.5">{member.role}</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-3 shrink-0">
                         {isOnline ? (
-                          <>
-                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Online</span>
-                          </>
+                          <Badge variant="outline" className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-500/30 text-xs font-bold flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
+                            <span>Online</span>
+                          </Badge>
                         ) : (
-                          <>
-                            <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600" />
-                            <span className="text-xs font-bold text-slate-500">Offline</span>
-                          </>
+                          <Badge variant="outline" className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 text-xs font-bold flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-slate-400 shrink-0" />
+                            <span>Offline</span>
+                          </Badge>
                         )}
+                        <div className="flex items-center gap-1.5 min-w-[95px] justify-end">
+                          {isOnline ? (
+                            <div className="px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center space-x-1.5 font-mono text-xs font-bold animate-pulse border border-emerald-200/50 dark:border-emerald-500/20">
+                              <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0 animate-ping" />
+                              <span><LiveTimer initialSeconds={activeSessions[member.id]?.time || member.todayActiveSeconds || 0} sessionStart={member.currentSessionStart} isOnline={isOnline} /></span>
+                            </div>
+                          ) : (
+                            <div className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl flex items-center space-x-1.5 font-mono text-xs font-bold border border-slate-200 dark:border-slate-700">
+                              <span className="h-2 w-2 rounded-full bg-slate-400 shrink-0" />
+                              <span>{formatTime(activeSessions[member.id]?.time || member.todayActiveSeconds || 0)}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )

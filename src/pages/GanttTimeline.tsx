@@ -42,7 +42,7 @@ const mapGlobalProjectsToGantt = (globalProjects: any[], currentDate: Date): Pro
   const monthStart = startOfMonth(currentDate);
   const colors = ['bg-indigo-500', 'bg-emerald-500', 'bg-rose-500', 'bg-blue-500', 'bg-purple-500', 'bg-amber-500'];
   
-  return globalProjects.map((p, pIndex) => {
+  return globalProjects.filter(p => p.status !== 'Aborted' && p.status !== 'aborted').map((p, pIndex) => {
     return {
       id: p.id,
       name: p.name,

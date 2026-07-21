@@ -10,6 +10,9 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    if (config.data instanceof FormData && config.headers) {
+      delete config.headers['Content-Type'];
+    }
     if (config.url?.includes('/auth/login') || config.url?.includes('/auth/signup')) {
       return config;
     }

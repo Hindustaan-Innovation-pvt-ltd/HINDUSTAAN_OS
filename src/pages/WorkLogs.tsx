@@ -159,16 +159,14 @@ export default function WorkLogs({ session }: { session?: any }) {
 
   useEffect(() => {
     const fetchTeam = async () => {
-      if (role === 'manager' || role === 'admin') {
-        try {
-          const res = await api.get('/team/profiles');
-          if (res.data?.success) {
-            // Include only employees/interns, exclude admin and manager
-            setTeamMembers(res.data.data.filter((u: any) => u.role !== 'admin' && u.role !== 'manager' && u.name !== 'Admin User'));
-          }
-        } catch (err) {
-          console.warn('Failed to fetch team profiles:', err);
+      try {
+        const res = await api.get('/team/profiles');
+        if (res.data?.success) {
+          // Include managers and employees/interns, exclude only Admin User
+          setTeamMembers(res.data.data.filter((u: any) => u.role !== 'admin' && u.name !== 'Admin User'));
         }
+      } catch (err) {
+        console.warn('Failed to fetch team profiles:', err);
       }
     };
     fetchTeam();
@@ -214,10 +212,12 @@ export default function WorkLogs({ session }: { session?: any }) {
         let seconds = member.todayActiveSeconds || 0;
         let isOnline = false;
         
-        if (member.currentSessionStart) {
+        if (member.currentSessionStart || member.id === currentUser.id) {
           isOnline = true;
-          const start = new Date(member.currentSessionStart).getTime();
-          seconds += Math.floor((Date.now() - start) / 1000);
+          if (member.currentSessionStart) {
+            const start = new Date(member.currentSessionStart).getTime();
+            seconds += Math.floor((Date.now() - start) / 1000);
+          }
         }
         
         if (isCurrentUserEmployee && loginTimeStr) {
@@ -511,10 +511,7 @@ export default function WorkLogs({ session }: { session?: any }) {
             <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg"><Users className="h-5 w-5 text-emerald-500" /></div>
           </div>
           <p className="text-4xl font-black text-[#0F172A] dark:text-white">
-            {currentUser.role === 'manager' 
-              ? activeStaff 
-              : Object.values(activeSessions).filter((s: any) => s.isOnline).length
-            }
+            {Object.values(activeSessions).filter((s: any) => s.isOnline).length}
           </p>
         </div>
       </div>

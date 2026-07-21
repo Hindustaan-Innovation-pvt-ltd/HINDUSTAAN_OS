@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, Video, CheckCircle2, AlertCircle, MessageSquare, Clock, Calendar, CheckSquare, Edit3, Sparkles, TrendingUp, AlertTriangle, Flame, Percent, Search, Trash2, MessageCircle, Users, Briefcase, Send, Check, ChevronDown, Target } from 'lucide-react';
+import { Video, CheckCircle2, AlertCircle, MessageSquare, Clock, Calendar, CheckSquare, Edit3, Sparkles, TrendingUp, AlertTriangle, Flame, Percent, Search, Trash2, MessageCircle, Users, Briefcase, Send, Check, ChevronDown, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -20,111 +20,6 @@ const WhatsappIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-const MOCK_STANDUPS = [
-  {
-    id: 's1',
-    user: 'Tanvy',
-    initials: 'TP',
-    role: 'Frontend Developer',
-    status: 'Submitted',
-    yesterday: 'Finished the responsive layout for the authentication screen.',
-    today: 'Working on the Kanban drag-and-drop feature.',
-    blockers: 'None so far, but might need help with React DnD.',
-    time: '9:05 AM',
-  },
-  {
-    id: 's2',
-    user: 'Rahul Sharma',
-    initials: 'RS',
-    role: 'Backend Developer',
-    status: 'Submitted',
-    yesterday: 'Set up the initial database schema for notifications.',
-    today: 'Creating the REST API endpoints for fetching logs.',
-    blockers: 'Waiting on the AWS IAM permissions to deploy.',
-    time: '9:15 AM',
-  },
-  {
-    id: 's3',
-    user: 'Priya Patel',
-    initials: 'PP',
-    role: 'Product Manager',
-    status: 'Pending',
-    yesterday: '',
-    today: '',
-    blockers: '',
-    time: '',
-  },
-  {
-    id: 's4',
-    user: 'Amanda Smith',
-    initials: 'AS',
-    role: 'UI/UX Designer',
-    status: 'Submitted',
-    yesterday: 'Handed off the final Figma files for the dashboard.',
-    today: 'Starting user research for the mobile app navigation.',
-    blockers: 'None.',
-    time: '9:42 AM',
-  }
-];
-
-const MOCK_HISTORY = [
-  {
-    id: 'h1',
-    user: 'Tanvy',
-    initials: 'TP',
-    role: 'Frontend Developer',
-    dateGroup: 'Yesterday',
-    yesterday: 'Integrated the ProjectProvider context into App.tsx.',
-    today: 'Working on refining the Contribution Scores analytics page.',
-    blockers: 'None.',
-    time: '9:10 AM'
-  },
-  {
-    id: 'h2',
-    user: 'Rahul Sharma',
-    initials: 'RS',
-    role: 'Backend Developer',
-    dateGroup: 'Yesterday',
-    yesterday: 'Set up the initial schema for standup storage in database.',
-    today: 'Working on logs API endpoints testing.',
-    blockers: 'None.',
-    time: '9:05 AM'
-  },
-  {
-    id: 'h3',
-    user: 'Amanda Smith',
-    initials: 'AS',
-    role: 'UI/UX Designer',
-    dateGroup: 'Yesterday',
-    yesterday: 'Designed high-fidelity mockups for Daily Standups page widgets.',
-    today: 'Syncing with Tanvy on component specifications.',
-    blockers: 'None.',
-    time: '9:30 AM'
-  },
-  {
-    id: 'h4',
-    user: 'Tanvy',
-    initials: 'TP',
-    role: 'Frontend Developer',
-    dateGroup: '2 Days Ago',
-    yesterday: 'Implemented custom theme context for light/dark mode.',
-    today: 'Debugging responsive design issues on main shell.',
-    blockers: 'None.',
-    time: '9:12 AM'
-  },
-  {
-    id: 'h5',
-    user: 'Rahul Sharma',
-    initials: 'RS',
-    role: 'Backend Developer',
-    dateGroup: '2 Days Ago',
-    yesterday: 'Configured supabase client initialization and auth routes.',
-    today: 'Writing test cases for RLS policies.',
-    blockers: 'None.',
-    time: '9:00 AM'
-  }
-];
-
 export default function DailyStandups({ session }: { session?: any }) {
   const { addNotification } = useNotifications();
   const currentUser = getCurrentUser();
@@ -141,11 +36,33 @@ export default function DailyStandups({ session }: { session?: any }) {
 
   const [standups, setStandups] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_standups');
-    return (saved && saved !== 'null') ? JSON.parse(saved) : [];
+    if (saved && saved !== 'null') {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.some((s: any) => ['s1', 's2', 's3', 's4'].includes(s?.id))) {
+          return [];
+        }
+        return parsed;
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
   });
   const [history, setHistory] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_standup_history');
-    return (saved && saved !== 'null') ? JSON.parse(saved) : [];
+    if (saved && saved !== 'null') {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.some((h: any) => ['h1', 'h2', 'h3', 'h4', 'h5'].includes(h?.id))) {
+          return [];
+        }
+        return parsed;
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
   });
 
   // Fetch real standups from backend on mount
@@ -280,75 +197,6 @@ export default function DailyStandups({ session }: { session?: any }) {
 
   const [empExpanded, setEmpExpanded] = useState(false);
   const [mgrExpanded, setMgrExpanded] = useState(false);
-
-  const [activeSpeechField, setActiveSpeechField] = useState<'yesterday' | 'today' | 'blockers' | 'notes' | null>(null);
-  const recognitionRef = React.useRef<any>(null);
-
-  const startListeningForField = (field: 'yesterday' | 'today' | 'blockers' | 'notes') => {
-    // If already listening for this field, stop it (toggle off)
-    if (activeSpeechField === field && recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-      setActiveSpeechField(null);
-      return;
-    }
-
-    // If listening for a different field, stop that first
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-    }
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      toast.error('Voice commands are not supported in this browser. Please use Google Chrome.');
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.lang = 'en-US';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    recognition.onstart = () => {
-      setActiveSpeechField(field);
-      toast.info(`Listening for "${field}"... Speak now`, { duration: 2500 });
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error', event.error);
-      setActiveSpeechField(null);
-      recognitionRef.current = null;
-      if (event.error !== 'aborted') {
-        toast.error(`Voice error: ${event.error}`);
-      }
-    };
-
-    recognition.onend = () => {
-      setActiveSpeechField(null);
-      recognitionRef.current = null;
-    };
-
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      if (transcript) {
-        setFormData(prev => ({
-          ...prev,
-          [field]: prev[field] ? prev[field] + ' ' + transcript : transcript
-        }));
-        toast.success(`Dictated: "${transcript}"`);
-      }
-    };
-
-    recognitionRef.current = recognition;
-    recognition.start();
-  };
-
-  const handleOpenVoiceStandup = () => {
-    // Just open the modal — user taps mic icon inside to start listening
-    setIsModalOpen(true);
-  };
 
   const handleSendReply = () => {
     if (!replyText.trim() || !replyStandupId) return;
@@ -1023,10 +871,10 @@ export default function DailyStandups({ session }: { session?: any }) {
         <div className="flex flex-wrap items-center gap-3">
           {role !== 'manager' && (
             <Button
-              onClick={handleOpenVoiceStandup}
-              className="h-10 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold shadow-md shadow-indigo-500/20 border-0 transition-all"
+              onClick={() => setIsModalOpen(true)}
+              className="h-10 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold shadow-md shadow-indigo-500/20 border-0 transition-all cursor-pointer"
             >
-              <Mic className="h-4 w-4 mr-2" /> Submit Update
+              <Edit3 className="h-4 w-4 mr-2" /> Submit Update
             </Button>
           )}
 
@@ -1502,21 +1350,7 @@ export default function DailyStandups({ session }: { session?: any }) {
           </DialogHeader>
           <div className="p-6 space-y-6">
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => startListeningForField('yesterday')}
-                  className={cn(
-                    "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
-                    activeSpeechField === 'yesterday' && "text-red-500 animate-pulse hover:text-red-600"
-                  )}
-                >
-                  <Mic className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What did you do yesterday?</label>
               <textarea
                 value={formData.yesterday}
                 onChange={(e) => setFormData({ ...formData, yesterday: e.target.value })}
@@ -1525,21 +1359,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What will you do today?</label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => startListeningForField('today')}
-                  className={cn(
-                    "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
-                    activeSpeechField === 'today' && "text-red-500 animate-pulse hover:text-red-600"
-                  )}
-                >
-                  <Mic className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">What will you do today?</label>
               <textarea
                 value={formData.today}
                 onChange={(e) => setFormData({ ...formData, today: e.target.value })}
@@ -1548,21 +1368,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Any blockers? (Optional)</label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => startListeningForField('blockers')}
-                  className={cn(
-                    "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
-                    activeSpeechField === 'blockers' && "text-red-500 animate-pulse hover:text-red-600"
-                  )}
-                >
-                  <Mic className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Any blockers? (Optional)</label>
               <textarea
                 value={formData.blockers}
                 onChange={(e) => setFormData({ ...formData, blockers: e.target.value })}
@@ -1571,21 +1377,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Additional Notes (Optional)</label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => startListeningForField('notes')}
-                  className={cn(
-                    "h-6 w-6 p-0 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400",
-                    activeSpeechField === 'notes' && "text-red-500 animate-pulse hover:text-red-600"
-                  )}
-                >
-                  <Mic className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Additional Notes (Optional)</label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}

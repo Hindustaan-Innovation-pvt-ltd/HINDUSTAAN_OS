@@ -39,6 +39,61 @@ localStorage.setItem = function (key, value) {
   window.dispatchEvent(new CustomEvent('local-storage-update', { detail: { key, value } }));
 };
 
+const formatTime = (totalSeconds: number) => {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  const s = totalSeconds % 60;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+};
+
+const formatCheckTime = (timeStr?: string | Date | null) => {
+  if (!timeStr) return '--:--';
+  try {
+    const d = new Date(timeStr);
+    if (isNaN(d.getTime())) return '--:--';
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    return '--:--';
+  }
+};
+
+const LiveTimer = ({ initialSeconds, sessionStart, isOnline }: { initialSeconds: number; sessionStart?: string | Date | null; isOnline?: boolean }) => {
+  const computedInitial = React.useMemo(() => {
+    if (isOnline && sessionStart) {
+      try {
+        const startMs = new Date(sessionStart).getTime();
+        const nowMs = Date.now();
+        if (startMs <= nowMs && !isNaN(startMs)) {
+          const elapsed = Math.floor((nowMs - startMs) / 1000);
+          return Math.max(initialSeconds, elapsed);
+        }
+      } catch (e) {}
+    }
+    return initialSeconds;
+  }, [initialSeconds, sessionStart, isOnline]);
+
+  const [startClock, setStartClock] = React.useState(Date.now() - computedInitial * 1000);
+  const [seconds, setSeconds] = React.useState(computedInitial);
+
+  React.useEffect(() => {
+    if (Math.abs(computedInitial - seconds) > 15) {
+      setStartClock(Date.now() - computedInitial * 1000);
+      setSeconds(computedInitial);
+    }
+  }, [computedInitial, seconds]);
+
+  React.useEffect(() => {
+    const int = setInterval(() => {
+      setSeconds(Math.floor((Date.now() - startClock) / 1000));
+    }, 1000);
+    return () => clearInterval(int);
+  }, [startClock]);
+
+  return <>{formatTime(seconds)}</>;
+};
+
 export default function InternDashboard({ }: InternDashboardProps) {
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   const [isFigjamOpen, setIsFigjamOpen] = useState(false);
@@ -543,6 +598,42 @@ export default function InternDashboard({ }: InternDashboardProps) {
           </p>
         </div>
 
+        {/* Check-in / Check-out Status & Live Duration Card */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl shadow-sm shrink-0">
+          <div className="flex items-center gap-3 pr-3 border-r border-slate-200 dark:border-slate-800">
+            <div className={cn("h-3 w-3 rounded-full shrink-0", (dashboardData?.isOnline || dashboardData?.checkinTime) ? "bg-emerald-500 animate-pulse" : "bg-slate-400")} />
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</p>
+              <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200">
+                {(dashboardData?.isOnline || dashboardData?.checkinTime) ? "Checked In" : "Offline"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 px-2">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Check In</p>
+              <p className="text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                {formatCheckTime(dashboardData?.checkinTime || dashboardData?.todayFirstLogin || dashboardData?.currentSessionStart)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Check Out</p>
+              <p className="text-sm font-mono font-bold text-slate-700 dark:text-slate-300">
+                {dashboardData?.checkoutTime ? formatCheckTime(dashboardData.checkoutTime) : (dashboardData?.isOnline || dashboardData?.currentSessionStart) ? <span className="text-amber-500 text-xs uppercase font-extrabold">Working</span> : "--:--"}
+              </p>
+            </div>
+          </div>
+          <div className="pl-3 border-l border-slate-200 dark:border-slate-800">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Duration</p>
+            <p className="text-sm font-mono font-black text-orange-600 dark:text-orange-400">
+              {(dashboardData?.isOnline || dashboardData?.currentSessionStart) ? (
+                <LiveTimer initialSeconds={dashboardData?.todayActiveSeconds || 0} sessionStart={dashboardData?.currentSessionStart} isOnline={dashboardData?.isOnline} />
+              ) : (
+                formatTime(dashboardData?.todayActiveSeconds || 0)
+              )}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* KPI Cards */}

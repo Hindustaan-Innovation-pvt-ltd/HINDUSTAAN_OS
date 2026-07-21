@@ -16,6 +16,7 @@ const GANTT_TASKS: any[] = [];
 
 import { useProjects } from '@/context/ProjectContext';
 import { useNotifications } from '@/context/NotificationContext';
+import { useUser } from '@/context/UserContext';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -49,9 +50,10 @@ export default function Projects({ session }: { session?: any }) {
   }, []);
   const [selectedWeekDate, setSelectedWeekDate] = useState<Date>(new Date());
 
-  const role = session?.user?.user_metadata?.role || 'intern';
+  const { user } = useUser();
+  const role = session?.user?.user_metadata?.role || user?.role || localStorage.getItem('role') || 'intern';
 
-  const baseProjects = (role === 'manager' || role === 'admin' ? projects : [projects[0]]).filter(Boolean);
+  const baseProjects = (role === 'manager' || role === 'admin' ? projects : projects).filter(Boolean);
 
   const handleSaveProject = () => {
     if (!newProject.name) return;
@@ -126,7 +128,7 @@ export default function Projects({ session }: { session?: any }) {
       { bg: 'bg-cyan-50 dark:bg-cyan-500/15', text: 'text-cyan-600 dark:text-cyan-400', stroke: '#06b6d4', border: 'border-cyan-200 dark:border-cyan-500/30' },
     ];
 
-    return displayedProjects.map((p, pIndex) => {
+    return displayedProjects.filter(p => p.status !== 'Aborted' && p.status !== 'aborted').map((p, pIndex) => {
       const palette = PROJECT_PALETTE[pIndex % PROJECT_PALETTE.length];
       const pTasks: any[] = [];
       p.tasks?.forEach((t: any, tIndex: number) => {

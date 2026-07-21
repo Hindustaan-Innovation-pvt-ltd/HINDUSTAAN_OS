@@ -408,8 +408,9 @@ export const uploadAvatarToBackend = async (file: File): Promise<string> => {
       return response.data.url;
     }
     throw new Error('No URL returned from backend');
-  } catch (error) {
-    console.error('Failed to upload avatar to backend:', error);
-    throw error;
+  } catch (error: any) {
+    const errorDetails = error?.response?.data?.details || error?.response?.data?.error || error.message;
+    console.error('Failed to upload avatar to backend:', error?.response?.data || error);
+    throw new Error(`Upload failed: ${errorDetails}`);
   }
 };
