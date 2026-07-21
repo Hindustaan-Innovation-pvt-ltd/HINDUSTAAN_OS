@@ -12,7 +12,7 @@ const toast = ({ title, description }: { title: string; description: string }) =
 };
 
 export interface LeaveRequest {
-  id: number;
+  id: string;
   employee: string;
   avatar?: string;
   department: string;
@@ -30,8 +30,8 @@ interface LeaveRequestDialogProps {
   request: LeaveRequest | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onApprove: (id: number) => Promise<void>;
-  onReject: (id: number) => Promise<void>;
+  onApprove: (id: string) => Promise<void>;
+  onReject: (id: string) => Promise<void>;
 }
 
 export default function LeaveRequestDialog({

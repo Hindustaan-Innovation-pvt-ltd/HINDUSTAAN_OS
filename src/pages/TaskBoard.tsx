@@ -3,14 +3,13 @@ import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayC
 import { cn, logActivity } from '@/lib/utils';
 import TaskDetailsModal from '../components/dashboard/TaskDetailsModal';
 import CreateTaskModal from '../components/dashboard/CreateTaskModal';
-import { INITIAL_TASKS } from '@/data/mockData';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/lib/auth';
 
 // --- Types & Mock Data ---
 
-type Priority = 'High' | 'Medium' | 'Normal' | 'Low';
+type Priority = 'Critical' | 'High' | 'Medium' | 'Normal' | 'Low';
 type Status = 'To Do' | 'In Progress' | 'In Review' | 'Done';
 interface Task {
   id: string;
@@ -36,7 +35,8 @@ const PriorityBadge = ({ priority, isEmployeeDashboard }: { priority: Priority; 
     Low: 'bg-emerald-100 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/20',
   };
 
-  const fixedStyles = {
+  const fixedStyles: Record<string, string> = {
+    Critical: 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-300 border-red-200 dark:border-red-500/20',
     High: 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300 border-rose-200 dark:border-rose-500/20',
     Medium: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300 border-blue-200 dark:border-blue-500/20',
     Normal: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300 border-amber-200 dark:border-amber-500/20',
@@ -148,8 +148,8 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
         }
       }
     } catch (e: any) {
-      console.error('Failed to load Kanban tasks:', e);
-      toast.error('Kanban Error', { description: e.message || 'Failed to load task board.' });
+      console.warn('Backend unavailable or failed to load Kanban tasks.', e.message);
+      setTasks([]);
     } finally {
       setLoading(false);
     }
@@ -296,7 +296,8 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
         desc: updatedTask.description,
         priority: backendPriority,
         status: backendStatus,
-        dueDate: updatedTask.due_date ? new Date(updatedTask.due_date) : undefined
+        dueDate: updatedTask.due_date ? new Date(updatedTask.due_date) : undefined,
+        assigneeId: updatedTask.assignee_id || undefined
       });
       toast.success('Task updated successfully');
     } catch (e: any) {

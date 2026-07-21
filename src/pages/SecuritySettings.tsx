@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Shield, Key, Fingerprint, Lock, Unlock, Smartphone, MapPin, Search, AlertTriangle, LogOut, CheckCircle2, MonitorSmartphone, Clock, Activity, Users, Settings2, Globe, Building2, Download, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,8 @@ import {
 export default function SecuritySettings({ session }: { session?: any }) {
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; actionType: string; title: string; desc: string }>({ isOpen: false, actionType: '', title: '', desc: '' });
   const [confirmText, setConfirmText] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [passwordLength, setPasswordLength] = useState('12');
 
   const [authSettings, setAuthSettings] = useState({
     passwordLogin: true,
@@ -44,6 +47,64 @@ export default function SecuritySettings({ session }: { session?: any }) {
     restrictCountries: false,
   });
 
+  const fetchSecurityConfig = async () => {
+    try {
+      const res = await api.get('/settings/security');
+      if (res.data) {
+        const config = res.data;
+        setMfaSettings({
+          admin: config.mfaRequired,
+          manager: config.mfaRequired,
+          employee: config.mfaRequired
+        });
+        setPasswordLength(String(config.passwordLength || 8));
+        
+        const mins = config.sessionTimeoutMins || 60;
+        let timeoutStr = '1 Hour';
+        if (mins === 15) timeoutStr = '15 Minutes';
+        else if (mins === 30) timeoutStr = '30 Minutes';
+        else if (mins === 240) timeoutStr = '4 Hours';
+        else if (mins === 480) timeoutStr = '8 Hours';
+        
+        setAuthSettings(prev => ({
+          ...prev,
+          sessionTimeout: timeoutStr
+        }));
+      }
+    } catch (e) {
+      console.error("Failed to load security config:", e);
+    }
+  };
+
+  const handleSaveAllSecurity = async () => {
+    setSaving(true);
+    try {
+      let sessionTimeoutMins = 60;
+      if (authSettings.sessionTimeout === '15 Minutes') sessionTimeoutMins = 15;
+      else if (authSettings.sessionTimeout === '30 Minutes') sessionTimeoutMins = 30;
+      else if (authSettings.sessionTimeout === '4 Hours') sessionTimeoutMins = 240;
+      else if (authSettings.sessionTimeout === '8 Hours') sessionTimeoutMins = 480;
+
+      const mfaRequired = mfaSettings.admin || mfaSettings.manager || mfaSettings.employee;
+
+      await api.put('/settings/security', {
+        mfaRequired,
+        passwordLength: parseInt(passwordLength, 10),
+        sessionTimeoutMins
+      });
+      toast.success("Security policies saved successfully.");
+      fetchSecurityConfig();
+    } catch (e: any) {
+      toast.error("Failed to save security policies", { description: e.response?.data?.message || e.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSecurityConfig();
+  }, []);
+
   const openConfirmDialog = (actionType: string, title: string, desc: string) => {
     setConfirmText('');
     setConfirmDialog({ isOpen: true, actionType, title, desc });
@@ -56,6 +117,10 @@ export default function SecuritySettings({ session }: { session?: any }) {
     }
     toast.success(`${confirmDialog.title} executed successfully.`);
     setConfirmDialog({ isOpen: false, actionType: '', title: '', desc: '' });
+  };
+
+  const handleNavigateToRoles = () => {
+    window.dispatchEvent(new CustomEvent('navigate-to-view', { detail: { view: 'Roles & Permissions' } }));
   };
 
   const activeSessions = [
@@ -80,14 +145,23 @@ export default function SecuritySettings({ session }: { session?: any }) {
     <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
 
       {/* Header */}
-      <div>
-        <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-          <Shield className="h-8 w-8 text-indigo-500" />
-          Security & Privacy
-        </h2>
-        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5 max-w-3xl">
-          Configure organization-wide security policies, access controls, monitoring, and authentication rules.
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div>
+          <h2 className="text-page-title text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+            <Shield className="h-8 w-8 text-indigo-500" />
+            Security & Privacy
+          </h2>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1.5 max-w-3xl">
+            Configure organization-wide security policies, access controls, monitoring, and authentication rules.
+          </p>
+        </div>
+        <Button 
+          onClick={handleSaveAllSecurity} 
+          disabled={saving}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md shadow-indigo-500/10 transition-transform active:scale-95 self-start md:self-auto shrink-0"
+        >
+          {saving ? 'Saving...' : 'Save Security Policies'}
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
@@ -187,7 +261,7 @@ export default function SecuritySettings({ session }: { session?: any }) {
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-sm font-bold text-slate-900 dark:text-white">Minimum Length</label>
-                    <Select defaultValue="12">
+                    <Select value={passwordLength} onValueChange={setPasswordLength}>
                       <SelectTrigger className="w-full bg-slate-50 dark:bg-slate-900/50 rounded-xl">
                         <SelectValue />
                       </SelectTrigger>
@@ -322,8 +396,28 @@ export default function SecuritySettings({ session }: { session?: any }) {
                       </div>
                     </div>
                     <div className="mt-5 grid grid-cols-2 gap-2">
-                      <Button variant="outline" size="sm" className="font-bold border-slate-200 dark:border-slate-700">View</Button>
-                      <Button variant="secondary" size="sm" className="font-bold" disabled={!role.editable}>Edit</Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="font-bold border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-slate-200"
+                        onClick={handleNavigateToRoles}
+                      >
+                        View
+                      </Button>
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className={cn(
+                          "font-bold transition-all",
+                          role.editable 
+                            ? "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-950 dark:text-slate-50 border border-slate-200 dark:border-slate-700" 
+                            : "bg-slate-50/50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-600 border border-slate-100 dark:border-slate-800"
+                        )}
+                        disabled={!role.editable}
+                        onClick={handleNavigateToRoles}
+                      >
+                        Edit
+                      </Button>
                     </div>
                   </div>
                 ))}

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getCurrentUser, updateProfileOnBackend } from '@/lib/auth';
+import { getCurrentUser, updateProfileOnBackend, fetchProfileFromBackend } from '@/lib/auth';
 import { getProfileData, saveProfileData, type ProfileData } from '@/lib/profile';
 import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext';
@@ -48,6 +48,20 @@ export default function EmployeeProfileEdit({ session, onNavigate }: { session?:
       setLinkedin(data.linkedin);
       setPortfolio(data.portfolio || '');
       setAvatar(data.avatar || '');
+
+      // Load live data from backend asynchronously
+      if (user.id) {
+        fetchProfileFromBackend(user.id).then((freshUser) => {
+          if (freshUser) {
+            const freshData = getProfileData(freshUser);
+            setProfile(freshData);
+            setName(freshData.name);
+            setPhone(freshData.phone);
+            setDepartment(freshData.department.toLowerCase());
+            setAvatar(freshData.avatar || '');
+          }
+        });
+      }
     }
   }, []);
 
@@ -117,6 +131,8 @@ export default function EmployeeProfileEdit({ session, onNavigate }: { session?:
         await updateProfileOnBackend(user.id, {
           name: name.trim(),
           department: department || undefined,
+          phoneWa: phone.trim() || undefined,
+          avatarUrl: avatar || undefined,
         });
         toast.success('Profile Saved', { description: 'Your changes have been synced to the server.' });
       } catch (err: any) {

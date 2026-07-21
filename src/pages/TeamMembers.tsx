@@ -23,37 +23,7 @@ import { toast } from 'sonner';
 import { getCurrentUser, type User } from '@/lib/auth';
 import api from '@/lib/api';
 
-// Generate 30 realistic mock interns
-const generateMockInterns = (currentUser?: User | null) => {
-  const depts = ['Frontend', 'Backend', 'AI/ML', 'UI/UX'];
-  const roles = ['Frontend Developer Intern', 'Backend Developer Intern', 'AI Researcher Intern', 'Product Design Intern'];
-  const projects = ['Dashboard UI Revamp', 'Supabase Migration', 'Predictive Model V2', 'Onboarding Flow'];
-  const statuses = ['Online', 'Busy', 'Offline', 'Leave'];
-  
-  const defaultEmployeeName = currentUser?.role === 'employee' ? currentUser.name : "Tanvy Pandey";
-  const defaultManagerName = currentUser?.role === 'manager' ? currentUser.name : "Aakash Gupta";
-
-  return Array.from({ length: 30 }).map((_, i) => ({
-    id: `INT-2026-${(i + 1).toString().padStart(3, '0')}`,
-    name: i === 0 ? defaultEmployeeName : `Intern Member ${i + 1}`,
-    email: i === 0 ? (currentUser?.role === 'employee' ? currentUser.email : "tanvy.pandey@hindustaan.in") : `intern${i+1}@hindustaan.in`,
-    phone: "+91 9876543210",
-    college: "IIT Delhi",
-    degree: "B.Tech Computer Science",
-    role: roles[i % roles.length],
-    department: depts[i % depts.length],
-    manager: defaultManagerName,
-    project: projects[i % projects.length],
-    score: Math.floor(Math.random() * (100 - 65 + 1)) + 65,
-    attendance: Math.floor(Math.random() * (100 - 80 + 1)) + 80,
-    currentTask: i % 3 === 0 ? "Building Team Members UI" : "Writing API Endpoints",
-    hoursLogged: Math.floor(Math.random() * (45 - 20 + 1)) + 20,
-    status: statuses[Math.floor(Math.random() * statuses.length)],
-    joiningDate: "June 1, 2026",
-    expectedEndDate: "Sept 1, 2026",
-    skills: ["React", "TypeScript", "Tailwind CSS", "Node.js"].slice(0, (i % 3) + 2),
-  }));
-};
+// Removed generateMockInterns as we only use API now
 
 export default function TeamMembers() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -86,6 +56,10 @@ export default function TeamMembers() {
   const [newProject, setNewProject] = useState('');
   const [whatsappIntern, setWhatsappIntern] = useState<any | null>(null);
   const [whatsappMessage, setWhatsappMessage] = useState('');
+  const [deactivatingIntern, setDeactivatingIntern] = useState<any | null>(null);
+  const [isDeactivatingSubmit, setIsDeactivatingSubmit] = useState(false);
+  const [activatingIntern, setActivatingIntern] = useState<any | null>(null);
+  const [isActivatingSubmit, setIsActivatingSubmit] = useState(false);
 
   const mapBackendMember = (m: any) => {
     const depts = ['Frontend', 'Backend', 'AI/ML', 'UI/UX'];
@@ -122,7 +96,8 @@ export default function TeamMembers() {
       status: m.status || 'Offline',
       joiningDate: m.joiningDate || 'June 1, 2026',
       expectedEndDate: m.expectedEndDate || 'Sept 1, 2026',
-      skills: m.skills || defaultSkills[matchedDept] || ['TypeScript', 'Git']
+      skills: m.skills || defaultSkills[matchedDept] || ['TypeScript', 'Git'],
+      isActive: m.isActive
     };
   };
 
@@ -156,7 +131,16 @@ export default function TeamMembers() {
       }
     } catch (err: any) {
       console.error('Error fetching team data:', err);
-      toast.error('Data Load Error', { description: err.message || 'Failed to load team directories.' });
+      if (err.response?.status !== 401) {
+        toast.error('Data Load Error', { description: err.message || 'Failed to load team directories.' });
+      }
+      setInterns([]);
+      setStats(prev => ({
+        ...prev,
+        totalInterns: 0,
+        onlineCount: 0,
+        leaveCount: 0
+      }));
     } finally {
       setLoading(false);
     }
@@ -285,6 +269,50 @@ export default function TeamMembers() {
     }
   };
 
+  const handleConfirmDeactivate = async () => {
+    if (!deactivatingIntern) return;
+    setIsDeactivatingSubmit(true);
+    try {
+      const response = await api.post(`/team/${deactivatingIntern.id}/deactivate`);
+      if (response.data?.success) {
+        toast.success('Account Deactivated', {
+          description: response.data.message || `${deactivatingIntern.name} has been deactivated successfully.`
+        });
+        setDeactivatingIntern(null);
+        await fetchData();
+      }
+    } catch (err: any) {
+      console.error('Error deactivating user:', err);
+      toast.error('Deactivation Failed', {
+        description: err.response?.data?.message || err.message || 'An error occurred during deactivation.'
+      });
+    } finally {
+      setIsDeactivatingSubmit(false);
+    }
+  };
+
+  const handleConfirmActivate = async () => {
+    if (!activatingIntern) return;
+    setIsActivatingSubmit(true);
+    try {
+      const response = await api.post(`/team/${activatingIntern.id}/activate`);
+      if (response.data?.success || response.status === 200) {
+        toast.success('Account Activated', {
+          description: response.data?.message || `${activatingIntern.name} has been activated successfully.`
+        });
+        setActivatingIntern(null);
+        await fetchData();
+      }
+    } catch (err: any) {
+      console.error('Error activating user:', err);
+      toast.error('Activation Failed', {
+        description: err.response?.data?.message || err.message || 'An error occurred during activation.'
+      });
+    } finally {
+      setIsActivatingSubmit(false);
+    }
+  };
+
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-6 animate-in fade-in duration-300 pb-10">
       
@@ -308,15 +336,15 @@ export default function TeamMembers() {
                 Invite Intern
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+            <DialogContent className="sm:max-w-[600px] rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl">
               <DialogHeader>
                 <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Invite New Intern</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleInviteSubmit} className="space-y-6 pt-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500">Manager</label>
-                    <Input required defaultValue={currentUser?.role === 'manager' ? currentUser.name : "Aakash Gupta"} className="rounded-xl" />
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">First Name</label>
+                    <Input required placeholder="E.g. Aakash" className="rounded-xl" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Last Name</label>
@@ -390,10 +418,10 @@ export default function TeamMembers() {
         <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as any)} className="w-full space-y-6">
           {currentUser?.role === 'manager' && (
             <TabsList className="bg-slate-100 dark:bg-slate-900 rounded-xl p-1 gap-2 self-start w-fit">
-              <TabsTrigger value="active" className="rounded-lg font-bold px-4 py-2">
+              <TabsTrigger value="active" className="rounded-lg font-bold px-4 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white text-slate-600 dark:text-slate-400">
                 Active Directory
               </TabsTrigger>
-              <TabsTrigger value="pending" className="rounded-lg font-bold px-4 py-2 relative">
+              <TabsTrigger value="pending" className="rounded-lg font-bold px-4 py-2 relative data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white text-slate-600 dark:text-slate-400">
                 Pending Approvals
                 {pendingApprovals.length > 0 && (
                   <span className="ml-2 px-1.5 py-0.5 text-[10px] font-black bg-orange-500 text-white rounded-full">
@@ -553,7 +581,27 @@ export default function TeamMembers() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48 rounded-xl">
                               <DropdownMenuItem className="font-medium cursor-pointer"><CheckCircle2 className="mr-2 h-4 w-4" /> Assign Task</DropdownMenuItem>
-                              <DropdownMenuItem className="font-medium cursor-pointer text-rose-600 dark:text-rose-400"><Clock className="mr-2 h-4 w-4" /> Deactivate</DropdownMenuItem>
+                              {intern.isActive !== false ? (
+                                <DropdownMenuItem 
+                                  className="font-medium cursor-pointer text-rose-600 dark:text-rose-400"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeactivatingIntern(intern);
+                                  }}
+                                >
+                                  <Clock className="mr-2 h-4 w-4" /> Deactivate
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem 
+                                  className="font-medium cursor-pointer text-emerald-600 dark:text-emerald-400"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActivatingIntern(intern);
+                                  }}
+                                >
+                                  <CheckCircle2 className="mr-2 h-4 w-4" /> Activate
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -826,7 +874,7 @@ export default function TeamMembers() {
 
       {/* Reassign Project Dialog */}
       <Dialog open={!!reassignIntern} onOpenChange={(open) => !open && setReassignIntern(null)}>
-        <DialogContent className="sm:max-w-[500px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-[500px] rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
               <MapPin className="mr-2 h-5 w-5 text-orange-500" />
@@ -874,7 +922,7 @@ export default function TeamMembers() {
 
       {/* WhatsApp Message Dialog */}
       <Dialog open={!!whatsappIntern} onOpenChange={(open) => !open && setWhatsappIntern(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
               <MessageSquare className="mr-2 h-5 w-5 text-emerald-500" />
@@ -904,9 +952,101 @@ export default function TeamMembers() {
         </DialogContent>
       </Dialog>
 
+      {/* Deactivate Intern Dialog */}
+      <Dialog open={!!deactivatingIntern} onOpenChange={(open) => !open && setDeactivatingIntern(null)}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+              <Clock className="mr-2 h-5 w-5 text-rose-500" />
+              Deactivate Intern Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Are you sure you want to deactivate <span className="font-semibold text-slate-900 dark:text-white">{deactivatingIntern?.name}</span>?
+            </p>
+            <p className="text-xs text-rose-500 dark:text-rose-400 font-medium">
+              This will disable their account and remove them from the active team list.
+            </p>
+          </div>
+          <DialogFooter className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => setDeactivatingIntern(null)} 
+              className="rounded-xl font-bold"
+              disabled={isDeactivatingSubmit}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleConfirmDeactivate}
+              className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold"
+              disabled={isDeactivatingSubmit}
+            >
+              {isDeactivatingSubmit ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deactivating...
+                </>
+              ) : (
+                "Confirm & Deactivate"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Activate Intern Dialog */}
+      <Dialog open={!!activatingIntern} onOpenChange={(open) => !open && setActivatingIntern(null)}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+              <CheckCircle2 className="mr-2 h-5 w-5 text-emerald-500" />
+              Activate Intern Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Are you sure you want to activate <span className="font-semibold text-slate-900 dark:text-white">{activatingIntern?.name}</span>?
+            </p>
+            <p className="text-xs text-emerald-500 dark:text-emerald-400 font-medium">
+              This will re-enable their account and allow them to log in.
+            </p>
+          </div>
+          <DialogFooter className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => setActivatingIntern(null)} 
+              className="rounded-xl font-bold"
+              disabled={isActivatingSubmit}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleConfirmActivate}
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+              disabled={isActivatingSubmit}
+            >
+              {isActivatingSubmit ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Activating...
+                </>
+              ) : (
+                "Confirm & Activate"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Approval Details Modal */}
       <Dialog open={!!approvingUser} onOpenChange={(open) => !open && setApprovingUser(null)}>
-        <DialogContent className="sm:max-w-[450px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-[450px] rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
               <CheckCircle2 className="mr-2 h-5 w-5 text-emerald-500" />

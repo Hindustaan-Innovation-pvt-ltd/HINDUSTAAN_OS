@@ -48,7 +48,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { INITIAL_TASKS, GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 import api from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -125,7 +124,7 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
   });
 
   const activeProjects = dbProjects.length > 0 ? dbProjects : PROJECTS;
-  const activeTeamMembers = teamMembers.length > 0 ? teamMembers : GLOBAL_TEAM_MEMBERS;
+  const activeTeamMembers = teamMembers.length > 0 ? teamMembers : [];
 
   const onSubmit = async (values: z.infer<typeof assignTaskSchema>) => {
     setLoading(true);
@@ -147,7 +146,7 @@ export function AssignTaskDialog({ open, onOpenChange }: { open: boolean, onOpen
     };
 
     const saved = localStorage.getItem('hindustaan_tasks_list');
-    const existingTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
+    const existingTasks = saved ? JSON.parse(saved) : [];
     const updatedTasks = [newTask, ...existingTasks];
     
     localStorage.setItem('hindustaan_tasks_list', JSON.stringify(updatedTasks));

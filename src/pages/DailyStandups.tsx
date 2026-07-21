@@ -140,11 +140,11 @@ export default function DailyStandups({ session }: { session?: any }) {
 
   const [standups, setStandups] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_standups');
-    return (saved && saved !== 'null') ? JSON.parse(saved) : MOCK_STANDUPS;
+    return (saved && saved !== 'null') ? JSON.parse(saved) : [];
   });
   const [history, setHistory] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_standup_history');
-    return (saved && saved !== 'null') ? JSON.parse(saved) : MOCK_HISTORY;
+    return (saved && saved !== 'null') ? JSON.parse(saved) : [];
   });
 
   // Fetch real standups from backend on mount
@@ -156,20 +156,14 @@ export default function DailyStandups({ session }: { session?: any }) {
         if (user.role === 'manager' || user.role === 'admin') {
           // Manager: get team overview
           const res = await api.get('/standups/manager/sync');
-          if (res.data?.success && res.data.data?.teamStandups) {
-            const mapped = res.data.data.teamStandups.map((s: any) => ({
-              id: s.id,
-              user: s.user?.name || 'Unknown',
-              initials: (s.user?.name || 'U').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
-              role: s.user?.designation || 'Team Member',
-              status: s.submitted ? 'Submitted' : 'Pending',
-              yesterday: s.standup?.done || '',
-              today: s.standup?.doing || '',
-              blockers: s.standup?.blocked || 'None.',
-              time: s.standup?.submittedAt ? new Date(s.standup.submittedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : ''
-            }));
-            setStandups(mapped);
-            localStorage.setItem('hindustaan_standups', JSON.stringify(mapped));
+          if (res.data?.success && res.data.data?.standups) {
+            // Already mapped nicely by the backend in getManagerStandupsOverview!
+            setStandups(res.data.data.standups);
+            localStorage.setItem('hindustaan_standups', JSON.stringify(res.data.data.standups));
+            if (res.data.data.history) {
+              setHistory(res.data.data.history);
+              localStorage.setItem('hindustaan_standup_history', JSON.stringify(res.data.data.history));
+            }
           }
         } else {
           // Intern: get own standups
@@ -1218,55 +1212,7 @@ export default function DailyStandups({ session }: { session?: any }) {
       {role !== 'manager' && (
         <div className="mt-12 space-y-8 animate-in fade-in duration-700">
           <div className="border-t border-slate-200 dark:border-slate-800 pt-8">
-            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6">Today's Progress</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {/* Card 1: Tasks Completed */}
-              <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tasks Completed</p>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white">{tasksCompletedCount}</p>
-                </div>
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 rounded-xl">
-                  <CheckSquare className="h-6 w-6" />
-                </div>
-              </div>
-
-              {/* Card 2: Tasks Pending */}
-              <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tasks Pending</p>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white">{tasksPendingCount}</p>
-                </div>
-                <div className="p-3 bg-amber-50 dark:bg-amber-500/10 text-amber-600 rounded-xl">
-                  <AlertCircle className="h-6 w-6" />
-                </div>
-              </div>
-
-              {/* Card 3: Hours Logged Today */}
-              <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Hours Logged Today</p>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white">{hoursLoggedToday.toFixed(1)}h</p>
-                </div>
-                <div className="p-3 bg-blue-50 dark:bg-blue-500/10 text-blue-600 rounded-xl">
-                  <Clock className="h-6 w-6" />
-                </div>
-              </div>
-
-              {/* Card 4: Current Sprint Progress */}
-              <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Sprint Progress</p>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white">{sprintProgress}%</p>
-                </div>
-                <div className="p-3 bg-purple-50 dark:bg-purple-500/10 text-purple-600 rounded-xl">
-                  <Percent className="h-6 w-6" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left side (8 cols): Upcoming Deadlines + Weekly Standup Activity */}
             <div className="lg:col-span-8 space-y-8">
               
@@ -1468,6 +1414,7 @@ export default function DailyStandups({ session }: { session?: any }) {
               </Card>
 
             </div>
+          </div>
           </div>
         </div>
       )}

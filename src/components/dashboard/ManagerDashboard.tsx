@@ -42,7 +42,6 @@ import { ProjectCalendarWidget } from './ProjectCalendarWidget';
 import { Separator } from '@/components/ui/separator';
 import { AssignTaskDialog } from './AssignTaskDialog';
 import { useProjects } from '@/context/ProjectContext';
-import { INITIAL_TASKS } from '@/data/mockData';
 
 // --- Mock Data ---
 const TEAM_MEMBERS = [
@@ -112,6 +111,22 @@ const INITIAL_BLOCKERS = [
   }
 ];
 
+const formatTime = (totalSeconds: number) => {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return h.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+};
+
+const LiveTimer = ({ initialSeconds }: { initialSeconds: number }) => {
+  const [seconds, setSeconds] = React.useState(initialSeconds);
+  React.useEffect(() => {
+    const int = setInterval(() => setSeconds(s => s + 1), 1000);
+    return () => clearInterval(int);
+  }, []);
+  return <>{formatTime(seconds)}</>;
+};
+
 function ManagerDashboardInner() {
   const { projects } = useProjects();
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -149,14 +164,16 @@ function ManagerDashboardInner() {
     const saved = localStorage.getItem('hindustaan_tasks_list');
     try {
       const parsed = saved ? JSON.parse(saved) : null;
-      return Array.isArray(parsed) ? parsed : INITIAL_TASKS;
+      return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-      return INITIAL_TASKS;
+      return [];
     }
   });
 
   // Live dashboard stats from backend
   const [dashboardStats, setDashboardStats] = useState<any>(null);
+  const [liveTeamMembers, setLiveTeamMembers] = useState<any[]>(ONLINE_TEAM_MEMBERS_MANAGER);
+  const lastDataRef = React.useRef<string | null>(null);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -164,7 +181,14 @@ function ManagerDashboardInner() {
         const res = await api.get('/dashboard');
         if (res.data?.success) {
           const data = res.data.data;
-          setDashboardStats(data);
+          const dataString = JSON.stringify(data);
+          if (lastDataRef.current === dataString) return;
+          lastDataRef.current = dataString;
+          React.startTransition(() => {
+            setDashboardStats(data);
+            if (data.liveTeamMembers && data.liveTeamMembers.length > 0) {
+              setLiveTeamMembers(data.liveTeamMembers);
+            }
           // Hydrate activity feed from real backend data
           if (data.activityFeed && data.activityFeed.length > 0) {
             setActivityFeed(data.activityFeed);
@@ -191,12 +215,17 @@ function ManagerDashboardInner() {
             }));
             setBlockers(mappedBlockers);
           }
+          });
         }
       } catch (err) {
         console.warn('Manager dashboard fetch failed, using local data:', err);
       }
     };
     fetchDashboard();
+    
+    // Poll every 5 seconds for real-time updates
+    const intervalId = setInterval(fetchDashboard, 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
 
@@ -215,7 +244,7 @@ function ManagerDashboardInner() {
 
     const handleLocalUpdate = (e: CustomEvent) => {
       if (e.detail.key === 'hindustaan_tasks_list') {
-        setTasks(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : INITIAL_TASKS);
+        setTasks(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : []);
       } else if (e.detail.key === 'hindustaan_activity_feed') {
         setActivityFeed(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : ACTIVITY_FEED_MOCK);
       } else if (e.detail.key === 'hindustaan_blockers') {
@@ -233,27 +262,26 @@ function ManagerDashboardInner() {
     };
   }, []);
 
-  const dueTodayTasksCount = (tasks || []).filter(t => t?.due_date?.toLowerCase().includes('today') || t?.due_date?.toLowerCase().includes('12') || t?.due_date?.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase())).length;
+  const dueTodayTasksCount = React.useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return (tasks || []).filter((t: any) => {
+      if (!t?.due_date) return false;
+      const dStr = t.due_date.includes('T') ? t.due_date.split('T')[0] : t.due_date;
+      return dStr <= todayStr && t.status !== 'Done' && t.status !== 'completed' && t.status !== 'done';
+    }).length;
+  }, [tasks]);
 
   const [activeSessions, setActiveSessions] = useState<{ [key: string]: { time: number; isOnline: boolean } }>({});
 
   useEffect(() => {
-    const teamMembers = [
-      { id: 'u-1', defaultOffset: 2 * 3600 + 15 * 60 + 30 },
-      { id: 'u-2', defaultOffset: 3600 + 45 * 60 + 12 },
-      { id: 'u-3', defaultOffset: 45 * 60 + 5 },
-      { id: 'u-4', defaultOffset: 3 * 3600 + 10 * 60 + 40 }
-    ];
-
     const updateSessions = () => {
       const sessions: { [key: string]: { time: number; isOnline: boolean } } = {};
-      teamMembers.forEach(member => {
+      liveTeamMembers.forEach(member => {
         const loginTimeStr = localStorage.getItem(`login_time_${member.id}`);
         if (loginTimeStr) {
           const startTime = parseInt(loginTimeStr, 10);
           sessions[member.id] = { time: Math.floor((Date.now() - startTime) / 1000), isOnline: true };
         } else {
-          // Changed to actually reflect offline status if real data doesn't exist
           sessions[member.id] = { time: 0, isOnline: false };
         }
       });
@@ -261,9 +289,7 @@ function ManagerDashboardInner() {
     };
 
     updateSessions();
-    const interval = setInterval(updateSessions, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  }, [liveTeamMembers]);
 
   const allMappedProjects: any[] = (projects || []).map(p => {
     if (!p) return null;
@@ -411,7 +437,7 @@ function ManagerDashboardInner() {
               <Badge variant="outline" className="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10">High Pri</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.dueTodayTasksCount ?? dueTodayTasksCount}</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{Math.max(dashboardStats?.dueTodayTasksCount || 0, dueTodayTasksCount)}</p>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tasks Due Today</p>
             </div>
           </CardContent>
@@ -509,7 +535,7 @@ function ManagerDashboardInner() {
                         <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Due: {project?.dueDate}</span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <Progress value={project?.progress || 0} className={cn("h-2 flex-1", project?.status === 'Aborted' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
+                        <Progress value={project?.progress || 0} className={cn("h-2 flex-1", project?.status === 'Aborted' ? 'bg-rose-100 dark:bg-rose-900/40 [&>div]:bg-rose-500' : 'bg-slate-100 dark:bg-slate-700 [&>div]:bg-orange-500 dark:[&>div]:bg-orange-400')} />
                         <div className="flex items-center gap-1 justify-end w-16 shrink-0">
                           <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{project?.progress || 0}%</span>
                           <button
@@ -708,7 +734,7 @@ function ManagerDashboardInner() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {ONLINE_TEAM_MEMBERS_MANAGER.map((member) => {
+                {liveTeamMembers.map((member) => {
                   const sessionInfo = activeSessions[member.id];
                   const isOnline = sessionInfo?.isOnline;
                   const sessionTime = sessionInfo?.time || 0;
@@ -735,7 +761,7 @@ function ManagerDashboardInner() {
                       {isOnline ? (
                         <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold animate-pulse">
                           <Timer className="h-3.5 w-3.5 text-emerald-500" />
-                          <span>{formatTime(sessionTime)}</span>
+                          <span><LiveTimer initialSeconds={sessionTime} /></span>
                         </div>
                       ) : (
                         <div className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 rounded-lg flex items-center space-x-1 font-mono text-xs font-bold">
@@ -852,6 +878,96 @@ function ManagerDashboardInner() {
         </div>
       )}
 
+
+
+
+
+      <AssignTaskDialog open={isAssignTaskOpen} onOpenChange={setIsAssignTaskOpen} />
+
+      <Dialog
+        open={!!messageUser}
+        onOpenChange={(open) => {
+          if (!open) {
+            setMessageUser(null);
+            setTimeout(() => {
+              setMessageText("");
+              setIsMessageSent(false);
+            }, 300); // delay reset so it doesn't flash during closing animation
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px] rounded-3xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-2xl p-0 overflow-hidden">
+          {!isMessageSent ? (
+            <>
+              <div className="bg-orange-50/50 dark:bg-orange-500/10 p-6 pb-4 border-b border-orange-100 dark:border-orange-900/30">
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-900 shadow-sm">
+                      <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 text-sm font-bold">
+                        {(messageUser || 'U').split(' ').map((n: string) => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>Message {messageUser?.split(' ')[0]}</span>
+                  </DialogTitle>
+                  <DialogDescription className="text-slate-500 dark:text-slate-400 font-medium pt-2">
+                    Send a direct, high-priority message regarding this blocker to help them get unblocked faster.
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
+              <div className="p-6 pt-4 space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Your Message</Label>
+                  <Textarea
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    placeholder={`Hey ${messageUser?.split(' ')[0]}, how can I help unblock you with this?`}
+                    className="min-h-[120px] rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500 text-slate-900 dark:text-white resize-none text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  />
+                </div>
+              </div>
+              <DialogFooter className="p-6 pt-0 sm:justify-end">
+                <Button type="button" variant="ghost" onClick={() => setMessageUser(null)} className="rounded-xl font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300">
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={!messageText.trim()}
+                  onClick={() => {
+                    setBlockers((prev: any[]) => prev.map((b: any) => b.user === messageUser ? { ...b, managerMessage: messageText } : b));
+                    setIsMessageSent(true);
+                  }}
+                  className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold cursor-pointer transition-all shadow-md hover:shadow-lg disabled:opacity-50"
+                >
+                  <Megaphone className="h-4 w-4 mr-2" />
+                  Send Message
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <div className="p-8 flex flex-col items-center justify-center text-center space-y-6 animate-in zoom-in duration-300">
+              <div className="h-16 w-16 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mb-2">
+                <CheckCircle2 className="h-8 w-8" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white">Sent!</h3>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">Your message has been delivered to <span className="font-bold text-slate-700 dark:text-slate-200">{messageUser}</span>.</p>
+              </div>
+              <div className="w-full bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700/50 text-left relative">
+                <span className="absolute -top-2.5 left-4 bg-white dark:bg-slate-900 px-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">What you said</span>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300 italic whitespace-pre-wrap">{messageText}</p>
+              </div>
+              <Button
+                onClick={() => setMessageUser(null)}
+                className="w-full rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold mt-4 cursor-pointer hover:scale-[1.02] transition-transform"
+              >
+                Done
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+
       {/* All Projects Modal */}
       <Dialog open={isAllProjectsOpen} onOpenChange={setIsAllProjectsOpen}>
         <DialogContent className="sm:max-w-[425px] md:max-w-[600px] rounded-2xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
@@ -879,7 +995,7 @@ function ManagerDashboardInner() {
                         </Badge>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Progress value={project?.progress} className="h-1.5 flex-1 bg-slate-200 dark:bg-slate-800" />
+                        <Progress value={project?.progress} className="h-1.5 flex-1 bg-slate-200 dark:bg-slate-700" />
                         <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 w-8">{project?.progress}%</span>
                       </div>
                     </div>

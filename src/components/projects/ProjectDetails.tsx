@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useProjects } from '@/context/ProjectContext';
-import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
+import { toast } from 'sonner';
 import { getCurrentUser } from '@/lib/auth';
 
 export default function ProjectDetails({ project, onBack }: { project: any, onBack: () => void }) {
@@ -314,7 +314,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                     className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
                   >
                     <option value="Unassigned">Unassigned</option>
-                    {GLOBAL_TEAM_MEMBERS.map(member => (
+                    {[].map((member: any) => (
                       <option key={member.id} value={member.name}>{member.name}</option>
                     ))}
                   </select>

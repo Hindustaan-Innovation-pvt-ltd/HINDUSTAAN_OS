@@ -20,7 +20,7 @@ import { WhatsAppBroadcastDialog } from "./WhatsAppBroadcastDialog";
 import { FigjamDialog } from "./FigjamDialog";
 import { EmployeeCalendar } from "./EmployeeCalendar";
 import { TotalHoursModal } from "./worklogs/TotalHoursModal";
-import { GLOBAL_ACTIVITY_FEED, INITIAL_TASKS, GLOBAL_LOGS } from '@/data/mockData';
+
 import { format, isSameDay, isAfter, startOfDay } from 'date-fns';
 import { getCurrentUser } from '@/lib/auth';
 import { useProjects } from '@/context/ProjectContext';
@@ -67,7 +67,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   // Extract dynamic tasks from central task list (TaskBoard source)
   const [tasks, setTasks] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_tasks_list');
-    const allTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
+    const allTasks = saved ? JSON.parse(saved) : [];
     return allTasks.filter((t: any) => 
       t.assignee_name === currentUserName || 
       (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
@@ -126,7 +126,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
     
     const handleLocalUpdate = (e: CustomEvent) => {
       if (e.detail.key === 'hindustaan_tasks_list') {
-        const allTasks = typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : INITIAL_TASKS;
+        const allTasks = typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : [];
         setTasks(allTasks.filter((t: any) => 
           t.assignee_name === currentUserName || 
           (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && t.assignee_name?.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
@@ -157,52 +157,17 @@ export default function InternDashboard({ session }: InternDashboardProps) {
     };
   }, [currentUserName]);
 
-  // Read activity feed
-  const [activityFeed, setActivityFeed] = useState<any[]>(() => {
-    const saved = null; // Bypass local storage
-    return saved ? JSON.parse(saved) : GLOBAL_ACTIVITY_FEED;
-  });
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'hindustaan_activity_feed' && e.newValue) {
-        setActivityFeed(JSON.parse(e.newValue));
-      }
-    };
-    const handleLocalUpdate = (e: CustomEvent) => {
-      if (e.detail.key === 'hindustaan_activity_feed') {
-        setActivityFeed(typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : GLOBAL_ACTIVITY_FEED);
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    };
-  }, []);
+  const [activityFeed, setActivityFeed] = useState<any[]>([]);
   
-  const userActivities = React.useMemo(() => {
-    return activityFeed.filter((act: any) => act.user === currentUserName || act.user.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())).slice(0, 5);
-  }, [activityFeed, currentUserName]);
-
-  // --- Upcoming Events (read-only, synced from manager's calendar) ---
-  const EMPLOYEE_MOCK_EVENTS = [
-    { id: '1', date: new Date(2026, 6, 12), type: 'deadline', title: 'Backend Deadline' },
-    { id: '2', date: new Date(2026, 6, 15), type: 'milestone', title: 'Sprint Planning' },
-    { id: '4', date: new Date(2026, 6, 20), type: 'leave', title: 'Priya on Leave' },
-    { id: '5', date: new Date(2026, 7, 1), type: 'milestone', title: 'Alpha Release' },
-  ];
-
   const [calendarEvents, setCalendarEvents] = useState<any[]>(() => {
     const saved = localStorage.getItem('hindustaan_calendar_events');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         return parsed.map((e: any) => ({ ...e, date: new Date(e.date) }));
-      } catch { return EMPLOYEE_MOCK_EVENTS; }
+      } catch { return []; }
     }
-    return EMPLOYEE_MOCK_EVENTS;
+    return [];
   });
 
   useEffect(() => {
@@ -243,7 +208,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
 
   const [allLogs, setAllLogs] = useState<any[]>(() => {
     const saved = localStorage.getItem('work_logs_list');
-    return saved ? JSON.parse(saved) : GLOBAL_LOGS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [loggedHours, setLoggedHours] = useState(() => {
@@ -254,7 +219,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
 
   useEffect(() => {
     const handleLogsChange = (logsStr: string | null) => {
-      const logs = logsStr ? JSON.parse(logsStr) : GLOBAL_LOGS;
+      const logs = logsStr ? JSON.parse(logsStr) : [];
       setAllLogs(logs);
       const userLogs = logs.filter((log: any) => log.name.toLowerCase() === currentUserName.toLowerCase() || (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && log.name.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase())));
       setLoggedHours(userLogs.reduce((acc: number, log: any) => acc + log.hours, 0));
@@ -277,45 +242,7 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   }, [currentUserName]);
 
   // Read todays standup
-  const [todaysStandup, setTodaysStandup] = useState<any>(() => {
-    const saved = localStorage.getItem('hindustaan_standups');
-    if (saved && saved !== 'null') {
-      const standups = JSON.parse(saved);
-      return standups.find((s: any) => 
-        s.user.toLowerCase() === currentUserName.toLowerCase() || 
-        (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && s.user.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
-      );
-    }
-    return null;
-  });
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'hindustaan_standups' && e.newValue) {
-        const standups = JSON.parse(e.newValue);
-        setTodaysStandup(standups.find((s: any) => 
-          s.user.toLowerCase() === currentUserName.toLowerCase() || 
-          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && s.user.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
-        ) || null);
-      }
-    };
-    const handleLocalUpdate = (e: CustomEvent) => {
-      if (e.detail.key === 'hindustaan_standups') {
-        const standups = typeof e.detail.value === 'string' ? JSON.parse(e.detail.value) : e.detail.value;
-        setTodaysStandup(standups.find((s: any) => 
-          s.user.toLowerCase() === currentUserName.toLowerCase() || 
-          (currentUserName.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()) && s.user.toLowerCase().includes(currentUserName.split(' ')[0].toLowerCase()))
-        ) || null);
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('local-storage-update', handleLocalUpdate as EventListener);
-    };
-  }, [currentUserName]);
+  const [todaysStandup, setTodaysStandup] = useState<any>(null);
 
   const getProgress = (status: string) => {
     switch (status) {
@@ -328,30 +255,54 @@ export default function InternDashboard({ session }: InternDashboardProps) {
 
   // Live backend dashboard data
   const [dashboardData, setDashboardData] = useState<any>(null);
+  const lastDataRef = React.useRef<string | null>(null);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
         const res = await api.get('/dashboard');
         if (res.data?.success) {
-          setDashboardData(res.data.data);
-          // Hydrate todaysStandup from live data
-          if (res.data.data.standupStatus?.submittedToday) {
-            setTodaysStandup({ status: 'Submitted', time: res.data.data.standupStatus.submissionTime || '' });
-          }
-          // Hydrate logged hours
-          if (typeof res.data.data.loggedHours === 'number') {
-            setLoggedHours(res.data.data.loggedHours);
-          }
+          const dataString = JSON.stringify(res.data.data);
+          if (lastDataRef.current === dataString) return;
+          lastDataRef.current = dataString;
+
+          React.startTransition(() => {
+            setDashboardData(res.data.data);
+            // Hydrate todaysStandup from live data
+            if (res.data.data.standupStatus?.submittedToday) {
+              setTodaysStandup({
+                status: 'Submitted',
+                time: res.data.data.standupStatus.submissionTime || '',
+                yesterday: res.data.data.standupStatus.yesterday || '',
+                today: res.data.data.standupStatus.today || '',
+                blockers: res.data.data.standupStatus.blockers || 'None'
+              });
+            } else {
+              setTodaysStandup(null);
+            }
+            // Hydrate logged hours
+            if (typeof res.data.data.loggedHours === 'number') {
+              setLoggedHours(res.data.data.loggedHours);
+            }
+            // Hydrate activity feed
+            if (res.data.data.activityFeed && res.data.data.activityFeed.length > 0) {
+              setActivityFeed(res.data.data.activityFeed);
+            }
+          });
         }
       } catch (err) {
         console.warn('Intern dashboard fetch failed, using local data:', err);
       }
     };
     fetchDashboard();
+
+    // Poll every 5 seconds for real-time updates
+    const intervalId = setInterval(fetchDashboard, 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
-  const activeTasksCount = dashboardData?.activeTasksCount ?? tasks.filter((t: any) => t.status !== 'Done').length;
+  const activeTasksCount = tasks.filter((t: any) => t && t.status !== 'Done' && t.status.toLowerCase() !== 'completed').length;
+  const completedTasksCount = tasks.filter((t: any) => t && (t.status === 'Done' || t.status.toLowerCase() === 'completed')).length;
 
   // Compute upcoming deadlines (handling relative dates like 'Today' and 'Tomorrow')
   const upcomingDeadlines = useMemo(() => {
@@ -391,7 +342,14 @@ export default function InternDashboard({ session }: InternDashboardProps) {
   const approvedExtensions: any[] = (savedApprovedExtensions && savedApprovedExtensions !== 'null')
     ? (() => { try { return JSON.parse(savedApprovedExtensions); } catch { return []; } })()
     : [];
-  const dueTodayCount = tasks.filter(t => t.due_date.toLowerCase().includes('today') || t.due_date.toLowerCase().includes('12') || t.due_date.toLowerCase().includes(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase())).length;
+  const dueTodayCount = React.useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return tasks.filter((t: any) => {
+      if (!t.due_date) return false;
+      const dStr = t.due_date.includes('T') ? t.due_date.split('T')[0] : t.due_date;
+      return dStr <= todayStr && t.status !== 'Done' && t.status !== 'completed' && t.status !== 'done';
+    }).length;
+  }, [tasks]);
 
   const handleExtensionSubmit = () => {
     if (!selectedTaskId) {
@@ -522,7 +480,10 @@ export default function InternDashboard({ session }: InternDashboardProps) {
             </div>
             <div>
               <p className="text-3xl font-black text-slate-900 dark:text-white">{activeTasksCount}</p>
-              <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">Active Tasks</p>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Active Tasks</p>
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full">{completedTasksCount} Done</span>
+              </div>
             </div>
           </CardContent>
         </Card>

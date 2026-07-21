@@ -3,7 +3,6 @@ import { CalendarDays, Filter, ChevronLeft, ChevronRight, Plus, ChevronDown, Che
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { GLOBAL_TEAM_MEMBERS } from '@/data/mockData';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -15,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, isToday, isSameMonth, addDays, subMonths, addMonths, differenceInDays, isWeekend, setMonth, setYear } from 'date-fns';
 import { useProjects } from '@/context/ProjectContext';
+import api from '@/lib/api';
 
 type ProjectTask = {
   id: string;
@@ -80,8 +80,17 @@ const mapGlobalProjectsToGantt = (globalProjects: any[], currentDate: Date): Pro
 };
 
 export default function GanttTimeline({ session }: { session?: any }) {
-  const { projects: globalProjects, addProject } = useProjects();
+  const { projects: globalProjects, addProject, refreshProjects } = useProjects();
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  // Real-time update every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshProjects();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [refreshProjects]);
+
   const [collapsedProjects, setCollapsedProjects] = useState<Record<string, boolean>>({});
   
   const projects = useMemo(() => mapGlobalProjectsToGantt(globalProjects, currentDate), [globalProjects, currentDate]);
@@ -122,6 +131,22 @@ export default function GanttTimeline({ session }: { session?: any }) {
   const [newProjectManager, setNewProjectManager] = useState('');
   const [newProjectMembers, setNewProjectMembers] = useState<string[]>([]);
   const [newProjectColor, setNewProjectColor] = useState('bg-orange-500');
+
+  const [dbMembers, setDbMembers] = useState<any[]>([]);
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const res = await api.get('/team/profiles');
+        if (res.data?.success) {
+          const employees = res.data.data.filter((p: any) => p.role === 'intern' || p.role === 'employee');
+          setDbMembers(employees);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchMembers();
+  }, []);
 
   // Filter State
   const [filters, setFilters] = useState({
@@ -167,10 +192,13 @@ export default function GanttTimeline({ session }: { session?: any }) {
   const handleAddProject = () => {
     if (!newProjectName || !newProjectManager) return;
     
+    const selectedManager = dbMembers.find(m => m.name === newProjectManager);
+    
     addProject({
       id: `p-${Date.now()}`,
       name: newProjectName,
       manager: newProjectManager,
+      managerId: selectedManager?.id,
       color: newProjectColor,
       tasks: [],
       members: newProjectMembers,
@@ -366,13 +394,13 @@ export default function GanttTimeline({ session }: { session?: any }) {
                       <SelectValue placeholder="Select a team leader" />
                     </SelectTrigger>
                     <SelectContent position="popper" className="rounded-xl border-slate-200 dark:border-slate-800 shadow-xl max-h-[220px] overflow-y-auto scrollbar-hide">
-                      {GLOBAL_TEAM_MEMBERS.map(m => m.name).map((emp, i) => {
+                      {dbMembers.map(m => m.name).map((emp, i) => {
                         const colors = ['bg-orange-100 text-orange-700', 'bg-emerald-100 text-emerald-700', 'bg-rose-100 text-rose-700', 'bg-blue-100 text-blue-700', 'bg-purple-100 text-purple-700'];
                         const colorClass = colors[i % colors.length];
                         return (
                           <SelectItem key={emp} value={emp}>
                             <div className="flex items-center gap-3">
-                              <Avatar className="h-6 w-6"><AvatarFallback className={`text-[9px] font-black ${colorClass}`}>{emp.split(' ').map(n=>n[0]).join('')}</AvatarFallback></Avatar>
+                              <Avatar className="h-6 w-6"><AvatarFallback className={`text-[9px] font-black ${colorClass}`}>{(emp as string).split(' ').map((n: string) => n[0]).join('')}</AvatarFallback></Avatar>
                               <span className="font-bold">{emp}</span>
                             </div>
                           </SelectItem>
@@ -413,7 +441,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
                     </PopoverTrigger>
                     <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1.5 rounded-xl border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-slate-950" align="start">
                       <div className="flex flex-col max-h-[220px] overflow-y-auto scrollbar-hide">
-                        {GLOBAL_TEAM_MEMBERS.map(m => m.name).filter(m => m !== newProjectManager).map((member) => (
+                        {dbMembers.map(m => m.name).filter(m => m !== newProjectManager).map((member) => (
                           <div
                             key={member}
                             onClick={() => {
@@ -585,7 +613,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
                 // if (visibleTasks.length === 0 && project.tasks.length > 0) return null;
 
                 return (
-                  <div key={project.id} className="group relative z-10 mb-6 border-y border-slate-200/60 dark:border-slate-700/40 bg-slate-50/20 dark:bg-slate-900/10 shadow-[0_4px_20px_rgba(0,0,0,0.02)] backdrop-blur-sm rounded-r-2xl mr-4 overflow-hidden">
+                  <div key={project.id} className="group relative z-10 mb-6 border-y border-slate-200/60 dark:border-slate-700/40 bg-slate-50/20 dark:bg-slate-900/10 shadow-[0_4px_20px_rgba(0,0,0,0.02)] backdrop-blur-sm rounded-r-2xl mr-4">
                     {/* Project Row */}
                     <div className="flex items-stretch border-b border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer bg-white/60 dark:bg-slate-950/40" onClick={() => toggleProject(project.id)}>
                       <div className="w-72 shrink-0 p-3 pl-4 border-r border-slate-200/50 dark:border-slate-800/50 sticky left-0 z-30 transition-colors flex items-center justify-between shadow-[4px_0_12px_rgba(0,0,0,0.02)] bg-white/95 dark:bg-slate-950/95 backdrop-blur-md">
@@ -645,8 +673,8 @@ export default function GanttTimeline({ session }: { session?: any }) {
                                           task.status === 'pending' && "opacity-40 hover:opacity-60"
                                         )}
                                       style={{
-                                        left: `${visibleStart * 48 + 4}px`, 
-                                        width: `${visibleDuration * 48 - 8}px`
+                                        left: `calc(${visibleStart * 3}rem + 4px)`, 
+                                        width: `calc(${visibleDuration * 3}rem - 8px)`
                                       }}
                                     >
                                       {task.status === 'on-track' && (
@@ -687,8 +715,8 @@ export default function GanttTimeline({ session }: { session?: any }) {
                                     <div 
                                       className="absolute top-3 h-8 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform z-20"
                                       style={{
-                                        left: `${visibleStart * 48}px`, 
-                                        width: `48px`
+                                        left: `${visibleStart * 3}rem`, 
+                                        width: `3rem`
                                       }}
                                     >
                                       <div className="w-5 h-5 transform rotate-45 bg-amber-500 border-2 border-amber-600 shadow-md flex items-center justify-center" />

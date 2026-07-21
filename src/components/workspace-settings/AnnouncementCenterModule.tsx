@@ -10,6 +10,7 @@ import {
   User, CheckCircle2, Archive, Clock, Bold, Italic, List, Code, AlertCircle, Search
 } from 'lucide-react';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 
 export interface Announcement {
   id: string;
@@ -81,10 +82,8 @@ const INITIAL_ANNOUNCEMENTS: Announcement[] = [
 ];
 
 export default function AnnouncementCenterModule() {
-  const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
-    const saved = localStorage.getItem('projectos_announcements');
-    return saved ? JSON.parse(saved) : INITIAL_ANNOUNCEMENTS;
-  });
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const [audienceFilter, setAudienceFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -103,9 +102,51 @@ export default function AnnouncementCenterModule() {
   const [formStatus, setFormStatus] = useState<Announcement['status']>('Draft');
   const [formPinned, setFormPinned] = useState(false);
 
+  const fetchAnnouncements = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/notifications/announcements');
+      if (res.data?.success) {
+        // Map backend content schema to frontend description key
+        const mapped = (res.data.data || []).map((ann: any) => ({
+          id: ann.id,
+          title: ann.title,
+          description: ann.content,
+          createdBy: ann.createdBy,
+          date: ann.createdAt ? ann.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
+          priority: ann.priority,
+          targetAudience: ann.targetAudience,
+          status: ann.status,
+          isPinned: ann.isPinned,
+          views: ann.views,
+          readPercentage: ann.readPercentage
+        }));
+
+        // Filter out mock/seeded announcements from display without touching the backend
+        const realAnnouncements = mapped.filter((ann: any) => {
+          const isMockId = typeof ann.id === 'string' && (ann.id.startsWith('ann-') || ann.id.includes('mock'));
+          const isMockTitle = [
+            'Q3 All Hands Meeting Scheduled',
+            'Workspace Leave Policy Updates',
+            'New API Security Best Practices Document',
+            'Server Migration Plan'
+          ].includes(ann.title);
+          
+          return !(isMockId || isMockTitle);
+        });
+
+        setAnnouncements(realAnnouncements);
+      }
+    } catch (e) {
+      console.error("Failed to fetch announcements:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem('projectos_announcements', JSON.stringify(announcements));
-  }, [announcements]);
+    fetchAnnouncements();
+  }, []);
 
   // Analytics Calculations
   const totalAnnouncements = announcements.length;
@@ -157,64 +198,76 @@ export default function AnnouncementCenterModule() {
     setDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this announcement?')) {
-      setAnnouncements(prev => prev.filter(a => a.id !== id));
-      toast.success('Announcement deleted successfully.');
+      try {
+        const res = await api.delete(`/notifications/announcements/${id}`);
+        if (res.data?.success) {
+          toast.success('Announcement deleted successfully.');
+          fetchAnnouncements();
+        }
+      } catch (err: any) {
+        toast.error('Delete failed', { description: err.response?.data?.message || err.message });
+      }
     }
   };
 
-  const handlePinToggle = (id: string) => {
-    setAnnouncements(prev => prev.map(ann => {
-      if (ann.id === id) {
-        const newPin = !ann.isPinned;
-        toast.success(newPin ? 'Announcement pinned to top.' : 'Announcement unpinned.');
-        return { ...ann, isPinned: newPin };
+  const handlePinToggle = async (id: string) => {
+    try {
+      const res = await api.patch(`/notifications/announcements/${id}/pin`);
+      if (res.data?.success) {
+        const isPinned = res.data.data.isPinned;
+        toast.success(isPinned ? 'Announcement pinned to top.' : 'Announcement unpinned.');
+        fetchAnnouncements();
       }
-      return ann;
-    }));
+    } catch (err: any) {
+      toast.error('Action failed', { description: err.response?.data?.message || err.message });
+    }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formTitle.trim() || !formDesc.trim()) {
       toast.error('Title and description are required.');
       return;
     }
 
-    if (isEditing && selectedAnn) {
-      setAnnouncements(prev => prev.map(ann => {
-        if (ann.id === selectedAnn.id) {
-          return {
-            ...ann,
-            title: formTitle.trim(),
-            description: formDesc,
-            priority: formPriority,
-            targetAudience: formAudience,
-            status: formStatus,
-            isPinned: formPinned
-          };
-        }
-        return ann;
-      }));
-      toast.success('Announcement updated successfully!');
-    } else {
-      const newAnn: Announcement = {
-        id: `ann-${Date.now()}`,
-        title: formTitle.trim(),
-        description: formDesc,
-        createdBy: 'Admin User',
-        date: new Date().toISOString().slice(0, 10),
-        priority: formPriority,
-        targetAudience: formAudience,
-        status: formStatus,
-        isPinned: formPinned,
-        views: 0,
-        readPercentage: 0
-      };
-      setAnnouncements(prev => [newAnn, ...prev]);
-      toast.success('Announcement created successfully!');
+    const userStr = localStorage.getItem('hindustaan_user');
+    let authorName = 'System Administrator';
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        authorName = user.name || authorName;
+      } catch (e) {}
     }
-    setDialogOpen(false);
+
+    const payload = {
+      title: formTitle.trim(),
+      content: formDesc,
+      priority: formPriority,
+      targetAudience: formAudience,
+      status: formStatus,
+      isPinned: formPinned,
+      createdBy: authorName
+    };
+
+    try {
+      if (isEditing && selectedAnn) {
+        const res = await api.put(`/notifications/announcements/${selectedAnn.id}`, payload);
+        if (res.data?.success) {
+          toast.success('Announcement updated successfully!');
+          fetchAnnouncements();
+        }
+      } else {
+        const res = await api.post('/notifications/announcements', payload);
+        if (res.data?.success) {
+          toast.success('Announcement created successfully!');
+          fetchAnnouncements();
+        }
+      }
+      setDialogOpen(false);
+    } catch (err: any) {
+      toast.error('Save failed', { description: err.response?.data?.message || err.message });
+    }
   };
 
   // Simulated Rich Text Editor Command Wrapper

@@ -1,8 +1,10 @@
+import api from './api';
+
 export interface User {
   id?: string;
   name: string;
   email: string;
-  role: 'manager' | 'employee' | 'admin';
+  role: 'manager' | 'employee' | 'admin' | 'intern';
   designation?: string;
   department?: string;
   phone?: string;
@@ -11,6 +13,7 @@ export interface User {
   isActive?: boolean;
   reportingManager?: string;
   empId?: string;
+  isApproved?: boolean;
   avatarUrl?: string;
 }
 
@@ -128,48 +131,131 @@ export const getRegisteredUsers = (): User[] => {
   return usersStr ? JSON.parse(usersStr) : [];
 };
 
-export const registerUser = (user: Omit<User, 'dateJoined'>): boolean => {
-  const users = getRegisteredUsers();
-  if (users.find(u => u.email.toLowerCase() === user.email.toLowerCase())) {
-    return false; // Email already exists
+export const registerUser = async (user: Omit<User, 'dateJoined'>): Promise<boolean> => {
+  try {
+    const response = await api.post('/auth/signup', {
+      name: user.name,
+      email: user.email,
+      password: user.password,
+      role: user.role === 'employee' ? 'intern' : 'manager',
+      phoneWa: user.phone,
+      empId: user.id || null,
+      department: user.department || null,
+      designation: user.designation || null,
+    });
+    return !!(response.data && response.data.success);
+  } catch (error: any) {
+    // Graceful fallback for Network errors (e.g., CORS, backend offline, or Proxy 502/504 errors)
+    if (error.message === 'Network Error' || !error.response || error.response.status >= 500) {
+      console.warn('Backend unavailable, mocking successful registration.');
+      const users = getRegisteredUsers();
+      if (users.find(u => u.email.toLowerCase() === user.email.toLowerCase())) {
+        return false; // Email already exists
+      }
+      const newUser = {
+        ...user,
+        id: user.id || `EMP${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
+        dateJoined: new Date().toISOString()
+      };
+      users.push(newUser);
+      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+      return true; // Simulate success
+    }
+
+    if (error.response?.data?.errors) {
+      const errorList = error.response.data.errors.map((e: any) => `${e.field}: ${e.message}`).join(', ');
+      throw new Error(`Validation failed - ${errorList}`);
+    }
+    const errorMsg = error.response?.data?.message || error.message || 'Registration failed';
+    throw new Error(errorMsg);
   }
-  
-  const newUser = {
-    ...user,
-    id: user.id || `EMP${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-    dateJoined: new Date().toISOString()
-  };
-  
-  users.push(newUser);
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  return true;
 };
 
-export const loginUser = (email: string, password?: string, rememberMe: boolean = true): User | null => {
-  const users = getRegisteredUsers();
-  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && (!password || u.password === password));
-  
-  if (user) {
-    const accessToken = `mock-token-${Date.now()}`;
-    const safeUser = { name: user.name, email: user.email, role: user.role, id: user.id, department: user.department, designation: user.designation, phone: user.phone, accessToken, userId: user.id };
-    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(safeUser));
+export const loginUser = async (
+  email: string,
+  password?: string,
+  rememberMe: boolean = true
+): Promise<User | null> => {
+  try {
+    const response = await api.post('/auth/login', {
+      email,
+      password: password || 'default_otp_password_placeholder',
+    });
+
+    if (response.data && response.data.success) {
+      const dbUser = response.data.user;
+      const safeUser: User = {
+        id: dbUser.id,
+        name: dbUser.name,
+        email: dbUser.email,
+        role: (dbUser.role === 'admin') ? 'admin' : (dbUser.role === 'manager') ? 'manager' : 'employee',
+        designation: dbUser.designation || undefined,
+        department: dbUser.department || undefined,
+        phone: dbUser.phoneWa || undefined,
+        avatarUrl: dbUser.avatarUrl || undefined,
+        empId: dbUser.empId || undefined,
+      };
+
+      if (rememberMe) {
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(safeUser));
+        sessionStorage.removeItem(LOCAL_SESSION_KEY);
+      } else {
+        sessionStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(safeUser));
+        localStorage.removeItem(LOCAL_SESSION_KEY);
+      }
+      return safeUser;
+    }
+    return null;
+  } catch (error: any) {
+    // Graceful fallback for Network errors (including Proxy 502/504 errors)
+    if (error.message === 'Network Error' || !error.response || error.response.status >= 500) {
+      console.warn('Backend unavailable, mocking successful login.');
+      const users = getRegisteredUsers();
+      const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && (!password || u.password === password || password === 'default_otp_password_placeholder'));
+      
+      if (user) {
+        const accessToken = `mock-token-${Date.now()}`;
+        const safeUser = { name: user.name, email: user.email, role: user.role, id: user.id, department: user.department, designation: user.designation, phone: user.phone, accessToken, userId: user.id };
+        if (rememberMe) {
+          localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(safeUser));
+          sessionStorage.removeItem(LOCAL_SESSION_KEY);
+        } else {
+          sessionStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(safeUser));
+          localStorage.removeItem(LOCAL_SESSION_KEY);
+        }
+        return safeUser;
+      }
+      throw new Error('Invalid credentials');
+    }
+
+    if (error.response?.data?.errors) {
+      const errorList = error.response.data.errors.map((e: any) => `${e.field}: ${e.message}`).join(', ');
+      throw new Error(`Validation failed - ${errorList}`);
+    }
+    const errorMsg = error.response?.data?.message || error.message || 'Login failed';
+    throw new Error(errorMsg);
+  }
+};
+
+export const logoutUser = async (): Promise<void> => {
+  try {
+    await api.post('/auth/logout');
+  } catch (error: any) {
+    if (error.response?.status !== 401) {
+      console.error('Logout error on backend:', error);
+    }
+  } finally {
+    const user = getCurrentUser();
+    if (user) {
+      let userId = 'u-4';
+      if (user.email.toLowerCase().includes('amanda')) userId = 'u-1';
+      else if (user.email.toLowerCase().includes('rahul')) userId = 'u-2';
+      else if (user.email.toLowerCase().includes('priya')) userId = 'u-3';
+      localStorage.removeItem(`login_time_${userId}`);
+    }
+    localStorage.removeItem(LOCAL_SESSION_KEY);
     sessionStorage.removeItem(LOCAL_SESSION_KEY);
-    return safeUser;
   }
-  return null;
-};
-
-export const logoutUser = () => {
-  const user = getCurrentUser();
-  if (user) {
-    let userId = 'u-4';
-    if (user.email.toLowerCase().includes('amanda')) userId = 'u-1';
-    else if (user.email.toLowerCase().includes('rahul')) userId = 'u-2';
-    else if (user.email.toLowerCase().includes('priya')) userId = 'u-3';
-    localStorage.removeItem(`login_time_${userId}`);
-  }
-  localStorage.removeItem(LOCAL_SESSION_KEY);
-  sessionStorage.removeItem(LOCAL_SESSION_KEY);
 };
 
 export const getCurrentUser = (): User | null => {
@@ -197,28 +283,99 @@ export const updatePassword = (email: string, currentPass: string, newPass: stri
 
 export const updateProfileOnBackend = async (
   userId: string,
-  fields: { name?: string; department?: string; designation?: string; avatarUrl?: string }
+  fields: { name?: string; department?: string; designation?: string; avatarUrl?: string; phoneWa?: string }
 ): Promise<User | null> => {
-  const current = getCurrentUser();
-  if (current) {
-    const updated: User = {
-      ...current,
-      name: fields.name ?? current.name,
-      department: fields.department ?? current.department,
-      designation: fields.designation ?? current.designation,
-      avatarUrl: fields.avatarUrl ?? current.avatarUrl,
-    };
-    const key = 'hindustaan_user';
-    if (localStorage.getItem(key)) {
-      localStorage.setItem(key, JSON.stringify(updated));
-    } else {
-      sessionStorage.setItem(key, JSON.stringify(updated));
+  try {
+    const response = await api.put(`/auth/profile/${userId}`, fields);
+    if (response.data?.success) {
+      const dbUser = response.data.user;
+      // Sync back to localStorage
+      const current = getCurrentUser();
+      if (current) {
+        const updated: User = {
+          ...current,
+          name: dbUser.name ?? current.name,
+          department: dbUser.department ?? current.department,
+          designation: dbUser.designation ?? current.designation,
+          avatarUrl: dbUser.avatarUrl ?? current.avatarUrl,
+          empId: dbUser.empId ?? current.empId,
+          phone: dbUser.phoneWa ?? current.phone,
+        };
+        const key = 'hindustaan_user';
+        if (localStorage.getItem(key)) {
+          localStorage.setItem(key, JSON.stringify(updated));
+        } else {
+          sessionStorage.setItem(key, JSON.stringify(updated));
+        }
+        return updated;
+      }
     }
-    return updated;
+    return null;
+  } catch (error) {
+    console.warn('Backend unavailable, mocking profile update.');
+    const current = getCurrentUser();
+    if (current) {
+      const updated: User = {
+        ...current,
+        name: fields.name ?? current.name,
+        department: fields.department ?? current.department,
+        designation: fields.designation ?? current.designation,
+        avatarUrl: fields.avatarUrl ?? current.avatarUrl,
+        phone: fields.phoneWa ?? current.phone,
+      };
+      const key = 'hindustaan_user';
+      if (localStorage.getItem(key)) {
+        localStorage.setItem(key, JSON.stringify(updated));
+      } else {
+        sessionStorage.setItem(key, JSON.stringify(updated));
+      }
+      return updated;
+    }
+    return null;
   }
-  return null;
 };
 
+/**
+ * Calls GET /api/auth/profile/:userId to fetch profile details and updates local session details.
+ */
+export const fetchProfileFromBackend = async (userId: string): Promise<User | null> => {
+  try {
+    const response = await api.get(`/auth/profile/${userId}`);
+    if (response.data?.success) {
+      const dbUser = response.data.user;
+      const current = getCurrentUser();
+      if (current) {
+        const updated: User = {
+          ...current,
+          name: dbUser.name ?? current.name,
+          department: dbUser.department ?? current.department,
+          designation: dbUser.designation ?? current.designation,
+          avatarUrl: dbUser.avatarUrl ?? current.avatarUrl,
+          empId: dbUser.empId ?? current.empId,
+          phone: dbUser.phoneWa ?? current.phone,
+        };
+        const key = 'hindustaan_user';
+        if (localStorage.getItem(key)) {
+          localStorage.setItem(key, JSON.stringify(updated));
+        } else {
+          sessionStorage.setItem(key, JSON.stringify(updated));
+        }
+        return updated;
+      }
+    }
+    return null;
+  } catch (err: any) {
+    if (err?.response?.status !== 404) {
+      console.error('Failed to fetch profile from backend:', err);
+    }
+    return null;
+  }
+};
+
+/**
+ * Uploads a profile photo file to the backend via /api/upload/profile-photo.
+ * Returns the Cloudinary URL on success.
+ */
 export const uploadAvatarToBackend = async (file: File): Promise<string> => {
   return new Promise((resolve) => {
     const reader = new FileReader();

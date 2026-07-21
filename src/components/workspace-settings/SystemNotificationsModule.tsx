@@ -8,6 +8,7 @@ import {
   Trash2, Pin, Check, ToggleLeft, AlertOctagon, HelpCircle, Info, BellRing
 } from 'lucide-react';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 
 export interface SystemNotification {
   id: string;
@@ -74,10 +75,8 @@ const INITIAL_SYSTEM_NOTIFICATIONS: SystemNotification[] = [
 ];
 
 export default function SystemNotificationsModule() {
-  const [notifications, setNotifications] = useState<SystemNotification[]>(() => {
-    const saved = localStorage.getItem('projectos_system_notifications');
-    return saved ? JSON.parse(saved) : INITIAL_SYSTEM_NOTIFICATIONS;
-  });
+  const [notifications, setNotifications] = useState<SystemNotification[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Settings State
   const [settings, setSettings] = useState(() => {
@@ -91,9 +90,23 @@ export default function SystemNotificationsModule() {
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'security' | 'critical'>('all');
 
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/notifications/system');
+      if (res.data?.success) {
+        setNotifications(res.data.data || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch system notifications:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem('projectos_system_notifications', JSON.stringify(notifications));
-  }, [notifications]);
+    fetchNotifications();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('projectos_sys_notif_settings', JSON.stringify(settings));
@@ -104,30 +117,53 @@ export default function SystemNotificationsModule() {
     toast.success('Notification settings updated.');
   };
 
-  const handleMarkAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-    toast.success('Notification marked as read.');
-  };
-
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-    toast.success('All notifications marked as read.');
-  };
-
-  const handleDelete = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-    toast.success('Notification deleted.');
-  };
-
-  const handleTogglePin = (id: string) => {
-    setNotifications(prev => prev.map(n => {
-      if (n.id === id) {
-        const nextPin = !n.isPinned;
-        toast.success(nextPin ? 'Notification pinned to top.' : 'Notification unpinned.');
-        return { ...n, isPinned: nextPin };
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      const res = await api.patch(`/notifications/system/${id}/read`);
+      if (res.data?.success) {
+        toast.success('Notification marked as read.');
+        fetchNotifications();
       }
-      return n;
-    }));
+    } catch (err: any) {
+      toast.error('Action failed', { description: err.response?.data?.message || err.message });
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const res = await api.post('/notifications/system/read-all');
+      if (res.data?.success) {
+        toast.success('All notifications marked as read.');
+        fetchNotifications();
+      }
+    } catch (err: any) {
+      toast.error('Action failed', { description: err.response?.data?.message || err.message });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await api.delete(`/notifications/system/${id}`);
+      if (res.data?.success) {
+        toast.success('Notification deleted.');
+        fetchNotifications();
+      }
+    } catch (err: any) {
+      toast.error('Delete failed', { description: err.response?.data?.message || err.message });
+    }
+  };
+
+  const handleTogglePin = async (id: string) => {
+    try {
+      const res = await api.patch(`/notifications/system/${id}/pin`);
+      if (res.data?.success) {
+        const isPinned = res.data.data.isPinned;
+        toast.success(isPinned ? 'Notification pinned to top.' : 'Notification unpinned.');
+        fetchNotifications();
+      }
+    } catch (err: any) {
+      toast.error('Action failed', { description: err.response?.data?.message || err.message });
+    }
   };
 
   // Filter application

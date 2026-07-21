@@ -48,10 +48,13 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       status: frontendStatus,
       iconColor: color.iconColor,
       strokeColor: color.strokeColor,
-      manager: p.manager?.name || 'Unassigned',
+      manager: p.manager?.name || (typeof p.manager === 'string' ? p.manager : 'Unassigned'),
       managerId: p.managerId || '',
-      deadline: p.endDate ? new Date(p.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD',
-      budget: '$25k',
+      deadline: p.deadline && p.deadline !== 'TBD' ? new Date(p.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) :
+                p.endDate ? new Date(p.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD',
+      endDate: p.endDate ? new Date(p.endDate).toISOString().split('T')[0] : 
+               (p.deadline && p.deadline !== 'TBD' && !isNaN(Date.parse(p.deadline)) ? new Date(p.deadline).toISOString().split('T')[0] : ''),
+      budget: p.budget && p.budget !== 'TBD' ? (p.budget.startsWith('$') ? p.budget : `$${p.budget}`) : 'TBD',
       progress,
       milestones: (p.milestones || []).map((m: any) => ({
         id: m.id,
@@ -69,7 +72,8 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         assignee_name: t.assignee?.name || 'Unassigned',
         assignee_id: t.assigneeId || 'unassigned',
         priority: t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
-        due_date: t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : ''
+        due_date: t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : '',
+        start_date: t.startDate ? new Date(t.startDate).toISOString().split('T')[0] : ''
       }))
     };
   };
@@ -101,19 +105,18 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const addProject = async (projectData: any): Promise<boolean> => {
     try {
       const currentUser = getCurrentUser();
-      const managerId = currentUser?.id;
-      if (!managerId) {
-        throw new Error('You must be logged in as a manager to create projects.');
-      }
+      const managerId = projectData.managerId || currentUser?.id;
+      const isUuid = managerId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(managerId);
 
       // 1. Create project on backend
       const projRes = await api.post('/projects', {
         name: projectData.name,
         description: projectData.description || projectData.name,
-        managerId,
+        ...(isUuid ? { managerId } : {}),
         startDate: new Date(),
-        endDate: projectData.deadline ? new Date(projectData.deadline) : undefined,
-        status: 'active'
+        endDate: projectData.deadline && projectData.deadline !== 'TBD' ? new Date(projectData.deadline) : undefined,
+        status: 'active',
+        budget: projectData.budget
       });
 
       if (projRes.data?.success) {
@@ -130,7 +133,8 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
                       task.status === 'In Progress' ? 'in-progress' :
                       task.status === 'In Review' ? 'in-review' : 'todo',
               priority: task.priority ? task.priority.toLowerCase() : 'medium',
-              dueDate: projectData.deadline ? new Date(projectData.deadline) : undefined
+              dueDate: projectData.deadline ? new Date(projectData.deadline) : undefined,
+              assigneeId: task.assigneeId || undefined
             });
           }
         }
@@ -155,6 +159,8 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
                          updateData.status === 'Aborted' ? 'aborted' :
                          updateData.status === 'On Hold' ? 'on_hold' : 'active';
       }
+      if (updateData.budget !== undefined) payload.budget = updateData.budget;
+      if (updateData.managerId !== undefined) payload.managerId = updateData.managerId;
 
       const res = await api.patch(`/projects/${id}`, payload);
       if (res.data?.success) {
@@ -187,7 +193,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       const res = await api.post('/milestones', {
         name,
         projectId,
-        dueDate: dueDate ? new Date(dueDate) : undefined,
+        dueDate: dueDate || null,
         status: 'pending'
       });
       if (res.data?.success) {

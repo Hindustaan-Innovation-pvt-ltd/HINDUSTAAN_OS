@@ -36,16 +36,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format, isSameDay } from 'date-fns';
+import api from '@/lib/api';
 
 // 9. Mock Data
-const MOCK_LEAVES = [
-  { id: 1, employee: "Tanvy Pandey", avatar: 'https://i.pravatar.cc/150?u=tanvy', department: "Engineering", type: "Sick Leave", start: "2026-07-11", end: "2026-07-13", appliedOn: "2026-07-10", reason: "Fever and medical consultation.", status: "Pending", days: 3 },
-  { id: 2, employee: "Priya", avatar: 'https://i.pravatar.cc/150?u=priya', department: "Design", type: "WFH", start: "2026-07-11", end: "2026-07-11", appliedOn: "2026-07-09", reason: "Internet maintenance at home.", status: "Approved", days: 1, hrNotified: true },
-  { id: 3, employee: "Rahul Sharma", avatar: 'https://i.pravatar.cc/150?u=rahul', department: "Engineering", type: "Casual Leave", start: "2026-07-15", end: "2026-07-18", appliedOn: "2026-07-05", reason: "Family function out of station.", status: "Pending", days: 4 },
-  { id: 4, employee: "Amit Kumar", avatar: 'https://i.pravatar.cc/150?u=amit', department: "Marketing", type: "Casual Leave", start: "2026-07-11", end: "2026-07-12", appliedOn: "2026-07-01", reason: "Personal work.", status: "Approved", days: 2, hrNotified: true },
-  { id: 5, employee: "Sara", avatar: 'https://i.pravatar.cc/150?u=sara', department: "HR", type: "Sick Leave", start: "2026-07-11", end: "2026-07-11", appliedOn: "2026-07-11", reason: "Not feeling well.", status: "Approved", days: 1, hrNotified: true },
-  { id: 6, employee: "John Doe", avatar: 'https://i.pravatar.cc/150?u=john', department: "Sales", type: "Emergency Leave", start: "2026-07-11", end: "2026-07-11", appliedOn: "2026-07-11", reason: "Personal emergency.", status: "Approved", days: 1, hrNotified: true },
-];
+const MOCK_LEAVES: any[] = [];
 
 const leaveBalance = {
   casual: { total: 10, used: 2, remaining: 8 },
@@ -62,17 +56,78 @@ const parseLocalDate = (dateStr: string) => {
   return new Date(year, month - 1, day);
 };
 
+const mapBackendLeave = (l: any) => {
+  const start = l.startDate ? l.startDate.split('T')[0] : '';
+  const end = l.endDate ? l.endDate.split('T')[0] : '';
+  
+  const diffTime = l.startDate && l.endDate ? Math.abs(new Date(l.endDate).getTime() - new Date(l.startDate).getTime()) : 0;
+  const diffDays = l.startDate && l.endDate ? Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1 : 1;
+
+  return {
+    id: l.id,
+    employee: l.user?.name || "Unassigned",
+    avatar: l.user?.avatarUrl || `https://i.pravatar.cc/150?u=${encodeURIComponent(l.user?.name || '')}`,
+    department: l.user?.department || "General",
+    type: l.type === 'Casual' ? 'Casual Leave' : l.type === 'Sick' ? 'Sick Leave' : l.type === 'Unpaid' ? 'Emergency Leave' : l.type,
+    start: start,
+    end: end,
+    appliedOn: l.createdAt ? l.createdAt.split('T')[0] : '',
+    reason: l.reason,
+    status: l.status === 'Approved' ? 'Approved' as const : l.status === 'Rejected' ? 'Rejected' as const : 'Pending' as const,
+    days: diffDays,
+    hrNotified: l.status === 'Approved'
+  };
+};
+
 export default function LeaveManagement({ session }: { session: any }) {
   const role = session?.user?.user_metadata?.role || 'manager';
-  const isManager = role === 'manager';
+  const isManager = role === 'manager' || role === 'admin';
 
   const [activeTab, setActiveTab] = useState(isManager ? 'requests' : 'apply');
-  const [leaveData, setLeaveData] = useState(() => {
-    const stored = localStorage.getItem('hindustaan_leave_data');
-    return stored ? JSON.parse(stored) : MOCK_LEAVES;
+  const [leaveData, setLeaveData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [balances, setBalances] = useState({
+    casual: { total: 12, used: 0, remaining: 12 },
+    sick: { total: 6, used: 0, remaining: 6 },
+    overall: { total: 18, used: 0, remaining: 18 }
   });
 
-  const [highlightedRequestId, setHighlightedRequestId] = useState<number | null>(null);
+  const [highlightedRequestId, setHighlightedRequestId] = useState<string | null>(null);
+
+  const fetchLeaves = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/leaves');
+      if (res.data?.success) {
+        const raw = res.data.data || [];
+        setLeaveData(raw.map(mapBackendLeave));
+      }
+    } catch (e) {
+      console.error("Failed to fetch leaves:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchLeaveSummary = async () => {
+    try {
+      const res = await api.get('/leaves/summary');
+      if (res.data?.success) {
+        const stats = res.data.data || {};
+        const sickUsed = Number(stats.Sick || 0);
+        const casualUsed = Number(stats.Casual || 0) + Number(stats.Earned || 0);
+        const overallUsed = sickUsed + casualUsed;
+
+        setBalances({
+          casual: { total: 12, used: casualUsed, remaining: Math.max(0, 12 - casualUsed) },
+          sick: { total: 6, used: sickUsed, remaining: Math.max(0, 6 - sickUsed) },
+          overall: { total: 18, used: overallUsed, remaining: Math.max(0, 18 - overallUsed) }
+        });
+      }
+    } catch (e) {
+      console.error("Failed to fetch leave summary:", e);
+    }
+  };
 
   // Sync tab with URL and check for selected request ID
   useEffect(() => {
@@ -87,65 +142,39 @@ export default function LeaveManagement({ session }: { session: any }) {
       // Check for selected leave request from notification
       const targetId = localStorage.getItem('selected_leave_request_id');
       if (targetId) {
-        const reqId = Number(targetId);
-        const storedLeaves = localStorage.getItem('hindustaan_leave_data');
-        const currentLeaves = storedLeaves ? JSON.parse(storedLeaves) : leaveData;
-        const foundReq = currentLeaves.find((l: any) => l.id === reqId && l.status === 'Pending');
-        if (foundReq) {
-          setHighlightedRequestId(reqId);
-          setSelectedRequest(foundReq);
-          setIsRequestDialogOpen(true);
-          localStorage.removeItem('selected_leave_request_id');
-        }
-      }
-    };
-
-    const handleSync = () => {
-      const stored = localStorage.getItem('hindustaan_leave_data');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setLeaveData((prev: any) => {
-            if (JSON.stringify(prev) !== stored) {
-              return parsed;
-            }
-            return prev;
-          });
-        } catch (e) {
-          console.error(e);
-        }
+        localStorage.removeItem('selected_leave_request_id');
+        setHighlightedRequestId(targetId);
+        // We will match it in leaveData once loaded
       }
     };
 
     window.addEventListener('popstate', handleRouteAndParams);
-    window.addEventListener('leave-data-updated', handleSync);
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'hindustaan_leave_data') {
-        handleSync();
-      }
-    });
-
-    // Run once on mount
     handleRouteAndParams();
-    handleSync();
+    fetchLeaves();
+    fetchLeaveSummary();
 
     return () => {
       window.removeEventListener('popstate', handleRouteAndParams);
-      window.removeEventListener('leave-data-updated', handleSync);
     };
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('hindustaan_leave_data', JSON.stringify(leaveData));
-    window.dispatchEvent(new Event('leave-data-updated'));
-  }, [leaveData]);
+    if (highlightedRequestId && leaveData.length > 0) {
+      const foundReq = leaveData.find((l: any) => String(l.id) === String(highlightedRequestId) && l.status === 'Pending');
+      if (foundReq) {
+        setSelectedRequest(foundReq);
+        setIsRequestDialogOpen(true);
+        setHighlightedRequestId(null);
+      }
+    }
+  }, [leaveData, highlightedRequestId]);
 
   // Calendar State
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
   // Comment Modal State
   const [commentModalOpen, setCommentModalOpen] = useState(false);
-  const [activeRequestId, setActiveRequestId] = useState<number | null>(null);
+  const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
 
   // Leave Request Dialog State
@@ -153,8 +182,8 @@ export default function LeaveManagement({ session }: { session: any }) {
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
 
   // 2. Email Notification Placeholder Flow - Loading States
-  const [approvingId, setApprovingId] = useState<number | null>(null);
-  const [rejectingId, setRejectingId] = useState<number | null>(null);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
 
   const onSubmitLeave = (leave: {
     type: string;
@@ -163,157 +192,77 @@ export default function LeaveManagement({ session }: { session: any }) {
     endDate: string;
     reason: string;
   }) => {
-    const start = parseLocalDate(leave.startDate);
-    const end = parseLocalDate(leave.endDate);
-
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
     const typeMapping: Record<string, string> = {
-      casual: "Casual Leave",
-      sick: "Sick Leave",
-      wfh: "WFH",
-      half: "Half Day",
-      emergency: "Emergency Leave"
+      casual: "Casual",
+      sick: "Sick",
+      wfh: "Casual",
+      half: "Casual",
+      emergency: "Unpaid"
     };
 
-    const employeeName = session?.user?.user_metadata?.name || "Tanvy Pandey";
-    const employeeDept = session?.user?.user_metadata?.department || "Engineering";
+    const type = typeMapping[leave.type] || "Casual";
 
-    const newRequest = {
-      id: Date.now(),
-      employee: employeeName,
-      avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(employeeName)}`,
-      department: employeeDept,
-      type: typeMapping[leave.type] || "Casual Leave",
-      start: leave.startDate,
-      end: leave.endDate,
-      appliedOn: format(new Date(), 'yyyy-MM-dd'),
-      reason: leave.reason,
-      status: "Pending" as const,
-      days: diffDays,
-      hrNotified: false
-    };
-
-    setLeaveData((prev: any[]) => [newRequest, ...prev]);
-
-    // Add manager notification
-    const newManagerNotification = {
-      id: Date.now(),
-      category: 'Leave Management',
-      icon: '📅',
-      title: 'New Leave Request',
-      message: `${employeeName} applied for leave on ${leave.startDate}`,
-      time: 'Just now',
-      unread: true,
-      group: 'Today',
-      metadata: {
-        requestId: newRequest.id,
-        type: 'leave_request',
-        employee: employeeName,
-        date: leave.startDate
+    api.post('/leaves', {
+      type,
+      startDate: new Date(leave.startDate).toISOString(),
+      endDate: new Date(leave.endDate).toISOString(),
+      reason: leave.reason
+    }).then(res => {
+      if (res.data?.success) {
+        toast.success("Leave Applied Successfully", { description: 'Awaiting manager approval.' });
+        fetchLeaves();
+        fetchLeaveSummary();
       }
-    };
-    const savedNotifications = localStorage.getItem('hindustaan_notifications');
-    let managerNotifications = [];
-    if (savedNotifications) {
-      try { managerNotifications = JSON.parse(savedNotifications); } catch (e) {}
-    }
-    localStorage.setItem('hindustaan_notifications', JSON.stringify([newManagerNotification, ...managerNotifications]));
-    window.dispatchEvent(new Event('notifications-updated'));
+    }).catch(err => {
+      toast.error("Application Failed", { description: err.response?.data?.message || err.message });
+    });
 
     return true;
   };
 
-  // 10. Future Backend Integration Comments
-  // Future Backend Flow:
-  // Employee Applies Leave -> Manager Approves -> POST /api/leaves/:id/approve -> Backend sends email to HR -> Calendar updates automatically
-
-  const handleApprove = async (id: number) => {
+  const handleApprove = async (id: string) => {
     const leaveObj = leaveData.find((l: any) => l.id === id);
     if (!leaveObj) return;
 
-    setLeaveData((prev: any[]) => prev.map((l: any) => {
-      if (l.id === id) {
-        return { ...l, status: 'Approved', hrNotified: true };
+    setApprovingId(id);
+    try {
+      const res = await api.patch(`/leaves/${id}/status`, { status: 'Approved' });
+      if (res.data?.success) {
+        toast.success('Leave Approved Successfully.', {
+          description: 'HR has been notified via email.'
+        });
+        fetchLeaves();
+        fetchLeaveSummary();
       }
-      return l;
-    }));
-
-    toast.success('Leave Approved Successfully.', {
-      description: 'HR has been notified via email.'
-    });
-
-    // Add employee notification
-    const leaveDateFormatted = leaveObj.start;
-    const newEmpNotification = {
-      id: Date.now(),
-      category: 'Leave Management',
-      icon: '✅',
-      title: 'Leave Approved',
-      message: `Manager approved your leave request for ${leaveDateFormatted}`,
-      time: 'Just now',
-      unread: true,
-      group: 'Today',
-      metadata: {
-        type: 'leave_approved',
-        date: leaveDateFormatted
-      }
-    };
-    const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
-    let empNotifications = [];
-    if (savedEmpNotifications) {
-      try { empNotifications = JSON.parse(savedEmpNotifications); } catch (e) {}
+    } catch (err: any) {
+      toast.error('Approval failed', { description: err.response?.data?.message || err.message });
+    } finally {
+      setApprovingId(null);
     }
-    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
-    window.dispatchEvent(new Event('employee-notifications-updated'));
-    window.dispatchEvent(new Event('notifications-updated'));
-    window.dispatchEvent(new Event('leave-data-updated'));
   };
 
-  const handleReject = async (id: number) => {
+  const handleReject = async (id: string) => {
     const leaveObj = leaveData.find((l: any) => l.id === id);
     if (!leaveObj) return;
 
-    setLeaveData((prev: any[]) => prev.map((l: any) => {
-      if (l.id === id) {
-        return { ...l, status: 'Rejected' };
+    setRejectingId(id);
+    try {
+      const res = await api.patch(`/leaves/${id}/status`, { status: 'Rejected' });
+      if (res.data?.success) {
+        toast.error('Leave Rejected', {
+          description: 'Employee has been notified.'
+        });
+        fetchLeaves();
+        fetchLeaveSummary();
       }
-      return l;
-    }));
-
-    toast.error('Leave Rejected', {
-      description: 'Employee has been notified.'
-    });
-
-    // Add employee notification
-    const leaveDateFormatted = leaveObj.start;
-    const newEmpNotification = {
-      id: Date.now(),
-      category: 'Leave Management',
-      icon: '❌',
-      title: 'Leave Rejected',
-      message: `Manager rejected your leave request for ${leaveDateFormatted}`,
-      time: 'Just now',
-      unread: true,
-      group: 'Today',
-      metadata: {
-        type: 'leave_rejected',
-        date: leaveDateFormatted
-      }
-    };
-    const savedEmpNotifications = localStorage.getItem('hindustaan_employee_notifications');
-    let empNotifications = [];
-    if (savedEmpNotifications) {
-      try { empNotifications = JSON.parse(savedEmpNotifications); } catch (e) {}
+    } catch (err: any) {
+      toast.error('Rejection failed', { description: err.response?.data?.message || err.message });
+    } finally {
+      setRejectingId(null);
     }
-    localStorage.setItem('hindustaan_employee_notifications', JSON.stringify([newEmpNotification, ...empNotifications]));
-    window.dispatchEvent(new Event('employee-notifications-updated'));
-    window.dispatchEvent(new Event('notifications-updated'));
-    window.dispatchEvent(new Event('leave-data-updated'));
   };
 
-  const openCommentModal = (id: number) => {
+  const openCommentModal = (id: string) => {
     setActiveRequestId(id);
     setCommentText('');
     setCommentModalOpen(true);
@@ -477,7 +426,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {leaveData.filter((l: any) => l.employee === "Tanvy Pandey").map((leave: any) => (
+                    {leaveData.map((leave: any) => (
                       <tr key={leave.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors group">
                         <td className="px-6 py-5 font-semibold text-slate-600 dark:text-slate-400">{leave.appliedOn}</td>
                         <td className="px-6 py-5 font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -515,7 +464,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-3xl font-black text-slate-950 dark:text-white mb-1">24.0</h4>
+                    <h4 className="text-3xl font-black text-slate-950 dark:text-white mb-1">{balances.overall.total.toFixed(1)}</h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400">Days allocated for FY 2026</p>
                   </div>
                 </Card>
@@ -528,7 +477,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-3xl font-black text-slate-950 dark:text-white mb-1">5.0</h4>
+                    <h4 className="text-3xl font-black text-slate-950 dark:text-white mb-1">{balances.overall.used.toFixed(1)}</h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400">Days used in current cycle</p>
                   </div>
                 </Card>
@@ -541,7 +490,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-3xl font-black text-slate-950 dark:text-white mb-1">19.0</h4>
+                    <h4 className="text-3xl font-black text-slate-950 dark:text-white mb-1">{balances.overall.remaining.toFixed(1)}</h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400">Days available to apply</p>
                   </div>
                 </Card>
@@ -554,7 +503,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-3xl font-black text-slate-950 dark:text-white mb-1">3.0</h4>
+                    <h4 className="text-3xl font-black text-slate-950 dark:text-white mb-1">{pendingRequestsCount.toFixed(1)}</h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400">Days awaiting manager approval</p>
                   </div>
                 </Card>
@@ -574,12 +523,12 @@ export default function LeaveManagement({ session }: { session: any }) {
                         <div className="flex items-center justify-between text-sm">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-slate-800 dark:text-slate-200">Casual Leave (CL)</span>
-                            <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 text-[10px] font-bold border border-orange-200 dark:border-orange-900/50">8.0 Left</Badge>
+                            <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 text-[10px] font-bold border border-orange-200 dark:border-orange-900/50">{balances.casual.remaining.toFixed(1)} Left</Badge>
                           </div>
-                          <span className="font-extrabold text-slate-500 dark:text-slate-400">4.0 / 12.0 Days Used</span>
+                          <span className="font-extrabold text-slate-500 dark:text-slate-400">{balances.casual.used.toFixed(1)} / {balances.casual.total.toFixed(1)} Days Used</span>
                         </div>
                         <div className="h-3 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-800/50">
-                          <div className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full" style={{ width: '33.33%' }} />
+                          <div className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full" style={{ width: `${(balances.casual.used / balances.casual.total) * 100}%` }} />
                         </div>
                         <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Mainly for short-duration personal purposes. Accrues 1.0 day/month.</p>
                       </div>
@@ -589,12 +538,12 @@ export default function LeaveManagement({ session }: { session: any }) {
                         <div className="flex items-center justify-between text-sm">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-slate-800 dark:text-slate-200">Sick Leave (SL)</span>
-                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 text-[10px] font-bold border border-emerald-200 dark:border-emerald-900/50">5.0 Left</Badge>
+                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 text-[10px] font-bold border border-emerald-200 dark:border-emerald-900/50">{balances.sick.remaining.toFixed(1)} Left</Badge>
                           </div>
-                          <span className="font-extrabold text-slate-500 dark:text-slate-400">1.0 / 6.0 Days Used</span>
+                          <span className="font-extrabold text-slate-500 dark:text-slate-400">{balances.sick.used.toFixed(1)} / {balances.sick.total.toFixed(1)} Days Used</span>
                         </div>
                         <div className="h-3 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-800/50">
-                          <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style={{ width: '16.66%' }} />
+                          <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style={{ width: `${(balances.sick.used / balances.sick.total) * 100}%` }} />
                         </div>
                         <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">To be availed on medical grounds only. Doctor certificate required for &gt; 2 days.</p>
                       </div>
@@ -644,7 +593,7 @@ export default function LeaveManagement({ session }: { session: any }) {
                       <div className="flex items-start gap-3 border-l-2 border-orange-500 pl-3 py-1">
                         <div className="flex-1">
                           <span className="block text-xs font-bold text-slate-700 dark:text-slate-300">Casual Leave Applied</span>
-                          <span className="block text-[10px] text-slate-400">Jul 11, 2026 (Tanvy Pandey)</span>
+                          <span className="block text-[10px] text-slate-400">Jul 11, 2026</span>
                         </div>
                         <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400">-3.0 Days</span>
                       </div>

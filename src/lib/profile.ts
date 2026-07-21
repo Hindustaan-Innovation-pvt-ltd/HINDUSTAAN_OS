@@ -11,7 +11,7 @@ export interface ProfileData {
   
   // Professional Information
   manager: string;
-  employmentType: 'Intern' | 'Employee';
+  employmentType: 'Intern' | 'Employee' | 'Admin';
   team: string;
   joiningDate: string;
   endDate: string;
@@ -93,7 +93,7 @@ const createDefaultProfile = (user: User): ProfileData => {
     role: user.role === 'manager' ? 'Manager' : 'Frontend Developer',
     avatar: localStorage.getItem(`userAvatar_${user.email.toLowerCase()}`) || '',
     manager: user.role === 'manager' ? 'VP of Engineering' : 'Aakash Gupta',
-    employmentType: user.role === 'manager' ? 'Employee' : 'Intern',
+    employmentType: user.role === 'admin' ? 'Admin' : user.role === 'manager' ? 'Employee' : 'Intern',
     team: user.department ? `${user.department} Team` : 'Core Engineering',
     joiningDate: joining.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
     endDate: end.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),

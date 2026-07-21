@@ -9,6 +9,7 @@ import { getRegisteredUsers, getCurrentUser } from '@/lib/auth';
 import type { User } from '@/lib/auth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import api from '@/lib/api';
 
 interface RoleHistoryItem {
   id: string;
@@ -33,10 +34,19 @@ export default function RolesAndPermissions() {
   const adminUser = getCurrentUser();
   const adminName = adminUser?.name || 'System Admin';
 
+  const fetchUsers = async () => {
+    try {
+      const res = await api.get('/admin/users?page=1&limit=200');
+      if (res.data?.success) {
+        setUsersList(res.data.data.users || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch users:", e);
+    }
+  };
+
   useEffect(() => {
-    // Load users
-    const users = getRegisteredUsers();
-    setUsersList(users);
+    fetchUsers();
 
     // Load History from localStorage
     const savedHistory = localStorage.getItem('hindustaan_role_history');
@@ -69,7 +79,7 @@ export default function RolesAndPermissions() {
     }
   }, []);
 
-  const handleAssignRole = (e: React.FormEvent) => {
+  const handleAssignRole = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUserId) {
       toast.error('Please select a user first.');
@@ -87,46 +97,42 @@ export default function RolesAndPermissions() {
     }
 
     const prevRole = targetUser.role;
-    if (prevRole === newRole.toLowerCase()) {
+    const mappedRole = newRole.toLowerCase() === 'employee' ? 'intern' : newRole.toLowerCase();
+    if (prevRole === mappedRole) {
       toast.info('The user is already assigned this role.');
       return;
     }
 
-    // 1. Update User in localStorage hindustaan_users
-    const allUsers = getRegisteredUsers();
-    const updatedUsers = allUsers.map(u => {
-      if (u.email.toLowerCase() === targetUser.email.toLowerCase()) {
-        return { ...u, role: newRole.toLowerCase() as any };
+    try {
+      const res = await api.put(`/auth/profile/${selectedUserId}`, { role: mappedRole });
+      if (res.data?.success) {
+        toast.success(`Successfully assigned role "${newRole}" to ${targetUser.name}!`);
+        
+        // Log locally to history list
+        const newHistoryRecord: RoleHistoryItem = {
+          id: `role-hist-${Date.now()}`,
+          userName: targetUser.name,
+          userEmail: targetUser.email,
+          prevRole: prevRole,
+          newRole: newRole.toLowerCase(),
+          changedBy: adminName,
+          timestamp: new Date().toISOString()
+        };
+        const updatedHistory = [newHistoryRecord, ...historyList];
+        localStorage.setItem('hindustaan_role_history', JSON.stringify(updatedHistory));
+        setHistoryList(updatedHistory);
+        
+        fetchUsers();
+
+        // Reset Form fields
+        setSelectedUserId('');
+        setSearchTerm('');
+        setNewRole('');
+        setIsDropdownOpen(false);
       }
-      return u;
-    });
-    localStorage.setItem('hindustaan_users', JSON.stringify(updatedUsers));
-
-    // 2. Create History Record
-    const newHistoryRecord: RoleHistoryItem = {
-      id: `role-hist-${Date.now()}`,
-      userName: targetUser.name,
-      userEmail: targetUser.email,
-      prevRole: prevRole,
-      newRole: newRole.toLowerCase(),
-      changedBy: adminName,
-      timestamp: new Date().toISOString()
-    };
-
-    const updatedHistory = [newHistoryRecord, ...historyList];
-    localStorage.setItem('hindustaan_role_history', JSON.stringify(updatedHistory));
-
-    // 3. Update component states
-    setUsersList(updatedUsers);
-    setHistoryList(updatedHistory);
-    
-    toast.success(`Successfully assigned role "${newRole}" to ${targetUser.name}!`);
-
-    // Reset Form fields
-    setSelectedUserId('');
-    setSearchTerm('');
-    setNewRole('');
-    setIsDropdownOpen(false);
+    } catch (err: any) {
+      toast.error("Role assignment failed", { description: err.response?.data?.message || err.message });
+    }
   };
 
   const handleCancel = () => {
@@ -149,7 +155,7 @@ export default function RolesAndPermissions() {
   const roleStats = {
     admin: usersList.filter(u => u.role === 'admin').length,
     manager: usersList.filter(u => u.role === 'manager').length,
-    employee: usersList.filter(u => u.role === 'employee').length,
+    employee: usersList.filter(u => u.role === 'employee' || u.role === 'intern').length,
     intern: usersList.filter(u => u.role === 'employee' && u.designation?.toLowerCase().includes('intern')).length // or fallback/intern role if seeded
   };
 
@@ -170,7 +176,7 @@ export default function RolesAndPermissions() {
     },
     { 
       name: 'Employee', 
-      count: usersList.filter(u => u.role === 'employee').length, 
+      count: usersList.filter(u => u.role === 'employee' || u.role === 'intern').length, 
       desc: 'Task assignment capability, daily standups log, work hours logs, and profile self-service.',
       icon: UserCheck,
       color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
@@ -273,7 +279,9 @@ export default function RolesAndPermissions() {
                                 <div className="font-extrabold text-slate-900 dark:text-white">{u.name}</div>
                                 <div className="text-[10px] text-slate-400 mt-0.5">{u.email}</div>
                               </div>
-                              <Badge variant="outline" className="text-[9px] uppercase tracking-wider">{u.role}</Badge>
+                              <Badge variant="outline" className="text-[9px] uppercase tracking-wider">
+                                {u.role === 'intern' ? 'employee' : u.role}
+                              </Badge>
                             </div>
                           ))
                         ) : (
@@ -289,7 +297,7 @@ export default function RolesAndPermissions() {
                     <input
                       type="text"
                       readOnly
-                      value={selectedUser ? selectedUser.role.toUpperCase() : 'No user selected'}
+                      value={selectedUser ? (selectedUser.role === 'intern' ? 'EMPLOYEE' : selectedUser.role.toUpperCase()) : 'No user selected'}
                       className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm font-bold text-slate-550 dark:text-slate-400 cursor-not-allowed outline-none"
                     />
                   </div>
@@ -365,12 +373,12 @@ export default function RolesAndPermissions() {
                         </td>
                         <td className="px-6 py-4">
                           <Badge variant="outline" className="uppercase font-bold text-[9px] border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                            {h.prevRole}
+                            {h.prevRole === 'intern' ? 'employee' : h.prevRole}
                           </Badge>
                         </td>
                         <td className="px-6 py-4">
                           <Badge className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 uppercase font-bold text-[9px]">
-                            {h.newRole}
+                            {h.newRole === 'intern' ? 'employee' : h.newRole}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">

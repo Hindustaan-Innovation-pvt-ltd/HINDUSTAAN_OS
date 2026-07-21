@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, fetchProfileFromBackend } from '@/lib/auth';
 import { getProfileData, type ProfileData } from '@/lib/profile';
 import { 
   User, Mail, Phone, Shield, Briefcase, Calendar, MapPin, 
@@ -19,6 +19,14 @@ export default function EmployeeProfileView({ session, onNavigate }: { session?:
     if (user) {
       const data = getProfileData(user);
       setProfile(data);
+
+      if (user.id) {
+        fetchProfileFromBackend(user.id).then((freshUser) => {
+          if (freshUser) {
+            setProfile(getProfileData(freshUser));
+          }
+        });
+      }
     }
   }, []);
 
