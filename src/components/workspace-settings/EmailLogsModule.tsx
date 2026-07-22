@@ -24,74 +24,7 @@ export interface EmailLog {
   body: string;
 }
 
-const INITIAL_EMAIL_LOGS: EmailLog[] = [
-  {
-    id: 'msg-1',
-    recipient: 'rahul.sharma@hindustaan.in',
-    subject: 'New Task Assigned: Setup Redis Caching',
-    type: 'Task Assignments',
-    status: 'Success',
-    sentBy: 'System Bot',
-    sentDate: '2026-07-14 09:30',
-    deliveryStatus: 'Delivered',
-    body: 'Hello Rahul,\n\nYou have been assigned the task "Setup Redis Caching for API" by Director.\nDue date: Oct 19, 2026.\n\nBest regards,\nProject OS Team'
-  },
-  {
-    id: 'msg-2',
-    recipient: 'priya.patel@gmail.com',
-    subject: 'Reset your password for Project OS',
-    type: 'Password Reset',
-    status: 'Success',
-    sentBy: 'Auth Service',
-    sentDate: '2026-07-13 14:20',
-    deliveryStatus: 'Delivered',
-    body: 'Hello Priya,\n\nWe received a request to reset your password. Click the link below to set a new one:\nhttps://projectos.hindustaan.in/reset-password?token=xyz123\n\nIf you did not request this, please ignore this email.'
-  },
-  {
-    id: 'msg-3',
-    recipient: 'tanvy.pandey@hindustaan.in',
-    subject: 'Leave Request Approved',
-    type: 'Leave Notifications',
-    status: 'Success',
-    sentBy: 'Manager Bot',
-    sentDate: '2026-07-13 11:05',
-    deliveryStatus: 'Delivered',
-    body: 'Hello Tanvy,\n\nYour leave request for July 20-22 has been approved by your manager.\nManager comment: Enjoy your time off!'
-  },
-  {
-    id: 'msg-4',
-    recipient: 'aakash.gupta@outlook.com',
-    subject: 'Welcome to Hindustaan Innovations!',
-    type: 'User Invitations',
-    status: 'Failed',
-    sentBy: 'Admin (System)',
-    sentDate: '2026-07-12 16:45',
-    deliveryStatus: 'Bounced (Invalid Address)',
-    body: 'Hello Aakash,\n\nYou have been invited to join the Hindustaan Innovations workspace on Project OS.\nClick here to complete registration: https://projectos.hindustaan.in/invite?code=ak82js'
-  },
-  {
-    id: 'msg-5',
-    recipient: 'all-hands@hindustaan.in',
-    subject: 'All Hands Meeting at 4:00 PM Today',
-    type: 'Announcements',
-    status: 'Pending',
-    sentBy: 'Admin (System)',
-    sentDate: '2026-07-14 10:15',
-    deliveryStatus: 'In Queue',
-    body: 'Hi Team,\n\nPlease join the quarterly All Hands meeting today at 4:00 PM in the main conference room or via Zoom link.'
-  },
-  {
-    id: 'msg-6',
-    recipient: 'devops-alerts@hindustaan.in',
-    subject: '[CRITICAL] High RAM Usage Alert on Server 4',
-    type: 'System Alerts',
-    status: 'Failed',
-    sentBy: 'Monitor Bot',
-    sentDate: '2026-07-14 05:12',
-    deliveryStatus: 'Failed (SMTP Server Timeout)',
-    body: 'CRITICAL Alert: Memory usage on Server-04 has exceeded 95% for more than 15 minutes.'
-  }
-];
+
 
 export default function EmailLogsModule() {
   const [logs, setLogs] = useState<EmailLog[]>([]);
@@ -107,6 +40,94 @@ export default function EmailLogsModule() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
+
+  // Send Test Email State
+  const [isTestEmailOpen, setIsTestEmailOpen] = useState(false);
+  const [recipientsList, setRecipientsList] = useState<string[]>(['bhupesh@ssipmt.com']);
+  const [newRecipientInput, setNewRecipientInput] = useState('');
+  const [testTemplate, setTestTemplate] = useState('test');
+  const [testSubject, setTestSubject] = useState('Hindustaan OS SMTP Test');
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const addRecipient = (emailToAdd?: string) => {
+    const target = (emailToAdd || newRecipientInput).trim();
+    if (!target) return;
+    // Extract comma-separated or space-separated if pasted
+    const items = target.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
+    setRecipientsList(prev => Array.from(new Set([...prev, ...items])));
+    setNewRecipientInput('');
+  };
+
+  const removeRecipient = (indexToRemove: number) => {
+    setRecipientsList(prev => prev.filter((_, i) => i !== indexToRemove));
+  };
+
+  const handleSendTestEmail = async () => {
+    if (recipientsList.length === 0 && !newRecipientInput.trim()) {
+      toast.error('Please add at least one recipient email address or target role');
+      return;
+    }
+    
+    // Add any remaining text in input
+    let finalRecipients = [...recipientsList];
+    if (newRecipientInput.trim()) {
+      const extra = newRecipientInput.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
+      finalRecipients = Array.from(new Set([...finalRecipients, ...extra]));
+      setRecipientsList(finalRecipients);
+      setNewRecipientInput('');
+    }
+
+    try {
+      setSendingTest(true);
+      const isBulk = finalRecipients.length > 1 || ['all', 'interns', 'managers', 'admins', 'employees'].includes(finalRecipients[0]?.toLowerCase());
+      const endpoint = isBulk ? '/email/send-bulk' : '/email/send';
+      const payload = isBulk
+        ? {
+            recipients: finalRecipients,
+            subject: testSubject || 'Hindustaan OS Workspace Notification',
+            template: testTemplate,
+            data: {
+              otp: '582914',
+              taskTitle: 'Bulk Nodemailer Service',
+              taskDescription: 'Batch email dispatch test.',
+              loginUrl: window.location.origin,
+              sentTime: new Date().toLocaleString()
+            }
+          }
+        : {
+            to: finalRecipients[0],
+            subject: testSubject || 'Hindustaan OS Notification',
+            template: testTemplate,
+            data: {
+              otp: '582914',
+              taskTitle: 'Integrate Gmail SMTP Service',
+              taskDescription: 'Complete Nodemailer backend and frontend integration.',
+              loginUrl: window.location.origin,
+              sentTime: new Date().toLocaleString()
+            }
+          };
+
+      const res = await api.post(endpoint, payload);
+      if (res.data?.success) {
+        if (isBulk) {
+          const stats = res.data.data;
+          toast.success(`Bulk Email Complete: ${stats.successful}/${stats.total} delivered!`, {
+            description: `Delivered to recipients array.`
+          });
+        } else {
+          toast.success(`Email delivered to ${finalRecipients[0]}!`, {
+            description: `Message-ID: ${res.data.data?.messageId || 'Delivered'}`
+          });
+        }
+        setIsTestEmailOpen(false);
+        fetchLogs();
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to send email');
+    } finally {
+      setSendingTest(false);
+    }
+  };
 
   const fetchLogs = async () => {
     try {
@@ -350,6 +371,13 @@ export default function EmailLogsModule() {
 
             {/* Actions */}
             <div className="flex flex-wrap items-center gap-2">
+              <Button 
+                onClick={() => setIsTestEmailOpen(true)} 
+                size="sm" 
+                className="rounded-xl font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-sm cursor-pointer"
+              >
+                <Mail className="h-4 w-4 mr-1.5" /> Send Test Email
+              </Button>
               <Button 
                 onClick={handleDownloadLogs} 
                 variant="outline" 
@@ -606,6 +634,132 @@ export default function EmailLogsModule() {
         )}
       </Dialog>
       
+      {/* Send Test Email Modal */}
+      <Dialog open={isTestEmailOpen} onOpenChange={setIsTestEmailOpen}>
+        <DialogContent className="max-w-md bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+              <Mail className="h-5 w-5 text-orange-500" /> Send Single or Bulk Email
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Send single or bulk emails using your Nodemailer Gmail SMTP service.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Array Recipients Input */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                  Recipients List (Array: {recipientsList.length}) (*)
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-slate-400">Quick Target:</span>
+                  <button type="button" onClick={() => addRecipient('all')} className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-orange-500 hover:bg-orange-500 hover:text-white px-1.5 py-0.5 rounded transition-colors">+ All</button>
+                  <button type="button" onClick={() => addRecipient('interns')} className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-indigo-500 hover:bg-indigo-500 hover:text-white px-1.5 py-0.5 rounded transition-colors">+ Interns</button>
+                  <button type="button" onClick={() => addRecipient('managers')} className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-emerald-500 hover:bg-emerald-500 hover:text-white px-1.5 py-0.5 rounded transition-colors">+ Managers</button>
+                </div>
+              </div>
+
+              {/* Badges Container */}
+              <div className="min-h-[46px] p-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-wrap items-center gap-1.5 mb-2">
+                {recipientsList.length === 0 && (
+                  <span className="text-xs text-slate-400 pl-1">No recipients added yet. Type email and press Enter...</span>
+                )}
+                {recipientsList.map((email, idx) => (
+                  <Badge key={idx} className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 px-2 py-1 rounded-lg text-xs flex items-center gap-1.5 font-bold">
+                    {email}
+                    <button type="button" onClick={() => removeRecipient(idx)} className="hover:text-rose-500 text-slate-400 transition-colors">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+
+              {/* Add Recipient Row */}
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Enter email or paste multiple separated by commas..."
+                  value={newRecipientInput}
+                  onChange={(e) => setNewRecipientInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault();
+                      addRecipient();
+                    }
+                  }}
+                  className="rounded-xl bg-slate-50 dark:bg-slate-800/50 flex-1 text-xs"
+                />
+                <Button 
+                  type="button" 
+                  onClick={() => addRecipient()} 
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl font-bold border-slate-200 dark:border-slate-800 shrink-0"
+                >
+                  + Add
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-600 dark:text-slate-400 block mb-1">Select Email Template</label>
+              <Select value={testTemplate} onValueChange={(val) => {
+                setTestTemplate(val);
+                if (val === 'test') setTestSubject('Hindustaan OS SMTP Test');
+                else if (val === 'welcome') setTestSubject('Welcome to Hindustaan OS');
+                else if (val === 'otp') setTestSubject('Your Verification OTP Code');
+                else if (val === 'forgot-password') setTestSubject('Reset Your Password Request');
+                else if (val === 'reset-password') setTestSubject('Password Reset Successful');
+                else if (val === 'task-assigned') setTestSubject('New Task Assigned');
+                else if (val === 'task-completed') setTestSubject('Task Marked Completed');
+                else if (val === 'standup-reminder') setTestSubject('Daily Standup Reminder');
+                else if (val === 'announcement') setTestSubject('Workspace Announcement');
+              }}>
+                <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                  <SelectValue placeholder="Choose Template" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="test">test.ejs (SMTP Test)</SelectItem>
+                  <SelectItem value="welcome">welcome.ejs (Onboarding)</SelectItem>
+                  <SelectItem value="otp">otp.ejs (Verification Code)</SelectItem>
+                  <SelectItem value="forgot-password">forgot-password.ejs (Reset Link)</SelectItem>
+                  <SelectItem value="reset-password">reset-password.ejs (Confirmation)</SelectItem>
+                  <SelectItem value="task-assigned">task-assigned.ejs (Task Update)</SelectItem>
+                  <SelectItem value="task-completed">task-completed.ejs (Task Completion)</SelectItem>
+                  <SelectItem value="standup-reminder">standup-reminder.ejs (Daily Reminder)</SelectItem>
+                  <SelectItem value="announcement">announcement.ejs (Broadcast)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-600 dark:text-slate-400 block mb-1">Subject</label>
+              <Input
+                type="text"
+                placeholder="Email Subject"
+                value={testSubject}
+                onChange={(e) => setTestSubject(e.target.value)}
+                className="rounded-xl bg-slate-50 dark:bg-slate-800/50"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setIsTestEmailOpen(false)} className="rounded-xl">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSendTestEmail}
+              disabled={sendingTest}
+              className="rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold"
+            >
+              {sendingTest ? "Sending..." : "Send Email Now"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
