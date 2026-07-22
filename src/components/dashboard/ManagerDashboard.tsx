@@ -79,7 +79,7 @@ const LiveTimer = ({ initialSeconds, sessionStart, isOnline }: { initialSeconds:
           const elapsed = Math.floor((nowMs - startMs) / 1000);
           return Math.max(initialSeconds, elapsed);
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return initialSeconds;
   }, [initialSeconds, sessionStart, isOnline]);
@@ -199,7 +199,7 @@ function ManagerDashboardInner() {
 
   useEffect(() => {
     fetchDashboard();
-    
+
     if (socket) {
       socket.on('dashboard_update', () => {
         console.log('Received real-time dashboard update from server');
@@ -846,8 +846,8 @@ function ManagerDashboardInner() {
                               member.userRole === 'manager' || member.role?.toLowerCase()?.includes('manager')
                                 ? "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/30"
                                 : member.userRole === 'admin' || member.role?.toLowerCase()?.includes('admin')
-                                ? "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30"
-                                : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30"
+                                  ? "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30"
+                                  : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30"
                             )}>
                               {member.userRole === 'manager' || member.role?.toLowerCase()?.includes('manager') ? 'MGR' : member.userRole === 'admin' || member.role?.toLowerCase()?.includes('admin') ? 'ADM' : 'EMP'}
                             </Badge>
@@ -980,8 +980,8 @@ function ManagerDashboardInner() {
                               member.userRole === 'manager' || member.role?.toLowerCase()?.includes('manager')
                                 ? "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/30"
                                 : member.userRole === 'admin' || member.role?.toLowerCase()?.includes('admin')
-                                ? "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30"
-                                : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30"
+                                  ? "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30"
+                                  : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30"
                             )}>
                               {member.userRole === 'manager' || member.role?.toLowerCase()?.includes('manager') ? 'MANAGER' : member.userRole === 'admin' || member.role?.toLowerCase()?.includes('admin') ? 'ADMIN' : 'EMPLOYEE'}
                             </Badge>

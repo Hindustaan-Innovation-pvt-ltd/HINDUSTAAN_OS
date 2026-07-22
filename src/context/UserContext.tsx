@@ -29,7 +29,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const fetchUser = async () => {
       const hasStoredUser = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
-      if (!hasStoredUser && ['/login', '/register', '/admin/login'].includes(window.location.pathname)) {
+      if (!hasStoredUser) {
         setUser(null);
         setLoading(false);
         return;
