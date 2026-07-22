@@ -59,6 +59,13 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     newSocket.on('connect_error', (error) => {
       console.warn('Socket connection error:', error.message);
       setConnected(false);
+      // If server restarted or session expired ('Session ID unknown'), force discard of stale sid and perform a fresh handshake
+      if (error.message.includes('Session ID unknown') || error.message.includes('sid unknown')) {
+        newSocket.disconnect();
+        setTimeout(() => {
+          newSocket.connect();
+        }, 500);
+      }
     });
 
     newSocket.on('disconnect', () => {
