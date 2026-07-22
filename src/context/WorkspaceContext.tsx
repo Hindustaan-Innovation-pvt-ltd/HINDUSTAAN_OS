@@ -29,6 +29,7 @@ export interface WorkspaceConfig {
   smtpUser?: string;
   smtpPass?: string;
   whatsappWebhook?: string;
+  maxWorkingHours: number;
 }
 
 interface WorkspaceContextType {
@@ -59,6 +60,7 @@ const DEFAULT_CONFIG: WorkspaceConfig = {
   pushNotifications: false,
   themeMode: 'dark',
   accentColor: 'blue',
+  maxWorkingHours: 9,
 };
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -102,6 +104,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           smtpUser: d.smtpUser || '',
           smtpPass: d.smtpPass || '',
           whatsappWebhook: d.whatsappWebhook || '',
+          maxWorkingHours: d.maxWorkingHours !== undefined && d.maxWorkingHours !== null ? d.maxWorkingHours : prev.maxWorkingHours,
         }));
       }
     } catch (e) {
@@ -117,16 +120,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateConfig = async (newConfig: Partial<WorkspaceConfig>) => {
-    let mergedConfig: WorkspaceConfig = config;
-    setConfig(prev => {
-      const updated = { ...prev, ...newConfig };
-      mergedConfig = updated;
-      localStorage.setItem('workspace_config_v2', JSON.stringify(updated));
-      return updated;
-    });
+    const mergedConfig: WorkspaceConfig = { ...config, ...newConfig };
+    setConfig(mergedConfig);
+    localStorage.setItem('workspace_config_v2', JSON.stringify(mergedConfig));
 
     try {
-      if ('workspaceName' in newConfig || 'supportEmail' in newConfig || 'themeMode' in newConfig || 'workspaceLogo' in newConfig || 'address' in newConfig || 'defaultTimezone' in newConfig || 'currency' in newConfig) {
+      if ('workspaceName' in newConfig || 'supportEmail' in newConfig || 'themeMode' in newConfig || 'workspaceLogo' in newConfig || 'address' in newConfig || 'defaultTimezone' in newConfig || 'currency' in newConfig || 'maxWorkingHours' in newConfig) {
         await api.put('/settings/workspace', {
           companyName: mergedConfig.workspaceName,
           supportEmail: mergedConfig.supportEmail,
@@ -135,6 +134,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           address: mergedConfig.address || "",
           defaultTimezone: mergedConfig.defaultTimezone || "Asia/Kolkata",
           currency: mergedConfig.currency || "INR",
+          maxWorkingHours: mergedConfig.maxWorkingHours || 9,
         });
       }
       const hasChannels = 'smtpHost' in newConfig || 'smtpPort' in newConfig || 'smtpUser' in newConfig || 'smtpPass' in newConfig || 'whatsappWebhook' in newConfig;

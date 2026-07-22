@@ -73,8 +73,7 @@ api.interceptors.response.use(
           } else {
             isMockOrDemoUser =
               (user && String(user.accessToken || '').startsWith('mock-token-')) ||
-              (user && String(user.id || '').startsWith('demo-')) ||
-              (user && String(user.email || '').toLowerCase().endsWith('@hindustaan.in'));
+              (user && String(user.id || '').startsWith('demo-'));
           }
         } catch (e) {}
       }

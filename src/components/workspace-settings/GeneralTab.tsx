@@ -2,8 +2,11 @@ import React from 'react';
 import { SettingsSection, SettingsRow } from './SettingsLayout';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useWorkspace } from '@/context/WorkspaceContext';
+import { toast } from 'sonner';
 
 export default function GeneralTab({ data, updateField }: { data: any, updateField: (key: string, value: any) => void }) {
+  const { updateConfig } = useWorkspace();
   return (
     <div className="animate-in fade-in duration-300">
       <div className="mb-8">
@@ -131,6 +134,39 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
               <SelectItem value="USD">US Dollar ($)</SelectItem>
               <SelectItem value="EUR">Euro (€)</SelectItem>
               <SelectItem value="GBP">British Pound (£)</SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingsRow>
+      </SettingsSection>
+
+      <SettingsSection 
+        title="Attendance Policy & Work Rules" 
+        description="Configure rules for attendance sessions and daily work hours validation across the workspace."
+      >
+        <SettingsRow 
+          title="Maximum Working Hours" 
+          description="If an employee forgets to check out and this duration is exceeded, their attendance session becomes INVALID (MISSED_CHECKOUT) with 0 worked time. They must perform a fresh check-in."
+        >
+          <Select 
+            value={String(data.maxWorkingHours || 9)} 
+            onValueChange={(val) => {
+              const numVal = parseInt(val, 10);
+              updateField('maxWorkingHours', numVal);
+              updateConfig({ maxWorkingHours: numVal });
+              toast.success(`Attendance limit updated to ${numVal} Hours (Saved to DB)`);
+            }}
+          >
+            <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/50 w-full sm:w-64 font-semibold text-violet-600 dark:text-violet-400">
+              <SelectValue placeholder="Select Limit" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="8">8 Hours</SelectItem>
+              <SelectItem value="9">9 Hours (Default)</SelectItem>
+              <SelectItem value="10">10 Hours</SelectItem>
+              <SelectItem value="11">11 Hours</SelectItem>
+              <SelectItem value="12">12 Hours</SelectItem>
+              <SelectItem value="13">13 Hours</SelectItem>
+              <SelectItem value="14">14 Hours</SelectItem>
             </SelectContent>
           </Select>
         </SettingsRow>

@@ -30,6 +30,7 @@ import EmailLogsModule from '@/components/workspace-settings/EmailLogsModule';
 import AnnouncementCenterModule from '@/components/workspace-settings/AnnouncementCenterModule';
 import SystemNotificationsModule from '@/components/workspace-settings/SystemNotificationsModule';
 import DeliveryChannelsModule from '@/components/workspace-settings/DeliveryChannelsModule';
+import ActivityLogsModule from '@/components/workspace-settings/ActivityLogsModule';
 import SecuritySettings from './pages/SecuritySettings';
 import Subscriptions from './pages/Subscriptions';
 
@@ -131,6 +132,8 @@ function AppRoutes() {
         <Route path="/admin/workspace/announcements" element={<AnnouncementCenterModule />} />
         <Route path="/admin/workspace/notifications" element={<SystemNotificationsModule />} />
         <Route path="/admin/workspace/channels" element={<DeliveryChannelsModule />} />
+        <Route path="/admin/workspace/activity-logs" element={<ActivityLogsModule />} />
+        <Route path="/admin/activity-logs" element={<ActivityLogsModule />} />
         <Route path="/admin/subscriptions" element={<Subscriptions />} />
         <Route path="/work-logs" element={<WorkLogs />} />
         <Route path="/daily-standups" element={<DailyStandups />} />

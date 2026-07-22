@@ -27,8 +27,9 @@ import {
   CalendarRange,
   PanelLeftClose,
   PanelLeftOpen,
-  UserCircle, Shield, Sliders, Building, Lock, Link, BellRing, Megaphone, Mail, ShieldCheck, Activity
+  UserCircle, Shield, Sliders, Building, Lock, Link, BellRing, Megaphone, Mail, ShieldCheck, Activity, FileText, History
 } from 'lucide-react';
+import AttendanceHistoryModal from '../attendance/AttendanceHistoryModal';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
@@ -88,7 +89,6 @@ const adminNavigationGroups = [
       { name: 'Tasks', icon: CheckSquare },
       { name: 'Team Members', icon: Users },
       { name: 'Gantt Timeline', icon: CalendarDays },
-      { name: 'Progress Tracker', icon: BarChart2 },
       { name: 'Contribution Scores', icon: Activity }
     ]
   },
@@ -122,6 +122,13 @@ const adminNavigationGroups = [
     ]
   },
   {
+    name: 'Activity Logs',
+    icon: FileText,
+    items: [
+      { name: 'Activity Logs', id: 'Activity Logs', icon: FileText }
+    ]
+  },
+  {
     name: 'Profile',
     icon: User,
     items: [
@@ -143,6 +150,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
 
   const collapsed = !isMobile && sidebarWidth < 150;
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   const toggleGroup = (groupName: string) => {
     if (collapsed && !isMobile) {
@@ -375,6 +383,13 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
               Check Out
               <Activity className="h-4 w-4 ml-2" />
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setIsHistoryModalOpen(true)}
+              className="cursor-pointer text-violet-600 dark:text-violet-400 focus:bg-violet-50 dark:focus:bg-violet-500/10 text-sm font-medium rounded-xl flex items-center justify-between py-2.5 transition-colors mb-1"
+            >
+              Attendance Logs
+              <History className="h-4 w-4 ml-2" />
+            </DropdownMenuItem>
             {onSignOut && (
               <DropdownMenuItem
                 onClick={onSignOut}
@@ -387,6 +402,11 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <AttendanceHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+      />
     </div>
   );
 };
@@ -441,6 +461,7 @@ export default function DashboardShell({
         break;
       case 'Email Logs': navigate('/admin/workspace/email'); break;
       case 'Delivery Channels': navigate('/admin/workspace/channels'); break;
+      case 'Activity Logs': navigate('/admin/workspace/activity-logs'); break;
       default: navigate(`/${role}/dashboard`);
     }
   };
@@ -469,6 +490,7 @@ export default function DashboardShell({
     if (path === '/admin/workspace/announcements') return 'Announcement Center';
     if (path === '/admin/workspace/email') return 'Email Logs';
     if (path === '/admin/workspace/channels') return 'Delivery Channels';
+    if (path === '/admin/workspace/activity-logs' || path === '/admin/activity-logs') return 'Activity Logs';
     return 'Dashboard';
   }, [location.pathname, role]);
 

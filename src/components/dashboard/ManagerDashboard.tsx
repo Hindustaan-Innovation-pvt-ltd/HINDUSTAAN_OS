@@ -22,7 +22,8 @@ class ManagerErrorBoundary extends Component<{ children: React.ReactNode }, { ha
   }
 }
 
-import { FileText, MoreVertical, Flag, Clock, Users, CalendarIcon, Briefcase, Plus, PlayCircle, Loader2, ArrowRight, LayoutGrid, Zap, TrendingUp, CheckCircle2, Megaphone, Timer, AlertTriangle, ShieldAlert, BellRing, Target, Fingerprint, Activity, UserPlus, FileEdit, HelpCircle, UserX, X, FolderKanban, CheckSquare, CalendarClock, ChevronRight, ChevronDown } from 'lucide-react';
+import { FileText, MoreVertical, Flag, Clock, Users, CalendarIcon, Briefcase, Plus, PlayCircle, Loader2, ArrowRight, LayoutGrid, Zap, TrendingUp, CheckCircle2, Megaphone, Timer, AlertTriangle, ShieldAlert, BellRing, Target, Fingerprint, Activity, UserPlus, FileEdit, HelpCircle, UserX, X, FolderKanban, CheckSquare, CalendarClock, ChevronRight, ChevronDown, History } from 'lucide-react';
+import AttendanceHistoryModal from '../attendance/AttendanceHistoryModal';
 import { cn, getRelativeTime } from '@/lib/utils';
 import ProjectDetails from '../projects/ProjectDetails';
 import { getCurrentUser } from '@/lib/auth';
@@ -110,6 +111,7 @@ function ManagerDashboardInner() {
   const { socket } = useSocket();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isAllDeadlinesOpen, setIsAllDeadlinesOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [isActiveInternsModalOpen, setIsActiveInternsModalOpen] = useState(false);
@@ -370,39 +372,61 @@ function ManagerDashboardInner() {
         </div>
 
         {/* Check-in / Check-out Status & Live Duration Card */}
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl shadow-sm shrink-0">
-          <div className="flex items-center gap-3 pr-3 border-r border-slate-200 dark:border-slate-800">
-            <div className={cn("h-3 w-3 rounded-full shrink-0", (dashboardStats?.isOnline || dashboardStats?.checkinTime) ? "bg-emerald-500 animate-pulse" : "bg-slate-400")} />
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</p>
-              <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200">
-                {(dashboardStats?.isOnline || dashboardStats?.checkinTime) ? "Checked In" : "Offline"}
-              </p>
+        <div className="flex flex-col gap-3 shrink-0">
+          {dashboardStats?.isSessionExpired && (
+            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 p-3 rounded-2xl flex items-center justify-between gap-3 text-xs sm:text-sm font-medium shadow-sm animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
+                <span>{dashboardStats?.sessionExpiredMessage || "Your previous session expired because you did not check out within 9 hours. Please check in again."}</span>
+              </div>
+              <Badge className="bg-rose-500 text-white font-bold px-2 py-0.5 border-0 text-[10px] shrink-0 uppercase">Auto Expired</Badge>
             </div>
-          </div>
-          <div className="flex items-center gap-4 px-2">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Check In</p>
-              <p className="text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                {formatCheckTime(dashboardStats?.checkinTime || dashboardStats?.todayFirstLogin || dashboardStats?.currentSessionStart)}
-              </p>
+          )}
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl shadow-sm shrink-0">
+            <div className="flex items-center gap-3 pr-3 border-r border-slate-200 dark:border-slate-800">
+              <div className={cn("h-3 w-3 rounded-full shrink-0", dashboardStats?.isSessionExpired ? "bg-rose-500" : (dashboardStats?.isOnline || dashboardStats?.checkinTime) ? "bg-emerald-500 animate-pulse" : "bg-slate-400")} />
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</p>
+                <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200">
+                  {dashboardStats?.isSessionExpired ? <span className="text-rose-600 dark:text-rose-400">Auto Expired</span> : (dashboardStats?.isOnline || dashboardStats?.checkinTime) ? "Checked In" : "Offline"}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Check Out</p>
-              <p className="text-sm font-mono font-bold text-slate-700 dark:text-slate-300">
-                {dashboardStats?.checkoutTime ? formatCheckTime(dashboardStats.checkoutTime) : (dashboardStats?.isOnline || dashboardStats?.currentSessionStart) ? <span className="text-amber-500 text-xs uppercase font-extrabold">Working</span> : "--:--"}
-              </p>
+            <div className="flex items-center gap-4 px-2">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Check In</p>
+                <p className="text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                  {formatCheckTime(dashboardStats?.checkinTime || dashboardStats?.todayFirstLogin || dashboardStats?.currentSessionStart)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Check Out</p>
+                <p className="text-sm font-mono font-bold text-slate-700 dark:text-slate-300">
+                  {dashboardStats?.isSessionExpired ? <span className="text-rose-500 text-xs uppercase font-extrabold">Policy Expired (0h)</span> : dashboardStats?.checkoutTime ? formatCheckTime(dashboardStats.checkoutTime) : (dashboardStats?.isOnline || dashboardStats?.currentSessionStart) ? <span className="text-amber-500 text-xs uppercase font-extrabold">Working</span> : "--:--"}
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="pl-3 border-l border-slate-200 dark:border-slate-800">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Duration</p>
-            <p className="text-sm font-mono font-black text-orange-600 dark:text-orange-400">
-              {(dashboardStats?.isOnline || dashboardStats?.currentSessionStart) ? (
-                <LiveTimer initialSeconds={dashboardStats?.todayActiveSeconds || 0} sessionStart={dashboardStats?.currentSessionStart} isOnline={dashboardStats?.isOnline} />
-              ) : (
-                formatTime(dashboardStats?.todayActiveSeconds || 0)
-              )}
-            </p>
+            <div className="pl-3 border-l border-slate-200 dark:border-slate-800 flex items-center gap-4">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Duration</p>
+                <p className="text-sm font-mono font-black text-orange-600 dark:text-orange-400">
+                  {!dashboardStats?.isSessionExpired && (dashboardStats?.isOnline || dashboardStats?.currentSessionStart) ? (
+                    <LiveTimer initialSeconds={dashboardStats?.todayActiveSeconds || 0} sessionStart={dashboardStats?.currentSessionStart} isOnline={dashboardStats?.isOnline} />
+                  ) : (
+                    formatTime(dashboardStats?.todayActiveSeconds || 0)
+                  )}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsHistoryModalOpen(true)}
+                className="h-8 px-3 rounded-xl border-violet-500/30 text-violet-600 dark:text-violet-300 hover:bg-violet-500/10 font-bold text-xs flex items-center gap-1.5 shadow-xs"
+              >
+                <History className="h-3.5 w-3.5" />
+                <span>Logs</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -1227,6 +1251,11 @@ function ManagerDashboardInner() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AttendanceHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+      />
     </div>
   );
 }
