@@ -34,7 +34,7 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { GlobalSearch } from '../dashboard/GlobalSearch';
+import { GlobalSearch } from '../../features/dashboard/components/GlobalSearch';
 import { NotificationBell } from '../dashboard/NotificationBell';
 import { EmployeeNotificationBell } from '../dashboard/EmployeeNotificationBell';
 import {
@@ -76,6 +76,7 @@ const managerNavigation = [
   { name: 'Daily Standups', icon: Mic },
   { name: 'Contribution Scores', icon: Trophy },
   { name: 'Team Members', icon: Users },
+  { name: 'Email Logs', icon: Mail },
   { name: 'Settings', icon: Settings },
 ];
 
@@ -89,6 +90,7 @@ const adminNavigationGroups = [
       { name: 'Tasks', icon: CheckSquare },
       { name: 'Team Members', icon: Users },
       { name: 'Gantt Timeline', icon: CalendarDays },
+      { name: 'Leave Management', icon: CalendarRange },
       { name: 'Contribution Scores', icon: Activity }
     ]
   },
@@ -431,7 +433,7 @@ export default function DashboardShell({
     switch (view) {
       case 'My Profile': navigate('/profile'); break;
       case 'Edit Profile': navigate('/profile/edit'); break;
-      case 'Leave Management': navigate(['manager', 'admin'].includes(role) ? '/manager/leave-management' : '/employee/leave'); break;
+      case 'Leave Management': navigate(role === 'admin' ? '/admin/leave-management' : role === 'manager' ? '/manager/leave-management' : '/employee/leave'); break;
       case 'Subscription Management': navigate('/admin/subscriptions'); break;
       case 'Dashboard': navigate(`/${role}/dashboard`); break;
       case 'Time Tracking': navigate('/time-tracking'); break;
@@ -459,7 +461,7 @@ export default function DashboardShell({
       case 'System Notifications': navigate('/admin/workspace/notifications'); break;
       case 'Announcement Center': navigate('/admin/workspace/announcements');
         break;
-      case 'Email Logs': navigate('/admin/workspace/email'); break;
+      case 'Email Logs': navigate(role === 'manager' ? '/manager/email' : '/admin/workspace/email'); break;
       case 'Delivery Channels': navigate('/admin/workspace/channels'); break;
       case 'Activity Logs': navigate('/admin/workspace/activity-logs'); break;
       default: navigate(`/${role}/dashboard`);
@@ -470,7 +472,7 @@ export default function DashboardShell({
     const path = location.pathname;
     if (path === '/profile') return 'My Profile';
     if (path === '/profile/edit') return 'Edit Profile';
-    if (path === '/manager/leave-management' || path === '/employee/leave') return 'Leave Management';
+    if (path === '/admin/leave-management' || path === '/admin/leaves' || path === '/manager/leave-management' || path === '/employee/leave') return 'Leave Management';
     if (path === '/admin/subscriptions') return 'Subscription Management';
     if (path === '/time-tracking') return 'Time Tracking';
     if (path === '/tasks') return role === 'employee' ? 'My Tasks' : 'Tasks';
@@ -488,7 +490,7 @@ export default function DashboardShell({
     if (path === '/security') return 'Workspace Settings - Security & Access';
     if (path === '/admin/workspace/notifications') return 'System Notifications';
     if (path === '/admin/workspace/announcements') return 'Announcement Center';
-    if (path === '/admin/workspace/email') return 'Email Logs';
+    if (path === '/admin/workspace/email' || path === '/manager/email') return 'Email Logs';
     if (path === '/admin/workspace/channels') return 'Delivery Channels';
     if (path === '/admin/workspace/activity-logs' || path === '/admin/activity-logs') return 'Activity Logs';
     return 'Dashboard';
@@ -643,7 +645,7 @@ export default function DashboardShell({
                     <Menu className="h-6 w-6" aria-hidden="true" />
                   </button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-70 border-r border-slate-200 dark:border-[#5B7CFF]/20 flex flex-col">
+                <SheetContent side="left" showCloseButton={false} className="p-0 w-70 border-r border-slate-200 dark:border-[#5B7CFF]/20 flex flex-col">
                   <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={handleNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={280} startResizing={() => { }} isMobile={true} toggleSidebar={toggleSidebar} />
                 </SheetContent>
               </Sheet>

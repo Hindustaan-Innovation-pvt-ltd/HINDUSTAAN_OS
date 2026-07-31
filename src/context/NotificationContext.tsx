@@ -46,7 +46,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchNotifications = async () => {
     // Only fetch if a user session exists in local/session storage
-    const hasSession = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
+    const hasSession = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user') || localStorage.getItem('hindustaan_session') || sessionStorage.getItem('hindustaan_session');
     if (!hasSession) {
       return;
     }

@@ -49,6 +49,23 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             department: profile.department || 'Engineering',
             email: profile.email
           });
+          try {
+            const key = 'hindustaan_user';
+            const storedLocal = localStorage.getItem(key);
+            const storedSession = sessionStorage.getItem(key);
+            if (storedLocal) {
+              const parsed = JSON.parse(storedLocal);
+              parsed.id = profile.id;
+              parsed.role = profile.role;
+              localStorage.setItem(key, JSON.stringify(parsed));
+            }
+            if (storedSession) {
+              const parsed = JSON.parse(storedSession);
+              parsed.id = profile.id;
+              parsed.role = profile.role;
+              sessionStorage.setItem(key, JSON.stringify(parsed));
+            }
+          } catch (e) {}
         } else {
           setUser(null);
         }

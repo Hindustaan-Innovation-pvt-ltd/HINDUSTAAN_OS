@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
+import { useUser } from '@/context/UserContext';
 
 export interface EmailLog {
   id: string;
@@ -27,6 +28,8 @@ export interface EmailLog {
 
 
 export default function EmailLogsModule() {
+  const { user } = useUser();
+  const role = user?.role || 'admin';
   const [logs, setLogs] = useState<EmailLog[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -52,8 +55,16 @@ export default function EmailLogsModule() {
   const addRecipient = (emailToAdd?: string) => {
     const target = (emailToAdd || newRecipientInput).trim();
     if (!target) return;
-    // Extract comma-separated or space-separated if pasted
     const items = target.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
+
+    if (role === 'manager') {
+      const restricted = items.some(item => ['all', 'managers', 'admins', 'admin', 'manager'].includes(item.toLowerCase()));
+      if (restricted) {
+        toast.error("Managers can only send emails to Interns or Employees.");
+        return;
+      }
+    }
+
     setRecipientsList(prev => Array.from(new Set([...prev, ...items])));
     setNewRecipientInput('');
   };
@@ -75,6 +86,14 @@ export default function EmailLogsModule() {
       finalRecipients = Array.from(new Set([...finalRecipients, ...extra]));
       setRecipientsList(finalRecipients);
       setNewRecipientInput('');
+    }
+
+    if (role === 'manager') {
+      const restricted = finalRecipients.some(item => ['all', 'managers', 'admins', 'admin', 'manager'].includes(item.toLowerCase()));
+      if (restricted) {
+        toast.error("Managers can only send emails to Interns or Employees.");
+        return;
+      }
     }
 
     try {
@@ -655,9 +674,14 @@ export default function EmailLogsModule() {
                 </label>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] font-bold text-slate-400">Quick Target:</span>
-                  <button type="button" onClick={() => addRecipient('all')} className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-orange-500 hover:bg-orange-500 hover:text-white px-1.5 py-0.5 rounded transition-colors">+ All</button>
+                  {role !== 'manager' && (
+                    <>
+                      <button type="button" onClick={() => addRecipient('all')} className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-orange-500 hover:bg-orange-500 hover:text-white px-1.5 py-0.5 rounded transition-colors">+ All</button>
+                      <button type="button" onClick={() => addRecipient('managers')} className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-emerald-500 hover:bg-emerald-500 hover:text-white px-1.5 py-0.5 rounded transition-colors">+ Managers</button>
+                    </>
+                  )}
                   <button type="button" onClick={() => addRecipient('interns')} className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-indigo-500 hover:bg-indigo-500 hover:text-white px-1.5 py-0.5 rounded transition-colors">+ Interns</button>
-                  <button type="button" onClick={() => addRecipient('managers')} className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-emerald-500 hover:bg-emerald-500 hover:text-white px-1.5 py-0.5 rounded transition-colors">+ Managers</button>
+                  <button type="button" onClick={() => addRecipient('employees')} className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-emerald-500 hover:bg-emerald-500 hover:text-white px-1.5 py-0.5 rounded transition-colors">+ Employees</button>
                 </div>
               </div>
 

@@ -16,12 +16,13 @@ api.interceptors.request.use(
     if (config.url?.includes('/auth/login') || config.url?.includes('/auth/signup')) {
       return config;
     }
-    const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
+    const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user') || localStorage.getItem('hindustaan_session') || sessionStorage.getItem('hindustaan_session');
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
-        if (user && user.accessToken) {
-          config.headers.Authorization = `Bearer ${user.accessToken}`;
+        const token = user && (user.accessToken || user.token);
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
         }
       } catch (e) {
         console.error('Failed to parse user session in request interceptor:', e);
@@ -62,7 +63,7 @@ api.interceptors.response.use(
       }
 
       // Check if this is a mock or demo user to prevent automatic logout/refresh loops
-      const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
+      const userStr = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user') || localStorage.getItem('hindustaan_session') || sessionStorage.getItem('hindustaan_session');
       let isMockOrDemoUser = false;
       let user: any = null;
       if (userStr) {
@@ -125,6 +126,11 @@ api.interceptors.response.use(
             } else if (sessionStorage.getItem('hindustaan_user')) {
               sessionStorage.setItem('hindustaan_user', JSON.stringify(user));
             }
+            if (localStorage.getItem('hindustaan_session')) {
+              localStorage.setItem('hindustaan_session', JSON.stringify(user));
+            } else if (sessionStorage.getItem('hindustaan_session')) {
+              sessionStorage.setItem('hindustaan_session', JSON.stringify(user));
+            }
           }
 
           api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
@@ -143,6 +149,8 @@ api.interceptors.response.use(
 
         localStorage.removeItem('hindustaan_user');
         sessionStorage.removeItem('hindustaan_user');
+        localStorage.removeItem('hindustaan_session');
+        sessionStorage.removeItem('hindustaan_session');
         window.dispatchEvent(new Event('auth-logout'));
         if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
           window.location.href = '/login';

@@ -39,8 +39,12 @@ export function FigjamDialog({ open, onOpenChange }: { open: boolean, onOpenChan
           <div className="flex items-center gap-3">
             {/* Active Users */}
             <div className="flex -space-x-2 mr-2">
-              <img className="h-8 w-8 rounded-full border-2 border-white dark:border-slate-900" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=32&h=32" alt="User" />
-              <img className="h-8 w-8 rounded-full border-2 border-white dark:border-slate-900" src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=32&h=32" alt="User" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white dark:border-slate-900 bg-purple-100 dark:bg-purple-900/40 text-[10px] font-bold text-purple-700 dark:text-purple-300">
+                AM
+              </div>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white dark:border-slate-900 bg-cyan-100 dark:bg-cyan-900/40 text-[10px] font-bold text-cyan-700 dark:text-cyan-300">
+                RK
+              </div>
               <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-300">
                 +3
               </div>

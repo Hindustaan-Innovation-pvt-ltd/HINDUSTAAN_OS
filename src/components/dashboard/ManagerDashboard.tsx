@@ -40,7 +40,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ProjectCalendarWidget } from './ProjectCalendarWidget';
 import { Separator } from '@/components/ui/separator';
-import { AssignTaskDialog } from './AssignTaskDialog';
+import { AssignTaskDialog } from '../../features/tasks/components/AssignTaskDialog';
 import { useProjects } from '@/context/ProjectContext';
 import { useNotifications } from '@/context/NotificationContext';
 import { useSocket } from '@/context/SocketContext';
@@ -181,7 +181,7 @@ function ManagerDashboardInner() {
       }
 
       // Fetch live tasks from PostgreSQL DB for Today's Deadlines
-      const tasksRes = await api.get('/tasks');
+      const tasksRes = await api.get('/tasks?limit=1000');
       if (tasksRes.data?.success && Array.isArray(tasksRes.data.data)) {
         const dbTasks = tasksRes.data.data.map((t: any) => ({
           id: t.id,

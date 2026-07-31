@@ -16,13 +16,15 @@ export function ProjectDatePicker({
   onChange, 
   placeholder = "Pick a date",
   className,
-  name
+  name,
+  disabled
 }: { 
   value?: Date; 
   onChange: (date?: Date) => void; 
   placeholder?: string;
   className?: string;
   name?: string;
+  disabled?: React.ComponentProps<typeof Calendar>["disabled"];
 }) {
   const [month, setMonth] = React.useState<Date>(value || new Date())
 
@@ -54,6 +56,7 @@ export function ProjectDatePicker({
           mode="single"
           selected={value}
           onSelect={onChange}
+          disabled={disabled}
           month={month}
           onMonthChange={setMonth}
           classNames={{

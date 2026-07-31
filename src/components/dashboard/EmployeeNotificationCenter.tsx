@@ -16,7 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { cn, getRelativeTime } from '@/lib/utils';
-import TaskDetailsModal from './TaskDetailsModal';
+import TaskDetailsModal from '../../features/tasks/components/TaskDetailsModal';
 
 type Priority = 'Critical' | 'Important' | 'Success' | 'Information';
 

@@ -18,7 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { WhatsAppBroadcastDialog } from "./WhatsAppBroadcastDialog";
 import { FigjamDialog } from "./FigjamDialog";
-import { EmployeeCalendar } from "./EmployeeCalendar";
+import { EmployeeCalendar } from "../../features/leaves/components/EmployeeCalendar";
 import { TotalHoursModal } from "./worklogs/TotalHoursModal";
 import AttendanceHistoryModal from "../attendance/AttendanceHistoryModal";
 
@@ -70,7 +70,7 @@ const LiveTimer = ({ initialSeconds, sessionStart, isOnline }: { initialSeconds:
           const elapsed = Math.floor((nowMs - startMs) / 1000);
           return Math.max(initialSeconds, elapsed);
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return initialSeconds;
   }, [initialSeconds, sessionStart, isOnline]);
@@ -137,27 +137,45 @@ export default function InternDashboard({ }: InternDashboardProps) {
 
   const fetchInternTasks = async () => {
     try {
-      const res = await api.get('/tasks?limit=1000');
-      console.log('[DEBUG API] /api/tasks response:', { url: '/api/tasks?limit=1000', data: res.data });
+      // Only fetch tasks assigned to the current intern
+      const assigneeId = currentUserId || user?.id;
+      const url = assigneeId ? `/tasks?limit=1000&assigneeId=${assigneeId}` : '/tasks?limit=1000';
+      const res = await api.get(url);
+      console.log('[DEBUG API] /api/tasks response:', { url, data: res.data });
       if (res.data?.success && Array.isArray(res.data.data)) {
-        const mapped = res.data.data.map((t: any) => ({
+        const allTasks = res.data.data;
+
+        // Client-side filter: if we got all tasks back (no assigneeId filter applied),
+        // filter by the current user being in the assignees list
+        const myTasks = assigneeId
+          ? allTasks.filter((t: any) => {
+            if (t.assignee_id === assigneeId || t.assigneeId === assigneeId) return true;
+            const assignees: any[] = t.assignees || [];
+            return assignees.some((a: any) => {
+              const uId = a.userId || a.user?.id || a.id;
+              return uId && String(uId).toLowerCase() === String(assigneeId).toLowerCase();
+            });
+          })
+          : allTasks;
+
+        const mapped = myTasks.map((t: any) => ({
           id: t.id,
           title: t.title,
           description: t.desc || '',
-          project_tag: t.project?.name || 'General',
+          project_tag: t.project?.name || t.project_tag || 'General',
           projectId: t.projectId,
           project_status: t.project?.status || 'active',
-          assignee_name: t.assignee_name || (t.assignees && t.assignees[0]?.name) || 'Unassigned',
-          assignee_id: t.assignee_id || (t.assignees && t.assignees[0]?.id) || 'unassigned',
+          assignee_name: t.assignee_name || (t.assignees && t.assignees[0]?.user?.name) || (t.assignees && t.assignees[0]?.name) || 'Unassigned',
+          assignee_id: t.assignee_id || (t.assignees && t.assignees[0]?.userId) || (t.assignees && t.assignees[0]?.user?.id) || (t.assignees && t.assignees[0]?.id) || 'unassigned',
           assignees: t.assignees || [],
           priority: t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
           due_date: formatDateSafely(t.due_date || t.dueDate),
           status: t.status === 'done' || t.status === 'completed' ? 'Done' :
-            t.status === 'in-progress' ? 'In Progress' :
-              t.status === 'in-review' ? 'In Review' : 'To Do'
+            t.status === 'in_progress' || t.status === 'in-progress' ? 'In Progress' :
+              t.status === 'in_review' || t.status === 'in-review' ? 'In Review' : 'To Do'
         }));
 
-        console.log('[DEBUG API] Mapped DB Tasks:', mapped);
+        console.log('[DEBUG API] My Tasks (filtered):', { assigneeId, count: mapped.length, tasks: mapped });
         setTasks(mapped);
       }
     } catch (err) {

@@ -50,7 +50,7 @@ function Section({ title, icon:Icon, color, children }:{ title:string; icon:any;
 export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser }: Props) {
   const [dateRange, setDateRange] = useState('This Month');
   const [customRange, setCustomRange] = useState<DateRange | undefined>(undefined);
-  const isManager = role === 'manager';
+  const isManager = role === 'manager' || role === 'admin';
 
   const filtered = useMemo(() => {
     let result = isManager ? logs : logs.filter(l => l.name === currentUser.name);

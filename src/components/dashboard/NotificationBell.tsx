@@ -20,7 +20,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn, getRelativeTime } from '@/lib/utils';
-import TaskDetailsModal from './TaskDetailsModal';
+import TaskDetailsModal from '../../features/tasks/components/TaskDetailsModal';
 import { useNotifications } from '@/context/NotificationContext';
 
 export interface NotificationBellProps {
