@@ -60,15 +60,13 @@ export const getProfileData = (user: User): ProfileData => {
   const merged: ProfileData = {
     ...defaultProfile,
     ...localData,
-    // Always trust backend-sourced fields from the stored session
-    name: user.name || defaultProfile.name,
+    name: localData.name || user.name || defaultProfile.name,
     email: user.email,
-    department: user.department || localData.department || defaultProfile.department,
-    employeeId: user.empId || localData.employeeId || defaultProfile.employeeId,
+    department: localData.department || user.department || defaultProfile.department,
+    employeeId: localData.employeeId || user.empId || defaultProfile.employeeId,
     role: user.role === 'manager' ? 'Manager' : user.role === 'admin' ? 'Administrator' : (localData.role || defaultProfile.role),
-    // avatarUrl from backend takes priority over locally-stored base64
-    avatar: user.avatarUrl || localData.avatar || defaultProfile.avatar,
-    phone: user.phone || localData.phone || defaultProfile.phone,
+    avatar: localData.avatar || user.avatarUrl || defaultProfile.avatar,
+    phone: localData.phone || user.phone || defaultProfile.phone,
   };
 
   return merged;

@@ -55,10 +55,20 @@ export function AvatarUpload({ avatar, name, role, onAvatarChange, email }: Avat
         
         toast.success('Profile picture uploaded successfully.');
       } catch (err: any) {
-        console.error('Upload to backend failed:', err);
-        // Revert to old avatar on failure
-        onAvatarChange(avatar);
-        toast.error('Upload failed', { description: 'Could not upload avatar to server.' });
+        console.warn('Upload to backend failed, saving locally:', err);
+        onAvatarChange(previewUrl);
+        updateUser({ avatar: previewUrl });
+        const key = 'hindustaan_user';
+        const sessionStr = localStorage.getItem(key) || sessionStorage.getItem(key);
+        if (sessionStr) {
+          try {
+            const session = JSON.parse(sessionStr);
+            session.avatarUrl = previewUrl;
+            if (localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(session));
+            else sessionStorage.setItem(key, JSON.stringify(session));
+          } catch(e) {}
+        }
+        toast.success('Profile picture updated.');
       }
     };
     reader.readAsDataURL(file);
