@@ -100,7 +100,13 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         });
         setNotifications(mapped);
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        localStorage.removeItem('hindustaan_user');
+        sessionStorage.removeItem('hindustaan_user');
+        localStorage.removeItem('hindustaan_session');
+        sessionStorage.removeItem('hindustaan_session');
+      }
       // Silently handle notification poll errors
     }
   };

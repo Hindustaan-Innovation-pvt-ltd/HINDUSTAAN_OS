@@ -30,28 +30,58 @@ export default function Projects({ session }: { session?: any }) {
   const [deletionReason, setDeletionReason] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const { user } = useUser();
+  const role = session?.user?.user_metadata?.role || user?.role || localStorage.getItem('role') || 'intern';
+  const currentUserName = user?.name || session?.user?.user_metadata?.name || localStorage.getItem('userName') || 'Project Manager';
+  const currentUserId = user?.id || session?.user?.id || localStorage.getItem('userId') || 'manager-1';
+
   const [selectedProject, setSelectedProject] = useState<any>(null);
-  const [newProject, setNewProject] = useState({ name: '', manager: '', managerId: '', deadline: '', budget: '', priority: 'Medium', tasks: [] as any[] });
+  const [newProject, setNewProject] = useState({ 
+    name: '', 
+    manager: currentUserName, 
+    managerId: currentUserId, 
+    deadline: '', 
+    budget: '', 
+    priority: 'Medium', 
+    tasks: [] as any[] 
+  });
   const [leads, setLeads] = useState<any[]>([]);
 
   React.useEffect(() => {
     const fetchLeads = async () => {
       try {
         const res = await api.get('/team/profiles');
-        if (res.data?.success) {
-          const employees = res.data.data.filter((p: any) => p.role === 'intern' || p.role === 'employee');
-          setLeads(employees);
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          const allProfiles = [...res.data.data];
+          const hasCurrent = allProfiles.some((p: any) => String(p.id) === String(currentUserId) || (p.name && p.name.toLowerCase() === currentUserName.toLowerCase()));
+          if (!hasCurrent && currentUserName) {
+            allProfiles.unshift({ id: currentUserId, name: currentUserName, role: 'manager' });
+          }
+          setLeads(allProfiles);
+        } else if (currentUserName) {
+          setLeads([{ id: currentUserId, name: currentUserName, role: 'manager' }]);
         }
       } catch (err) {
         console.error("Failed to fetch leads:", err);
+        if (currentUserName) {
+          setLeads([{ id: currentUserId, name: currentUserName, role: 'manager' }]);
+        }
       }
     };
     fetchLeads();
-  }, []);
-  const [selectedWeekDate, setSelectedWeekDate] = useState<Date>(new Date());
+  }, [currentUserName, currentUserId]);
 
-  const { user } = useUser();
-  const role = session?.user?.user_metadata?.role || user?.role || localStorage.getItem('role') || 'intern';
+  React.useEffect(() => {
+    if (currentUserName && currentUserId && (!newProject.manager || newProject.manager === 'Unassigned' || !newProject.managerId)) {
+      setNewProject(prev => ({
+        ...prev,
+        manager: prev.manager && prev.manager !== 'Unassigned' ? prev.manager : currentUserName,
+        managerId: prev.managerId || currentUserId
+      }));
+    }
+  }, [currentUserName, currentUserId]);
+
+  const [selectedWeekDate, setSelectedWeekDate] = useState<Date>(new Date());
 
   const baseProjects = (role === 'manager' || role === 'admin' ? projects : projects).filter(Boolean);
 
@@ -66,6 +96,9 @@ export default function Projects({ session }: { session?: any }) {
         deadline: newProject.deadline,
         tasks: newProject.tasks,
         budget: newProject.budget ? (newProject.budget.toString().startsWith('₹') ? newProject.budget : `₹${newProject.budget.replace('$', '')}`) : 'TBD'
+      });
+      toast.success("Project Updated Successfully!", {
+        description: `"${newProject.name}" details have been saved.`
       });
     } else {
       const colors = [
@@ -91,6 +124,9 @@ export default function Projects({ session }: { session?: any }) {
       };
 
       addProject(project);
+      toast.success("Project Created Successfully!", {
+        description: `"${newProject.name}" has been added to active projects.`
+      });
       addNotification({
         type: 'success',
         category: 'Projects',
@@ -103,7 +139,7 @@ export default function Projects({ session }: { session?: any }) {
 
     setIsModalOpen(false);
     setEditingProjectId(null);
-    setNewProject({ name: '', manager: '', managerId: '', deadline: '', budget: '', priority: 'Medium', tasks: [] });
+    setNewProject({ name: '', manager: currentUserName, managerId: currentUserId, deadline: '', budget: '', priority: 'Medium', tasks: [] });
   };
 
   const startOfCurrentWeek = startOfWeek(selectedWeekDate, { weekStartsOn: 1 });
@@ -181,7 +217,7 @@ export default function Projects({ session }: { session?: any }) {
         {role === 'manager' && (
           <button onClick={() => {
             setEditingProjectId(null);
-            setNewProject({ name: '', manager: '', managerId: '', deadline: '', budget: '', priority: 'Medium', tasks: [] });
+            setNewProject({ name: '', manager: currentUserName, managerId: currentUserId, deadline: '', budget: '', priority: 'Medium', tasks: [] });
             setIsModalOpen(true);
           }} className="flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 shrink-0">
             <Plus className="h-4 w-4 mr-1.5" /> New Project
@@ -293,12 +329,14 @@ export default function Projects({ session }: { session?: any }) {
                             {project.status === 'Aborted' ? (
                               <DropdownMenuItem className="font-bold text-xs cursor-pointer rounded-lg text-emerald-600 focus:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30" onClick={() => {
                                 updateProject(project.id, { status: 'In Progress' });
+                                toast.success("Project Restored", { description: `"${project.name}" has been restored to active projects.` });
                               }}>
                                 <RotateCcw className="mr-2 h-3.5 w-3.5" /> Restore
                               </DropdownMenuItem>
                             ) : (
                               <DropdownMenuItem className="font-bold text-xs cursor-pointer rounded-lg text-amber-600 focus:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30" onClick={() => {
                                 updateProject(project.id, { status: 'Aborted' });
+                                toast.success("Project Aborted", { description: `"${project.name}" has been marked as Aborted.` });
                               }}>
                                 <X className="mr-2 h-3.5 w-3.5" /> Abort
                               </DropdownMenuItem>
@@ -333,15 +371,19 @@ export default function Projects({ session }: { session?: any }) {
 
                 <div className="p-5 bg-slate-50/50 dark:bg-slate-900/30 flex-1 flex flex-col justify-between space-y-4 relative z-10">
                   <div className="flex justify-between items-center bg-white/50 dark:bg-slate-950/50 p-3 rounded-xl border border-slate-100/50 dark:border-slate-800/50 backdrop-blur-sm">
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-1 mb-1 text-slate-500 dark:text-slate-400">
-                        <TrendingUp className="h-3 w-3" />
-                        <span className="text-[9px] font-black uppercase tracking-wider">Budget</span>
-                      </div>
-                      <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{project.budget}</span>
-                    </div>
-                    <div className="w-px h-6 bg-slate-200 dark:bg-slate-800" />
-                    <div className="flex flex-col items-end">
+                    {(role === 'manager' || role === 'admin') && (
+                      <>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1 mb-1 text-slate-500 dark:text-slate-400">
+                            <TrendingUp className="h-3 w-3" />
+                            <span className="text-[9px] font-black uppercase tracking-wider">Budget</span>
+                          </div>
+                          <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{project.budget}</span>
+                        </div>
+                        <div className="w-px h-6 bg-slate-200 dark:bg-slate-800" />
+                      </>
+                    )}
+                    <div className={cn("flex flex-col", (role === 'manager' || role === 'admin') ? "items-end" : "items-start")}>
                       <div className={cn("flex items-center gap-1 mb-1", isPastDue ? "text-rose-600 dark:text-rose-500" : "text-slate-500 dark:text-slate-400")}>
                         {isPastDue ? <AlertTriangle className="h-3 w-3" /> : <CalendarIcon className="h-3 w-3" />}
                         <span className="text-[9px] font-black uppercase tracking-wider">Deadline</span>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { getCurrentUser } from '../lib/auth';
 import Login from '../features/auth/pages/Login';
 import Logout from '../features/auth/pages/Logout';
 import DashboardShell from '../components/layout/DashboardShell';
@@ -71,7 +72,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   const { user } = useUser();
-  const role = user?.role || 'employee';
+  const role = user?.role || getCurrentUser()?.role || localStorage.getItem('role') || 'employee';
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
 
   const handleSignOut = async () => {
@@ -108,6 +109,7 @@ function AppRoutes() {
         }
       >
         <Route path="/" element={<Navigate to={`/${role}/dashboard`} replace />} />
+        <Route path="/intern/dashboard" element={['employee', 'intern'].includes(role) ? <RoleBasedRouter /> : <Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/employee/dashboard" element={['employee', 'intern'].includes(role) ? <RoleBasedRouter /> : <Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/manager/dashboard" element={role === 'manager' ? <RoleBasedRouter /> : <Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/admin/dashboard" element={role === 'admin' ? <RoleBasedRouter /> : <Navigate to={`/${role}/dashboard`} replace />} />
@@ -127,6 +129,7 @@ function AppRoutes() {
         <Route path="/admin/leaves" element={<LeaveManagement />} />
         <Route path="/manager/leave-management" element={<LeaveManagement />} />
         <Route path="/employee/leave" element={<LeaveManagement />} />
+        <Route path="/intern/leave" element={<LeaveManagement />} />
         <Route path="/help" element={<HelpSupport />} />
         <Route path="/security" element={<SecuritySettings />} />
         <Route path="/admin/workspace/general" element={<WorkspaceSettings />} />

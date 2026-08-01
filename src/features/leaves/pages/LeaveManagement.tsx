@@ -394,7 +394,9 @@ export default function LeaveManagement() {
       reason: leave.reason
     }).then((res: any) => {
       if (res.data?.success) {
-        toast.success("Leave Applied Successfully", { description: 'Awaiting manager approval.' });
+        toast.success("Leave Applied Successfully", {
+          description: isManager ? 'Awaiting admin approval.' : 'Awaiting manager approval.'
+        });
         fetchLeaves();
         fetchLeaveSummary();
       }
@@ -597,7 +599,7 @@ export default function LeaveManagement() {
         <div className="mt-8">
           {/* Employee: Apply Leave */}
           <TabsContent value="apply">
-            <LeaveApplicationWithDrafts onSubmitLeave={onSubmitLeave} />
+            <LeaveApplicationWithDrafts onSubmitLeave={onSubmitLeave} role={role} />
           </TabsContent>
 
           {/* Employee: My History */}

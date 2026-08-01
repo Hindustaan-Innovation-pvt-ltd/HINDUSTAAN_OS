@@ -425,7 +425,7 @@ export default function DashboardShell({
   onSignOut
 }: DashboardShellProps) {
   const { user } = useUser();
-  const role = user?.role || 'employee';
+  const role = user?.role || getCurrentUser()?.role || localStorage.getItem('role') || 'employee';
   const location = useLocation();
   const navigate = useNavigate();
 

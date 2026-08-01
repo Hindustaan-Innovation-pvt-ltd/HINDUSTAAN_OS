@@ -141,7 +141,6 @@ export default function InternDashboard({ }: InternDashboardProps) {
       const assigneeId = currentUserId || user?.id;
       const url = assigneeId ? `/tasks?limit=1000&assigneeId=${assigneeId}` : '/tasks?limit=1000';
       const res = await api.get(url);
-      console.log('[DEBUG API] /api/tasks response:', { url, data: res.data });
       if (res.data?.success && Array.isArray(res.data.data)) {
         const allTasks = res.data.data;
 
@@ -175,7 +174,6 @@ export default function InternDashboard({ }: InternDashboardProps) {
               t.status === 'in_review' || t.status === 'in-review' ? 'In Review' : 'To Do'
         }));
 
-        console.log('[DEBUG API] My Tasks (filtered):', { assigneeId, count: mapped.length, tasks: mapped });
         setTasks(mapped);
       }
     } catch (err) {
@@ -188,7 +186,6 @@ export default function InternDashboard({ }: InternDashboardProps) {
   const fetchLeaves = async () => {
     try {
       const res = await api.get('/leaves');
-      console.log('[DEBUG API] /api/leaves response:', res.data);
       if (res.data?.success && Array.isArray(res.data.data)) {
         setLeaves(res.data.data);
       }
@@ -206,13 +203,16 @@ export default function InternDashboard({ }: InternDashboardProps) {
   const fetchWorkLogs = async () => {
     try {
       const res = await api.get('/worklogs');
-      console.log('[DEBUG API] /api/worklogs response:', res.data);
       if (res.data?.success && Array.isArray(res.data.data)) {
-        const logs = res.data.data;
-        setAllLogs(logs);
-        const total = logs.reduce((acc: number, log: any) => acc + (log.hours || 0), 0);
+        const myLogs = res.data.data.filter((log: any) =>
+          log.user?.id === currentUserId ||
+          log.userId === currentUserId ||
+          log.user?.name?.toLowerCase() === currentUserName?.toLowerCase() ||
+          log.name?.toLowerCase() === currentUserName?.toLowerCase()
+        );
+        setAllLogs(myLogs);
+        const total = myLogs.reduce((acc: number, log: any) => acc + (log.hours || 0), 0);
         setLoggedHours(total);
-        console.log('[DEBUG API] Mapped WorkLogs:', { count: logs.length, totalHours: total });
       }
     } catch (err) {
       console.warn('Failed to fetch worklogs on InternDashboard:', err);
@@ -281,7 +281,6 @@ export default function InternDashboard({ }: InternDashboardProps) {
   const fetchDashboard = async () => {
     try {
       const res = await api.get('/dashboard');
-      console.log('[DEBUG API] /api/dashboard response:', res.data);
       if (res.data?.success) {
         const dataString = JSON.stringify(res.data.data);
         if (lastDataRef.current === dataString) return;

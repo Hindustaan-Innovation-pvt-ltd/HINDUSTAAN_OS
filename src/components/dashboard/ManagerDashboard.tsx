@@ -204,7 +204,6 @@ function ManagerDashboardInner() {
 
     if (socket) {
       socket.on('dashboard_update', () => {
-        console.log('Received real-time dashboard update from server');
         fetchDashboard();
       });
 

@@ -47,6 +47,21 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
+const clearAuthDataAndRedirect = () => {
+  localStorage.removeItem('hindustaan_user');
+  sessionStorage.removeItem('hindustaan_user');
+  localStorage.removeItem('hindustaan_session');
+  sessionStorage.removeItem('hindustaan_session');
+  localStorage.removeItem('token');
+  sessionStorage.removeItem('token');
+  localStorage.removeItem('role');
+  sessionStorage.removeItem('role');
+  window.dispatchEvent(new Event('auth-logout'));
+  if (typeof window !== 'undefined' && window.location.pathname !== '/' && window.location.pathname !== '/login') {
+    window.location.href = '/login';
+  }
+};
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -146,16 +161,17 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         isRefreshing = false;
-
-        localStorage.removeItem('hindustaan_user');
-        sessionStorage.removeItem('hindustaan_user');
-        localStorage.removeItem('hindustaan_session');
-        sessionStorage.removeItem('hindustaan_session');
-        window.dispatchEvent(new Event('auth-logout'));
-        if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        }
+        clearAuthDataAndRedirect();
         return Promise.reject(refreshError);
+      }
+    }
+
+    if (error.response?.status === 401) {
+      if (
+        !error.config?.url?.includes('/auth/login') &&
+        !error.config?.url?.includes('/auth/logout')
+      ) {
+        clearAuthDataAndRedirect();
       }
     }
 

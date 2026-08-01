@@ -82,11 +82,9 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       const res = await api.get('/projects');
-      console.log('[DEBUG API] /api/projects response:', res.data);
       if (res.data?.success) {
         const backendProjects = res.data.data || [];
         const mapped = backendProjects.map(mapBackendProject);
-        console.log('[DEBUG API] Mapped Projects:', mapped);
         setProjects(mapped);
       }
     } catch (e) {

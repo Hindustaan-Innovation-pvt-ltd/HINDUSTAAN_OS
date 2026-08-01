@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { ProjectDatePicker } from '@/components/ui/project-date-picker';
 
 interface LeaveApplicationWithDraftsProps {
+  role?: string;
   onSubmitLeave: (leave: {
     type: string;
     emergencyContact: string;
@@ -24,7 +25,7 @@ const parseLocalDate = (dateStr: string) => {
   return new Date(year, month - 1, day);
 };
 
-export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWithDraftsProps) {
+export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplicationWithDraftsProps) {
   // Form State
   const [leaveType, setLeaveType] = useState('casual');
   const [startDate, setStartDate] = useState('');
@@ -76,7 +77,11 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
       setEndDate('');
       setReason('');
 
-      toast.success('Leave application submitted.');
+      toast.success('Leave application submitted.', {
+        description: role === 'manager' || role === 'admin'
+          ? 'Awaiting admin approval.'
+          : 'Awaiting manager approval.'
+      });
     }
   };
 
@@ -85,7 +90,9 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave }: LeaveApplicationWi
       <Card className="border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-950/40 backdrop-blur-2xl shadow-xl rounded-3xl overflow-hidden">
         <CardHeader className="border-b border-slate-100 dark:border-slate-800/60 pb-6">
           <CardTitle className="text-xl font-bold">Apply for Leave</CardTitle>
-          <CardDescription>Submit a new leave request. Subject to manager approval.</CardDescription>
+          <CardDescription>
+            Submit a new leave request. Subject to {role === 'manager' || role === 'admin' ? 'admin' : 'manager'} approval.
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-6 md:p-8">
           <form id="leave-form" onSubmit={handleFormSubmit} className="space-y-6">

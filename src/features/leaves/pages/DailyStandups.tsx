@@ -14,6 +14,7 @@ import { useNotifications } from '@/context/NotificationContext';
 import { getCurrentUser } from '@/lib/auth';
 import { useUser } from '@/context/UserContext';
 import api from '@/lib/api';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const WhatsappIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -557,13 +558,40 @@ export default function DailyStandups({ session }: { session?: any }) {
   const [historySearch, setHistorySearch] = useState('');
   const [historyDateFilter, setHistoryDateFilter] = useState('');
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [employeeFilter, setEmployeeFilter] = useState('All');
+
+  const uniqueEmployees = React.useMemo(() => {
+    const names = standups.map(s => s.user).filter(Boolean);
+    return Array.from(new Set(names)).sort();
+  }, [standups]);
+
   const displayStandups = role !== 'manager'
     ? (history.length > 0 ? history.slice(0, 3) : [])
-    : [...standups].sort((a, b) => {
-        if (a.status === 'Submitted' && b.status !== 'Submitted') return -1;
-        if (a.status !== 'Submitted' && b.status === 'Submitted') return 1;
-        return (a.user || '').localeCompare(b.user || '');
-      });
+    : [...standups]
+        .filter(s => {
+          const matchesSearch = !searchQuery || 
+            (s.user || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (s.role || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (s.yesterday || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (s.today || '').toLowerCase().includes(searchQuery.toLowerCase());
+          const matchesStatus = statusFilter === 'All' || s.status === statusFilter;
+          const matchesEmployee = employeeFilter === 'All' || s.user === employeeFilter;
+          return matchesSearch && matchesStatus && matchesEmployee;
+        })
+        .sort((a, b) => {
+          if (a.status === 'Submitted' && b.status !== 'Submitted') return -1;
+          if (a.status !== 'Submitted' && b.status === 'Submitted') return 1;
+          if (a.status === 'Submitted' && b.status === 'Submitted') {
+            const timeA = a.timestamp || (a.id && String(a.id).startsWith('s-') ? parseInt(String(a.id).slice(2), 10) : 0);
+            const timeB = b.timestamp || (b.id && String(b.id).startsWith('s-') ? parseInt(String(b.id).slice(2), 10) : 0);
+            if (timeB !== timeA && !isNaN(timeB) && !isNaN(timeA) && timeB !== 0 && timeA !== 0) {
+              return timeB - timeA;
+            }
+          }
+          return (a.user || '').localeCompare(b.user || '');
+        });
 
   const hasSubmittedToday = role !== 'manager'
     ? history.some(s => s && s.dateGroup === 'Today')
@@ -591,6 +619,7 @@ export default function DailyStandups({ session }: { session?: any }) {
       yesterday: formData.yesterday,
       today: formData.today,
       blockers: formData.blockers || 'None.',
+      timestamp: Date.now(),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
@@ -933,8 +962,8 @@ export default function DailyStandups({ session }: { session?: any }) {
         </div>
       </div>
 
-      {/* Stats & History Row */}
-      <div className="flex flex-row justify-between items-center w-full mb-8 gap-4">
+      {/* Stats & Filter Row */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center w-full mb-8 gap-4">
         <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm w-fit">
           <div className="px-4 py-2 flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-emerald-500" />
@@ -953,11 +982,90 @@ export default function DailyStandups({ session }: { session?: any }) {
           </div>
         </div>
 
+        {role === 'manager' && (
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <div className="relative flex-1 sm:w-64 sm:flex-initial">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search intern standups..."
+                className="w-full h-10 pl-10 pr-8 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+              <SelectTrigger className="w-44 h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-300 focus:ring-indigo-500/20 focus:border-indigo-500">
+                <SelectValue placeholder="Employee" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="All">All Interns</SelectItem>
+                {uniqueEmployees.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-36 h-10 rounded-xl border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-300 focus:ring-indigo-500/20 focus:border-indigo-500">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="All">All Statuses</SelectItem>
+                <SelectItem value="Submitted">Submitted</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {(searchQuery || employeeFilter !== 'All' || statusFilter !== 'All') && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSearchQuery('');
+                  setEmployeeFilter('All');
+                  setStatusFilter('All');
+                }}
+                className="h-10 px-3 rounded-xl text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 text-xs font-bold"
+              >
+                Reset
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Standup Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {displayStandups.map(standup => (
+      {displayStandups.length === 0 ? (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700/60 p-12 text-center shadow-sm">
+          <AlertCircle className="h-10 w-10 text-slate-400 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">No standup reports found</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Try adjusting your search query or filters to find the intern's standup.
+          </p>
+          {(searchQuery || employeeFilter !== 'All' || statusFilter !== 'All') && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearchQuery('');
+                setEmployeeFilter('All');
+                setStatusFilter('All');
+              }}
+              className="mt-4 rounded-xl text-xs font-bold"
+            >
+              Clear all filters
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {displayStandups.map(standup => (
           <div
             key={standup.id}
             onClick={() => standup.status === 'Submitted' && setViewingStandup(standup)}
@@ -1099,7 +1207,8 @@ export default function DailyStandups({ session }: { session?: any }) {
             )}
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       {role !== 'manager' && (
         <div className="mt-12 space-y-8 animate-in fade-in duration-700">

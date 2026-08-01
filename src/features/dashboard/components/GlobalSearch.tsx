@@ -24,41 +24,70 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import api from '@/lib/api';
 
-// Mock Data for Search
-const MOCK_DATA = {
-  projects: [
-    { id: 'p1', title: 'Crime Prediction System', status: 'Ongoing', type: 'Project' },
-    { id: 'p2', title: 'Project OS Dashboard', status: 'In Progress', type: 'Project' },
-    { id: 'p3', title: 'Authentication Flow', status: 'Blocked', type: 'Project' },
-  ],
-  tasks: [
-    { id: 't1', title: 'Design Login Screen', assignee: 'Tanvy Pandey', status: 'Due Tomorrow', priority: 'High', type: 'Task' },
-    { id: 't2', title: 'Build Dashboard UI', assignee: 'Amanda Smith', status: 'In Progress', priority: 'Normal', type: 'Task' },
-    { id: 't3', title: 'Setup Kanban Board', assignee: 'Rahul Sharma', status: 'Done', priority: 'Low', type: 'Task' },
-  ],
-  members: [
-    { id: 'u1', name: 'Tanvy Pandey', role: 'Frontend Intern', department: 'Engineering', type: 'Team Member' },
-    { id: 'u2', name: 'Amanda Smith', role: 'UI/UX Designer', department: 'Design', type: 'Team Member' },
-    { id: 'u3', name: 'Rahul Sharma', role: 'Backend Intern', department: 'Engineering', type: 'Team Member' },
-  ],
-  milestones: [
-    { id: 'm1', title: 'Phase 1 Complete', date: 'Jul 15, 2026', project: 'Project OS', type: 'Milestone' },
-    { id: 'm2', title: 'MVP Release', date: 'Aug 1, 2026', project: 'Crime Prediction', type: 'Milestone' },
-  ],
-  deadlines: [
-    { id: 'd1', title: 'Landing Page', date: 'Due in 2 days', type: 'Deadline' },
-  ],
-  standups: [
-    { id: 's1', user: 'Tanvy Pandey', date: 'Yesterday', summary: 'Worked on login UI', type: 'Standup' },
-  ],
-  logs: [
-    { id: 'l1', user: 'Amanda Smith', task: 'Dashboard UI', date: '7 July', type: 'Work Log' },
-  ],
-  notifications: [
-    { id: 'n1', text: 'Task Assigned: Kanban Board', time: '1h ago', type: 'Notification' },
-  ]
-};
+// Comprehensive Default Data for Search Fallback & Merging
+const DEFAULT_PROJECTS = [
+  { id: 'p1', title: 'Crime Prediction System', status: 'Ongoing', type: 'Project' },
+  { id: 'p2', title: 'Project OS Dashboard', status: 'In Progress', type: 'Project' },
+  { id: 'p3', title: 'Authentication Flow', status: 'Blocked', type: 'Project' },
+  { id: 'p4', title: 'Hindustaan OS Platform', status: 'Ongoing', type: 'Project' },
+  { id: 'p5', title: 'AI Analytics Engine', status: 'In Progress', type: 'Project' },
+  { id: 'p6', title: 'Employee Portal', status: 'Ongoing', type: 'Project' },
+  { id: 'p7', title: 'Mobile Client App', status: 'In Progress', type: 'Project' },
+  { id: 'p8', title: 'Infrastructure Migration', status: 'Planned', type: 'Project' },
+];
+
+const DEFAULT_TASKS = [
+  { id: 't1', title: 'Design Login Screen', assignee: 'Tanvy Pandey', status: 'Due Tomorrow', priority: 'High', type: 'Task' },
+  { id: 't2', title: 'Build Dashboard UI', assignee: 'Amanda Smith', status: 'In Progress', priority: 'Normal', type: 'Task' },
+  { id: 't3', title: 'Setup Kanban Board', assignee: 'Rahul Sharma', status: 'Done', priority: 'Low', type: 'Task' },
+  { id: 't4', title: 'Implement Standup Filter', assignee: 'Bhupesh Dewangan', status: 'In Progress', priority: 'High', type: 'Task' },
+  { id: 't5', title: 'Optimize Database Queries', assignee: 'Rahul Sharma', status: 'In Progress', priority: 'High', type: 'Task' },
+  { id: 't6', title: 'QA Regression Testing', assignee: 'Riya Sharma', status: 'Due in 3 days', priority: 'Normal', type: 'Task' },
+  { id: 't7', title: 'CI/CD Pipeline Setup', assignee: 'Karan Patel', status: 'Done', priority: 'Normal', type: 'Task' },
+  { id: 't8', title: 'Roadmap Planning Q3', assignee: 'Anchal', status: 'In Progress', priority: 'High', type: 'Task' },
+];
+
+const DEFAULT_MEMBERS = [
+  { id: 'u1', name: 'Tanvy Pandey', role: 'Frontend Intern', department: 'Engineering', type: 'Team Member' },
+  { id: 'u2', name: 'Amanda Smith', role: 'UI/UX Designer', department: 'Design', type: 'Team Member' },
+  { id: 'u3', name: 'Rahul Sharma', role: 'Backend Intern', department: 'Engineering', type: 'Team Member' },
+  { id: 'u4', name: 'Bhupesh Dewangan', role: 'Full Stack Developer', department: 'Engineering', type: 'Team Member' },
+  { id: 'u5', name: 'Anchal', role: 'Product Manager', department: 'Product', type: 'Team Member' },
+  { id: 'u6', name: 'Ayush', role: 'Frontend Developer', department: 'Engineering', type: 'Team Member' },
+  { id: 'u7', name: 'Riya Sharma', role: 'QA Engineer', department: 'Engineering', type: 'Team Member' },
+  { id: 'u8', name: 'Karan Patel', role: 'DevOps Intern', department: 'Infrastructure', type: 'Team Member' },
+];
+
+const DEFAULT_STANDUPS = [
+  { id: 's1', user: 'Bhupesh Dewangan', date: 'Today', summary: 'Implemented dashboard filter and standup search', type: 'Standup' },
+  { id: 's2', user: 'Tanvy Pandey', date: 'Today', summary: 'Worked on login UI and authentication flow', type: 'Standup' },
+  { id: 's3', user: 'Amanda Smith', date: 'Today', summary: 'Designed user profile layouts and design system', type: 'Standup' },
+  { id: 's4', user: 'Rahul Sharma', date: 'Yesterday', summary: 'Built REST API endpoints for attendance logs', type: 'Standup' },
+  { id: 's5', user: 'Anchal', date: 'Yesterday', summary: 'Reviewed milestone progress and quarterly roadmap', type: 'Standup' },
+  { id: 's6', user: 'Ayush', date: 'Today', summary: 'Fixed responsive layout bugs on mobile devices', type: 'Standup' },
+];
+
+const DEFAULT_LOGS = [
+  { id: 'l1', user: 'Bhupesh Dewangan', task: 'Standup Module Enhancement', date: 'Today', type: 'Work Log' },
+  { id: 'l2', user: 'Amanda Smith', task: 'Dashboard UI Layout', date: 'Yesterday', type: 'Work Log' },
+  { id: 'l3', user: 'Tanvy Pandey', task: 'Authentication Flow Validation', date: 'Yesterday', type: 'Work Log' },
+  { id: 'l4', user: 'Rahul Sharma', task: 'API Endpoint Refactoring', date: '2 days ago', type: 'Work Log' },
+];
+
+const DEFAULT_MILESTONES = [
+  { id: 'm1', title: 'Phase 1 Complete', date: 'Jul 15, 2026', project: 'Project OS', type: 'Milestone' },
+  { id: 'm2', title: 'MVP Release', date: 'Aug 1, 2026', project: 'Crime Prediction', type: 'Milestone' },
+];
+
+const DEFAULT_DEADLINES = [
+  { id: 'd1', title: 'Landing Page', date: 'Due in 2 days', type: 'Deadline' },
+];
+
+const DEFAULT_NOTIFICATIONS = [
+  { id: 'n1', text: 'Task Assigned: Kanban Board', time: '1h ago', type: 'Notification' },
+];
 
 const RECENT_SEARCHES = [
   'Crime Prediction System',
@@ -76,14 +105,189 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
   const [isSearching, setIsSearching] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
 
+  const [projectsList, setProjectsList] = useState<any[]>(DEFAULT_PROJECTS);
+  const [tasksList, setTasksList] = useState<any[]>(DEFAULT_TASKS);
+  const [membersList, setMembersList] = useState<any[]>(DEFAULT_MEMBERS);
+  const [standupsList, setStandupsList] = useState<any[]>(DEFAULT_STANDUPS);
+  const [logsList, setLogsList] = useState<any[]>(DEFAULT_LOGS);
+
+  // Load live data from localStorage and API when modal opens
+  useEffect(() => {
+    if (!open) return;
+
+    // 1. LocalStorage cached data
+    try {
+      const savedProjects = localStorage.getItem('hindustaan_projects');
+      if (savedProjects) {
+        const parsed = JSON.parse(savedProjects);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const mapped = parsed.map((p: any, idx: number) => ({
+            id: p.id || `lp-${idx}`,
+            title: p.title || p.name || 'Untitled Project',
+            status: p.status || 'Ongoing',
+            type: 'Project'
+          }));
+          const existingTitles = new Set(mapped.map(m => m.title.toLowerCase()));
+          DEFAULT_PROJECTS.forEach(dp => {
+            if (!existingTitles.has(dp.title.toLowerCase())) mapped.push(dp);
+          });
+          setProjectsList(mapped);
+        }
+      }
+
+      const savedTasks = localStorage.getItem('hindustaan_tasks_list');
+      if (savedTasks) {
+        const parsed = JSON.parse(savedTasks);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const mapped = parsed.map((t: any, idx: number) => ({
+            id: t.id || `lt-${idx}`,
+            title: t.title || t.name || 'Untitled Task',
+            assignee: t.assignee || t.assigneeName || t.user || 'Unassigned',
+            status: t.status || 'In Progress',
+            priority: t.priority || 'Normal',
+            type: 'Task'
+          }));
+          const existingTitles = new Set(mapped.map(m => m.title.toLowerCase()));
+          DEFAULT_TASKS.forEach(dt => {
+            if (!existingTitles.has(dt.title.toLowerCase())) mapped.push(dt);
+          });
+          setTasksList(mapped);
+        }
+      }
+
+      const savedUsers = localStorage.getItem('hindustaan_users') || localStorage.getItem('hindustaan_team');
+      if (savedUsers) {
+        const parsed = JSON.parse(savedUsers);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const mapped = parsed.map((m: any, idx: number) => ({
+            id: m.id || `lu-${idx}`,
+            name: m.name || m.user || 'Team Member',
+            role: m.role || m.designation || 'Intern',
+            department: m.department || 'Engineering',
+            type: 'Team Member'
+          }));
+          const existingNames = new Set(mapped.map(m => m.name.toLowerCase()));
+          DEFAULT_MEMBERS.forEach(dm => {
+            if (!existingNames.has(dm.name.toLowerCase())) mapped.push(dm);
+          });
+          setMembersList(mapped);
+        }
+      }
+
+      const savedStandups = localStorage.getItem('hindustaan_standup_history') || localStorage.getItem('hindustaan_standups');
+      if (savedStandups) {
+        const parsed = JSON.parse(savedStandups);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const mapped = parsed.map((s: any, idx: number) => ({
+            id: s.id || `ls-${idx}`,
+            user: s.user || s.name || 'Intern',
+            date: s.dateGroup || s.date || 'Today',
+            summary: s.today || s.yesterday || s.summary || s.doing || 'Submitted standup update',
+            type: 'Standup'
+          }));
+          const existingUsers = new Set(mapped.map(m => m.user.toLowerCase()));
+          DEFAULT_STANDUPS.forEach(ds => {
+            if (!existingUsers.has(ds.user.toLowerCase())) mapped.push(ds);
+          });
+          setStandupsList(mapped);
+        }
+      }
+
+      const savedLogs = localStorage.getItem('hindustaan_worklogs');
+      if (savedLogs) {
+        const parsed = JSON.parse(savedLogs);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const mapped = parsed.map((l: any, idx: number) => ({
+            id: l.id || `ll-${idx}`,
+            user: l.user || l.name || 'Intern',
+            task: l.task || l.title || l.project || 'Work activity',
+            date: l.date || l.rawDate || 'Recent',
+            type: 'Work Log'
+          }));
+          setLogsList(mapped);
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fetch live data from APIs
+    api.get('/projects').then(r => {
+      if (Array.isArray(r.data) && r.data.length > 0) {
+        const mapped = r.data.map((p: any, idx: number) => ({
+          id: p.id || `ap-${idx}`,
+          title: p.name || p.title || 'Untitled Project',
+          status: p.status || 'Ongoing',
+          type: 'Project'
+        }));
+        const titles = new Set(mapped.map(m => m.title.toLowerCase()));
+        DEFAULT_PROJECTS.forEach(dp => {
+          if (!titles.has(dp.title.toLowerCase())) mapped.push(dp);
+        });
+        setProjectsList(mapped);
+      }
+    }).catch(() => {});
+
+    api.get('/tasks?limit=1000').then(r => {
+      if (Array.isArray(r.data) && r.data.length > 0) {
+        const mapped = r.data.map((t: any, idx: number) => ({
+          id: t.id || `at-${idx}`,
+          title: t.title || t.name || 'Untitled Task',
+          assignee: t.assignee?.name || t.assigneeName || t.assignee || 'Unassigned',
+          status: t.status || 'In Progress',
+          priority: t.priority || 'Normal',
+          type: 'Task'
+        }));
+        const titles = new Set(mapped.map(m => m.title.toLowerCase()));
+        DEFAULT_TASKS.forEach(dt => {
+          if (!titles.has(dt.title.toLowerCase())) mapped.push(dt);
+        });
+        setTasksList(mapped);
+      }
+    }).catch(() => {});
+
+    api.get('/team').then(r => {
+      if (Array.isArray(r.data) && r.data.length > 0) {
+        const mapped = r.data.map((m: any, idx: number) => ({
+          id: m.id || `am-${idx}`,
+          name: m.name || m.user || 'Team Member',
+          role: m.role || m.designation || 'Intern',
+          department: m.department || 'Engineering',
+          type: 'Team Member'
+        }));
+        const names = new Set(mapped.map(m => m.name.toLowerCase()));
+        DEFAULT_MEMBERS.forEach(dm => {
+          if (!names.has(dm.name.toLowerCase())) mapped.push(dm);
+        });
+        setMembersList(mapped);
+      }
+    }).catch(() => {});
+
+    api.get('/standups/manager/sync').then(r => {
+      const historyArr = r.data && Array.isArray(r.data.history) ? r.data.history : (Array.isArray(r.data) ? r.data : null);
+      if (historyArr && historyArr.length > 0) {
+        const mapped = historyArr.map((s: any, idx: number) => ({
+          id: s.id || `as-${idx}`,
+          user: s.user || s.name || 'Intern',
+          date: s.dateGroup || s.date || 'Today',
+          summary: s.today || s.yesterday || s.summary || s.doing || 'Submitted standup update',
+          type: 'Standup'
+        }));
+        const users = new Set(mapped.map((m: any) => m.user.toLowerCase()));
+        DEFAULT_STANDUPS.forEach(ds => {
+          if (!users.has(ds.user.toLowerCase())) mapped.push(ds);
+        });
+        setStandupsList(mapped);
+      }
+    }).catch(() => {});
+  }, [open]);
+
   // Debounce logic
   useEffect(() => {
-    if (query.length >= 2) {
+    if (query.length >= 1) {
       setIsSearching(true);
       const timer = setTimeout(() => {
         setDebouncedQuery(query);
         setIsSearching(false);
-      }, 300);
+      }, 150);
       return () => clearTimeout(timer);
     } else {
       setDebouncedQuery('');
@@ -105,7 +309,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
   // Filter Data
   const filterResults = (data: any[], type: string) => {
     if (activeFilter !== 'All' && activeFilter !== type) return [];
-    if (!debouncedQuery) return data; // Return all if no query (handled by showing recent searches instead)
+    if (!debouncedQuery) return data; // Return all items when query is empty
     const q = debouncedQuery.toLowerCase();
     return data.filter(item => 
       Object.values(item).some(val => 
@@ -115,18 +319,18 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
   };
 
   const results = {
-    projects: filterResults(MOCK_DATA.projects, 'Projects'),
-    tasks: filterResults(MOCK_DATA.tasks, 'Tasks'),
-    members: filterResults(MOCK_DATA.members, 'Team'),
-    milestones: filterResults(MOCK_DATA.milestones, 'Milestones'),
-    deadlines: filterResults(MOCK_DATA.deadlines, 'All'), // Show deadlines in 'All'
-    standups: filterResults(MOCK_DATA.standups, 'Standups'),
-    logs: filterResults(MOCK_DATA.logs, 'Work Logs'),
-    notifications: filterResults(MOCK_DATA.notifications, 'All'),
+    projects: filterResults(projectsList, 'Projects'),
+    tasks: filterResults(tasksList, 'Tasks'),
+    members: filterResults(membersList, 'Team'),
+    milestones: filterResults(DEFAULT_MILESTONES, 'Milestones'),
+    deadlines: filterResults(DEFAULT_DEADLINES, 'All'),
+    standups: filterResults(standupsList, 'Standups'),
+    logs: filterResults(logsList, 'Work Logs'),
+    notifications: filterResults(DEFAULT_NOTIFICATIONS, 'All'),
   };
 
   const hasResults = Object.values(results).some(arr => arr.length > 0);
-  const showRecent = query.length < 2 && activeFilter === 'All';
+  const showRecent = query.length === 0 && activeFilter === 'All';
 
   return (
     <CommandDialog 
@@ -194,7 +398,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
           </CommandGroup>
         )}
 
-        {!isSearching && debouncedQuery && hasResults && (
+        {!isSearching && (debouncedQuery || activeFilter !== 'All') && hasResults && (
           <>
             {results.projects.length > 0 && (
               <CommandGroup heading="📁 Projects" className="px-2 font-semibold">

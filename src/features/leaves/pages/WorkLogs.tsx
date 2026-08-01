@@ -185,6 +185,8 @@ export default function WorkLogs({ session }: { session?: any }) {
     email: email
   };
 
+  const isEmployee = currentUser.role === 'employee' || currentUser.role === 'intern' || (currentUser.role !== 'manager' && currentUser.role !== 'admin');
+
   const loginKey = `login_time_${currentUser.id}`;
   const [secondsElapsed, setSecondsElapsed] = useState(0);
 
@@ -251,16 +253,17 @@ export default function WorkLogs({ session }: { session?: any }) {
     const data: Record<string, Record<string, number>> = {};
     let usersToShow: string[] = [];
 
-    if (currentUser.role === 'manager' || currentUser.role === 'admin') {
-      if (teamMembers.length > 0) {
-        usersToShow = Array.from(new Set(teamMembers.map(m => m.name)));
-      } else {
-        usersToShow = Array.from(new Set(logs.map(l => l.name)));
-      }
-      // Strictly filter out admin and current manager
-      usersToShow = usersToShow.filter(name => name !== 'Admin User' && name !== currentUser.name);
-    } else {
+    if (isEmployee) {
       usersToShow = [currentUser.name];
+    } else {
+      const allNames = [
+        ...teamMembers.map((m: any) => m.name),
+        ...logs.map((l: any) => l.name)
+      ];
+      usersToShow = Array.from(new Set(allNames)).filter(name => name !== 'Admin User' && name !== currentUser.name);
+      if (usersToShow.length === 0 && currentUser.name !== 'Admin User') {
+        usersToShow = [currentUser.name];
+      }
     }
       
     usersToShow.forEach(user => {
@@ -303,8 +306,9 @@ export default function WorkLogs({ session }: { session?: any }) {
   };
 
   const userBaseLogs = useMemo(() => {
-    // Backend API already filters work logs for employee role on server
-    const base = logs;
+    const base = isEmployee
+      ? logs.filter((log: any) => log.name === currentUser.name || log.userId === currentUser.id)
+      : logs;
 
     return base.filter((log: any) => {
       const logDate = new Date(log.rawDate || log.date);
@@ -340,7 +344,7 @@ export default function WorkLogs({ session }: { session?: any }) {
         log.project.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'All' || log.status === statusFilter;
       const matchesProject = projectFilter === 'All' || log.project === projectFilter;
-      const matchesEmployee = (currentUser.role === 'manager' || currentUser.role === 'admin') && employeeFilter !== 'All' ? log.name === employeeFilter : true;
+      const matchesEmployee = !isEmployee && employeeFilter !== 'All' ? log.name === employeeFilter : true;
       
       return matchesSearch && matchesStatus && matchesProject && matchesEmployee;
     }).sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime());
@@ -365,8 +369,6 @@ export default function WorkLogs({ session }: { session?: any }) {
   const approvedHours = useMemo(() => (filteredLogs || []).filter((l: any) => l?.status === 'Approved').reduce((acc: number, log: any) => acc + (log?.hours || 0), 0), [filteredLogs]);
   const pendingHours = useMemo(() => (filteredLogs || []).filter((l: any) => l?.status === 'Pending').reduce((acc: number, log: any) => acc + (log?.hours || 0), 0), [filteredLogs]);
   const activeStaff = useMemo(() => new Set((filteredLogs || []).map(l => l.name)).size, [filteredLogs]);
-
-  const isEmployee = currentUser.role === 'employee' || currentUser.role === 'intern' || (currentUser.role !== 'manager' && currentUser.role !== 'admin');
 
   const filtersCard = (
     <div className={cn(
@@ -415,7 +417,7 @@ export default function WorkLogs({ session }: { session?: any }) {
           </PopoverContent>
         </Popover>
 
-        {(currentUser.role === 'manager' || currentUser.role === 'admin') && (
+        {!isEmployee && (
           <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
             <SelectTrigger className="w-40 h-9 rounded-xl border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-[#6366F1]/20 focus:border-[#6366F1]">
               <SelectValue placeholder="Employee" />
@@ -497,7 +499,7 @@ export default function WorkLogs({ session }: { session?: any }) {
           className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-[#E2E8F0] dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-[#64748B] dark:text-slate-400 group-hover:text-[#6366F1] transition-colors">{isEmployee ? 'My Total Hours' : "Employee's Total Hours"}</h3>
+            <h3 className="text-sm font-bold text-[#64748B] dark:text-slate-400 group-hover:text-[#6366F1] transition-colors">{isEmployee ? 'My Total Hours' : "Total Logged Hours"}</h3>
             <div className="p-2 bg-[#F1F5F9] dark:bg-slate-800 rounded-lg"><Clock className="h-5 w-5 text-[#6366F1]" /></div>
           </div>
           <p className="text-4xl font-black text-[#0F172A] dark:text-white">{totalHours.toFixed(1)}h</p>
@@ -525,12 +527,12 @@ export default function WorkLogs({ session }: { session?: any }) {
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-[#64748B] dark:text-slate-400 group-hover:text-emerald-500 transition-colors font-sans">
-              {isEmployee ? "Active Members" : "Active Employees"}
+              {isEmployee ? "Active Members" : "Active Team Members"}
             </h3>
             <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg"><Users className="h-5 w-5 text-emerald-500" /></div>
           </div>
           <p className="text-4xl font-black text-[#0F172A] dark:text-white">
-            {Object.values(activeSessions).filter((s: any) => s.isOnline).length}
+            {isEmployee ? Object.values(activeSessions).filter((s: any) => s.isOnline).length : (activeStaff || uniqueEmployees.length)}
           </p>
         </div>
       </div>
