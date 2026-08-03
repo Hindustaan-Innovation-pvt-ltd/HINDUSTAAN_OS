@@ -101,7 +101,7 @@ export default function Login({
           setLoading(false);
           return;
         }
-        toast.success('Access granted.', { description: 'Initializing workspaces...' });
+        toast.success('Access granted.', { description: 'Welcome to Hindustaan OS!' });
         if (onMockLogin) {
           onMockLogin('admin', email);
         } else {
@@ -138,7 +138,7 @@ export default function Login({
 
       }
 
-      toast.success('Access granted.', { description: 'Initializing workspaces...' });
+      toast.success('Access granted.', { description: 'Welcome to Hindustaan OS!' });
       console.log("Login successfully");
 
       if (onMockLogin) {

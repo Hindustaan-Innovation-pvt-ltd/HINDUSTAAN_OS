@@ -22,9 +22,29 @@ const UserContext = createContext<UserContextType>({
   updateUser: () => { }
 });
 
+const getInitialUser = (): UserState | null => {
+  try {
+    const stored = localStorage.getItem('hindustaan_user') || sessionStorage.getItem('hindustaan_user');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return {
+        id: parsed.id || parsed.userId || 'demo-1',
+        name: parsed.name || 'User',
+        role: parsed.role || 'employee',
+        avatar: parsed.avatarUrl || parsed.avatar || null,
+        department: parsed.department || 'Engineering',
+        email: parsed.email || ''
+      };
+    }
+  } catch (e) {
+    console.error('Error reading initial user:', e);
+  }
+  return null;
+};
+
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<UserState | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<UserState | null>(getInitialUser);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -67,14 +87,25 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             }
           } catch (e) {}
         } else {
-          setUser(null);
+          const fallbackUser = getInitialUser();
+          if (!fallbackUser) {
+            setUser(null);
+          }
         }
       } catch (err: any) {
         if (err?.response?.status !== 401 && err?.response?.status !== 400) {
           console.warn('Failed to fetch user from /api/auth/me:', err);
         }
-        // Fallback for mock if needed, but we aim to rely strictly on backend
-        setUser(null);
+        if (err?.response?.status === 401) {
+          setUser(null);
+        } else {
+          const fallbackUser = getInitialUser();
+          if (fallbackUser) {
+            setUser(fallbackUser);
+          } else {
+            setUser(null);
+          }
+        }
       } finally {
         setLoading(false);
       }
