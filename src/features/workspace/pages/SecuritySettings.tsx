@@ -19,6 +19,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+const TIME_OPTIONS = [
+  "06:00 AM", "06:30 AM", "07:00 AM", "07:30 AM", "08:00 AM", "08:30 AM",
+  "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+  "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM",
+  "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM",
+  "06:00 PM", "06:30 PM", "07:00 PM", "07:30 PM", "08:00 PM", "08:30 PM",
+  "09:00 PM", "09:30 PM", "10:00 PM", "10:30 PM", "11:00 PM", "11:30 PM",
+  "12:00 AM", "12:30 AM", "01:00 AM", "01:30 AM", "02:00 AM", "02:30 AM",
+  "03:00 AM", "03:30 AM", "04:00 AM", "04:30 AM", "05:00 AM", "05:30 AM"
+];
+
+
 export default function SecuritySettings({ session }: { session?: any }) {
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; actionType: string; title: string; desc: string }>({ isOpen: false, actionType: '', title: '', desc: '' });
   const [confirmText, setConfirmText] = useState('');
@@ -47,6 +59,15 @@ export default function SecuritySettings({ session }: { session?: any }) {
     restrictCountries: false,
   });
 
+  const [rbacRoles, setRbacRoles] = useState([
+    { name: 'Admin', count: 2, permissions: 120, editable: true, restricted: 0, description: 'Full workspace access' },
+    { name: 'Manager', count: 5, permissions: 45, editable: true, restricted: 75, description: 'Project & Team access' },
+    { name: 'Employee', count: 25, permissions: 15, editable: false, restricted: 105, description: 'Personal access only' },
+  ]);
+
+  const [officeHoursStart, setOfficeHoursStart] = useState<string>('09:00 AM');
+  const [officeHoursEnd, setOfficeHoursEnd] = useState<string>('07:00 PM');
+
   const fetchSecurityConfig = async () => {
     try {
       const res = await api.get('/settings/security');
@@ -58,6 +79,8 @@ export default function SecuritySettings({ session }: { session?: any }) {
           employee: config.mfaRequired
         });
         setPasswordLength(String(config.passwordLength || 8));
+        if (config.officeHoursStart) setOfficeHoursStart(config.officeHoursStart);
+        if (config.officeHoursEnd) setOfficeHoursEnd(config.officeHoursEnd);
         
         const mins = config.sessionTimeoutMins || 60;
         let timeoutStr = '1 Hour';
@@ -70,6 +93,15 @@ export default function SecuritySettings({ session }: { session?: any }) {
           ...prev,
           sessionTimeout: timeoutStr
         }));
+      }
+
+      try {
+        const rbacRes = await api.get('/settings/rbac');
+        if (rbacRes.data?.success && Array.isArray(rbacRes.data.data)) {
+          setRbacRoles(rbacRes.data.data);
+        }
+      } catch (err) {
+        console.error("Failed to load RBAC summary:", err);
       }
     } catch (e) {
       console.error("Failed to load security config:", e);
@@ -90,7 +122,9 @@ export default function SecuritySettings({ session }: { session?: any }) {
       await api.put('/settings/security', {
         mfaRequired,
         passwordLength: parseInt(passwordLength, 10),
-        sessionTimeoutMins
+        sessionTimeoutMins,
+        officeHoursStart,
+        officeHoursEnd
       });
       toast.success("Security policies saved successfully.");
       fetchSecurityConfig();
@@ -135,11 +169,6 @@ export default function SecuritySettings({ session }: { session?: any }) {
     { id: 3, user: 'Rahul Sharma', role: 'manager', action: 'Permissions modified', type: 'Access', time: 'Yesterday', desc: 'Granted Project Manager access to Amanda Smith' },
   ];
 
-  const rbacRoles = [
-    { name: 'Admin', count: 2, permissions: 120, editable: true, restricted: 0, description: 'Full workspace access' },
-    { name: 'Manager', count: 5, permissions: 45, editable: true, restricted: 75, description: 'Project & Team access' },
-    { name: 'Employee', count: 25, permissions: 15, editable: false, restricted: 105, description: 'Personal access only' },
-  ];
 
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
@@ -568,17 +597,58 @@ export default function SecuritySettings({ session }: { session?: any }) {
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Allowed Domains</label>
                   <Input defaultValue="hindustaan.in" className="bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 rounded-xl" />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Office Hours</label>
-                  <div className="flex items-center gap-2">
-                    <Input defaultValue="09:00" type="time" className="bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 rounded-xl" />
-                    <span className="text-slate-400">to</span>
-                    <Input defaultValue="19:00" type="time" className="bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 rounded-xl" />
+                <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800/80 space-y-3.5">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-indigo-500" />
+                      Working Hours Schedule
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Define core office hours for workspace access restrictions.</p>
                   </div>
+                  
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">From</span>
+                      <Select value={officeHoursStart} onValueChange={(val) => setOfficeHoursStart(val)}>
+                        <SelectTrigger className="w-32 h-9 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 shadow-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 rounded-xl">
+                          {(TIME_OPTIONS.includes(officeHoursStart) ? TIME_OPTIONS : [officeHoursStart, ...TIME_OPTIONS]).map((t) => (
+                            <SelectItem key={t} value={t} className="text-xs font-medium">{t}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">To</span>
+                      <Select value={officeHoursEnd} onValueChange={(val) => setOfficeHoursEnd(val)}>
+                        <SelectTrigger className="w-32 h-9 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 shadow-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 rounded-xl">
+                          {(TIME_OPTIONS.includes(officeHoursEnd) ? TIME_OPTIONS : [officeHoursEnd, ...TIME_OPTIONS]).map((t) => (
+                            <SelectItem key={t} value={t} className="text-xs font-medium">{t}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                <div className="pt-2 flex justify-end">
+                  <Button 
+                    onClick={handleSaveAllSecurity} 
+                    disabled={saving}
+                    size="sm"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md shadow-indigo-500/10"
+                  >
+                    {saving ? 'Saving...' : 'Save Office Hours'}
+                  </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
+
 
           {/* 6. Security Audit Logs */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex-1">
