@@ -161,6 +161,10 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
   const handleStatusChange = (newStatus: Status) => {
     if (!canEditStatus) return;
+    if (task?.status === 'Done' && newStatus !== 'Done') {
+      toast.error('Task Completed', { description: 'Completed tasks cannot be moved back to To Do, In Progress, or In Review.' });
+      return;
+    }
     setEditedTask(prev => prev ? { ...prev, status: newStatus } : null);
     setHasChanges(true);
   };
@@ -363,10 +367,21 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                   <select
                     value={editedTask.status}
                     onChange={(e) => handleStatusChange(e.target.value as Status)}
-                    className="appearance-none w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]"
+                    disabled={task?.status === 'Done'}
+                    className={cn(
+                      "appearance-none w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]",
+                      task?.status === 'Done' && "opacity-75 cursor-not-allowed bg-slate-100 dark:bg-slate-800/60"
+                    )}
                   >
                     {STATUSES.map(s => (
-                      <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={s} value={s}>{s}</option>
+                      <option 
+                        className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" 
+                        key={s} 
+                        value={s}
+                        disabled={task?.status === 'Done' && s !== 'Done'}
+                      >
+                        {s}{task?.status === 'Done' && s !== 'Done' ? ' (Locked)' : ''}
+                      </option>
                     ))}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-700 dark:text-slate-400" />

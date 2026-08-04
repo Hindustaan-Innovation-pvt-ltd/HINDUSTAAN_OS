@@ -282,6 +282,12 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
       return;
     }
 
+    if (task.status === 'Done' && status !== 'Done') {
+      toast.error('Task Completed', { description: 'Completed tasks cannot be moved back to To Do, In Progress, or In Review.' });
+      setDraggedTaskId(null);
+      return;
+    }
+
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
 
     try {
@@ -485,18 +491,21 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                       columnTasks.map(task => {
                         const isPastDue = task.due_date && new Date(task.due_date).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
                         const isAborted = task.project_status === 'aborted';
+                        const isCompleted = task.status === 'Done';
+                        const canDrag = currentUser.role === 'manager' && !isAborted && !isCompleted;
                         return (
                           <div
                             key={task.id}
-                            draggable={currentUser.role === 'manager' && !isAborted}
+                            draggable={canDrag}
                             onClick={() => setSelectedTask(task)}
-                            onDragStart={(currentUser.role === 'manager' && !isAborted) ? (e) => handleDragStart(e, task.id) : undefined}
-                            onDragEnd={(currentUser.role === 'manager' && !isAborted) ? handleDragEnd : undefined}
+                            onDragStart={canDrag ? (e) => handleDragStart(e, task.id) : undefined}
+                            onDragEnd={canDrag ? handleDragEnd : undefined}
                             className={cn(
                               "group bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-md dark:shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between h-[180px]",
-                              currentUser.role === 'manager' && !isAborted && "active:cursor-grabbing",
+                              canDrag && "active:cursor-grabbing",
                               draggedTaskId === task.id ? "absolute opacity-0 pointer-events-none" : "relative opacity-100",
-                              isAborted && "opacity-75 grayscale bg-slate-50 dark:bg-slate-900/40 border-red-200 dark:border-red-900/50 hover:shadow-none hover:translate-y-0 cursor-not-allowed"
+                              isAborted && "opacity-75 grayscale bg-slate-50 dark:bg-slate-900/40 border-red-200 dark:border-red-900/50 hover:shadow-none hover:translate-y-0 cursor-not-allowed",
+                              isCompleted && "border-emerald-200/80 dark:border-emerald-900/40 bg-emerald-50/10 dark:bg-emerald-950/10"
                             )}
                           >
                             <div>
