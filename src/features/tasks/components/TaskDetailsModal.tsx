@@ -165,6 +165,10 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
       toast.error('Task Completed', { description: 'Completed tasks cannot be moved back to To Do, In Progress, or In Review.' });
       return;
     }
+    if (newStatus === 'Done' && !isManager && !isAdmin) {
+      toast.error('Manager Approval Required', { description: 'Only a manager or admin can approve and mark a task as Done.' });
+      return;
+    }
     setEditedTask(prev => prev ? { ...prev, status: newStatus } : null);
     setHasChanges(true);
   };
@@ -373,16 +377,20 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                       task?.status === 'Done' && "opacity-75 cursor-not-allowed bg-slate-100 dark:bg-slate-800/60"
                     )}
                   >
-                    {STATUSES.map(s => (
-                      <option 
-                        className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" 
-                        key={s} 
-                        value={s}
-                        disabled={task?.status === 'Done' && s !== 'Done'}
-                      >
-                        {s}{task?.status === 'Done' && s !== 'Done' ? ' (Locked)' : ''}
-                      </option>
-                    ))}
+                    {STATUSES.map(s => {
+                      const isLocked = task?.status === 'Done' && s !== 'Done';
+                      const isManagerOnly = !isManager && !isAdmin && s === 'Done';
+                      return (
+                        <option 
+                          className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" 
+                          key={s} 
+                          value={s}
+                          disabled={isLocked || isManagerOnly}
+                        >
+                          {s}{isLocked ? ' (Locked)' : isManagerOnly ? ' (Manager Only)' : ''}
+                        </option>
+                      );
+                    })}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-700 dark:text-slate-400" />
                 </div>
@@ -439,9 +447,18 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                 </Button>
               )}
               {editedTask.status === 'In Review' && (
-                <Badge variant="outline" className="border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:bg-amber-500/10 font-bold px-3 py-1.5 rounded-lg flex items-center">
-                  <Clock className="h-3.5 w-3.5 mr-1.5 animate-pulse" /> Pending Approval
-                </Badge>
+                (isManager || isAdmin) ? (
+                  <Button
+                    onClick={() => handleStatusChange('Done')}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl shadow-sm transition-all active:scale-95 flex items-center cursor-pointer"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" /> Approve & Mark Done
+                  </Button>
+                ) : (
+                  <Badge variant="outline" className="border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:bg-amber-500/10 font-bold px-3 py-1.5 rounded-lg flex items-center">
+                    <Clock className="h-3.5 w-3.5 mr-1.5 animate-pulse" /> Pending Manager Approval
+                  </Badge>
+                )
               )}
               {editedTask.status === 'Done' && (
                 <Badge variant="outline" className="border-emerald-200 text-emerald-700 bg-emerald-50 dark:border-emerald-900/50 dark:text-emerald-400 dark:bg-emerald-500/10 font-bold px-3 py-1.5 rounded-lg flex items-center">
