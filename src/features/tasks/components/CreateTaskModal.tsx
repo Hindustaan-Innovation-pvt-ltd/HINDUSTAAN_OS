@@ -33,6 +33,7 @@ export default function CreateTaskModal({
   if (!isOpen) return null;
 
   const isPastDue = dueDate && new Date(dueDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
+  const todayStr = new Date().toISOString().split('T')[0];
   
   const availableMembers = currentUser?.role === 'intern' 
     ? teamMembers.filter(m => m.id === currentUser.id)
@@ -174,6 +175,7 @@ export default function CreateTaskModal({
               <input 
                 type="date"
                 value={startDate}
+                min={todayStr}
                 onChange={e => setStartDate(e.target.value)}
                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
               />
@@ -187,6 +189,7 @@ export default function CreateTaskModal({
                 required
                 type="date"
                 value={dueDate}
+                min={todayStr}
                 onChange={e => setDueDate(e.target.value)}
                 className={cn(
                   "w-full bg-white dark:bg-slate-900 border text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-colors",

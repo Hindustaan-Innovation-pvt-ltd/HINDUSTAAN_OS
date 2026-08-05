@@ -207,9 +207,9 @@ export const WorkLogSummaryCards = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
       <SummaryCard
-        title={isEmployee ? "My Logged Days" : "Total Logged Days"}
-        description={isEmployee ? "Your total days for the period" : "Total days logged by the team"}
-        value={`${(totalHours / 8).toFixed(1)}d`}
+        title={isEmployee ? (totalHours < 8 ? "My Logged Hours" : "My Logged Days") : (totalHours < 8 ? "Total Logged Hours" : "Total Logged Days")}
+        description={isEmployee ? (totalHours < 8 ? "Your total hours for the period" : "Your total days for the period") : (totalHours < 8 ? "Total hours logged by the team" : "Total days logged by the team")}
+        value={totalHours < 8 ? `${totalHours.toFixed(1)}h` : `${(totalHours / 8).toFixed(1)}d`}
         trend={totalMetrics.trend}
         icon={<Clock className="h-5 w-5" />}
         data={totalMetrics.sparklineData}

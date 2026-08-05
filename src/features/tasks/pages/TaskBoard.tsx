@@ -489,10 +489,23 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                       <EmptyColumnPlaceholder status={columnStatus} role={currentUser.role} />
                     ) : (
                       columnTasks.map(task => {
-                        const isPastDue = task.due_date && new Date(task.due_date).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
                         const isAborted = task.project_status === 'aborted';
                         const isCompleted = task.status === 'Done';
                         const canDrag = currentUser.role === 'manager' && !isAborted && !isCompleted;
+                        
+                        let deadlineStatus: 'past' | 'today' | 'tomorrow' | 'normal' | null = null;
+                        if (task.due_date && !isCompleted && !isAborted) {
+                          const due = new Date(task.due_date); due.setHours(0, 0, 0, 0);
+                          const today = new Date(); today.setHours(0, 0, 0, 0);
+                          const diff = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                          if (diff < 0) deadlineStatus = 'past';
+                          else if (diff === 0) deadlineStatus = 'today';
+                          else if (diff === 1) deadlineStatus = 'tomorrow';
+                          else deadlineStatus = 'normal';
+                        } else if (task.due_date) {
+                          deadlineStatus = 'normal';
+                        }
+
                         return (
                           <div
                             key={task.id}
@@ -540,12 +553,18 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                             {/* Bottom Row: Date */}
                             <div className="flex items-center pt-3 border-t border-slate-100 dark:border-slate-800 mt-auto">
                               <div className={cn("flex items-center space-x-1.5",
-                                task.due_date && new Date(task.due_date).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)
-                                  ? "text-rose-600 dark:text-rose-500"
-                                  : "text-slate-400 dark:text-slate-500"
+                                deadlineStatus === 'past' ? "text-rose-600 dark:text-rose-500" :
+                                deadlineStatus === 'today' ? "text-rose-500 dark:text-rose-400" :
+                                deadlineStatus === 'tomorrow' ? "text-orange-500 dark:text-orange-400" :
+                                "text-slate-400 dark:text-slate-500"
                               )}>
-                                {task.due_date && new Date(task.due_date).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0) ? <AlertTriangle className="h-3.5 w-3.5" /> : <Calendar className="h-3.5 w-3.5" />}
-                                <span className="text-xs font-semibold">Deadline: {task.due_date} {task.due_date && new Date(task.due_date).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0) && <span className="ml-1 text-[9px] uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 px-1 py-0.5 rounded">Past</span>}</span>
+                                {deadlineStatus === 'past' || deadlineStatus === 'today' ? <AlertTriangle className="h-3.5 w-3.5" /> : <Calendar className="h-3.5 w-3.5" />}
+                                <span className="text-xs font-semibold">
+                                  Deadline: {task.due_date} 
+                                  {deadlineStatus === 'past' && <span className="ml-1.5 text-[9px] uppercase tracking-wider font-bold bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 px-1.5 py-0.5 rounded-full">Past Due</span>}
+                                  {deadlineStatus === 'today' && <span className="ml-1.5 text-[9px] uppercase tracking-wider font-bold bg-rose-500 text-white dark:bg-rose-500 dark:text-white px-1.5 py-0.5 rounded-full">Today</span>}
+                                  {deadlineStatus === 'tomorrow' && <span className="ml-1.5 text-[9px] uppercase tracking-wider font-bold bg-orange-500 text-white dark:bg-orange-500 dark:text-white px-1.5 py-0.5 rounded-full">Tomorrow</span>}
+                                </span>
                               </div>
                             </div>
                           </div>

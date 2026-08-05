@@ -351,6 +351,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                 <input
                   type="date"
                   value={safeToInputDate(editedTask.due_date)}
+                  min={new Date().toISOString().split('T')[0]}
                   onChange={(e) => handleUpdateField('due_date', e.target.value)}
                   className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:[color-scheme:dark]"
                 />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   CheckCircle2, Clock, Calendar as CalendarIcon, Flag, Activity,
-  ArrowRight, MoreVertical, PlayCircle, Trophy, Target, AlertCircle, Sparkles, LayoutDashboard, History
+  ArrowRight, MoreVertical, PlayCircle, Trophy, Target, AlertCircle, Sparkles, LayoutDashboard, History, Bell, X, AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -48,6 +48,27 @@ const formatTime = (totalSeconds: number) => {
   if (m > 0) return `${m}m ${s}s`;
   return `${s}s`;
 };
+
+// ─── Deadline Alarm Tune (Web Audio API) ─────────────────────────────
+const playAlarmTune = () => {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const notes = [880, 988, 880, 988, 880];
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.18 + 0.15);
+      osc.start(ctx.currentTime + i * 0.18);
+      osc.stop(ctx.currentTime + i * 0.18 + 0.15);
+    });
+  } catch (e) { /* AudioContext not available */ }
+};
+
 
 const formatCheckTime = (timeStr?: string | Date | null) => {
   if (!timeStr) return '--:--';
@@ -107,6 +128,8 @@ export default function InternDashboard({ }: InternDashboardProps) {
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [extensionDays, setExtensionDays] = useState(1);
   const [extensionReason, setExtensionReason] = useState('');
+  const [deadlineAlerts, setDeadlineAlerts] = useState<any[]>([]);
+  const [alertDismissed, setAlertDismissed] = useState(false);
 
   const { user: contextUser } = useUser();
   const role = contextUser?.role || 'intern';
@@ -358,6 +381,38 @@ export default function InternDashboard({ }: InternDashboardProps) {
     };
   }, []);
 
+  // ─── Deadline Warning Alarm ────────────────────────────────────────────
+  useEffect(() => {
+    if (!tasks || tasks.length === 0) return;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const alarmKey = 'deadline_alarm_fired';
+    const firedToday = (() => { try { return localStorage.getItem(alarmKey) === today.toISOString().slice(0, 10); } catch { return false; } })();
+
+    const nearDeadline = tasks.filter((t: any) => {
+      if (!t.due_date || t.status === 'Done' || t.status === 'completed') return false;
+      const due = new Date(t.due_date); due.setHours(0, 0, 0, 0);
+      const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays >= 0 && diffDays <= 2;
+    });
+
+    if (nearDeadline.length > 0) {
+      setDeadlineAlerts(nearDeadline);
+      setAlertDismissed(false);
+      if (!firedToday) {
+        playAlarmTune();
+        try { localStorage.setItem(alarmKey, today.toISOString().slice(0, 10)); } catch {}
+        nearDeadline.forEach((t: any) => {
+          const due = new Date(t.due_date); due.setHours(0, 0, 0, 0);
+          const diff = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          const label = diff === 0 ? '🔴 Due TODAY' : diff === 1 ? '🟠 Due Tomorrow' : '🟡 Due in 2 days';
+          toast.warning(`${label}: ${t.title}`, { description: `Project: ${t.project_tag}`, duration: 8000 });
+        });
+      }
+    } else {
+      setDeadlineAlerts([]);
+    }
+  }, [tasks]);
+
   const employeeUpcomingEvents = useMemo(() => {
     const today = new Date();
     const cutoffDate = startOfDay(today);
@@ -403,19 +458,24 @@ export default function InternDashboard({ }: InternDashboardProps) {
     // 3. Project Milestones
     const milestoneEvents = projects.flatMap((proj: any) => {
       return (proj.milestones || [])
-        .filter((m: any) => m.status !== 'completed' && m.status !== 'Done' && m.date && m.date !== 'TBD')
+        .filter((m: any) => m.status !== 'completed' && m.status !== 'Done')
         .map((m: any) => {
+          // DB returns dueDate as ISO string e.g. "2026-08-06T05:00:00.000Z"
+          const rawDate = m.dueDate || m.due_date || m.date;
           let dateVal = new Date();
-          const parsed = Date.parse(`${m.date}, ${new Date().getFullYear()}`);
-          if (!isNaN(parsed)) {
-            dateVal = new Date(parsed);
+          if (rawDate && rawDate !== 'TBD') {
+            const parsed = new Date(rawDate);
+            if (!isNaN(parsed.getTime())) dateVal = parsed;
           }
+          const timeStr = !isNaN(dateVal.getTime())
+            ? dateVal.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : 'All Day';
           return {
             id: `milestone-event-${m.id}`,
             date: dateVal,
-            title: `${m.title} (${proj.name})`,
+            title: m.name || m.title || 'Milestone',
             type: 'milestone',
-            time: 'All Day'
+            time: timeStr
           };
         });
     });
@@ -630,6 +690,60 @@ export default function InternDashboard({ }: InternDashboardProps) {
   return (
     <div className="p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-4 md:space-y-5 animate-in fade-in duration-500 min-h-screen">
 
+      {/* ─── Deadline Warning Banner ─────────────────────────────────────── */}
+      {deadlineAlerts.length > 0 && !alertDismissed && (
+        <div className="relative rounded-2xl overflow-hidden border border-rose-500/30 dark:border-rose-500/20 shadow-lg shadow-rose-500/10 animate-in slide-in-from-top-2 duration-300">
+          <div className="absolute inset-0 bg-gradient-to-r from-rose-500/10 via-orange-500/8 to-amber-500/10 dark:from-rose-500/15 dark:via-orange-500/10 dark:to-amber-500/10 pointer-events-none" />
+          <div className="relative p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="flex-shrink-0 h-9 w-9 rounded-xl bg-rose-500/20 dark:bg-rose-500/15 flex items-center justify-center">
+                <Bell className="h-5 w-5 text-rose-600 dark:text-rose-400 animate-bounce" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-rose-700 dark:text-rose-300">
+                  ⚠️ {deadlineAlerts.length} task{deadlineAlerts.length > 1 ? 's' : ''} deadline{deadlineAlerts.length > 1 ? 's' : ''} approaching!
+                </p>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {deadlineAlerts.map((t: any) => {
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const due = new Date(t.due_date); due.setHours(0,0,0,0);
+                    const diff = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                    const badge = diff === 0
+                      ? 'bg-rose-500 text-white'
+                      : diff === 1
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-amber-400 text-amber-900';
+                    const label = diff === 0 ? 'TODAY' : diff === 1 ? 'TOMORROW' : 'IN 2 DAYS';
+                    return (
+                      <span key={t.id} className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${badge}`}>
+                        <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
+                        {t.title} — {label}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => playAlarmTune()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold transition-colors border border-rose-500/20"
+                title="Play alarm again"
+              >
+                <Bell className="h-3.5 w-3.5" /> Ring
+              </button>
+              <button
+                onClick={() => setAlertDismissed(true)}
+                className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                title="Dismiss"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -640,7 +754,7 @@ export default function InternDashboard({ }: InternDashboardProps) {
             {user?.designation || (user?.role === 'manager' ? 'Product Manager' : 'Frontend Developer Intern')}
           </p>
           <p className="text-sm sm:text-base font-medium text-slate-500 dark:text-slate-400 mt-2 wrap-break-word whitespace-normal">
-            You have <strong className="text-slate-700 dark:text-slate-200">{activeTasksCount} active tasks</strong>, <strong className="text-rose-600 dark:text-rose-400">{dueTodayCount} due today</strong>, and <strong>{loggedHours.toFixed(1)} hours</strong> logged total.
+            You have <strong className="text-slate-700 dark:text-slate-200">{activeTasksCount} active tasks</strong> and <strong className="text-rose-600 dark:text-rose-400">{dueTodayCount} due today</strong>.
           </p>
         </div>
 

@@ -83,7 +83,7 @@ export default function WorkLogs({ session }: { session?: any }) {
   const [projectFilter, setProjectFilter] = useState('All');
   const [roleFilter, setRoleFilter] = useState('All');
   const [employeeFilter, setEmployeeFilter] = useState('All');
-  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(todayDate);
   const [heatmapDate, setHeatmapDate] = useState<Date>(todayDate);
   
   const [selectedLog, setSelectedLog] = useState<any>(null);
@@ -312,6 +312,21 @@ export default function WorkLogs({ session }: { session?: any }) {
         <div>
           <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Work Logs</h2>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage team timesheets and logged hours efficiently.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {dateFilter && format(dateFilter, 'yyyy-MM-dd') === todayStr && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
+              <span className="h-2 w-2 bg-indigo-400 rounded-full animate-pulse" />
+              <span className="text-xs font-semibold text-indigo-400">Showing Today's Logs</span>
+              <button
+                onClick={() => setDateFilter(undefined)}
+                className="text-indigo-400 hover:text-white transition-colors text-xs font-bold ml-1"
+                title="Show all dates"
+              >
+                ✕ All
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
