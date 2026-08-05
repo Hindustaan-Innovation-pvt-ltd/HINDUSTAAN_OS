@@ -674,7 +674,7 @@ export default function TeamMembers() {
             </div>
           </TabsContent>
 
-          {currentUser?.role === 'manager' && (
+          {(currentUser?.role === 'manager' || currentUser?.role === 'admin') && (
             <TabsContent value="pending" className="space-y-6 mt-0">
               {pendingApprovals.length === 0 ? (
                 <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm p-12 text-center flex flex-col items-center justify-center min-h-[250px]">

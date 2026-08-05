@@ -131,7 +131,14 @@ function ManagerDashboardInner() {
   const [tasks, setTasks] = useState<any[]>([]);
 
   // Live dashboard stats from backend
-  const [dashboardStats, setDashboardStats] = useState<any>(null);
+  const [dashboardStats, setDashboardStats] = useState<any>(() => {
+    try {
+      const cached = localStorage.getItem('manager_dashboard_data');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [liveTeamMembers, setLiveTeamMembers] = useState<any[]>([]);
   const lastDataRef = React.useRef<string | null>(null);
 
@@ -145,6 +152,7 @@ function ManagerDashboardInner() {
           lastDataRef.current = dataString;
           React.startTransition(() => {
             setDashboardStats(data);
+            localStorage.setItem('manager_dashboard_data', JSON.stringify(data));
             setLiveTeamMembers(data.liveTeamMembers || []);
             setActivityFeed(data.activityFeed || []);
             setAlerts(data.recentAlerts || []);
@@ -202,6 +210,11 @@ function ManagerDashboardInner() {
   useEffect(() => {
     fetchDashboard();
 
+    const handleAuthStatus = () => {
+      fetchDashboard();
+    };
+    window.addEventListener('auth_status_changed', handleAuthStatus);
+
     if (socket) {
       socket.on('dashboard_update', () => {
         fetchDashboard();
@@ -209,8 +222,13 @@ function ManagerDashboardInner() {
 
       return () => {
         socket.off('dashboard_update');
+        window.removeEventListener('auth_status_changed', handleAuthStatus);
       };
     }
+
+    return () => {
+      window.removeEventListener('auth_status_changed', handleAuthStatus);
+    };
   }, [fetchDashboard, socket]);
 
 

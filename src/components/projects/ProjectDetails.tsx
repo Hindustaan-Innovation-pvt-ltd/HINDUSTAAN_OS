@@ -106,7 +106,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+        {/* <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Milestones</p>
             <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{milestones.length}</p>
@@ -114,7 +114,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
           <div className="h-12 w-12 rounded-full bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
             <Flag className="h-6 w-6" />
           </div>
-        </div>
+        </div> */}
 
         <div className="bg-gradient-to-br from-orange-500 to-rose-500 rounded-2xl p-6 text-white shadow-lg shadow-orange-500/20 flex items-center justify-between relative overflow-hidden">
           <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10" />
@@ -131,7 +131,7 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Milestones Timeline */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 lg:col-span-1 flex flex-col justify-between">
+        {false && ( <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 lg:col-span-1 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
@@ -242,10 +242,10 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
               </div>
             </form>
           )}
-        </div>
+        </div> )}
 
         {/* Task Board / List */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 lg:col-span-2 flex flex-col">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 lg:col-span-3 flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <CheckSquare className="h-5 w-5 text-orange-600 dark:text-orange-400" />

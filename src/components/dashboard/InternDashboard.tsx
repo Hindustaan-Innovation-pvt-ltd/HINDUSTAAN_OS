@@ -199,6 +199,7 @@ export default function InternDashboard({ }: InternDashboardProps) {
 
   const [allLogs, setAllLogs] = useState<any[]>([]);
   const [loggedHours, setLoggedHours] = useState(0);
+  const [todayLoggedHours, setTodayLoggedHours] = useState(0);
 
   const fetchWorkLogs = async () => {
     try {
@@ -213,6 +214,15 @@ export default function InternDashboard({ }: InternDashboardProps) {
         setAllLogs(myLogs);
         const total = myLogs.reduce((acc: number, log: any) => acc + (log.hours || 0), 0);
         setLoggedHours(total);
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        const todayLogs = myLogs.filter((log: any) => {
+          if (!log.date && !log.createdAt && !log.rawDate) return false;
+          const logDate = new Date(log.date || log.createdAt || log.rawDate || Date.now()).toISOString().split('T')[0];
+          return logDate === todayStr;
+        });
+        const todayTotal = todayLogs.reduce((acc: number, log: any) => acc + (log.hours || 0), 0);
+        setTodayLoggedHours(todayTotal);
       }
     } catch (err) {
       console.warn('Failed to fetch worklogs on InternDashboard:', err);
@@ -268,7 +278,14 @@ export default function InternDashboard({ }: InternDashboardProps) {
   };
 
   // Live backend dashboard data
-  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<any>(() => {
+    try {
+      const cached = localStorage.getItem('intern_dashboard_data');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const lastDataRef = React.useRef<string | null>(null);
 
   const overallScore = dashboardData?.contribution?.overallScore ?? 0;
@@ -288,6 +305,7 @@ export default function InternDashboard({ }: InternDashboardProps) {
 
         React.startTransition(() => {
           setDashboardData(res.data.data);
+          localStorage.setItem('intern_dashboard_data', JSON.stringify(res.data.data));
           // Hydrate todaysStandup from live data
           if (res.data.data.standupStatus?.submittedToday) {
             setTodaysStandup({
@@ -321,6 +339,12 @@ export default function InternDashboard({ }: InternDashboardProps) {
     fetchWorkLogs();
     fetchInternTasks();
 
+    const handleAuthStatus = () => {
+      fetchDashboard();
+      fetchWorkLogs();
+    };
+    window.addEventListener('auth_status_changed', handleAuthStatus);
+
     // Poll every 5 seconds for real-time updates
     const intervalId = setInterval(() => {
       fetchDashboard();
@@ -328,7 +352,10 @@ export default function InternDashboard({ }: InternDashboardProps) {
       fetchWorkLogs();
       fetchInternTasks();
     }, 5000);
-    return () => clearInterval(intervalId);
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('auth_status_changed', handleAuthStatus);
+    };
   }, []);
 
   const employeeUpcomingEvents = useMemo(() => {
@@ -705,12 +732,12 @@ export default function InternDashboard({ }: InternDashboardProps) {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400">
                 <Clock className="h-5 w-5" />
               </div>
-              <span className="text-xs font-bold text-slate-500">Goal: 8 hrs</span>
+              <span className="text-xs font-bold text-slate-500">Today / Goal: 8 hrs</span>
             </div>
             <div>
-              <p className="text-3xl font-black text-slate-900 dark:text-white">{loggedHours.toFixed(1)} <span className="text-lg text-slate-500 font-bold">hrs</span></p>
+              <p className="text-3xl font-black text-slate-900 dark:text-white">{todayLoggedHours.toFixed(1)} <span className="text-lg text-slate-500 font-bold">hrs</span></p>
               <div className="flex items-center gap-3 mt-2">
-                <Progress value={Math.min(100, (loggedHours / 8) * 100)} className="h-1.5 flex-1 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
+                <Progress value={Math.min(100, (todayLoggedHours / 8) * 100)} className="h-1.5 flex-1 bg-slate-100 dark:bg-slate-800 [&>div]:bg-orange-500" />
               </div>
             </div>
           </CardContent>

@@ -110,6 +110,9 @@ function AppRoutes() {
         <Route path="/milestones" element={<Milestones />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/team" element={<TeamMembers />} />
+        <Route path="/admin/users" element={role === 'admin' ? <AdminDashboard /> : <Navigate to={`/${role}/dashboard`} replace />} />
+        <Route path="/admin/users/interns" element={role === 'admin' ? <AdminDashboard showOnlyRole="employee" /> : <Navigate to={`/${role}/dashboard`} replace />} />
+        <Route path="/admin/users/managers" element={role === 'admin' ? <AdminDashboard showOnlyRole="manager" /> : <Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/roles" element={<RolesAndPermissions />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/profile" element={['manager', 'admin'].includes(role) ? <ProfileView /> : <EmployeeProfileView />} />

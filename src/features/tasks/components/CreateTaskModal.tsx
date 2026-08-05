@@ -150,7 +150,7 @@ export default function CreateTaskModal({
               </select>
             </div>
 
-            <div>
+            {/* <div>
               <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
                 <Target className="h-3.5 w-3.5 mr-1.5" /> Milestone (Optional)
               </label>
@@ -165,7 +165,7 @@ export default function CreateTaskModal({
                   <option key={m.id} value={m.id}>{m.title}</option>
                 ))}
               </select>
-            </div>
+            </div> */}
             
             <div>
               <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">

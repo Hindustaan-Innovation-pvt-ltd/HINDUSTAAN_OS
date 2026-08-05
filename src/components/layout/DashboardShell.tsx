@@ -60,7 +60,7 @@ const employeeNavigation = [
   { name: 'Leave Management', icon: CalendarRange },
   { name: 'Daily Standup', icon: Mic },
   { name: 'Projects', icon: FolderKanban },
-  { name: 'Milestones', icon: Flag },
+  // { name: 'Milestones', icon: Flag },
   { name: 'Contribution Scores', icon: Trophy },
   { name: 'Settings', icon: Settings },
 ];
@@ -165,6 +165,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
       const res = await api.post(`/auth/${type}`);
       if (res.data?.success) {
         toast.success(res.data.message);
+        window.dispatchEvent(new Event('auth_status_changed'));
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || `Failed to ${type}`);
@@ -447,9 +448,9 @@ export default function DashboardShell({
       case 'Milestones': navigate('/milestones'); break;
       case 'Settings':
       case 'Workspace Settings - Appearance': navigate('/settings'); break;
+      case 'Interns': navigate('/admin/users/interns'); break;
+      case 'Managers': navigate('/admin/users/managers'); break;
       case 'Team Members':
-      case 'Interns':
-      case 'Managers':
       case 'Team': navigate('/team'); break;
       case 'Work Logs': navigate('/work-logs'); break;
       case 'Daily Standup':

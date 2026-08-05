@@ -585,7 +585,8 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (u.id && u.id.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesRole = u.role === showOnlyRole || (showOnlyRole === 'employee' && u.role === 'intern');
+    const matchesRole = !showOnlyRole || u.role === showOnlyRole || 
+      (showOnlyRole === 'employee' && (u.role === 'intern' || u.role === 'employee'));
     const matchesDept = deptFilter === 'All' || u.department === deptFilter;
     const isActive = u.isActive !== false;
     const matchesStatus = statusFilter === 'All' || 
@@ -1190,7 +1191,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
         </div>
 
         {/* Conditional Content */}
-        {!showOnlyRole ? (
+        {!showOnlyRole && (
           // Admin Overview Dashboard View
           <div className="space-y-6">
             {/* Stats Row */}
@@ -1248,7 +1249,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     <Activity className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Active Users Today</p>
+                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Active Today</p>
                     <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1.5 leading-none">{activeUsersCount}</h3>
                   </div>
                 </CardContent>
@@ -1267,81 +1268,11 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
               </Card>
 
             </div>
-
-            {/* User Account Summary */}
-            <div className="grid grid-cols-1 gap-6">
-              <div className="space-y-6">
-                <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden">
-                  <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-                    <CardTitle className="text-lg font-bold flex items-center justify-between text-slate-900 dark:text-white">
-                      User Account Summary
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0 overflow-x-auto">
-                    <table className="w-full text-sm text-left min-w-150">
-                      <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                        <tr>
-                          <th className="px-6 py-4 font-bold">User</th>
-                          <th className="px-6 py-4 font-bold">Role</th>
-                          <th className="px-6 py-4 font-bold">Status</th>
-                          <th className="px-6 py-4 font-bold">Last Login</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {usersList.slice(0, 4).map((u: any, i: number) => {
-                          const initials = u.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
-                          const isActive = u.isActive !== false;
-                          return (
-                            <tr 
-                              key={i} 
-                              className="border-b border-slate-100 dark:border-slate-800/60 cursor-pointer"
-                              onClick={() => setSelectedDetailUser(u)}
-                            >
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                  <div className={cn(
-                                    "h-9 w-9 rounded-full flex items-center justify-center text-xs font-extrabold border shrink-0",
-                                    isActive
-                                      ? "bg-orange-50 text-orange-700 border-orange-250 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20"
-                                      : "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-800"
-                                  )}>
-                                    {initials}
-                                  </div>
-                                  <div>
-                                    <div className="font-extrabold text-slate-900 dark:text-white leading-snug">{u.name}</div>
-                                    <div className="text-xs text-slate-450 dark:text-slate-400 leading-snug truncate max-w-37.5">{u.email}</div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <Badge variant="outline" className={cn(
-                                  "font-black tracking-wide rounded px-2 uppercase text-[9px]",
-                                  u.role === 'admin' ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400" :
-                                  u.role === 'manager' ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400" :
-                                  "border-slate-255 bg-slate-50 text-slate-600 dark:border-slate-805 dark:bg-slate-900/60 dark:text-slate-350"
-                                )}>{u.role}</Badge>
-                              </td>
-                              <td className="px-6 py-4">
-                                <Badge className={isActive ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 'bg-slate-500/10 text-slate-500 hover:bg-slate-500/20'}>
-                                  {isActive ? 'Active' : 'Inactive'}
-                                </Badge>
-                              </td>
-                              <td className="px-6 py-4 text-slate-500 text-xs">
-                                {u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
           </div>
-        ) : (
-          // CRUD Registry View
-          <div className="space-y-6 animate-in fade-in duration-300">
+        )}
+
+        {/* CRUD Registry View */}
+        <div className="space-y-6 animate-in fade-in duration-300">
             {/* Filters and Search Toolbar */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm p-4">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
@@ -1571,7 +1502,6 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
               )}
             </Card>
           </div>
-        )}
         </>
       )}
       </div>

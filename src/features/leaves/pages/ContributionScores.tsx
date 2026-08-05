@@ -33,20 +33,6 @@ import autoTable from 'jspdf-autotable';
 // Real data will be fetched from the backend API
 
 // Chart Data
-const weeklyTrendData = [
-  { name: 'Week 1', score: 78 },
-  { name: 'Week 2', score: 82 },
-  { name: 'Week 3', score: 85 },
-  { name: 'Week 4', score: 86 },
-];
-
-const deptData = [
-  { name: 'Frontend', score: 88 },
-  { name: 'Backend', score: 82 },
-  { name: 'UI/UX', score: 91 },
-  { name: 'AI/ML', score: 79 },
-];
-
 const COLORS = {
   excellent: '#10b981', // emerald-500
   good: '#3b82f6', // blue-500
@@ -67,24 +53,20 @@ const CustomTooltip = ({ active, payload }: any) => {
         </p>
         <div className="space-y-1.5 pt-1 text-[11px] text-slate-400 font-semibold">
           <div className="flex justify-between items-center">
-            <span>📈 Tasks ({data.tasks}% × 35%)</span>
-            <span className="text-slate-200 font-bold">{Math.round(data.tasks * 0.35)}%</span>
+            <span>📈 Tasks ({data.tasks}% × 50%)</span>
+            <span className="text-slate-200 font-bold">{Math.round(data.tasks * 0.50)}%</span>
           </div>
           <div className="flex justify-between items-center">
-            <span>⏱️ Work Logs ({data.logs}% × 25%)</span>
-            <span className="text-slate-200 font-bold">{Math.round(data.logs * 0.25)}%</span>
+            <span>⏱️ Work Logs ({data.logs}% × 30%)</span>
+            <span className="text-slate-200 font-bold">{Math.round(data.logs * 0.30)}%</span>
           </div>
           <div className="flex justify-between items-center">
             <span>💬 Standups ({data.standups}% × 20%)</span>
             <span className="text-slate-200 font-bold">{Math.round(data.standups * 0.20)}%</span>
           </div>
-          <div className="flex justify-between items-center">
-            <span>🏁 Milestones ({data.milestones}% × 20%)</span>
-            <span className="text-slate-200 font-bold">{Math.round(data.milestones * 0.20)}%</span>
-          </div>
         </div>
         <p className="text-[10px] text-slate-500 border-t border-slate-800/80 pt-1.5 leading-tight">
-          Score = Tasks(35%) + Logs(25%) + Standups(20%) + Milestones(20%)
+          Score = Tasks(50%) + Logs(30%) + Standups(20%)
         </p>
       </div>
     );
@@ -105,6 +87,7 @@ export default function ContributionScores({ session }: { session?: any }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   
   const [internData, setInternData] = useState<any[]>([]);
+  const [managerAnalytics, setManagerAnalytics] = useState<any>(null);
   const [loadingCohort, setLoadingCohort] = useState(true);
 
   const [metrics, setMetrics] = useState<any>({
@@ -329,7 +312,7 @@ export default function ContributionScores({ session }: { session?: any }) {
       const milestonePercent = totalMilestones > 0 ? Math.round((milestonesAchieved / totalMilestones) * 100) : 0;
 
       // 5. Overall score
-      const overallScore = Math.round((taskPercent * 0.35) + (logPercent * 0.25) + (standupPercent * 0.20) + (milestonePercent * 0.20));
+      const overallScore = Math.round((taskPercent * 0.50) + (logPercent * 0.30) + (standupPercent * 0.20));
 
       // 6. Compute weekly trend (past 4 weeks) - pre-parsed for computational efficiency
       const parsedLogs = combinedLogs.map(l => ({
@@ -377,15 +360,14 @@ export default function ContributionScores({ session }: { session?: any }) {
         const weekMilestonesCompleted = weekMilestones.filter(m => m.status === 'completed' || m.status === 'done').length;
         const weekMilestonePercent = weekMilestones.length > 0 ? Math.round((weekMilestonesCompleted / weekMilestones.length) * 100) : 0;
 
-        const weekScore = Math.round((weekTaskPercent * 0.35) + (weekLogPercent * 0.25) + (weekStandupPercent * 0.20) + (weekMilestonePercent * 0.20));
+        const weekScore = Math.round((weekTaskPercent * 0.50) + (weekLogPercent * 0.30) + (weekStandupPercent * 0.20));
 
         weeklyTrendData.push({
           name: `Week ${4 - i}`,
           score: weekScore,
           tasks: weekTaskPercent,
           logs: weekLogPercent,
-          standups: weekStandupPercent,
-          milestones: weekMilestonePercent
+          standups: weekStandupPercent
         });
       }
 
@@ -405,10 +387,9 @@ export default function ContributionScores({ session }: { session?: any }) {
         milestonePercent,
         weeklyTrendData,
         scoreBreakdownData: [
-          { name: 'Tasks Completed', value: 35, fill: COLORS.excellent },
-          { name: 'Work Logs', value: 25, fill: COLORS.good },
+          { name: 'Tasks Completed', value: 50, fill: COLORS.excellent },
+          { name: 'Work Logs', value: 30, fill: COLORS.good },
           { name: 'Standups', value: 20, fill: COLORS.orange },
-          { name: 'Milestones', value: 20, fill: '#8b5cf6' },
         ]
       });    } catch (e) {
       console.error('Error fetching contribution metrics:', e);
@@ -420,27 +401,13 @@ export default function ContributionScores({ session }: { session?: any }) {
   const fetchCohortData = async () => {
     try {
       setLoadingCohort(true);
-      const res = await api.get('/scores/cohort?period=today');
+      const res = await api.get('/scores/manager/analytics?period=today');
       if (res.data?.success) {
-        const mapped = res.data.data.map((score: any) => ({
-          id: score.userId,
-          name: score.name,
-          department: "Engineering", // Backend doesn't return department
-          project: "Hindustaan OS",
-          manager: "Aakash Gupta",
-          score: Math.round(score.total),
-          taskScore: Math.round(score.tasksScore),
-          logScore: Math.round(score.hoursScore),
-          standupScore: Math.round(score.milestoneScore), // Mapping to UI fields
-          trend: 0, // Placeholder
-          status: score.total >= 90 ? 'Excellent' : score.total >= 80 ? 'Good' : score.total >= 70 ? 'Average' : 'Needs Improvement',
-          hoursLogged: Math.round(score.hoursScore * 0.48), // Approximate
-          tasksCompleted: Math.round(score.tasksScore / 10) // Approximate
-        }));
-        setInternData(mapped);
+        setManagerAnalytics(res.data.data);
+        setInternData(res.data.data.performanceOverview || []);
       }
     } catch (e) {
-      console.error('Error fetching cohort scores:', e);
+      console.error('Error fetching manager analytics:', e);
     } finally {
       setLoadingCohort(false);
     }
@@ -470,23 +437,11 @@ export default function ContributionScores({ session }: { session?: any }) {
     { name: 'Needs Imp.', value: internData.filter(i => i.score < 70).length, fill: COLORS.poor },
   ];
 
-  const teamAverageScore = internData.length > 0 
-    ? Math.round(internData.reduce((acc, i) => acc + (i.score || 0), 0) / internData.length)
-    : 0;
-
-  const avgTaskPerf = internData.length > 0 
-    ? Math.round(internData.reduce((acc, i) => acc + (i.taskScore || 0), 0) / internData.length)
-    : 0;
-
-  const avgLogPerf = internData.length > 0 
-    ? Math.round(internData.reduce((acc, i) => acc + (i.logScore || 0), 0) / internData.length)
-    : 0;
-
-  const avgStandupPerf = internData.length > 0 
-    ? Math.round(internData.reduce((acc, i) => acc + (i.standupScore || 0), 0) / internData.length)
-    : 0;
-
-  const highestScorer = internData.length > 0 ? internData.reduce((max, intern) => (intern.score > max.score ? intern : max), internData[0]) : null;
+  const teamAverageScore = managerAnalytics?.teamAverage || 0;
+  const avgTaskPerf = managerAnalytics?.taskPerformanceAvg || 0;
+  const avgLogPerf = managerAnalytics?.workLogsAvg || 0;
+  const avgStandupPerf = managerAnalytics?.standupsAvg || 0;
+  const highestScorer = managerAnalytics?.highestScoreUser || null;
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -505,7 +460,7 @@ export default function ContributionScores({ session }: { session?: any }) {
       intern.name,
       intern.department,
       `${intern.score}%`,
-      intern.trend + '%',
+      intern.trend,
       intern.status
     ]);
 
@@ -559,7 +514,7 @@ export default function ContributionScores({ session }: { session?: any }) {
         </div>
 
         {/* KPI Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
           {/* Overall Score Card */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
             <div className="absolute right-0 top-0 h-full w-1/2 opacity-10 pointer-events-none">
@@ -639,24 +594,6 @@ export default function ContributionScores({ session }: { session?: any }) {
             </CardContent>
           </Card>
 
-          {/* Milestones Card */}
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm">
-            <CardContent className="p-5 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Milestones Achieved</p>
-                <p className="text-2xl font-black text-slate-900 dark:text-white">{metrics.milestonesAchieved} <span className="text-sm font-bold text-slate-500">/ {metrics.totalMilestones}</span></p>
-                <p className="text-xs font-bold text-slate-400 mt-1">{Math.round(metrics.milestonePercent)}% completed</p>
-              </div>
-              <div className="h-12 w-12 shrink-0 relative flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%" className="absolute inset-0">
-                  <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: metrics.milestonePercent, fill: '#8b5cf6' }]} startAngle={90} endAngle={-270}>
-                    <RadialBar background={{ fill: 'var(--color-slate-100)' }} dataKey="value" cornerRadius={10} />
-                  </RadialBarChart>
-                </ResponsiveContainer>
-                <Trophy className="h-4 w-4 relative z-10 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Main Content Grid */}
@@ -809,7 +746,7 @@ export default function ContributionScores({ session }: { session?: any }) {
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm col-span-1 sm:col-span-2 lg:col-span-2 relative overflow-hidden group">
           <div className="absolute right-0 top-0 h-full w-1/2 opacity-10 pointer-events-none">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={weeklyTrendData}>
+              <AreaChart data={managerAnalytics?.weeklyTrendData || []}>
                 <Area type="monotone" dataKey="score" stroke={COLORS.orange} fill={COLORS.orange} strokeWidth={4} />
               </AreaChart>
             </ResponsiveContainer>
@@ -915,7 +852,7 @@ export default function ContributionScores({ session }: { session?: any }) {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {filteredInterns.map((intern, idx) => (
                     <tr
-                      key={intern.id}
+                      key={intern.userId}
                       className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group"
                     >
                       <td className="px-6 py-4 font-black text-slate-400 dark:text-slate-600">
@@ -950,12 +887,12 @@ export default function ContributionScores({ session }: { session?: any }) {
                       </td>
                       <td className="px-6 py-4">
                         <span className={cn(
-                          "flex items-center text-xs font-bold",
-                          parseFloat(intern.trend) > 0 ? "text-emerald-600" : "text-rose-600"
-                        )}>
-                          {parseFloat(intern.trend) > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                          {Math.abs(parseFloat(intern.trend))}%
-                        </span>
+                                "text-xs font-bold",
+                                intern.trend.startsWith('+') ? "text-emerald-500" : intern.trend.startsWith('-') ? "text-rose-500" : "text-rose-500"
+                              )}>
+                                {intern.trend.startsWith('+') ? <TrendingUp className="inline h-3 w-3 mr-1" /> : <TrendingDown className="inline h-3 w-3 mr-1" />}
+                                {intern.trend}
+                              </span>
                       </td>
                       <td className="px-6 py-4">
                         <Badge variant="outline" className={cn(
@@ -1042,7 +979,7 @@ export default function ContributionScores({ session }: { session?: any }) {
             <CardContent className="p-5">
               <div className="h-[180px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={deptData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                  <BarChart data={managerAnalytics?.avgScoreByDept || []} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} className="text-slate-500" />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} className="text-slate-500" domain={[60, 100]} />
@@ -1064,7 +1001,7 @@ export default function ContributionScores({ session }: { session?: any }) {
             </CardHeader>
             <CardContent className="p-5 pt-2 space-y-3">
               {needsAttention.map(intern => (
-                <div key={intern.id} className="flex items-center justify-between bg-white dark:bg-slate-900 p-3 rounded-xl border border-rose-100 dark:border-rose-900/30">
+                <div key={intern.userId} className="flex items-center justify-between bg-white dark:bg-slate-900 p-3 rounded-xl border border-rose-100 dark:border-rose-900/30">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-rose-100 text-rose-700 text-xs font-bold">{intern.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
