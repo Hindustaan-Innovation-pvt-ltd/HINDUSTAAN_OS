@@ -235,6 +235,23 @@ export function generateMeetingText(link: string, dateTime: string, platform: st
   return txt;
 }
 
+export function stripAllMeetingBlocks(html: string): string {
+  if (!html) return '';
+  return html
+    .replace(MEETING_HTML_REGEX, '')
+    .replace(/<div[^>]*id="hip-meeting-card"[^>]*>[\s\S]*?<\/div>/gi, '')
+    .replace(/<div[^>]*>[\s\S]*?(?:Onboarding\s+Video\s+Meeting|Video\s+Meeting|Meeting\s+Invitation)[\s\S]*?Join\s+Meeting[\s\S]*?<\/div>\s*<\/div>/gi, '')
+    .replace(/<div[^>]*style="[^"]*background:\s*#(?:fff7ed|f8fafc|fff|eff6ff)[^"]*"[^>]*>[\s\S]*?(?:Onboarding\s+Video\s+Meeting|Video\s+Meeting)[\s\S]*?<\/div>/gi, '');
+}
+
+export function stripAllMeetingTextBlocks(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(MEETING_TEXT_REGEX, '')
+    .replace(/=== VIDEO MEETING DETAILS ===[\s\S]*?===========================/gi, '')
+    .replace(/Video Meeting:[\s\S]*?Join Link:[\s\S]*?\n/gi, '');
+}
+
 export function injectMeetingBlock(
   html: string,
   link: string,
@@ -242,18 +259,17 @@ export function injectMeetingBlock(
   platform: string = 'google_meet'
 ): string {
   const block = generateMeetingHtml(link, dateTime, platform);
-  if (html.includes('<!-- HIP_MEETING_START -->')) {
-    return html.replace(MEETING_HTML_REGEX, block);
-  }
-  const closingIdx = html.search(/<(?:p|div)[^>]*>(?:Sincerely|Warm regards|Best regards|Yours sincerely|Authorized Signatory)/i);
+  const cleanHtml = stripAllMeetingBlocks(html);
+
+  const closingIdx = cleanHtml.search(/<(?:p|div)[^>]*>(?:Sincerely|Warm regards|Best regards|Yours sincerely|Authorized Signatory)/i);
   if (closingIdx !== -1) {
-    return html.slice(0, closingIdx) + block + '\n' + html.slice(closingIdx);
+    return cleanHtml.slice(0, closingIdx) + block + '\n' + cleanHtml.slice(closingIdx);
   }
-  const lastDivIdx = html.lastIndexOf('</div>');
+  const lastDivIdx = cleanHtml.lastIndexOf('</div>');
   if (lastDivIdx !== -1) {
-    return html.slice(0, lastDivIdx) + block + '\n' + html.slice(lastDivIdx);
+    return cleanHtml.slice(0, lastDivIdx) + block + '\n' + cleanHtml.slice(lastDivIdx);
   }
-  return html + '\n' + block;
+  return cleanHtml + '\n' + block;
 }
 
 export function injectMeetingTextBlock(
@@ -263,14 +279,13 @@ export function injectMeetingTextBlock(
   platform: string = 'google_meet'
 ): string {
   const block = generateMeetingText(link, dateTime, platform);
-  if (text.includes('=== VIDEO MEETING DETAILS ===')) {
-    return text.replace(MEETING_TEXT_REGEX, block);
-  }
-  const closingIdx = text.search(/(?:Sincerely,|Warm regards,|Best regards,|Yours sincerely,)/i);
+  const cleanText = stripAllMeetingTextBlocks(text);
+
+  const closingIdx = cleanText.search(/(?:Sincerely,|Warm regards,|Best regards,|Yours sincerely,)/i);
   if (closingIdx !== -1) {
-    return text.slice(0, closingIdx) + block + '\n' + text.slice(closingIdx);
+    return cleanText.slice(0, closingIdx) + block + '\n' + cleanText.slice(closingIdx);
   }
-  return text + '\n' + block;
+  return cleanText + '\n' + block;
 }
 
 // Helper to interpolate raw templates with form values
@@ -377,6 +392,7 @@ export default function EmailComposerModal({
   const [plainText, setPlainText] = useState('');
   const [isEditablePreview, setIsEditablePreview] = useState(false);
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [previewRenderId, setPreviewRenderId] = useState(0);
 
   // AI Generation inputs
   const [candidateName, setCandidateName] = useState('');
@@ -530,6 +546,7 @@ export default function EmailComposerModal({
           const schedule = meetingDateTime || 'Tomorrow, 04:00 PM IST';
           setHtmlBody((prev) => injectMeetingBlock(prev, cleaned, schedule, detected));
           setPlainText((prev) => injectMeetingTextBlock(prev, cleaned, schedule, detected));
+          setPreviewRenderId((prev) => prev + 1);
         }
         const platformName = detected === 'google_meet' ? 'Google Meet (Saved as default)' : detected === 'zoom' ? 'Zoom' : detected === 'teams' ? 'Microsoft Teams' : 'Meeting';
         toast.success(`Pasted ${platformName} link from clipboard!`);
@@ -565,6 +582,7 @@ export default function EmailComposerModal({
               setHtmlBody((prev) => injectMeetingBlock(prev, cleaned, schedule, detected));
               setPlainText((prev) => injectMeetingTextBlock(prev, cleaned, schedule, detected));
               setAttachMeetingToEmail(true);
+              setPreviewRenderId((prev) => prev + 1);
               const platformTitle = detected === 'google_meet' ? 'Google Meet' : detected === 'zoom' ? 'Zoom' : 'Microsoft Teams';
               toast.success(`⚡ Automatically detected ${platformTitle} link & attached to letter!`, {
                 description: cleaned,
@@ -630,6 +648,8 @@ export default function EmailComposerModal({
     // Update Plain Text
     setPlainText((prev) => injectMeetingTextBlock(prev, activeLink, activeTime, activePlatform));
 
+    setPreviewRenderId((prev) => prev + 1);
+
     const platformName = activePlatform === 'google_meet' ? 'Google Meet' : activePlatform === 'zoom' ? 'Zoom' : activePlatform === 'teams' ? 'Microsoft Teams' : 'Meeting';
     toast.success(`${platformName} invitation added to letter!`);
   };
@@ -668,8 +688,9 @@ export default function EmailComposerModal({
   // Remove meeting invitation from draft
   const handleRemoveMeeting = () => {
     setAttachMeetingToEmail(false);
-    setHtmlBody((prev) => prev.replace(MEETING_HTML_REGEX, ''));
-    setPlainText((prev) => prev.replace(MEETING_TEXT_REGEX, ''));
+    setHtmlBody((prev) => stripAllMeetingBlocks(prev));
+    setPlainText((prev) => stripAllMeetingTextBlocks(prev));
+    setPreviewRenderId((prev) => prev + 1);
   };
 
   // Fetch templates on mount
@@ -790,6 +811,7 @@ export default function EmailComposerModal({
     setSubject(rendered.subject);
     setHtmlBody(activeHtml);
     setPlainText(activeText);
+    setPreviewRenderId((prev) => prev + 1);
   };
 
   const handleTemplateChange = (id: string) => {
@@ -847,11 +869,13 @@ export default function EmailComposerModal({
       setSubject(rendered.subject);
       setHtmlBody(activeHtml);
       setPlainText(activeText);
+      setPreviewRenderId((prev) => prev + 1);
     } else {
       // Direct replace fallback
       if (key === 'name' && candidateName) {
         setHtmlBody(prev => prev.replace(new RegExp(candidateName, 'g'), value));
         setSubject(prev => prev.replace(new RegExp(candidateName, 'g'), value));
+        setPreviewRenderId((prev) => prev + 1);
       }
     }
   };
@@ -893,22 +917,30 @@ export default function EmailComposerModal({
       const res = await api.post('/email/ai-generate', payload);
       if (res.data?.success && res.data.data) {
         const newSubj = res.data.data.subject || subject;
-        const newHtml = res.data.data.htmlBody || htmlBody;
+        let newHtml = res.data.data.htmlBody || htmlBody;
+        let newText = res.data.data.textBody ? formatPlainText(res.data.data.textBody) : htmlToPlainText(newHtml);
+
+        // Strip any rogue duplicate AI meeting cards so only ONE official meeting card exists
+        newHtml = stripAllMeetingBlocks(newHtml);
+        newText = stripAllMeetingTextBlocks(newText);
+
+        const activeMeet = meetingLink.trim() || (() => {
+          try { return (localStorage.getItem('hip_default_google_meet_link') || '').trim(); } catch { return ''; }
+        })();
+
+        if (attachMeetingToEmail && activeMeet) {
+          const schedule = meetingDateTime || 'Tomorrow, 04:00 PM IST';
+          newHtml = injectMeetingBlock(newHtml, activeMeet, schedule, meetingPlatform);
+          newText = injectMeetingTextBlock(newText, activeMeet, schedule, meetingPlatform);
+        }
+
         setRawSubjectTemplate(newSubj);
         setRawHtmlTemplate(newHtml);
         setSubject(newSubj);
-
-        if (emailFormat === 'html') {
-          setHtmlBody(newHtml);
-          setPlainText(res.data.data.textBody ? formatPlainText(res.data.data.textBody) : htmlToPlainText(newHtml));
-        } else {
-          const newText = formatPlainText(res.data.data.textBody || plainText);
-          setPlainText(newText);
-          if (res.data.data.htmlBody) {
-            setHtmlBody(res.data.data.htmlBody);
-          }
-        }
+        setHtmlBody(newHtml);
+        setPlainText(newText);
         setLastSummary(res.data.data.summary || 'Draft generated by Groq AI');
+        setPreviewRenderId(prev => prev + 1);
         toast.success(`Generated via Groq AI (${emailFormat.toUpperCase()})!`, {
           description: res.data.data.summary
         });
@@ -938,22 +970,30 @@ export default function EmailComposerModal({
       });
       if (res.data?.success && res.data.data) {
         const newSubj = res.data.data.subject || subject;
-        const newHtml = res.data.data.htmlBody || htmlBody;
+        let newHtml = res.data.data.htmlBody || htmlBody;
+        let newText = res.data.data.textBody ? formatPlainText(res.data.data.textBody) : htmlToPlainText(newHtml);
+
+        // Strip any rogue duplicate AI meeting cards so only ONE official meeting card exists
+        newHtml = stripAllMeetingBlocks(newHtml);
+        newText = stripAllMeetingTextBlocks(newText);
+
+        const activeMeet = meetingLink.trim() || (() => {
+          try { return (localStorage.getItem('hip_default_google_meet_link') || '').trim(); } catch { return ''; }
+        })();
+
+        if (attachMeetingToEmail && activeMeet) {
+          const schedule = meetingDateTime || 'Tomorrow, 04:00 PM IST';
+          newHtml = injectMeetingBlock(newHtml, activeMeet, schedule, meetingPlatform);
+          newText = injectMeetingTextBlock(newText, activeMeet, schedule, meetingPlatform);
+        }
+
         setRawSubjectTemplate(newSubj);
         setRawHtmlTemplate(newHtml);
         setSubject(newSubj);
-
-        if (emailFormat === 'html') {
-          setHtmlBody(newHtml);
-          setPlainText(res.data.data.textBody ? formatPlainText(res.data.data.textBody) : htmlToPlainText(newHtml));
-        } else {
-          const newText = formatPlainText(res.data.data.textBody || plainText);
-          setPlainText(newText);
-          if (res.data.data.htmlBody) {
-            setHtmlBody(res.data.data.htmlBody);
-          }
-        }
+        setHtmlBody(newHtml);
+        setPlainText(newText);
         setLastSummary(res.data.data.summary || 'Refined by Groq AI');
+        setPreviewRenderId(prev => prev + 1);
         toast.success(`Refined: "${instruction}"`);
       }
     } catch (err: any) {
@@ -2418,6 +2458,7 @@ export default function EmailComposerModal({
                 {/* Mode A: Rich HTML Letterhead */}
                 {emailFormat === 'html' ? (
                   <div
+                    key={`html-preview-${previewRenderId}`}
                     contentEditable={isEditablePreview}
                     suppressContentEditableWarning
                     onBlur={(e) => {
@@ -2454,6 +2495,7 @@ export default function EmailComposerModal({
 
                     {/* Plain Text Content */}
                     <div
+                      key={`plain-preview-${previewRenderId}`}
                       contentEditable={isEditablePreview}
                       suppressContentEditableWarning
                       onBlur={(e) => {
