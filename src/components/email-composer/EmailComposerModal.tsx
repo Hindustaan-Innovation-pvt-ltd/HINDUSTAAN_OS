@@ -388,7 +388,7 @@ export default function EmailComposerModal({
   onOpenChange,
   onSuccess,
   initialRecipient = '',
-  initialCategory = 'internship'
+  initialCategory = 'none'
 }: EmailComposerModalProps) {
   const { user } = useUser();
   const role = (user?.role || 'admin').toLowerCase();
@@ -422,10 +422,10 @@ export default function EmailComposerModal({
 
   // AI Generation inputs
   const [candidateName, setCandidateName] = useState('');
-  const [candidateRole, setCandidateRole] = useState('Full Stack Intern');
-  const [stipend, setStipend] = useState('₹15,000 / month');
+  const [candidateRole, setCandidateRole] = useState('');
+  const [stipend, setStipend] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
-  const [duration, setDuration] = useState('3 Months');
+  const [duration, setDuration] = useState('');
   const [tone, setTone] = useState('Formal & Encouraging');
   const [customPrompt, setCustomPrompt] = useState('');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
@@ -722,6 +722,9 @@ export default function EmailComposerModal({
   // Fetch templates on mount
   useEffect(() => {
     if (open) {
+      if (!initialCategory || initialCategory === 'none') {
+        handleApplyBlankCanvas();
+      }
       fetchTemplates();
       if (initialRecipient && !recipientsList.includes(initialRecipient)) {
         setRecipientsList([initialRecipient]);
