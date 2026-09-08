@@ -10,7 +10,7 @@ import {
   Mail, Sparkles, Send, Eye, Edit3, Printer, RefreshCw, 
   X, Check, AlertCircle, FileText, CheckCircle2,
   Building2, ShieldCheck, Laptop, Smartphone, Wand2, Type, LayoutTemplate,
-  Paperclip, Users, Search, Download, Trash2, Calendar
+  Paperclip, Users, Search, Download, Trash2, Calendar, Plus
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -252,6 +252,18 @@ export default function EmailComposerModal({
   const [isSearchingRecipients, setIsSearchingRecipients] = useState(false);
   const [showSuggestionsDropdown, setShowSuggestionsDropdown] = useState(false);
   const searchDebounceRef = useRef<any>(null);
+  const recipientContainerRef = useRef<HTMLDivElement>(null);
+
+  // Close autocomplete dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (recipientContainerRef.current && !recipientContainerRef.current.contains(e.target as Node)) {
+        setShowSuggestionsDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Gmail-style Attachments state
   const [attachments, setAttachments] = useState<EmailAttachmentItem[]>([]);
@@ -259,6 +271,12 @@ export default function EmailComposerModal({
 
   // Bulk CSV / Paste mode modal state
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+
+  // New Custom Template modal state
+  const [isCreateTemplateOpen, setIsCreateTemplateOpen] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [newTemplateCategory, setNewTemplateCategory] = useState('internship');
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
   // Fetch templates on mount
   useEffect(() => {
@@ -287,6 +305,37 @@ export default function EmailComposerModal({
       console.error('Failed to load templates:', err);
     } finally {
       setLoadingTemplates(false);
+    }
+  };
+
+  // Save currently drafted letter as a new official preset template
+  const handleSaveNewTemplate = async () => {
+    if (!newTemplateName.trim()) {
+      toast.error('Please enter a template name');
+      return;
+    }
+    try {
+      setIsSavingTemplate(true);
+      const res = await api.post('/email/templates', {
+        name: newTemplateName.trim(),
+        category: newTemplateCategory,
+        subject: subject || 'Official Communication – Hindustan Innovation',
+        htmlBody: htmlBody || `<div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b;">${plainText}</div>`,
+        variables: ['candidateName', 'role', 'stipend', 'startDate', 'duration', 'reportingManager']
+      });
+
+      if (res.data?.success && res.data.data) {
+        const createdT = res.data.data;
+        setTemplates(prev => [...prev, createdT]);
+        setSelectedTemplateId(createdT.id);
+        toast.success(`Template "${createdT.name}" saved to presets!`);
+        setIsCreateTemplateOpen(false);
+        setNewTemplateName('');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to save template');
+    } finally {
+      setIsSavingTemplate(false);
     }
   };
 
@@ -484,6 +533,8 @@ export default function EmailComposerModal({
       return;
     }
 
+    setShowSuggestionsDropdown(true);
+
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     searchDebounceRef.current = setTimeout(async () => {
       try {
@@ -498,16 +549,16 @@ export default function EmailComposerModal({
       } finally {
         setIsSearchingRecipients(false);
       }
-    }, 180);
+    }, 100);
   };
 
   const selectSuggestion = (targetUser: { name: string; email: string; role: string }) => {
-    addRecipient(targetUser.email);
-    if (!candidateName || candidateName === 'Candidate' || candidateName === 'Aarav Sharma') {
-      handleFieldChange('name', targetUser.name);
-    }
+    if (!targetUser.email) return;
+    setRecipientsList(prev => Array.from(new Set([...prev, targetUser.email])));
+    handleFieldChange('name', targetUser.name);
     setShowSuggestionsDropdown(false);
     setNewRecipientInput('');
+    toast.success(`Selected ${targetUser.name} (${targetUser.email})`);
   };
 
   // File Attachments Handler
@@ -557,7 +608,23 @@ export default function EmailComposerModal({
   const addRecipient = (target?: string) => {
     const value = (target || newRecipientInput).trim();
     if (!value) return;
+
+    // If query matches suggestions and user pressed Enter / Add without an @ symbol, auto-select first suggestion
+    if (!target && recipientSuggestions.length > 0 && !value.includes('@')) {
+      selectSuggestion(recipientSuggestions[0]);
+      return;
+    }
+
     const items = value.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
+
+    // Validate email format if manual input
+    if (!target) {
+      const invalidEmails = items.filter(item => !item.includes('@'));
+      if (invalidEmails.length > 0) {
+        toast.error(`"${invalidEmails.join(', ')}" is not a valid email address. Please select from workspace members or enter a valid email.`);
+        return;
+      }
+    }
 
     if (isManager) {
       const restricted = items.some(item => 
@@ -786,10 +853,28 @@ export default function EmailComposerModal({
             
             {/* Template Selector Bar */}
             <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/40">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5 flex items-center gap-1.5">
-                <FileText className="h-4 w-4 text-orange-500" /> Choose Pre-Fixed Template Preset
-              </label>
-              <Select value={selectedTemplateId} onValueChange={handleTemplateChange}>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <FileText className="h-4 w-4 text-orange-500" /> Choose Pre-Fixed Template Preset
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateTemplateOpen(true)}
+                  className="text-[11px] font-bold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" /> + New Template
+                </button>
+              </div>
+              <Select 
+                value={selectedTemplateId} 
+                onValueChange={(val) => {
+                  if (val === '__add_new__') {
+                    setIsCreateTemplateOpen(true);
+                  } else {
+                    handleTemplateChange(val);
+                  }
+                }}
+              >
                 <SelectTrigger className="w-full text-xs font-bold rounded-xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 h-9.5">
                   <SelectValue placeholder="Select official template..." />
                 </SelectTrigger>
@@ -800,6 +885,11 @@ export default function EmailComposerModal({
                       <span className="text-[10px] text-slate-400 ml-2">({t.category})</span>
                     </SelectItem>
                   ))}
+                  <SelectItem value="__add_new__" className="text-xs font-bold text-orange-600 dark:text-orange-400 border-t border-slate-100 dark:border-slate-800 mt-1 cursor-pointer">
+                    <span className="flex items-center gap-1.5">
+                      <Plus className="h-3.5 w-3.5 text-orange-500" /> + Add / Save Current as New Template
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -824,6 +914,19 @@ export default function EmailComposerModal({
                       Drafting as <strong>{emailFormat === 'html' ? 'Rich Corporate Letterhead' : 'Clean Plain Text'}</strong>. 
                       Fill candidate details below or give custom instructions.
                     </span>
+                  </div>
+
+                  {/* Email Subject Line Field */}
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                      Email Subject Line
+                    </label>
+                    <Input
+                      placeholder="e.g. Internship Offer Letter – Full Stack Intern at Hindustan Innovation Pvt Ltd"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-bold"
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -1055,7 +1158,7 @@ export default function EmailComposerModal({
                 </div>
 
                 {/* Add Email Bar with Live Autocomplete */}
-                <div className="relative">
+                <div ref={recipientContainerRef} className="relative">
                   <div className="flex gap-1.5">
                     <div className="relative flex-1">
                       <Input
@@ -1063,16 +1166,17 @@ export default function EmailComposerModal({
                         value={newRecipientInput}
                         onChange={(e) => handleRecipientInputChange(e.target.value)}
                         onFocus={() => {
-                          if (recipientSuggestions.length > 0) setShowSuggestionsDropdown(true);
+                          if (newRecipientInput.trim() || recipientSuggestions.length > 0) {
+                            setShowSuggestionsDropdown(true);
+                          }
                         }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ',') {
                             e.preventDefault();
                             addRecipient();
-                            setShowSuggestionsDropdown(false);
                           }
                         }}
-                        className="text-xs h-8.5 pl-8 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+                        className="text-xs h-8.5 pl-8 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:border-orange-500"
                       />
                       <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                       {isSearchingRecipients && (
@@ -1081,66 +1185,80 @@ export default function EmailComposerModal({
                     </div>
                     <Button
                       type="button"
-                      onClick={() => {
-                        addRecipient();
-                        setShowSuggestionsDropdown(false);
-                      }}
+                      onClick={() => addRecipient()}
                       size="sm"
                       variant="outline"
-                      className="h-8.5 text-xs font-bold rounded-xl border-slate-200 dark:border-slate-700 cursor-pointer"
+                      className="h-8.5 text-xs font-bold rounded-xl border-slate-200 dark:border-slate-700 hover:border-orange-500 hover:text-orange-600 cursor-pointer shadow-xs"
                     >
                       + Add
                     </Button>
                   </div>
 
                   {/* Suggestions Popover Dropdown */}
-                  {showSuggestionsDropdown && recipientSuggestions.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 animate-in fade-in slide-in-from-top-1 duration-150">
+                  {showSuggestionsDropdown && (newRecipientInput.trim() || recipientSuggestions.length > 0) && (
+                    <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 animate-in fade-in slide-in-from-top-1 duration-150">
                       <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
                         <span>Workspace Members ({recipientSuggestions.length})</span>
                         <button
                           type="button"
                           onClick={() => setShowSuggestionsDropdown(false)}
-                          className="hover:text-slate-600 dark:hover:text-slate-200"
+                          className="hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                         >
                           <X className="h-3 w-3" />
                         </button>
                       </div>
-                      {recipientSuggestions.map((userItem) => {
-                        const roleColor =
-                          userItem.role === 'INTERN'
-                            ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'
-                            : userItem.role === 'MANAGER'
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                            : userItem.role === 'ADMIN'
-                            ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20'
-                            : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
 
-                        return (
-                          <div
-                            key={userItem.id}
-                            onClick={() => selectSuggestion(userItem)}
-                            className="p-2.5 flex items-center justify-between hover:bg-orange-50/60 dark:hover:bg-orange-950/20 cursor-pointer transition-colors"
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="h-7 w-7 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-300 shrink-0">
-                                {userItem.name?.charAt(0)?.toUpperCase() || 'U'}
+                      {isSearchingRecipients && recipientSuggestions.length === 0 ? (
+                        <div className="p-3.5 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin text-orange-500" /> Searching workspace members...
+                        </div>
+                      ) : recipientSuggestions.length === 0 ? (
+                        <div className="p-3 text-center text-xs text-slate-400">
+                          No workspace member found for &ldquo;{newRecipientInput}&rdquo;. Press Enter or &quot;+ Add&quot; to use as email.
+                        </div>
+                      ) : (
+                        recipientSuggestions.map((userItem) => {
+                          const roleUpper = (userItem.role || 'INTERN').toUpperCase();
+                          const roleColor =
+                            roleUpper === 'INTERN'
+                              ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'
+                              : roleUpper === 'MANAGER'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                              : roleUpper === 'ADMIN'
+                              ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20'
+                              : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
+
+                          return (
+                            <div
+                              key={userItem.id}
+                              onClick={() => selectSuggestion(userItem)}
+                              className="p-2.5 flex items-center justify-between hover:bg-orange-50/70 dark:hover:bg-orange-950/30 cursor-pointer transition-colors group"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="h-7 w-7 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold text-xs flex items-center justify-center shrink-0 border border-orange-500/20">
+                                  {userItem.name?.charAt(0)?.toUpperCase() || 'U'}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-orange-600 transition-colors truncate leading-tight">
+                                    {userItem.name}
+                                  </p>
+                                  <p className="text-[11px] text-slate-600 dark:text-slate-300 font-mono font-medium truncate leading-tight mt-0.5">
+                                    {userItem.email}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate leading-tight">
-                                  {userItem.name}
-                                </p>
-                                <p className="text-[11px] text-slate-500 truncate leading-tight">
-                                  {userItem.email}
-                                </p>
+                              <div className="flex items-center gap-2 shrink-0 ml-2">
+                                <Badge className={`text-[10px] font-bold border px-1.5 py-0.5 rounded ${roleColor}`}>
+                                  {roleUpper}
+                                </Badge>
+                                <span className="text-[10px] text-orange-600 dark:text-orange-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                  + Select
+                                </span>
                               </div>
                             </div>
-                            <Badge className={`text-[10px] font-bold border px-1.5 py-0.5 rounded shrink-0 ml-2 ${roleColor}`}>
-                              {userItem.role}
-                            </Badge>
-                          </div>
-                        );
-                      })}
+                          );
+                        })
+                      )}
                     </div>
                   )}
                 </div>
@@ -1293,14 +1411,16 @@ export default function EmailComposerModal({
             </div>
 
             {/* Email Subject Header Bar in Preview */}
-            <div className="px-6 py-2.5 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2 shrink-0">
-              <span className="text-xs font-bold text-slate-500">Subject:</span>
+            <div className="px-6 py-2.5 bg-slate-50/90 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2.5 shrink-0">
+              <span className="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5 shrink-0">
+                <Edit3 className="h-3.5 w-3.5 text-orange-500" /> Subject:
+              </span>
               <input
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="Email Subject Line..."
-                className="flex-1 bg-transparent border-none text-xs font-bold text-slate-900 dark:text-white focus:outline-hidden"
+                placeholder="Click to edit subject line..."
+                className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-orange-400 focus:border-orange-500 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:outline-none transition-all shadow-2xs"
               />
             </div>
 
@@ -1337,7 +1457,17 @@ export default function EmailComposerModal({
                     <div className="pb-4 border-b border-slate-200 dark:border-slate-800 text-xs space-y-2 text-slate-600 dark:text-slate-400">
                       <p><strong className="text-slate-900 dark:text-slate-100 font-bold">From:</strong> Hindustan OS &lt;kushinde13@gmail.com&gt;</p>
                       <p><strong className="text-slate-900 dark:text-slate-100 font-bold">To:</strong> <span className="text-slate-800 dark:text-slate-200">{recipientsList.length > 0 ? recipientsList.join(', ') : 'recipient@example.com'}</span></p>
-                      <p><strong className="text-slate-900 dark:text-slate-100 font-bold">Subject:</strong> <span className="text-slate-900 dark:text-white font-bold">{subject || '(No Subject)'}</span></p>
+                      <div className="flex items-center gap-1.5">
+                        <strong className="text-slate-900 dark:text-slate-100 font-bold shrink-0">Subject:</strong>
+                        <input
+                          type="text"
+                          value={subject}
+                          onChange={(e) => setSubject(e.target.value)}
+                          placeholder="(Click to edit Subject)"
+                          className="flex-1 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-orange-500 rounded px-1.5 py-0.5 text-xs font-bold text-slate-900 dark:text-white transition-all focus:outline-none"
+                          title="Click to edit subject"
+                        />
+                      </div>
                     </div>
 
                     {/* Plain Text Content */}
@@ -1397,6 +1527,106 @@ export default function EmailComposerModal({
             if (onSuccess) onSuccess();
           }}
         />
+
+        {/* Create / Save Preset Template Modal */}
+        <Dialog open={isCreateTemplateOpen} onOpenChange={setIsCreateTemplateOpen}>
+          <DialogContent className="max-w-md p-6 bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[60]">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <FileText className="h-4 w-4 text-orange-500" /> Save as Preset Template
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">
+                Save the current letter content and subject as a reusable official template in workspace presets.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Template Name <span className="text-rose-500">*</span>
+                </label>
+                <Input
+                  placeholder="e.g. Probation Extension & Performance Review"
+                  value={newTemplateName}
+                  onChange={(e) => setNewTemplateName(e.target.value)}
+                  className="text-xs rounded-xl h-9"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Category
+                </label>
+                <Select value={newTemplateCategory} onValueChange={setNewTemplateCategory}>
+                  <SelectTrigger className="text-xs rounded-xl h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="internship">Internship Offer / Agreement</SelectItem>
+                    <SelectItem value="offer_letter">Full-Time Employment Offer</SelectItem>
+                    <SelectItem value="certificate">Experience Certificate</SelectItem>
+                    <SelectItem value="notice">Performance / Review Notice</SelectItem>
+                    <SelectItem value="announcement">Corporate Announcement</SelectItem>
+                    <SelectItem value="custom">Custom Workspace Template</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Subject Line Template
+                </label>
+                <Input
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="text-xs rounded-xl h-9 text-slate-700 dark:text-slate-300 font-bold"
+                />
+              </div>
+
+              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-[11px] text-slate-500">
+                <p className="font-semibold text-slate-700 dark:text-slate-300 mb-1">Captured Letter Content:</p>
+                <p className="line-clamp-2 italic text-slate-600 dark:text-slate-400">
+                  {emailFormat === 'html'
+                    ? (htmlBody.replace(/<[^>]+>/g, ' ').slice(0, 120) || 'Empty HTML content')
+                    : (plainText.slice(0, 120) || 'Empty plain text')}...
+                </p>
+                <p className="text-[10px] text-orange-600 dark:text-orange-400 font-semibold mt-1">
+                  Format: {emailFormat === 'html' ? 'Rich HTML Letterhead' : 'Plain Text'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCreateTemplateOpen(false)}
+                className="text-xs font-bold rounded-xl cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSaveNewTemplate}
+                disabled={isSavingTemplate || !newTemplateName.trim()}
+                className="text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer"
+              >
+                {isSavingTemplate ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Saving Preset...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-3.5 w-3.5" /> Save as Preset Template
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );
