@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
+import { formatDateToCustom } from './EmailComposerModal';
 
 export interface BulkRecipientItem {
   id: string;
@@ -116,7 +117,8 @@ export default function BulkCsvImportModal({
       const name = (parts[nameIdx] || parts[0] || '').trim();
       const role = (parts[roleIdx] || 'Full Stack Intern').trim();
       const stipend = (parts[stipendIdx] || '₹15,000 / month').trim();
-      const startDate = (parts[startIdx] || new Date().toISOString().slice(0, 10)).trim();
+      const rawStartDate = (parts[startIdx] || new Date().toISOString().slice(0, 10)).trim();
+      const startDate = formatDateToCustom(rawStartDate) || '08-Sep-2026';
       const duration = (parts[durationIdx] || '3 Months').trim();
 
       if (email && email.includes('@')) {
@@ -160,10 +162,10 @@ export default function BulkCsvImportModal({
   // Download Sample CSV template
   const handleDownloadSampleCsv = () => {
     const sample = `Name,Email,Role,Stipend,StartDate,Duration
-Aarav Sharma,aarav@example.com,Full Stack Intern,₹15,000 / month,2026-09-15,3 Months
-Priya Verma,priya@example.com,UI/UX Design Intern,₹12,000 / month,2026-09-15,3 Months
-Rohan Mehta,rohan@example.com,Backend Engineer Intern,₹18,000 / month,2026-09-15,6 Months
-Ananya Patel,ananya@example.com,Data Science Intern,₹15,000 / month,2026-09-15,3 Months`;
+Aarav Sharma,aarav@example.com,Full Stack Intern,₹15,000 / month,08-Sep-2026,3 Months
+Priya Verma,priya@example.com,UI/UX Design Intern,₹12,000 / month,08-Sep-2026,3 Months
+Rohan Mehta,rohan@example.com,Backend Engineer Intern,₹18,000 / month,15-Sep-2026,6 Months
+Ananya Patel,ananya@example.com,Data Science Intern,₹15,000 / month,01-Oct-2026,3 Months`;
 
     const blob = new Blob([sample], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -365,6 +367,7 @@ Ananya Patel,ananya@example.com,Data Science Intern,₹15,000 / month,2026-09-15
                       <th className="p-2.5">Email</th>
                       <th className="p-2.5">Role</th>
                       <th className="p-2.5">Stipend</th>
+                      <th className="p-2.5">Start Date</th>
                       <th className="p-2.5">Duration</th>
                       <th className="p-2.5 text-center">Action</th>
                     </tr>
@@ -377,6 +380,11 @@ Ananya Patel,ananya@example.com,Data Science Intern,₹15,000 / month,2026-09-15
                         <td className="p-2.5 text-indigo-600 dark:text-indigo-400 font-medium">{row.email}</td>
                         <td className="p-2.5">{row.role}</td>
                         <td className="p-2.5 font-semibold text-emerald-600 dark:text-emerald-400">{row.stipend}</td>
+                        <td className="p-2.5 font-medium text-slate-600 dark:text-slate-300">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200">
+                            {row.startDate}
+                          </span>
+                        </td>
                         <td className="p-2.5">{row.duration}</td>
                         <td className="p-2.5 text-center">
                           <button

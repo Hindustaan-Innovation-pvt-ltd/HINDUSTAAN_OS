@@ -10,7 +10,7 @@ import {
   Mail, Sparkles, Send, Eye, Edit3, Printer, RefreshCw, 
   X, Check, AlertCircle, FileText, CheckCircle2,
   Building2, ShieldCheck, Laptop, Smartphone, Wand2, Type, LayoutTemplate,
-  Paperclip, Users, Search, Download, Trash2
+  Paperclip, Users, Search, Download, Trash2, Calendar
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -81,6 +81,45 @@ export function htmlToPlainText(html: string): string {
   return text.trim();
 }
 
+// Formats any date into strict DD-MMM-YYYY (e.g. 08-Sep-2026)
+export function formatDateToCustom(dateInput: string | Date | undefined | null): string {
+  if (!dateInput) return '';
+  const str = String(dateInput).trim();
+  // Already in DD-MMM-YYYY format?
+  if (/^\d{2}-[A-Za-z]{3}-\d{4}$/.test(str)) {
+    return str;
+  }
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  // Handle YYYY-MM-DD
+  if (/^\d{4}-\d{1,2}-\d{1,2}/.test(str)) {
+    const parts = str.split('T')[0].split('-');
+    const year = parts[0];
+    const monthIdx = parseInt(parts[1], 10) - 1;
+    const day = parts[2].slice(0, 2).padStart(2, '0');
+    if (months[monthIdx]) {
+      return `${day}-${months[monthIdx]}-${year}`;
+    }
+  }
+  // Handle DD/MM/YYYY or DD-MM-YYYY
+  if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(str)) {
+    const parts = str.split(/[\/\-]/);
+    const day = parts[0].padStart(2, '0');
+    const monthIdx = parseInt(parts[1], 10) - 1;
+    const year = parts[2];
+    if (months[monthIdx]) {
+      return `${day}-${months[monthIdx]}-${year}`;
+    }
+  }
+  const d = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  if (!isNaN(d.getTime())) {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+  return str;
+}
+
 // Helper to interpolate raw templates with form values
 export function interpolateTemplate(
   rawHtml: string,
@@ -96,13 +135,16 @@ export function interpolateTemplate(
     dateStr: string;
   }
 ) {
+  const formattedStartDate = formatDateToCustom(data.startDate) || '08-Sep-2026';
+  const formattedCurrentDate = formatDateToCustom(data.dateStr) || '08-Sep-2026';
+
   let endDateStr = '3 Months from joining';
   try {
     const d = new Date(data.startDate);
     if (!isNaN(d.getTime())) {
       const numMonths = parseInt(data.duration, 10) || 3;
       d.setMonth(d.getMonth() + numMonths);
-      endDateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      endDateStr = formatDateToCustom(d);
     }
   } catch (e) {
     endDateStr = '3 Months from joining';
@@ -118,25 +160,26 @@ export function interpolateTemplate(
     .replace(/{{name}}/g, safeName)
     .replace(/{{employeeName}}/g, safeName)
     .replace(/{{role}}/g, safeRole)
-    .replace(/{{stipend}}/g, safeStipend);
+    .replace(/{{stipend}}/g, safeStipend)
+    .replace(/{{startDate}}/g, formattedStartDate);
 
   let h = (rawHtml || '')
     .replace(/{{referenceId}}/g, data.refId)
-    .replace(/{{currentDate}}/g, data.dateStr)
+    .replace(/{{currentDate}}/g, formattedCurrentDate)
     .replace(/{{candidateName}}/g, safeName)
     .replace(/{{name}}/g, safeName)
     .replace(/{{employeeName}}/g, safeName)
     .replace(/{{role}}/g, safeRole)
     .replace(/{{stipend}}/g, safeStipend)
     .replace(/{{annualCTC}}/g, safeStipend)
-    .replace(/{{startDate}}/g, data.startDate)
+    .replace(/{{startDate}}/g, formattedStartDate)
     .replace(/{{endDate}}/g, endDateStr)
     .replace(/{{duration}}/g, safeDuration)
     .replace(/{{reportingManager}}/g, data.manager)
     .replace(/{{workLocation}}/g, 'Headquarters / Remote')
     .replace(/{{projectAccomplished}}/g, 'Full Stack Enterprise Systems Development')
     .replace(/{{performanceRating}}/g, 'Exemplary / Outstanding')
-    .replace(/{{reviewDate}}/g, data.startDate)
+    .replace(/{{reviewDate}}/g, formattedStartDate)
     .replace(/{{areasOfImprovement}}/g, 'Deepening system architecture & cross-functional documentation')
     .replace(/{{supportAction}}/g, 'Dedicated 1-on-1 mentorship and weekly technical check-ins');
 
@@ -171,7 +214,7 @@ export default function EmailComposerModal({
   const [rawHtmlTemplate, setRawHtmlTemplate] = useState('');
   const [currentRefId, setCurrentRefId] = useState('2659');
   const [currentDateStr, setCurrentDateStr] = useState(
-    new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    formatDateToCustom(new Date())
   );
 
   // Active email content
@@ -252,7 +295,7 @@ export default function EmailComposerModal({
     setRawSubjectTemplate(t.subject);
     setRawHtmlTemplate(t.htmlBody);
 
-    const todayStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const todayStr = formatDateToCustom(new Date());
     const randomRef = Math.floor(1000 + Math.random() * 9000).toString();
     setCurrentDateStr(todayStr);
     setCurrentRefId(randomRef);
@@ -816,12 +859,20 @@ export default function EmailComposerModal({
                     </div>
                     <div>
                       <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Start Date</label>
-                      <Input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => handleFieldChange('startDate', e.target.value)}
-                        className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                      />
+                      <div className="relative inline-flex items-center w-full">
+                        <input
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => handleFieldChange('startDate', e.target.value)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        />
+                        <div className="w-full h-9 px-3 rounded-full border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1.5 shadow-inner transition-colors cursor-pointer group">
+                          <span className="text-[11px] font-bold tracking-wide text-white">
+                            {formatDateToCustom(startDate) || '08-Sep-2026'}
+                          </span>
+                          <Calendar className="h-3.5 w-3.5 text-slate-400 group-hover:text-white transition-colors shrink-0" />
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Duration</label>
