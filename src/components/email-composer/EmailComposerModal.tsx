@@ -1343,7 +1343,7 @@ export default function EmailComposerModal({
               <DialogTitle className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
                 Email & Letterhead Composer
                 <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20 text-[10px] font-bold px-2 py-0.5">
-                  <Sparkles className="h-3 w-3 mr-1 inline" /> Groq AI (0.1s)
+                  <Sparkles className="h-3 w-3 mr-1 inline" /> Groq AI
                 </Badge>
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500 hidden sm:block">

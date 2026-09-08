@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { 
   Mail, CheckCircle2, AlertCircle, Clock, Search, RefreshCw, Eye, Download, 
-  FileSpreadsheet, Filter, X, ChevronLeft, ChevronRight, Calendar, AlertTriangle, Sparkles
+  FileSpreadsheet, Filter, X, ChevronLeft, ChevronRight, Calendar, AlertTriangle, Sparkles,
+  Video, ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -541,7 +542,16 @@ export default function EmailLogsModule() {
                         <div className="font-bold text-sm text-slate-900 dark:text-white leading-tight">{log.recipient}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-slate-600 dark:text-slate-300 truncate max-w-[200px]">{log.subject}</div>
+                        <div className="flex items-center gap-1.5 max-w-[280px]">
+                          <span className="text-sm font-medium text-slate-600 dark:text-slate-300 truncate" title={log.subject}>
+                            {log.subject}
+                          </span>
+                          {(log.body?.includes('meet.google.com') || log.type?.includes('Meet')) && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 shrink-0" title="Includes Google Meet Room">
+                              <Video className="h-3 w-3" /> Meet
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">{log.type}</span>
@@ -598,43 +608,78 @@ export default function EmailLogsModule() {
       {/* View Email Content Dialog */}
       <Dialog open={selectedLog !== null} onOpenChange={(open) => !open && setSelectedLog(null)}>
         {selectedLog && (
-          <DialogContent className="sm:max-w-[550px] rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]">
-            <DialogHeader className="border-b border-slate-100 dark:border-slate-800/60 pb-3">
-              <DialogTitle className="text-slate-900 dark:text-white flex items-center gap-2">
-                <Mail className="h-5 w-5 text-orange-500" /> View Email Content
+          <DialogContent className="sm:max-w-[720px] max-h-[85vh] flex flex-col rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] p-6 overflow-hidden">
+            <DialogHeader className="border-b border-slate-100 dark:border-slate-800/60 pb-3 shrink-0">
+              <DialogTitle className="text-slate-900 dark:text-white flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Mail className="h-5 w-5 text-orange-500" /> Dispatched Email Details
+                </span>
+                {selectedLog.body?.includes('meet.google.com') && (
+                  <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/25 text-xs font-bold gap-1">
+                    <Video className="h-3.5 w-3.5" /> Google Meet Attached
+                  </Badge>
+                )}
               </DialogTitle>
               <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs">
                 Email message ID: {selectedLog.id}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="py-4 space-y-4 text-sm">
-              <div className="grid grid-cols-3 gap-2 py-2 border-b border-slate-100 dark:border-slate-800/60">
+            <div className="py-3 space-y-3 text-sm flex-1 overflow-y-auto custom-scrollbar pr-1">
+              <div className="grid grid-cols-3 gap-2 py-1.5 border-b border-slate-100 dark:border-slate-800/60 text-xs">
                 <span className="font-extrabold text-slate-500 uppercase text-[10px] tracking-wider">Recipient</span>
                 <span className="col-span-2 font-bold text-slate-900 dark:text-white">{selectedLog.recipient}</span>
               </div>
-              <div className="grid grid-cols-3 gap-2 py-2 border-b border-slate-100 dark:border-slate-800/60">
+              <div className="grid grid-cols-3 gap-2 py-1.5 border-b border-slate-100 dark:border-slate-800/60 text-xs">
                 <span className="font-extrabold text-slate-500 uppercase text-[10px] tracking-wider">Subject</span>
                 <span className="col-span-2 font-bold text-slate-900 dark:text-white">{selectedLog.subject}</span>
               </div>
-              <div className="grid grid-cols-3 gap-2 py-2 border-b border-slate-100 dark:border-slate-800/60">
-                <span className="font-extrabold text-slate-500 uppercase text-[10px] tracking-wider">Email Type</span>
-                <span className="col-span-2">
-                  <Badge variant="outline" className="text-xs font-bold border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">{selectedLog.type}</Badge>
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2 py-2 border-b border-slate-100 dark:border-slate-800/60">
+              <div className="grid grid-cols-3 gap-2 py-1.5 border-b border-slate-100 dark:border-slate-800/60 text-xs">
                 <span className="font-extrabold text-slate-500 uppercase text-[10px] tracking-wider">Sent By / Date</span>
                 <span className="col-span-2 text-slate-700 dark:text-slate-300 font-medium">
-                  {selectedLog.sentBy} on {selectedLog.sentDate}
+                  {selectedLog.sentBy} • {selectedLog.sentDate} ({selectedLog.deliveryStatus})
                 </span>
               </div>
-              
-              <div className="space-y-2 mt-4">
-                <span className="font-extrabold text-slate-500 uppercase text-[10px] tracking-wider block">Message Body</span>
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-medium whitespace-pre-wrap leading-relaxed max-h-[220px] overflow-y-auto">
-                  {selectedLog.body}
-                </div>
+
+              {/* Quick Google Meet Direct Room Access Banner */}
+              {selectedLog.body?.includes('meet.google.com') && (() => {
+                const meetMatch = selectedLog.body.match(/https:\/\/meet\.google\.com\/[a-z0-9-]+/i);
+                const meetUrl = meetMatch ? meetMatch[0] : '';
+                return meetUrl ? (
+                  <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/25 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-8 w-8 rounded-lg bg-orange-500 text-white flex items-center justify-center font-bold shrink-0">
+                        <Video className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">Google Meet Conference Room</div>
+                        <div className="text-[11px] text-slate-500 font-mono select-all">{meetUrl}</div>
+                      </div>
+                    </div>
+                    <a
+                      href={meetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold flex items-center gap-1 shrink-0 transition-colors shadow-sm"
+                    >
+                      Join / Test Room <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                ) : null;
+              })()}
+
+              <div className="space-y-1.5 pt-1">
+                <span className="font-extrabold text-slate-500 uppercase text-[10px] tracking-wider block">Full Email Content & Letterhead</span>
+                {selectedLog.body && (selectedLog.body.includes('<div') || selectedLog.body.includes('<p') || selectedLog.body.includes('<table')) ? (
+                  <div 
+                    className="p-4 rounded-xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 max-h-[380px] overflow-y-auto shadow-inner"
+                    dangerouslySetInnerHTML={{ __html: selectedLog.body }}
+                  />
+                ) : (
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-medium whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto">
+                    {selectedLog.body}
+                  </div>
+                )}
               </div>
             </div>
 
