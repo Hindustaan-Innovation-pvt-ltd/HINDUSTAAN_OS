@@ -239,9 +239,8 @@ export function stripAllMeetingBlocks(html: string): string {
   if (!html) return '';
   return html
     .replace(MEETING_HTML_REGEX, '')
-    .replace(/<div[^>]*id="hip-meeting-card"[^>]*>[\s\S]*?<\/div>/gi, '')
-    .replace(/<div[^>]*>[\s\S]*?(?:Onboarding\s+Video\s+Meeting|Video\s+Meeting|Meeting\s+Invitation)[\s\S]*?Join\s+Meeting[\s\S]*?<\/div>\s*<\/div>/gi, '')
-    .replace(/<div[^>]*style="[^"]*background:\s*#(?:fff7ed|f8fafc|fff|eff6ff)[^"]*"[^>]*>[\s\S]*?(?:Onboarding\s+Video\s+Meeting|Video\s+Meeting)[\s\S]*?<\/div>/gi, '');
+    .replace(/<div[^>]*id="hip-meeting-card"[\s\S]*?<\/table>\s*<\/div>/gi, '')
+    .replace(/<div[^>]*style="[^"]*#(?:fff7ed|fed7aa|fef3c7)[^"]*"[^>]*>(?:(?!<div)[\s\S])*?Onboarding Video Meeting[\s\S]*?<\/div>/gi, '');
 }
 
 export function stripAllMeetingTextBlocks(text: string): string {
@@ -2451,8 +2450,8 @@ export default function EmailComposerModal({
               <div
                 className={`transition-all duration-300 ${
                   previewDevice === 'mobile'
-                    ? 'w-[390px] shadow-2xl rounded-3xl border-8 border-slate-800 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 p-3'
-                    : 'w-full max-w-[760px] shadow-2xl rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden'
+                    ? 'w-[390px] shadow-2xl rounded-3xl border-8 border-slate-800 dark:border-slate-700 overflow-hidden bg-white text-slate-900 p-3'
+                    : 'w-full max-w-[760px] shadow-2xl rounded-2xl bg-white text-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden'
                 }`}
               >
                 {/* Mode A: Rich HTML Letterhead */}
