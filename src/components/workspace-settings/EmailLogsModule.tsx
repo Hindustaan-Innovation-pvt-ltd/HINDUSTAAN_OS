@@ -7,11 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { 
   Mail, CheckCircle2, AlertCircle, Clock, Search, RefreshCw, Eye, Download, 
-  FileSpreadsheet, Filter, X, ChevronLeft, ChevronRight, Calendar, AlertTriangle
+  FileSpreadsheet, Filter, X, ChevronLeft, ChevronRight, Calendar, AlertTriangle, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { useUser } from '@/context/UserContext';
+import EmailComposerModal from '@/components/email-composer/EmailComposerModal';
 
 export interface EmailLog {
   id: string;
@@ -46,6 +47,7 @@ export default function EmailLogsModule() {
 
   // Send Test Email State
   const [isTestEmailOpen, setIsTestEmailOpen] = useState(false);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [recipientsList, setRecipientsList] = useState<string[]>(['bhupesh@ssipmt.com']);
   const [newRecipientInput, setNewRecipientInput] = useState('');
   const [testTemplate, setTestTemplate] = useState('test');
@@ -391,11 +393,19 @@ export default function EmailLogsModule() {
             {/* Actions */}
             <div className="flex flex-wrap items-center gap-2">
               <Button 
+                onClick={() => setIsComposerOpen(true)} 
+                size="sm" 
+                className="rounded-xl font-bold bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white shadow-md shadow-orange-500/20 cursor-pointer gap-1.5"
+              >
+                <Sparkles className="h-4 w-4" /> Compose Email (AI Powered)
+              </Button>
+              <Button 
                 onClick={() => setIsTestEmailOpen(true)} 
                 size="sm" 
-                className="rounded-xl font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-sm cursor-pointer"
+                variant="outline"
+                className="rounded-xl font-bold border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
               >
-                <Mail className="h-4 w-4 mr-1.5" /> Send Test Email
+                <Mail className="h-4 w-4 mr-1.5 text-orange-500" /> Send Test Email
               </Button>
               <Button 
                 onClick={handleDownloadLogs} 
@@ -784,6 +794,13 @@ export default function EmailLogsModule() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Advanced AI Email & Letterhead Composer Modal */}
+      <EmailComposerModal
+        open={isComposerOpen}
+        onOpenChange={setIsComposerOpen}
+        onSuccess={fetchLogs}
+      />
     </div>
   );
 }

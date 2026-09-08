@@ -18,6 +18,9 @@ import {
 import { cn } from '@/lib/utils';
 import api from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
+import { Sparkles } from 'lucide-react';
+import EmailComposerModal from '@/components/email-composer/EmailComposerModal';
 
 // --- Mock Data ---
 
@@ -58,6 +61,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function OverviewDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
   const user = getCurrentUser();
 
   useEffect(() => {
@@ -92,9 +96,19 @@ export default function OverviewDashboard() {
     <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
       
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Project Overview</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Real-time metrics and sprint velocity tracking.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Project Overview</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Real-time metrics and sprint velocity tracking.</p>
+        </div>
+        {(user?.role === 'manager' || user?.role === 'admin') && (
+          <Button
+            onClick={() => setIsComposerOpen(true)}
+            className="rounded-xl font-bold bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white shadow-md shadow-orange-500/20 text-xs gap-1.5 self-start sm:self-auto cursor-pointer"
+          >
+            <Sparkles className="h-4 w-4" /> Send Offer / Letterhead Email
+          </Button>
+        )}
       </div>
 
       {/* GRID AREA 1: TOP PERFORMANCE STATS ROW */}
@@ -352,6 +366,12 @@ export default function OverviewDashboard() {
         </div>
 
       </div>
+
+      {/* Email & Letterhead Composer Modal */}
+      <EmailComposerModal
+        open={isComposerOpen}
+        onOpenChange={setIsComposerOpen}
+      />
     </div>
   );
 }
