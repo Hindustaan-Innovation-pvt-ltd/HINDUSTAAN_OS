@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -540,6 +540,65 @@ export default function EmailComposerModal({
       toast.error('Could not access clipboard. Please paste directly into the box.');
     }
   };
+
+  // Auto-grab and attach meeting link when user copies it in Google Meet and returns to this window!
+  useEffect(() => {
+    if (!open) return;
+    const handleWindowFocus = async () => {
+      try {
+        if (!navigator.clipboard || !navigator.clipboard.readText) return;
+        const text = await navigator.clipboard.readText();
+        if (text && text.trim()) {
+          const cleaned = text.trim();
+          if (cleaned.includes('meet.google.com/') || cleaned.includes('zoom.us/') || cleaned.includes('teams.')) {
+            // If link changed or current is empty
+            if (cleaned !== meetingLink) {
+              setMeetingLink(cleaned);
+              const detected = detectPlatformFromUrl(cleaned);
+              setMeetingPlatform(detected);
+              if (detected === 'google_meet') {
+                try {
+                  localStorage.setItem('hip_default_google_meet_link', cleaned);
+                } catch (e) {}
+              }
+              const schedule = meetingDateTime || 'Tomorrow, 04:00 PM IST';
+              setHtmlBody((prev) => injectMeetingBlock(prev, cleaned, schedule, detected));
+              setPlainText((prev) => injectMeetingTextBlock(prev, cleaned, schedule, detected));
+              setAttachMeetingToEmail(true);
+              const platformTitle = detected === 'google_meet' ? 'Google Meet' : detected === 'zoom' ? 'Zoom' : 'Microsoft Teams';
+              toast.success(`⚡ Automatically detected ${platformTitle} link & attached to letter!`, {
+                description: cleaned,
+                duration: 5000
+              });
+            }
+          }
+        }
+      } catch (err) {
+        // clipboard access might be restricted until user interacts, safely ignore
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    return () => window.removeEventListener('focus', handleWindowFocus);
+  }, [open, meetingLink, meetingDateTime]);
+
+  // Real-time format validation for Google Meet codes (preventing missing letters / invalid formats)
+  const meetValidation = useMemo(() => {
+    if (!meetingLink.trim() || meetingPlatform !== 'google_meet') return null;
+    const match = meetingLink.match(/meet\.google\.com\/([a-z0-9-]+)/i);
+    if (!match) return { valid: false, message: 'Invalid URL. Correct format: https://meet.google.com/xxx-yyyy-zzz' };
+    const code = match[1].replace(/[^a-z0-9]/gi, '');
+    if (code.length === 10) {
+      return { valid: true, message: '✓ Valid Google Meet Room Format (10 characters: ' + match[1] + ')' };
+    } else if (code.length < 10) {
+      return { 
+        valid: false, 
+        message: `⚠️ Incomplete room code (${code.length}/10 letters). Google Meet codes have 10 letters (e.g. xxx-yyyy-zzz). Check if the last letter is missing!` 
+      };
+    } else {
+      return { valid: true, message: '✓ Google Meet Room: ' + match[1] };
+    }
+  }, [meetingLink, meetingPlatform]);
 
   // Generate Google Meet format link (inform user that Google requires room creation)
   const handleGenerateGoogleMeet = () => {
@@ -1749,6 +1808,20 @@ export default function EmailComposerModal({
                           </Button>
                         )}
                       </div>
+                      {meetValidation && (
+                        <div className={`text-[10px] font-semibold mt-1.5 px-2 py-1 rounded-md border flex items-center gap-1.5 ${
+                          meetValidation.valid
+                            ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-400'
+                            : 'bg-amber-500/10 border-amber-500/25 text-amber-700 dark:text-amber-400'
+                        }`}>
+                          {meetValidation.valid ? (
+                            <CheckCircle2 className="h-3 w-3 shrink-0" />
+                          ) : (
+                            <AlertCircle className="h-3 w-3 shrink-0" />
+                          )}
+                          <span>{meetValidation.message}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Meeting Date & Time */}
