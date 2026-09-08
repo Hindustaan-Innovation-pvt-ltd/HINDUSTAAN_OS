@@ -11,7 +11,8 @@ import {
   X, Check, AlertCircle, FileText, CheckCircle2,
   Building2, ShieldCheck, Laptop, Smartphone, Wand2, Type, LayoutTemplate,
   Paperclip, Users, Search, Download, Trash2, Calendar, Plus,
-  Video, ExternalLink, Clock, Copy, Briefcase, ChevronDown, Award, Megaphone
+  Video, ExternalLink, Clock, Copy, Briefcase, ChevronDown, Award, Megaphone,
+  Settings, Lock, EyeOff, KeyRound
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -340,9 +341,16 @@ export function interpolateTemplate(
     certProject?: string;
     certRating?: string;
     announcementAction?: string;
+    interviewDate?: string;
+    interviewTime?: string;
+    interviewMode?: string;
+    interviewLocation?: string;
+    interviewTopics?: string;
+    interviewTools?: string;
   }
 ) {
   const formattedStartDate = formatDateToCustom(data.startDate) || '08-Sep-2026';
+  const formattedInterviewDate = formatDateToCustom(data.interviewDate || data.startDate) || '08-Sep-2026';
   const formattedCurrentDate = formatDateToCustom(data.dateStr) || '08-Sep-2026';
 
   let endDateStr = '3 Months from joining';
@@ -368,7 +376,9 @@ export function interpolateTemplate(
     .replace(/{{employeeName}}/g, safeName)
     .replace(/{{role}}/g, safeRole)
     .replace(/{{stipend}}/g, safeStipend)
-    .replace(/{{startDate}}/g, formattedStartDate);
+    .replace(/{{startDate}}/g, formattedStartDate)
+    .replace(/{{interviewDate}}/g, formattedInterviewDate)
+    .replace(/{{interviewTime}}/g, data.interviewTime || '3:30 PM');
 
   let h = (rawHtml || '')
     .replace(/{{referenceId}}/g, data.refId || '3796')
@@ -389,7 +399,13 @@ export function interpolateTemplate(
     .replace(/{{reviewDate}}/g, formattedStartDate)
     .replace(/{{areasOfImprovement}}/g, data.noticeAreas?.trim() || 'Deepening system architecture & cross-functional documentation')
     .replace(/{{supportAction}}/g, data.noticeAction?.trim() || 'Dedicated 1-on-1 mentorship and weekly technical check-ins')
-    .replace(/{{actionRequired}}/g, data.announcementAction?.trim() || 'Please review the instructions and align with your team.');
+    .replace(/{{actionRequired}}/g, data.announcementAction?.trim() || 'Please review the instructions and align with your team.')
+    .replace(/{{interviewDate}}/g, formattedInterviewDate)
+    .replace(/{{interviewTime}}/g, data.interviewTime || '3:30 PM')
+    .replace(/{{interviewMode}}/g, data.interviewMode || 'In person')
+    .replace(/{{interviewLocation}}/g, data.interviewLocation || 'Hindustaan Innovations Private Limited, Raipur, Chhattisgarh')
+    .replace(/{{interviewTopics}}/g, data.interviewTopics || 'graphic designing, social media management, content creation, branding, creative campaigns, and social media growth strategies')
+    .replace(/{{interviewTools}}/g, data.interviewTools || 'Canva, Photoshop, Illustrator, video editing tools, and other relevant platforms');
 
   if (data.includeRef === false) {
     h = stripReferenceFromHtml(h);
@@ -413,8 +429,8 @@ export default function EmailComposerModal({
   const role = (user?.role || 'admin').toLowerCase();
   const isManager = role === 'manager';
 
-  // Format toggle: Rich HTML letterhead vs Simple Plain Email
-  const [emailFormat, setEmailFormat] = useState<'html' | 'text'>('html');
+  // Format toggle: Rich HTML letterhead vs Simple Plain Email (Plain text as default)
+  const [emailFormat, setEmailFormat] = useState<'html' | 'text'>('text');
 
   // Templates state
   const [templates, setTemplates] = useState<EmailTemplateItem[]>([]);
@@ -455,6 +471,17 @@ export default function EmailComposerModal({
   const [customRefId, setCustomRefId] = useState('');
 
   // Category specific fields
+  const [interviewDate, setInterviewDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [interviewTime, setInterviewTime] = useState('3:30 PM');
+  const [interviewMode, setInterviewMode] = useState('In person');
+  const [interviewLocation, setInterviewLocation] = useState('Hindustaan Innovations Private Limited, Raipur, Chhattisgarh');
+  const [interviewTopics, setInterviewTopics] = useState('graphic designing, social media management, content creation, branding, creative campaigns, and social media growth strategies');
+  const [interviewTools, setInterviewTools] = useState('Canva, Photoshop, Illustrator, video editing tools, and other relevant platforms');
+
   const [noticeAreas, setNoticeAreas] = useState('Deepening system architecture & cross-functional documentation');
   const [noticeAction, setNoticeAction] = useState('Dedicated 1-on-1 mentorship and weekly technical check-ins');
   const [certProject, setCertProject] = useState('Full Stack Enterprise Systems Development');
@@ -465,10 +492,25 @@ export default function EmailComposerModal({
   const [isEditTemplateOpen, setIsEditTemplateOpen] = useState(false);
   const [editTemplateId, setEditTemplateId] = useState('');
   const [editTemplateName, setEditTemplateName] = useState('');
-  const [editTemplateCategory, setEditTemplateCategory] = useState('notice');
+  const [editTemplateCategory, setEditTemplateCategory] = useState('interview');
   const [editTemplateSubject, setEditTemplateSubject] = useState('');
   const [editTemplateHtmlBody, setEditTemplateHtmlBody] = useState('');
   const [isUpdatingTemplate, setIsUpdatingTemplate] = useState(false);
+  const [isDeletingTemplate, setIsDeletingTemplate] = useState(false);
+
+  // Dynamic Encrypted SMTP Configuration state
+  const [isSmtpConfigOpen, setIsSmtpConfigOpen] = useState(false);
+  const [smtpHost, setSmtpHost] = useState('');
+  const [smtpPort, setSmtpPort] = useState(465);
+  const [smtpSecure, setSmtpSecure] = useState(true);
+  const [smtpUserEmail, setSmtpUserEmail] = useState('');
+  const [smtpPassword, setSmtpPassword] = useState('');
+  const [smtpSenderName, setSmtpSenderName] = useState('Hindustaan Innovations HR');
+  const [smtpSenderEmail, setSmtpSenderEmail] = useState('');
+  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
+  const [isTestingSmtp, setIsTestingSmtp] = useState(false);
+  const [isSavingSmtp, setIsSavingSmtp] = useState(false);
+  const [hasConfiguredSmtp, setHasConfiguredSmtp] = useState(false);
 
   // Recipients
   const [recipientsList, setRecipientsList] = useState<string[]>(initialRecipient ? [initialRecipient] : []);
@@ -765,6 +807,7 @@ export default function EmailComposerModal({
         handleApplyBlankCanvas();
       }
       fetchTemplates();
+      fetchSmtpConfig();
       if (initialRecipient && !recipientsList.includes(initialRecipient)) {
         setRecipientsList([initialRecipient]);
       }
@@ -885,7 +928,7 @@ export default function EmailComposerModal({
 
     const rendered = interpolateTemplate(t.htmlBody, t.subject, {
       name: candidateName || 'Aarav Sharma',
-      role: candidateRole,
+      role: candidateRole || (t.category === 'interview' ? 'Graphic Designer & Social Media Manager' : ''),
       stipend,
       startDate,
       duration,
@@ -897,7 +940,13 @@ export default function EmailComposerModal({
       noticeAction,
       certProject,
       certRating,
-      announcementAction
+      announcementAction,
+      interviewDate,
+      interviewTime,
+      interviewMode,
+      interviewLocation,
+      interviewTopics,
+      interviewTools
     });
 
     let activeHtml = rendered.htmlBody;
@@ -981,7 +1030,13 @@ export default function EmailComposerModal({
             noticeAction,
             certProject,
             certRating,
-            announcementAction
+            announcementAction,
+            interviewDate,
+            interviewTime,
+            interviewMode,
+            interviewLocation,
+            interviewTopics,
+            interviewTools
           });
 
           let activeHtml = rendered.htmlBody;
@@ -1007,6 +1062,112 @@ export default function EmailComposerModal({
     }
   };
 
+  // Delete template via DELETE /api/email/templates/:id
+  const handleDeleteTemplate = async () => {
+    if (!editTemplateId) return;
+    if (!window.confirm(`Are you sure you want to permanently delete/remove template "${editTemplateName}"?`)) {
+      return;
+    }
+    try {
+      setIsDeletingTemplate(true);
+      const res = await api.delete(`/email/templates/${editTemplateId}`);
+      if (res.data?.success) {
+        toast.success(`Template "${editTemplateName}" deleted successfully!`);
+        setTemplates((prev) => prev.filter((t) => t.id !== editTemplateId));
+        if (selectedTemplateId === editTemplateId) {
+          handleApplyBlankCanvas();
+        }
+        setIsEditTemplateOpen(false);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete template');
+    } finally {
+      setIsDeletingTemplate(false);
+    }
+  };
+
+  // Fetch SMTP Configuration
+  const fetchSmtpConfig = async () => {
+    try {
+      const res = await api.get('/email/config');
+      if (res.data?.success && res.data.data) {
+        const cfg = res.data.data;
+        setSmtpHost(cfg.host || '');
+        setSmtpPort(cfg.port || 465);
+        setSmtpSecure(cfg.secure !== undefined ? cfg.secure : true);
+        setSmtpUserEmail(cfg.userEmail || '');
+        setSmtpSenderName(cfg.senderName || 'Hindustaan Innovations HR');
+        setSmtpSenderEmail(cfg.senderEmail || '');
+        setHasConfiguredSmtp(cfg.hasPassword || false);
+      }
+    } catch (err) {
+      console.error('Failed to load SMTP config:', err);
+    }
+  };
+
+  // Test SMTP Connection
+  const handleTestSmtp = async () => {
+    if (!smtpHost.trim() || !smtpUserEmail.trim()) {
+      toast.error('Please enter Host and User Email');
+      return;
+    }
+    try {
+      setIsTestingSmtp(true);
+      const res = await api.post('/email/config/test', {
+        host: smtpHost.trim(),
+        port: Number(smtpPort) || 465,
+        secure: smtpSecure,
+        userEmail: smtpUserEmail.trim(),
+        password: smtpPassword,
+        senderEmail: smtpSenderEmail.trim() || smtpUserEmail.trim()
+      });
+      if (res.data?.success) {
+        toast.success('SMTP Connection Verified Successfully!', {
+          description: res.data.message || 'Ready to send emails.'
+        });
+      } else {
+        toast.error(res.data?.message || 'SMTP connection failed');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'SMTP Connection Test Failed');
+    } finally {
+      setIsTestingSmtp(false);
+    }
+  };
+
+  // Save Dynamic SMTP Configuration
+  const handleSaveSmtp = async () => {
+    if (!smtpHost.trim() || !smtpUserEmail.trim()) {
+      toast.error('Host and User Email are required');
+      return;
+    }
+    try {
+      setIsSavingSmtp(true);
+      const res = await api.post('/email/config', {
+        host: smtpHost.trim(),
+        port: Number(smtpPort) || 465,
+        secure: smtpSecure,
+        userEmail: smtpUserEmail.trim(),
+        password: smtpPassword,
+        senderName: smtpSenderName.trim(),
+        senderEmail: smtpSenderEmail.trim() || smtpUserEmail.trim(),
+        isDefault: true
+      });
+      if (res.data?.success) {
+        toast.success('SMTP Configuration Saved & Encrypted!', {
+          description: 'Credentials secured with AES-256-GCM in database.'
+        });
+        setHasConfiguredSmtp(true);
+        setSmtpPassword('');
+        setIsSmtpConfigOpen(false);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to save SMTP configuration');
+    } finally {
+      setIsSavingSmtp(false);
+    }
+  };
+
   // Re-renders the preview instantly with any overridden field values
   const triggerLiveRender = (overrides?: {
     name?: string;
@@ -1021,6 +1182,12 @@ export default function EmailComposerModal({
     announcementAction?: string;
     includeRef?: boolean;
     refId?: string;
+    interviewDate?: string;
+    interviewTime?: string;
+    interviewMode?: string;
+    interviewLocation?: string;
+    interviewTopics?: string;
+    interviewTools?: string;
   }) => {
     const valName = overrides?.name !== undefined ? overrides.name : candidateName;
     const valRole = overrides?.role !== undefined ? overrides.role : candidateRole;
@@ -1034,6 +1201,12 @@ export default function EmailComposerModal({
     const valAnnAction = overrides?.announcementAction !== undefined ? overrides.announcementAction : announcementAction;
     const valIncludeRef = overrides?.includeRef !== undefined ? overrides.includeRef : includeRefNumber;
     const valRefId = overrides?.refId !== undefined ? overrides.refId : (customRefId || currentRefId);
+    const valInterviewDate = overrides?.interviewDate !== undefined ? overrides.interviewDate : interviewDate;
+    const valInterviewTime = overrides?.interviewTime !== undefined ? overrides.interviewTime : interviewTime;
+    const valInterviewMode = overrides?.interviewMode !== undefined ? overrides.interviewMode : interviewMode;
+    const valInterviewLocation = overrides?.interviewLocation !== undefined ? overrides.interviewLocation : interviewLocation;
+    const valInterviewTopics = overrides?.interviewTopics !== undefined ? overrides.interviewTopics : interviewTopics;
+    const valInterviewTools = overrides?.interviewTools !== undefined ? overrides.interviewTools : interviewTools;
 
     if (rawHtmlTemplate) {
       const rendered = interpolateTemplate(rawHtmlTemplate, rawSubjectTemplate || subject, {
@@ -1050,7 +1223,13 @@ export default function EmailComposerModal({
         noticeAction: valNoticeAction,
         certProject: valCertProj,
         certRating: valCertRate,
-        announcementAction: valAnnAction
+        announcementAction: valAnnAction,
+        interviewDate: valInterviewDate,
+        interviewTime: valInterviewTime,
+        interviewMode: valInterviewMode,
+        interviewLocation: valInterviewLocation,
+        interviewTopics: valInterviewTopics,
+        interviewTools: valInterviewTools
       });
 
       let activeHtml = rendered.htmlBody;
@@ -1127,6 +1306,24 @@ export default function EmailComposerModal({
     } else if (key === 'announcementAction') {
       setAnnouncementAction(value);
       triggerLiveRender({ announcementAction: value });
+    } else if (key === 'interviewDate') {
+      setInterviewDate(value);
+      triggerLiveRender({ interviewDate: value });
+    } else if (key === 'interviewTime') {
+      setInterviewTime(value);
+      triggerLiveRender({ interviewTime: value });
+    } else if (key === 'interviewMode') {
+      setInterviewMode(value);
+      triggerLiveRender({ interviewMode: value });
+    } else if (key === 'interviewLocation') {
+      setInterviewLocation(value);
+      triggerLiveRender({ interviewLocation: value });
+    } else if (key === 'interviewTopics') {
+      setInterviewTopics(value);
+      triggerLiveRender({ interviewTopics: value });
+    } else if (key === 'interviewTools') {
+      setInterviewTools(value);
+      triggerLiveRender({ interviewTools: value });
     }
   };
 
@@ -1573,6 +1770,22 @@ export default function EmailComposerModal({
               </button>
             </div>
 
+            {/* SMTP Settings Button */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                fetchSmtpConfig();
+                setIsSmtpConfigOpen(true);
+              }}
+              className="text-xs font-bold gap-1.5 rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer shadow-xs"
+              title="Configure Dynamic SMTP Server & Credentials (AES-256-GCM Encrypted)"
+            >
+              <Settings className="h-3.5 w-3.5 text-orange-500" />
+              SMTP Config
+            </Button>
+
             {/* Bulk Send Mode Button */}
             <Button
               type="button"
@@ -1734,7 +1947,9 @@ export default function EmailComposerModal({
                           className="w-full px-3.5 py-2.5 flex items-center justify-between text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
                         >
                           <div className="flex items-center gap-2">
-                            {activeCategory === 'notice' ? (
+                            {activeCategory === 'interview' ? (
+                              <Video className="h-3.5 w-3.5 text-orange-500" />
+                            ) : activeCategory === 'notice' ? (
                               <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
                             ) : activeCategory === 'certificate' ? (
                               <Award className="h-3.5 w-3.5 text-orange-500" />
@@ -1746,7 +1961,9 @@ export default function EmailComposerModal({
                               <Briefcase className="h-3.5 w-3.5 text-orange-500" />
                             )}
                             <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                              {activeCategory === 'notice'
+                              {activeCategory === 'interview'
+                                ? 'Interview Invitation & Schedule Details'
+                                : activeCategory === 'notice'
                                 ? 'Performance Review & Notice Details'
                                 : activeCategory === 'certificate'
                                 ? 'Experience Certificate Details'
@@ -1769,7 +1986,7 @@ export default function EmailComposerModal({
                         {isRoleFieldsOpen && (
                           <div className="p-3 pt-2 space-y-2.5 border-t border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/50">
                             {/* Notice / Reference Tracking ID Checkbox Control */}
-                            {activeCategory !== 'none' && activeCategory !== 'announcement' && (
+                            {activeCategory !== 'none' && activeCategory !== 'announcement' && activeCategory !== 'interview' && (
                               <div className="flex items-center justify-between p-2 rounded-lg bg-slate-100/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60">
                                 <label className="flex items-center gap-2 cursor-pointer text-[11px] font-semibold text-slate-700 dark:text-slate-300 select-none">
                                   <input
@@ -1799,6 +2016,101 @@ export default function EmailComposerModal({
                                   </div>
                                 )}
                               </div>
+                            )}
+
+                            {/* CANDIDATE INTERVIEW SHORTLIST (NO STIPEND! NO DURATION!) */}
+                            {activeCategory === 'interview' && (
+                              <>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Candidate Role / Designation
+                                  </label>
+                                  <Input
+                                    placeholder="e.g. Graphic Designer & Social Media Manager"
+                                    value={candidateRole}
+                                    onChange={(e) => handleFieldChange('role', e.target.value)}
+                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Interview Date
+                                    </label>
+                                    <div className="relative inline-flex items-center w-full">
+                                      <input
+                                        type="date"
+                                        value={interviewDate}
+                                        onChange={(e) => handleFieldChange('interviewDate', e.target.value)}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                      />
+                                      <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
+                                        <span className="text-[10px] font-bold tracking-wide text-white truncate">
+                                          {formatDateToCustom(interviewDate) || '08-Sep-2026'}
+                                        </span>
+                                        <Calendar className="h-3 w-3 text-slate-400 group-hover:text-white transition-colors shrink-0" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Interview Time
+                                    </label>
+                                    <Input
+                                      placeholder="e.g. 3:30 PM"
+                                      value={interviewTime}
+                                      onChange={(e) => handleFieldChange('interviewTime', e.target.value)}
+                                      className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Interview Mode
+                                    </label>
+                                    <Input
+                                      placeholder="e.g. In person or Google Meet"
+                                      value={interviewMode}
+                                      onChange={(e) => handleFieldChange('interviewMode', e.target.value)}
+                                      className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Interview Location
+                                    </label>
+                                    <Input
+                                      placeholder="e.g. Hindustaan Innovations Private Limited, Raipur, Chhattisgarh"
+                                      value={interviewLocation}
+                                      onChange={(e) => handleFieldChange('interviewLocation', e.target.value)}
+                                      className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Discussion Topics & Experience Focus
+                                  </label>
+                                  <Input
+                                    placeholder="e.g. graphic designing, social media management, content creation, branding"
+                                    value={interviewTopics}
+                                    onChange={(e) => handleFieldChange('interviewTopics', e.target.value)}
+                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Familiarity with Tools
+                                  </label>
+                                  <Input
+                                    placeholder="e.g. Canva, Photoshop, Illustrator, video editing tools"
+                                    value={interviewTools}
+                                    onChange={(e) => handleFieldChange('interviewTools', e.target.value)}
+                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                  />
+                                </div>
+                              </>
                             )}
 
                             {/* PERFORMANCE REVIEW / NOTICE CATEGORY (NO STIPEND! NO DURATION!) */}
@@ -3247,6 +3559,7 @@ export default function EmailComposerModal({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="interview">Candidate Shortlist & Interview</SelectItem>
                     <SelectItem value="internship">Internship Offer / Agreement</SelectItem>
                     <SelectItem value="offer_letter">Full-Time Employment Offer</SelectItem>
                     <SelectItem value="certificate">Experience Certificate</SelectItem>
@@ -3314,13 +3627,13 @@ export default function EmailComposerModal({
 
         {/* Edit Pre-Existing Template Dialog */}
         <Dialog open={isEditTemplateOpen} onOpenChange={setIsEditTemplateOpen}>
-          <DialogContent className="sm:max-w-[650px] p-6 rounded-2xl max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogContent className="sm:max-w-[680px] p-6 rounded-2xl max-h-[90vh] flex flex-col overflow-hidden">
             <DialogHeader className="pb-2 border-b border-slate-100 dark:border-slate-800">
               <DialogTitle className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Edit3 className="h-4 w-4 text-orange-500" /> Edit Template: {editTemplateName || 'Official Template'}
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500">
-                Modify this pre-existing template's name, category, default subject line, and HTML letterhead structure.
+                Rename, modify category, edit default subject line, adjust template structure, or delete/remove this template.
               </DialogDescription>
             </DialogHeader>
 
@@ -3328,10 +3641,10 @@ export default function EmailComposerModal({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Template Name
+                    Template Name / Rename
                   </label>
                   <Input
-                    placeholder="e.g. Performance Discussion & Review Notice"
+                    placeholder="e.g. Candidate Shortlist & Interview Invitation"
                     value={editTemplateName}
                     onChange={(e) => setEditTemplateName(e.target.value)}
                     className="text-xs rounded-xl h-9"
@@ -3346,6 +3659,7 @@ export default function EmailComposerModal({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="interview">Candidate Shortlist & Interview</SelectItem>
                       <SelectItem value="internship">Internship Offer / Agreement</SelectItem>
                       <SelectItem value="offer_letter">Full-Time Employment Offer</SelectItem>
                       <SelectItem value="certificate">Experience Certificate</SelectItem>
@@ -3392,6 +3706,12 @@ export default function EmailComposerModal({
                     '{{role}}',
                     '{{referenceId}}',
                     '{{currentDate}}',
+                    '{{interviewDate}}',
+                    '{{interviewTime}}',
+                    '{{interviewMode}}',
+                    '{{interviewLocation}}',
+                    '{{interviewTopics}}',
+                    '{{interviewTools}}',
                     '{{startDate}}',
                     '{{reviewDate}}',
                     '{{stipend}}',
@@ -3416,33 +3736,235 @@ export default function EmailComposerModal({
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 gap-2">
               <Button
                 type="button"
-                variant="ghost"
+                variant="destructive"
                 size="sm"
-                onClick={() => setIsEditTemplateOpen(false)}
-                className="text-xs font-bold rounded-xl cursor-pointer"
+                onClick={handleDeleteTemplate}
+                disabled={isDeletingTemplate}
+                className="text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white gap-1.5 cursor-pointer"
+                title="Permanently remove this template"
               >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleSaveEditedTemplate}
-                disabled={isUpdatingTemplate || !editTemplateName.trim() || !editTemplateHtmlBody.trim()}
-                className="text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer"
-              >
-                {isUpdatingTemplate ? (
+                {isDeletingTemplate ? (
                   <>
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Saving Changes...
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Removing...
                   </>
                 ) : (
                   <>
-                    <Check className="h-3.5 w-3.5" /> Save Changes
+                    <Trash2 className="h-3.5 w-3.5" /> Delete / Remove Template
                   </>
                 )}
               </Button>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsEditTemplateOpen(false)}
+                  className="text-xs font-bold rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleSaveEditedTemplate}
+                  disabled={isUpdatingTemplate || !editTemplateName.trim() || !editTemplateHtmlBody.trim()}
+                  className="text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer"
+                >
+                  {isUpdatingTemplate ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Saving Changes...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-3.5 w-3.5" /> Save Changes
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dynamic Encrypted SMTP Configuration Dialog */}
+        <Dialog open={isSmtpConfigOpen} onOpenChange={setIsSmtpConfigOpen}>
+          <DialogContent className="sm:max-w-[540px] p-6 rounded-2xl max-h-[90vh] flex flex-col overflow-hidden bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 shadow-2xl z-[70]">
+            <DialogHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-orange-500/10 text-orange-600 flex items-center justify-center">
+                    <Settings className="h-4 w-4" />
+                  </div>
+                  SMTP Server Configuration
+                </DialogTitle>
+                <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px] font-bold px-2 py-0.5 flex items-center gap-1">
+                  <Lock className="h-3 w-3" /> AES-256-GCM Encrypted
+                </Badge>
+              </div>
+              <DialogDescription className="text-xs text-slate-500 mt-1">
+                Configure your custom or corporate SMTP credentials. Your password is encrypted with AES-256-GCM in the database.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3.5 py-3 overflow-y-auto flex-1 pr-1">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    SMTP Host <span className="text-rose-500">*</span>
+                  </label>
+                  <Input
+                    placeholder="e.g. smtp.gmail.com or mail.hindustaan.com"
+                    value={smtpHost}
+                    onChange={(e) => setSmtpHost(e.target.value)}
+                    className="text-xs rounded-xl h-9 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Port
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="465"
+                    value={smtpPort}
+                    onChange={(e) => setSmtpPort(Number(e.target.value) || 465)}
+                    className="text-xs rounded-xl h-9 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <div>
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">SSL / TLS Encryption</p>
+                  <p className="text-[11px] text-slate-500">Recommended true for port 465 (SMTPS) or direct SSL</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={smtpSecure}
+                  onChange={(e) => setSmtpSecure(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400 cursor-pointer"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Username / SMTP Email <span className="text-rose-500">*</span>
+                  </label>
+                  <Input
+                    placeholder="e.g. hr@hindustaan.com"
+                    value={smtpUserEmail}
+                    onChange={(e) => setSmtpUserEmail(e.target.value)}
+                    className="text-xs rounded-xl h-9 font-medium"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Password {hasConfiguredSmtp ? '(Saved ✓)' : ''}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowSmtpPassword(!showSmtpPassword)}
+                      className="text-[10px] text-orange-500 hover:text-orange-600 font-bold"
+                    >
+                      {showSmtpPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                  <Input
+                    type={showSmtpPassword ? 'text' : 'password'}
+                    placeholder={hasConfiguredSmtp ? '•••••••• (Leave blank to keep saved)' : 'Enter SMTP password'}
+                    value={smtpPassword}
+                    onChange={(e) => setSmtpPassword(e.target.value)}
+                    className="text-xs rounded-xl h-9 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Sender Display Name
+                  </label>
+                  <Input
+                    placeholder="e.g. Hindustaan Innovations HR"
+                    value={smtpSenderName}
+                    onChange={(e) => setSmtpSenderName(e.target.value)}
+                    className="text-xs rounded-xl h-9 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    From / Reply-To Email
+                  </label>
+                  <Input
+                    placeholder="e.g. hr@hindustaan.com (optional)"
+                    value={smtpSenderEmail}
+                    onChange={(e) => setSmtpSenderEmail(e.target.value)}
+                    className="text-xs rounded-xl h-9 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-700 dark:text-amber-400 flex items-start gap-2">
+                <ShieldCheck className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <span>
+                  For Gmail, make sure to generate an <strong>App Password</strong> with 2-Step Verification enabled in your Google Account.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleTestSmtp}
+                disabled={isTestingSmtp || !smtpHost.trim() || !smtpUserEmail.trim()}
+                className="text-xs font-bold rounded-xl gap-1.5 cursor-pointer"
+              >
+                {isTestingSmtp ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin text-orange-500" /> Testing Connection...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Test Connection
+                  </>
+                )}
+              </Button>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsSmtpConfigOpen(false)}
+                  className="text-xs font-bold rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleSaveSmtp}
+                  disabled={isSavingSmtp || !smtpHost.trim() || !smtpUserEmail.trim()}
+                  className="text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer shadow-sm"
+                >
+                  {isSavingSmtp ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-3.5 w-3.5" /> Save Configuration
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
