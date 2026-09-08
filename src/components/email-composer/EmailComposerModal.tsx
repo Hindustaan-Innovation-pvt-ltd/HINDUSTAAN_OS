@@ -124,12 +124,18 @@ export function formatDateToCustom(dateInput: string | Date | undefined | null):
 export const MEETING_HTML_REGEX = /<!-- HIP_MEETING_START -->[\s\S]*?<!-- HIP_MEETING_END -->/g;
 export const MEETING_TEXT_REGEX = /=== VIDEO MEETING DETAILS ===[\s\S]*?===========================/g;
 
-export function generateMeetingHtml(link: string, dateTime: string, platform: string = 'google_meet'): string {
+export function generateMeetingHtml(link: string, dateTime: string, platform: string = 'instant'): string {
   const platformLabel = 
     platform === 'google_meet' ? 'Google Meet' :
-    platform === 'instant' ? 'Hindustan OS Live Conference' :
+    platform === 'instant' ? 'Hindustan OS Video Conference' :
     platform === 'zoom' ? 'Zoom Meeting' :
     platform === 'teams' ? 'Microsoft Teams' : 'Video Conference';
+
+  const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+    'Hindustan Innovation Pvt Ltd – Official Video Meeting'
+  )}&details=${encodeURIComponent(
+    `Official corporate video meeting invitation from Hindustan Innovation Pvt Ltd.\nJoin Video Link: ${link}\nScheduled Time: ${dateTime || 'As scheduled'}`
+  )}&location=${encodeURIComponent(link)}`;
 
   return `<!-- HIP_MEETING_START -->
 <div id="hip-meeting-card" style="margin: 22px 0; padding: 18px 20px; background: #0f172a; border-radius: 12px; border: 1px solid #334155; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-shadow: 0 8px 20px -4px rgba(0,0,0,0.25);">
@@ -137,7 +143,7 @@ export function generateMeetingHtml(link: string, dateTime: string, platform: st
     <tr>
       <td align="left" style="vertical-align: middle;">
         <span style="font-size: 15px; margin-right: 6px;">📹</span>
-        <strong style="font-size: 12px; color: #f97316; letter-spacing: 0.5px; text-transform: uppercase;">Official Video Meeting Invitation</strong>
+        <strong style="font-size: 12px; color: #f97316; letter-spacing: 0.5px; text-transform: uppercase;">Official Video Conference Invitation</strong>
       </td>
       <td align="right" style="vertical-align: middle;">
         <span style="background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.35); font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 9999px;">
@@ -148,28 +154,81 @@ export function generateMeetingHtml(link: string, dateTime: string, platform: st
   </table>
   <div style="font-size: 13px; color: #cbd5e1; line-height: 1.6; margin-bottom: 14px;">
     ${dateTime ? `<div style="margin-bottom: 5px;"><strong>🗓️ Scheduled Time:</strong> <span style="color: #ffffff; font-weight: 600;">${dateTime}</span></div>` : ''}
-    <div><strong>🔗 Meeting Link:</strong> <a href="${link}" target="_blank" style="color: #38bdf8; text-decoration: underline; word-break: break-all; font-weight: 600;">${link}</a></div>
+    <div><strong>🔗 Meeting Link:</strong> <a href="${link}" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: underline; word-break: break-all; font-weight: 600;">${link}</a></div>
   </div>
-  <div style="text-align: left; margin-top: 10px;">
-    <a href="${link}" target="_blank" style="display: inline-block; background: #ea580c; color: #ffffff; font-weight: 700; font-size: 13px; padding: 9px 20px; text-decoration: none; border-radius: 8px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);">
-      🚀 Join ${platformLabel} Now &rarr;
-    </a>
-  </div>
+  <table cellpadding="0" cellspacing="0" border="0" style="margin-top: 10px;">
+    <tr>
+      <td style="padding-right: 10px;">
+        <a href="${link}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: #ea580c; color: #ffffff; font-weight: 700; font-size: 13px; padding: 10px 22px; text-decoration: none; border-radius: 8px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);">
+          🚀 Join Live Meeting Now &rarr;
+        </a>
+      </td>
+      <td>
+        <a href="${gcalUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: #1e293b; color: #f8fafc; font-weight: 600; font-size: 12px; padding: 10px 16px; text-decoration: none; border-radius: 8px; border: 1px solid #475569;">
+          📅 Add to Google Calendar
+        </a>
+      </td>
+    </tr>
+  </table>
 </div>
 <!-- HIP_MEETING_END -->`;
 }
 
-export function generateMeetingText(link: string, dateTime: string, platform: string = 'google_meet'): string {
+export function generateMeetingText(link: string, dateTime: string, platform: string = 'instant'): string {
   const platformLabel = 
     platform === 'google_meet' ? 'Google Meet' :
-    platform === 'instant' ? 'Hindustan OS Live Conference' :
+    platform === 'instant' ? 'Hindustan OS Video Conference' :
     platform === 'zoom' ? 'Zoom Meeting' :
     platform === 'teams' ? 'Microsoft Teams' : 'Video Conference';
 
+  const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+    'Hindustan Innovation Pvt Ltd – Official Video Meeting'
+  )}&details=${encodeURIComponent(
+    `Official corporate video meeting invitation from Hindustan Innovation Pvt Ltd.\nJoin Video Link: ${link}\nScheduled Time: ${dateTime || 'As scheduled'}`
+  )}&location=${encodeURIComponent(link)}`;
+
   let txt = `\n=== VIDEO MEETING DETAILS ===\nPlatform: ${platformLabel}\n`;
   if (dateTime) txt += `Scheduled Time: ${dateTime}\n`;
-  txt += `Meeting Link: ${link}\n===========================\n`;
+  txt += `Meeting Link: ${link}\nAdd to Google Calendar: ${gcalUrl}\n===========================\n`;
   return txt;
+}
+
+export function injectMeetingBlock(
+  html: string,
+  link: string,
+  dateTime: string,
+  platform: string = 'instant'
+): string {
+  const block = generateMeetingHtml(link, dateTime, platform);
+  if (html.includes('<!-- HIP_MEETING_START -->')) {
+    return html.replace(MEETING_HTML_REGEX, block);
+  }
+  const closingIdx = html.search(/<(?:p|div)[^>]*>(?:Sincerely|Warm regards|Best regards|Yours sincerely|Authorized Signatory)/i);
+  if (closingIdx !== -1) {
+    return html.slice(0, closingIdx) + block + '\n' + html.slice(closingIdx);
+  }
+  const lastDivIdx = html.lastIndexOf('</div>');
+  if (lastDivIdx !== -1) {
+    return html.slice(0, lastDivIdx) + block + '\n' + html.slice(lastDivIdx);
+  }
+  return html + '\n' + block;
+}
+
+export function injectMeetingTextBlock(
+  text: string,
+  link: string,
+  dateTime: string,
+  platform: string = 'instant'
+): string {
+  const block = generateMeetingText(link, dateTime, platform);
+  if (text.includes('=== VIDEO MEETING DETAILS ===')) {
+    return text.replace(MEETING_TEXT_REGEX, block);
+  }
+  const closingIdx = text.search(/(?:Sincerely,|Warm regards,|Best regards,|Yours sincerely,)/i);
+  if (closingIdx !== -1) {
+    return text.slice(0, closingIdx) + block + '\n' + text.slice(closingIdx);
+  }
+  return text + '\n' + block;
 }
 
 // Helper to interpolate raw templates with form values
@@ -330,26 +389,37 @@ export default function EmailComposerModal({
   const [newTemplateCategory, setNewTemplateCategory] = useState('internship');
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
-  // Video Meeting Link state (Google Meet, Instant Live Room, Zoom, Teams)
+  // Video Meeting Link state (Instant Live Room as primary default, Google Meet, Zoom, Teams)
   const [meetingLink, setMeetingLink] = useState('');
-  const [meetingPlatform, setMeetingPlatform] = useState<'google_meet' | 'instant' | 'zoom' | 'teams' | 'custom'>('google_meet');
+  const [meetingPlatform, setMeetingPlatform] = useState<'google_meet' | 'instant' | 'zoom' | 'teams' | 'custom'>('instant');
   const [meetingDateTime, setMeetingDateTime] = useState('');
+  const [attachMeetingToEmail, setAttachMeetingToEmail] = useState(true);
 
-  const isMeetingAttached = htmlBody.includes('HIP_MEETING_START') || plainText.includes('VIDEO MEETING DETAILS');
+  const isMeetingAttached = htmlBody.includes('<!-- HIP_MEETING_START -->') || plainText.includes('=== VIDEO MEETING DETAILS ===');
 
   // Generate an instant working live conference room (100% works immediately upon click, zero login)
-  const handleGenerateInstantRoom = () => {
-    const cleanName = candidateName ? candidateName.replace(/[^a-zA-Z0-9]/g, '') : 'Interview';
+  const handleGenerateInstantRoom = (customCandidateName?: string) => {
+    const targetName = customCandidateName || candidateName;
+    const cleanName = targetName ? targetName.replace(/[^a-zA-Z0-9]/g, '') : 'Interview';
     const roomCode = `HIP-${cleanName}-${Math.floor(1000 + Math.random() * 9000)}`;
     const generated = `https://meet.jit.si/${roomCode}`;
     setMeetingLink(generated);
     setMeetingPlatform('instant');
-    if (!meetingDateTime) {
+
+    let schedule = meetingDateTime;
+    if (!schedule) {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       const tomorrowStr = formatDateToCustom(tomorrow);
-      setMeetingDateTime(`${tomorrowStr}, 04:00 PM IST`);
+      schedule = `${tomorrowStr}, 04:00 PM IST`;
+      setMeetingDateTime(schedule);
     }
+
+    if (attachMeetingToEmail) {
+      setHtmlBody((prev) => injectMeetingBlock(prev, generated, schedule, 'instant'));
+      setPlainText((prev) => injectMeetingTextBlock(prev, generated, schedule, 'instant'));
+    }
+
     toast.success('Generated Instant Live Video Room!', {
       description: 'Works immediately upon clicking without requiring Google account setup!'
     });
@@ -369,14 +439,25 @@ export default function EmailComposerModal({
       if (text && text.trim()) {
         const cleaned = text.trim();
         setMeetingLink(cleaned);
+        let detectedPlatform: 'google_meet' | 'instant' | 'zoom' | 'teams' | 'custom' = meetingPlatform;
         if (cleaned.includes('meet.google.com')) {
+          detectedPlatform = 'google_meet';
           setMeetingPlatform('google_meet');
         } else if (cleaned.includes('jit.si')) {
+          detectedPlatform = 'instant';
           setMeetingPlatform('instant');
         } else if (cleaned.includes('zoom.us')) {
+          detectedPlatform = 'zoom';
           setMeetingPlatform('zoom');
         } else if (cleaned.includes('teams.microsoft.com')) {
+          detectedPlatform = 'teams';
           setMeetingPlatform('teams');
+        }
+
+        if (attachMeetingToEmail) {
+          const schedule = meetingDateTime || 'Tomorrow, 04:00 PM IST';
+          setHtmlBody((prev) => injectMeetingBlock(prev, cleaned, schedule, detectedPlatform));
+          setPlainText((prev) => injectMeetingTextBlock(prev, cleaned, schedule, detectedPlatform));
         }
         toast.success('Pasted meeting link from clipboard!');
       } else {
@@ -402,46 +483,39 @@ export default function EmailComposerModal({
     const activeTime = customTime !== undefined ? customTime : meetingDateTime.trim();
     const activePlatform = customPlatform || meetingPlatform;
 
-    const newHtmlBlock = generateMeetingHtml(activeLink, activeTime, activePlatform);
-    const newTextBlock = generateMeetingText(activeLink, activeTime, activePlatform);
+    setAttachMeetingToEmail(true);
 
     // Update HTML Letterhead
-    setHtmlBody((prev) => {
-      if (MEETING_HTML_REGEX.test(prev)) {
-        return prev.replace(MEETING_HTML_REGEX, newHtmlBlock);
-      }
-      // Insert before closing signature
-      const closingIdx = prev.search(/<(?:p|div)[^>]*>(?:Sincerely|Warm regards|Best regards|Yours sincerely|Authorized Signatory)/i);
-      if (closingIdx !== -1) {
-        return prev.slice(0, closingIdx) + newHtmlBlock + '\n' + prev.slice(closingIdx);
-      }
-      const lastDivIdx = prev.lastIndexOf('</div>');
-      if (lastDivIdx !== -1) {
-        return prev.slice(0, lastDivIdx) + newHtmlBlock + '\n' + prev.slice(lastDivIdx);
-      }
-      return prev + '\n' + newHtmlBlock;
-    });
+    setHtmlBody((prev) => injectMeetingBlock(prev, activeLink, activeTime, activePlatform));
 
     // Update Plain Text
-    setPlainText((prev) => {
-      if (MEETING_TEXT_REGEX.test(prev)) {
-        return prev.replace(MEETING_TEXT_REGEX, newTextBlock);
-      }
-      const closingIdx = prev.search(/(?:Sincerely,|Warm regards,|Best regards,|Yours sincerely,)/i);
-      if (closingIdx !== -1) {
-        return prev.slice(0, closingIdx) + newTextBlock + '\n' + prev.slice(closingIdx);
-      }
-      return prev + '\n' + newTextBlock;
-    });
+    setPlainText((prev) => injectMeetingTextBlock(prev, activeLink, activeTime, activePlatform));
 
     toast.success('Meeting invitation added to letter!');
   };
 
+  // Toggle attachment of meeting card to email
+  const handleToggleMeetingAttachment = () => {
+    if (isMeetingAttached || attachMeetingToEmail) {
+      handleRemoveMeeting();
+      setAttachMeetingToEmail(false);
+      toast.info('Meeting invitation detached from letter');
+    } else {
+      let link = meetingLink.trim();
+      if (!link) {
+        link = handleGenerateInstantRoom();
+      }
+      handleInsertOrUpdateMeeting(link);
+      setAttachMeetingToEmail(true);
+      toast.success('Meeting invitation attached to letter!');
+    }
+  };
+
   // Remove meeting invitation from draft
   const handleRemoveMeeting = () => {
+    setAttachMeetingToEmail(false);
     setHtmlBody((prev) => prev.replace(MEETING_HTML_REGEX, ''));
     setPlainText((prev) => prev.replace(MEETING_TEXT_REGEX, ''));
-    toast.info('Meeting invitation removed from draft');
   };
 
   // Fetch templates on mount
@@ -450,6 +524,18 @@ export default function EmailComposerModal({
       fetchTemplates();
       if (initialRecipient && !recipientsList.includes(initialRecipient)) {
         setRecipientsList([initialRecipient]);
+      }
+      // Auto-populate Instant Live Video Room as primary default
+      if (!meetingLink) {
+        const roomCode = `HIP-Interview-${Math.floor(1000 + Math.random() * 9000)}`;
+        const initialInstantUrl = `https://meet.jit.si/${roomCode}`;
+        setMeetingLink(initialInstantUrl);
+        setMeetingPlatform('instant');
+
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = formatDateToCustom(tomorrow);
+        setMeetingDateTime(`${tomorrowStr}, 04:00 PM IST`);
       }
     }
   }, [open]);
@@ -526,9 +612,32 @@ export default function EmailComposerModal({
       dateStr: todayStr
     });
 
+    let currentMeeting = meetingLink;
+    if (!currentMeeting) {
+      const cleanName = (candidateName || 'Interview').replace(/[^a-zA-Z0-9]/g, '');
+      currentMeeting = `https://meet.jit.si/HIP-${cleanName}-${Math.floor(1000 + Math.random() * 9000)}`;
+      setMeetingLink(currentMeeting);
+      setMeetingPlatform('instant');
+      if (!meetingDateTime) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = formatDateToCustom(tomorrow);
+        setMeetingDateTime(`${tomorrowStr}, 04:00 PM IST`);
+      }
+    }
+
+    let activeHtml = rendered.htmlBody;
+    let activeText = rendered.plainText;
+
+    if (attachMeetingToEmail && currentMeeting.trim()) {
+      const activeTime = meetingDateTime || 'Tomorrow, 04:00 PM IST';
+      activeHtml = injectMeetingBlock(activeHtml, currentMeeting.trim(), activeTime, meetingPlatform);
+      activeText = injectMeetingTextBlock(activeText, currentMeeting.trim(), activeTime, meetingPlatform);
+    }
+
     setSubject(rendered.subject);
-    setHtmlBody(rendered.htmlBody);
-    setPlainText(rendered.plainText);
+    setHtmlBody(activeHtml);
+    setPlainText(activeText);
   };
 
   const handleTemplateChange = (id: string) => {
@@ -574,9 +683,18 @@ export default function EmailComposerModal({
         refId: currentRefId,
         dateStr: currentDateStr
       });
+
+      let activeHtml = rendered.htmlBody;
+      let activeText = rendered.plainText;
+
+      if (attachMeetingToEmail && meetingLink.trim()) {
+        activeHtml = injectMeetingBlock(activeHtml, meetingLink.trim(), meetingDateTime.trim(), meetingPlatform);
+        activeText = injectMeetingTextBlock(activeText, meetingLink.trim(), meetingDateTime.trim(), meetingPlatform);
+      }
+
       setSubject(rendered.subject);
-      setHtmlBody(rendered.htmlBody);
-      setPlainText(rendered.plainText);
+      setHtmlBody(activeHtml);
+      setPlainText(activeText);
     } else {
       // Direct replace fallback
       if (key === 'name' && candidateName) {
@@ -894,11 +1012,24 @@ export default function EmailComposerModal({
         subject
       };
 
+      let outgoingHtml = htmlBody;
+      let outgoingText = plainText;
+
+      if (attachMeetingToEmail && meetingLink.trim()) {
+        const schedule = meetingDateTime.trim() || 'Tomorrow, 04:00 PM IST';
+        if (!outgoingHtml.includes('<!-- HIP_MEETING_START -->')) {
+          outgoingHtml = injectMeetingBlock(outgoingHtml, meetingLink.trim(), schedule, meetingPlatform);
+        }
+        if (!outgoingText.includes('=== VIDEO MEETING DETAILS ===')) {
+          outgoingText = injectMeetingTextBlock(outgoingText, meetingLink.trim(), schedule, meetingPlatform);
+        }
+      }
+
       if (emailFormat === 'text') {
-        payload.text = plainText;
-        payload.html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; white-space: pre-wrap; padding: 16px;">${plainText}</div>`;
+        payload.text = outgoingText;
+        payload.html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; white-space: pre-wrap; padding: 16px;">${outgoingText}</div>`;
       } else {
-        payload.html = htmlBody;
+        payload.html = outgoingHtml;
       }
 
       if (isBulk) {
@@ -1198,26 +1329,55 @@ export default function EmailComposerModal({
                         </div>
                         <div>
                           <label className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 leading-tight">
-                            Video Meeting / Google Meet
+                            Video Meeting & Conference
                           </label>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400">Attach meeting link & schedule</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400">Live video room + Google Calendar link</span>
                         </div>
                       </div>
-                      <Badge className={`text-[10px] font-bold border px-1.5 py-0.5 rounded ${
-                        isMeetingAttached
-                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                          : 'bg-slate-200 dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-700'
-                      }`}>
-                        {isMeetingAttached ? '✓ Attached in Letter' : 'Optional'}
-                      </Badge>
+                      <button
+                        type="button"
+                        onClick={handleToggleMeetingAttachment}
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isMeetingAttached
+                            ? 'bg-emerald-500 text-white border-emerald-600 shadow-xs hover:bg-emerald-600'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-orange-400'
+                        }`}
+                        title={isMeetingAttached ? 'Click to detach from email' : 'Click to attach to email'}
+                      >
+                        {isMeetingAttached ? (
+                          <>
+                            <Check className="h-3 w-3" /> Attached to Letter
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-3 w-3" /> + Attach to Letter
+                          </>
+                        )}
+                      </button>
                     </div>
 
-                    {/* Platform Selector */}
+                    {/* Platform Selector (Option 2 Instant Live Room is #1 Recommended) */}
                     <div className="grid grid-cols-4 gap-1 p-0.5 bg-slate-200/60 dark:bg-slate-800 rounded-lg">
                       <button
                         type="button"
+                        onClick={() => {
+                          setMeetingPlatform('instant');
+                          if (!meetingLink || meetingLink.includes('meet.google.com')) {
+                            handleGenerateInstantRoom();
+                          }
+                        }}
+                        className={`text-[10px] font-bold py-1.5 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
+                          meetingPlatform === 'instant'
+                            ? 'bg-emerald-600 text-white shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                        }`}
+                      >
+                        ⚡ Instant (Best)
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setMeetingPlatform('google_meet')}
-                        className={`text-[10px] font-bold py-1 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
+                        className={`text-[10px] font-bold py-1.5 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
                           meetingPlatform === 'google_meet'
                             ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-xs'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -1227,24 +1387,8 @@ export default function EmailComposerModal({
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          setMeetingPlatform('instant');
-                          if (!meetingLink || meetingLink.includes('meet.google.com')) {
-                            handleGenerateInstantRoom();
-                          }
-                        }}
-                        className={`text-[10px] font-bold py-1 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
-                          meetingPlatform === 'instant'
-                            ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                        }`}
-                      >
-                        ⚡ Instant Room
-                      </button>
-                      <button
-                        type="button"
                         onClick={() => setMeetingPlatform('zoom')}
-                        className={`text-[10px] font-bold py-1 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
+                        className={`text-[10px] font-bold py-1.5 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
                           meetingPlatform === 'zoom'
                             ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -1255,7 +1399,7 @@ export default function EmailComposerModal({
                       <button
                         type="button"
                         onClick={() => setMeetingPlatform('teams')}
-                        className={`text-[10px] font-bold py-1 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
+                        className={`text-[10px] font-bold py-1.5 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
                           meetingPlatform === 'teams'
                             ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -1266,13 +1410,25 @@ export default function EmailComposerModal({
                     </div>
 
                     {/* Platform Explanation Notice */}
-                    {meetingPlatform === 'google_meet' ? (
-                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 text-[10px] text-amber-700 dark:text-amber-400">
-                        <strong>Google Meet Requirement:</strong> Google requires meeting rooms to be registered on Google servers. Click <strong>&quot;Create Google Meet Room ↗&quot;</strong> to start a real room, then paste its URL below.
+                    {meetingPlatform === 'instant' ? (
+                      <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-lg p-2.5 text-[11px] text-emerald-800 dark:text-emerald-300 space-y-1">
+                        <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400">
+                          <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                          <span>100% Live Video Conference Ready</span>
+                        </div>
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-normal">
+                          Zero setup or login required! Anyone can join via camera, mic & screen share. The email automatically includes a <strong>&quot;🚀 Join Live Meeting Now&quot;</strong> button plus a <strong>&quot;📅 Add to Google Calendar&quot;</strong> button!
+                        </p>
                       </div>
-                    ) : meetingPlatform === 'instant' ? (
-                      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2 text-[10px] text-emerald-700 dark:text-emerald-400">
-                        <strong>Instant Live Room:</strong> Works 100% immediately for any candidate or interviewer without Google accounts or login!
+                    ) : meetingPlatform === 'google_meet' ? (
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 text-[11px] text-amber-800 dark:text-amber-300 space-y-1">
+                        <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-400">
+                          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                          <span>Google Meet Server Requirement</span>
+                        </div>
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-normal">
+                          Google Meet requires rooms to be created on Google servers first. Click <strong>&quot;Create Google Meet Room ↗&quot;</strong> to start a room, then paste its URL below.
+                        </p>
                       </div>
                     ) : null}
 
@@ -1281,21 +1437,21 @@ export default function EmailComposerModal({
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Meeting Link URL</span>
                         <div className="flex items-center gap-1.5">
-                          {meetingPlatform === 'google_meet' ? (
+                          {meetingPlatform === 'instant' ? (
+                            <button
+                              type="button"
+                              onClick={() => handleGenerateInstantRoom()}
+                              className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <Sparkles className="h-3 w-3" /> Re-generate Room
+                            </button>
+                          ) : meetingPlatform === 'google_meet' ? (
                             <button
                               type="button"
                               onClick={handleOpenGoogleMeetNew}
                               className="text-[10px] font-bold text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-0.5 cursor-pointer"
                             >
                               <ExternalLink className="h-3 w-3" /> Create Google Meet Room ↗
-                            </button>
-                          ) : meetingPlatform === 'instant' ? (
-                            <button
-                              type="button"
-                              onClick={handleGenerateInstantRoom}
-                              className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5 cursor-pointer"
-                            >
-                              <Sparkles className="h-3 w-3" /> Re-generate Room
                             </button>
                           ) : null}
                           <span className="text-slate-300 dark:text-slate-700">•</span>
@@ -1312,16 +1468,34 @@ export default function EmailComposerModal({
                       <div className="flex gap-1.5">
                         <Input
                           placeholder={
-                            meetingPlatform === 'google_meet'
-                              ? 'https://meet.google.com/xxx-yyyy-zzz (Paste real room URL)'
-                              : meetingPlatform === 'instant'
+                            meetingPlatform === 'instant'
                               ? 'https://meet.jit.si/HIP-...'
+                              : meetingPlatform === 'google_meet'
+                              ? 'https://meet.google.com/xxx-yyyy-zzz (Paste real room URL)'
                               : 'Paste meeting invite URL...'
                           }
                           value={meetingLink}
-                          onChange={(e) => setMeetingLink(e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setMeetingLink(val);
+                            if (attachMeetingToEmail && val.trim()) {
+                              handleInsertOrUpdateMeeting(val, meetingDateTime);
+                            }
+                          }}
                           className="text-xs rounded-xl h-8.5 bg-white dark:bg-slate-950 font-mono"
                         />
+                        {meetingLink && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(meetingLink, '_blank')}
+                            className="h-8.5 px-2 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 shrink-0 cursor-pointer"
+                            title="Open and test live video call now"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5 mr-1" /> Test
+                          </Button>
+                        )}
                         {meetingLink && (
                           <Button
                             type="button"
@@ -1348,7 +1522,13 @@ export default function EmailComposerModal({
                       <Input
                         placeholder="e.g. 10-Sep-2026, 04:00 PM IST or Tomorrow 4 PM"
                         value={meetingDateTime}
-                        onChange={(e) => setMeetingDateTime(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setMeetingDateTime(val);
+                          if (attachMeetingToEmail && meetingLink.trim()) {
+                            handleInsertOrUpdateMeeting(meetingLink, val);
+                          }
+                        }}
                         className="text-xs rounded-xl h-8.5 bg-white dark:bg-slate-950 font-medium"
                       />
                     </div>
@@ -1358,11 +1538,19 @@ export default function EmailComposerModal({
                       <Button
                         type="button"
                         size="sm"
-                        onClick={() => handleInsertOrUpdateMeeting()}
-                        className="flex-1 h-8.5 text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer shadow-xs"
+                        onClick={() => {
+                          let link = meetingLink;
+                          if (!link) link = handleGenerateInstantRoom();
+                          handleInsertOrUpdateMeeting(link);
+                        }}
+                        className={`flex-1 h-8.5 text-xs font-bold rounded-xl gap-1.5 cursor-pointer shadow-xs ${
+                          isMeetingAttached
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                            : 'bg-orange-500 hover:bg-orange-600 text-white'
+                        }`}
                       >
                         <Video className="h-3.5 w-3.5" />
-                        {isMeetingAttached ? 'Update Meeting in Letter' : 'Insert Meeting into Letter'}
+                        {isMeetingAttached ? '✓ Meeting Inserted in Letter' : 'Insert Meeting into Letter'}
                       </Button>
                       {isMeetingAttached && (
                         <Button
@@ -1411,9 +1599,9 @@ export default function EmailComposerModal({
                           }
                           handleInsertOrUpdateMeeting(link);
                         }}
-                        className="text-[10px] font-bold bg-orange-500/10 hover:bg-orange-500 text-orange-600 hover:text-white dark:text-orange-400 dark:hover:text-white px-2.5 py-1 rounded-lg border border-orange-500/30 transition-colors cursor-pointer flex items-center gap-1"
+                        className="text-[10px] font-bold bg-emerald-500/10 hover:bg-emerald-500 text-emerald-600 hover:text-white dark:text-emerald-400 dark:hover:text-white px-2.5 py-1 rounded-lg border border-emerald-500/30 transition-colors cursor-pointer flex items-center gap-1"
                       >
-                        <Video className="h-3 w-3" /> + Add Google Meet / Video Invitation
+                        <Video className="h-3 w-3" /> + Attach Instant Live Video Meeting
                       </button>
                       <button
                         type="button"
@@ -1492,26 +1680,37 @@ export default function EmailComposerModal({
                   {/* Quick Meeting Helper in Manual tab */}
                   <div className="p-3 bg-slate-50 dark:bg-slate-900/70 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <Video className="h-4 w-4 text-orange-500 shrink-0" />
+                      <Video className="h-4 w-4 text-emerald-500 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
                           {meetingLink ? meetingLink : 'No meeting link set'}
                         </p>
                         <p className="text-[10px] text-slate-400 truncate">
-                          {isMeetingAttached ? '✓ Attached in body' : 'Not yet inserted in body'}
+                          {isMeetingAttached ? '✓ Attached in letter (Join + Google Calendar)' : 'Not yet attached in letter'}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      {!meetingLink && (
+                      {!meetingLink ? (
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
-                          onClick={handleGenerateGoogleMeet}
-                          className="h-7 text-[11px] font-bold rounded-lg cursor-pointer"
+                          onClick={() => handleGenerateInstantRoom()}
+                          className="h-7 text-[11px] font-bold rounded-lg text-emerald-600 border-emerald-500/30 hover:bg-emerald-50 cursor-pointer"
                         >
-                          Generate Meet
+                          ⚡ Instant Room
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(meetingLink, '_blank')}
+                          className="h-7 text-[11px] font-bold rounded-lg text-emerald-600 border-emerald-500/30 hover:bg-emerald-50 cursor-pointer"
+                          title="Open and test live video call now"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" /> Test
                         </Button>
                       )}
                       <Button
@@ -1522,9 +1721,11 @@ export default function EmailComposerModal({
                           if (!link) link = handleGenerateInstantRoom();
                           handleInsertOrUpdateMeeting(link);
                         }}
-                        className="h-7 text-[11px] font-bold rounded-lg bg-orange-500 hover:bg-orange-600 text-white cursor-pointer"
+                        className={`h-7 text-[11px] font-bold rounded-lg text-white cursor-pointer ${
+                          isMeetingAttached ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-orange-500 hover:bg-orange-600'
+                        }`}
                       >
-                        {isMeetingAttached ? 'Update Meet' : 'Insert Meet'}
+                        {isMeetingAttached ? '✓ In Letter' : 'Insert Meeting'}
                       </Button>
                       {isMeetingAttached && (
                         <button
@@ -1790,8 +1991,8 @@ export default function EmailComposerModal({
                   </Badge>
                 )}
                 {isMeetingAttached && (
-                  <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 text-[10px] hidden sm:inline-flex items-center gap-1">
-                    <Video className="h-3 w-3 inline" /> {meetingPlatform === 'google_meet' ? 'Google Meet Attached' : 'Meeting Attached'}
+                  <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] hidden sm:inline-flex items-center gap-1">
+                    <Video className="h-3 w-3 inline" /> {meetingPlatform === 'instant' ? '⚡ Instant Video Room Attached' : meetingPlatform === 'google_meet' ? 'Google Meet Attached' : 'Meeting Attached'}
                   </Badge>
                 )}
               </div>
