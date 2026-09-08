@@ -1332,11 +1332,14 @@ export default function EmailComposerModal({
         <BulkCsvImportModal
           open={isBulkModalOpen}
           onOpenChange={setIsBulkModalOpen}
-          templateSubject={rawSubjectTemplate || subject}
-          templateHtml={rawHtmlTemplate || htmlBody}
-          templatePlainText={plainText}
-          format={emailFormat}
-          attachments={attachments}
+          subjectTemplate={rawSubjectTemplate || subject}
+          htmlTemplate={rawHtmlTemplate || htmlBody}
+          textTemplate={plainText}
+          attachments={attachments.map(a => ({
+            filename: a.filename,
+            content: a.content,
+            contentType: a.contentType
+          }))}
           onSuccess={() => {
             setIsBulkModalOpen(false);
             onOpenChange(false);
