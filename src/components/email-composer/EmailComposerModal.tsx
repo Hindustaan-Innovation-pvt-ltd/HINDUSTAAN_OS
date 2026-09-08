@@ -127,6 +127,7 @@ export const MEETING_TEXT_REGEX = /=== VIDEO MEETING DETAILS ===[\s\S]*?========
 export function generateMeetingHtml(link: string, dateTime: string, platform: string = 'google_meet'): string {
   const platformLabel = 
     platform === 'google_meet' ? 'Google Meet' :
+    platform === 'instant' ? 'Hindustan OS Live Conference' :
     platform === 'zoom' ? 'Zoom Meeting' :
     platform === 'teams' ? 'Microsoft Teams' : 'Video Conference';
 
@@ -161,6 +162,7 @@ export function generateMeetingHtml(link: string, dateTime: string, platform: st
 export function generateMeetingText(link: string, dateTime: string, platform: string = 'google_meet'): string {
   const platformLabel = 
     platform === 'google_meet' ? 'Google Meet' :
+    platform === 'instant' ? 'Hindustan OS Live Conference' :
     platform === 'zoom' ? 'Zoom Meeting' :
     platform === 'teams' ? 'Microsoft Teams' : 'Video Conference';
 
@@ -328,30 +330,66 @@ export default function EmailComposerModal({
   const [newTemplateCategory, setNewTemplateCategory] = useState('internship');
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
-  // Video Meeting Link state (Google Meet, Zoom, Teams)
+  // Video Meeting Link state (Google Meet, Instant Live Room, Zoom, Teams)
   const [meetingLink, setMeetingLink] = useState('');
-  const [meetingPlatform, setMeetingPlatform] = useState<'google_meet' | 'zoom' | 'teams' | 'custom'>('google_meet');
+  const [meetingPlatform, setMeetingPlatform] = useState<'google_meet' | 'instant' | 'zoom' | 'teams' | 'custom'>('google_meet');
   const [meetingDateTime, setMeetingDateTime] = useState('');
 
   const isMeetingAttached = htmlBody.includes('HIP_MEETING_START') || plainText.includes('VIDEO MEETING DETAILS');
 
-  // Generate valid Google Meet link (e.g. https://meet.google.com/xxx-yyyy-zzz)
-  const handleGenerateGoogleMeet = () => {
-    const randStr = (len: number) => {
-      const chars = 'abcdefghijklmnopqrstuvwxyz';
-      return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-    };
-    const generated = `https://meet.google.com/${randStr(3)}-${randStr(4)}-${randStr(3)}`;
+  // Generate an instant working live conference room (100% works immediately upon click, zero login)
+  const handleGenerateInstantRoom = () => {
+    const cleanName = candidateName ? candidateName.replace(/[^a-zA-Z0-9]/g, '') : 'Interview';
+    const roomCode = `HIP-${cleanName}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const generated = `https://meet.jit.si/${roomCode}`;
     setMeetingLink(generated);
-    setMeetingPlatform('google_meet');
+    setMeetingPlatform('instant');
     if (!meetingDateTime) {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       const tomorrowStr = formatDateToCustom(tomorrow);
       setMeetingDateTime(`${tomorrowStr}, 04:00 PM IST`);
     }
-    toast.success('Generated Google Meet Link!', { description: generated });
+    toast.success('Generated Instant Live Video Room!', {
+      description: 'Works immediately upon clicking without requiring Google account setup!'
+    });
     return generated;
+  };
+
+  // Launch Google Meet to create real room
+  const handleOpenGoogleMeetNew = () => {
+    window.open('https://meet.google.com/new', '_blank');
+    toast.info('Google Meet opening in new tab. Create your room, copy the URL, and click "Paste Link" below!');
+  };
+
+  // Paste URL directly from clipboard
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text && text.trim()) {
+        const cleaned = text.trim();
+        setMeetingLink(cleaned);
+        if (cleaned.includes('meet.google.com')) {
+          setMeetingPlatform('google_meet');
+        } else if (cleaned.includes('jit.si')) {
+          setMeetingPlatform('instant');
+        } else if (cleaned.includes('zoom.us')) {
+          setMeetingPlatform('zoom');
+        } else if (cleaned.includes('teams.microsoft.com')) {
+          setMeetingPlatform('teams');
+        }
+        toast.success('Pasted meeting link from clipboard!');
+      } else {
+        toast.error('Clipboard is empty');
+      }
+    } catch (err) {
+      toast.error('Could not access clipboard. Please paste directly into the box.');
+    }
+  };
+
+  // Generate Google Meet format link (inform user that Google requires room creation)
+  const handleGenerateGoogleMeet = () => {
+    handleOpenGoogleMeetNew();
   };
 
   // Insert or update meeting invitation card into email draft
@@ -1175,11 +1213,11 @@ export default function EmailComposerModal({
                     </div>
 
                     {/* Platform Selector */}
-                    <div className="grid grid-cols-3 gap-1.5 p-0.5 bg-slate-200/60 dark:bg-slate-800 rounded-lg">
+                    <div className="grid grid-cols-4 gap-1 p-0.5 bg-slate-200/60 dark:bg-slate-800 rounded-lg">
                       <button
                         type="button"
                         onClick={() => setMeetingPlatform('google_meet')}
-                        className={`text-[11px] font-bold py-1 px-2 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                        className={`text-[10px] font-bold py-1 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
                           meetingPlatform === 'google_meet'
                             ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-xs'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -1189,8 +1227,24 @@ export default function EmailComposerModal({
                       </button>
                       <button
                         type="button"
+                        onClick={() => {
+                          setMeetingPlatform('instant');
+                          if (!meetingLink || meetingLink.includes('meet.google.com')) {
+                            handleGenerateInstantRoom();
+                          }
+                        }}
+                        className={`text-[10px] font-bold py-1 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
+                          meetingPlatform === 'instant'
+                            ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                        }`}
+                      >
+                        ⚡ Instant Room
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setMeetingPlatform('zoom')}
-                        className={`text-[11px] font-bold py-1 px-2 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                        className={`text-[10px] font-bold py-1 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
                           meetingPlatform === 'zoom'
                             ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -1201,43 +1255,69 @@ export default function EmailComposerModal({
                       <button
                         type="button"
                         onClick={() => setMeetingPlatform('teams')}
-                        className={`text-[11px] font-bold py-1 px-2 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                        className={`text-[10px] font-bold py-1 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
                           meetingPlatform === 'teams'
                             ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                         }`}
                       >
-                        MS Teams
+                        Teams
                       </button>
                     </div>
+
+                    {/* Platform Explanation Notice */}
+                    {meetingPlatform === 'google_meet' ? (
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 text-[10px] text-amber-700 dark:text-amber-400">
+                        <strong>Google Meet Requirement:</strong> Google requires meeting rooms to be registered on Google servers. Click <strong>&quot;Create Google Meet Room ↗&quot;</strong> to start a real room, then paste its URL below.
+                      </div>
+                    ) : meetingPlatform === 'instant' ? (
+                      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2 text-[10px] text-emerald-700 dark:text-emerald-400">
+                        <strong>Instant Live Room:</strong> Works 100% immediately for any candidate or interviewer without Google accounts or login!
+                      </div>
+                    ) : null}
 
                     {/* Meeting URL Bar with Quick Actions */}
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Meeting Link URL</span>
                         <div className="flex items-center gap-1.5">
+                          {meetingPlatform === 'google_meet' ? (
+                            <button
+                              type="button"
+                              onClick={handleOpenGoogleMeetNew}
+                              className="text-[10px] font-bold text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <ExternalLink className="h-3 w-3" /> Create Google Meet Room ↗
+                            </button>
+                          ) : meetingPlatform === 'instant' ? (
+                            <button
+                              type="button"
+                              onClick={handleGenerateInstantRoom}
+                              className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <Sparkles className="h-3 w-3" /> Re-generate Room
+                            </button>
+                          ) : null}
+                          <span className="text-slate-300 dark:text-slate-700">•</span>
                           <button
                             type="button"
-                            onClick={handleGenerateGoogleMeet}
-                            className="text-[10px] font-bold text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                            onClick={handlePasteFromClipboard}
+                            className="text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-0.5 cursor-pointer"
+                            title="Paste link from clipboard"
                           >
-                            <Sparkles className="h-3 w-3" /> Auto-Generate Link
+                            Paste Link
                           </button>
-                          <span className="text-slate-300 dark:text-slate-700">•</span>
-                          <a
-                            href="https://meet.google.com/new"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-0.5"
-                            title="Open Google Meet in new tab to create room"
-                          >
-                            Open Meet <ExternalLink className="h-2.5 w-2.5" />
-                          </a>
                         </div>
                       </div>
                       <div className="flex gap-1.5">
                         <Input
-                          placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                          placeholder={
+                            meetingPlatform === 'google_meet'
+                              ? 'https://meet.google.com/xxx-yyyy-zzz (Paste real room URL)'
+                              : meetingPlatform === 'instant'
+                              ? 'https://meet.jit.si/HIP-...'
+                              : 'Paste meeting invite URL...'
+                          }
                           value={meetingLink}
                           onChange={(e) => setMeetingLink(e.target.value)}
                           className="text-xs rounded-xl h-8.5 bg-white dark:bg-slate-950 font-mono"
@@ -1251,7 +1331,7 @@ export default function EmailComposerModal({
                               navigator.clipboard.writeText(meetingLink);
                               toast.success('Meeting link copied to clipboard!');
                             }}
-                            className="h-8.5 px-2.5 rounded-xl text-xs font-bold shrink-0"
+                            className="h-8.5 px-2.5 rounded-xl text-xs font-bold shrink-0 cursor-pointer"
                             title="Copy Link"
                           >
                             <Copy className="h-3.5 w-3.5" />
@@ -1327,13 +1407,13 @@ export default function EmailComposerModal({
                         onClick={() => {
                           let link = meetingLink;
                           if (!link) {
-                            link = handleGenerateGoogleMeet();
+                            link = handleGenerateInstantRoom();
                           }
                           handleInsertOrUpdateMeeting(link);
                         }}
                         className="text-[10px] font-bold bg-orange-500/10 hover:bg-orange-500 text-orange-600 hover:text-white dark:text-orange-400 dark:hover:text-white px-2.5 py-1 rounded-lg border border-orange-500/30 transition-colors cursor-pointer flex items-center gap-1"
                       >
-                        <Video className="h-3 w-3" /> + Add Google Meet Invitation
+                        <Video className="h-3 w-3" /> + Add Google Meet / Video Invitation
                       </button>
                       <button
                         type="button"
@@ -1439,7 +1519,7 @@ export default function EmailComposerModal({
                         size="sm"
                         onClick={() => {
                           let link = meetingLink;
-                          if (!link) link = handleGenerateGoogleMeet();
+                          if (!link) link = handleGenerateInstantRoom();
                           handleInsertOrUpdateMeeting(link);
                         }}
                         className="h-7 text-[11px] font-bold rounded-lg bg-orange-500 hover:bg-orange-600 text-white cursor-pointer"
