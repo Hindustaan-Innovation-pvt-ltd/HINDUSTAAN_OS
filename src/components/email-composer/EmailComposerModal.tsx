@@ -124,17 +124,53 @@ export function formatDateToCustom(dateInput: string | Date | undefined | null):
 export const MEETING_HTML_REGEX = /<!-- HIP_MEETING_START -->[\s\S]*?<!-- HIP_MEETING_END -->/g;
 export const MEETING_TEXT_REGEX = /=== VIDEO MEETING DETAILS ===[\s\S]*?===========================/g;
 
-export function generateMeetingHtml(link: string, dateTime: string, platform: string = 'instant'): string {
+export function generateMeetingHtml(link: string, dateTime: string, platform: string = 'google_meet'): string {
   const platformLabel = 
     platform === 'google_meet' ? 'Google Meet' :
-    platform === 'instant' ? 'Hindustan OS Video Conference' :
     platform === 'zoom' ? 'Zoom Meeting' :
-    platform === 'teams' ? 'Microsoft Teams' : 'Video Conference';
+    platform === 'teams' ? 'Microsoft Teams' :
+    platform === 'instant' ? 'Hindustan OS Video Conference' : 'Video Conference';
+
+  const cardTitle = 
+    platform === 'google_meet' ? 'Official Google Meet Invitation' :
+    platform === 'zoom' ? 'Official Zoom Meeting Invitation' :
+    platform === 'teams' ? 'Official Microsoft Teams Invitation' :
+    'Official Video Conference Invitation';
+
+  const joinButtonLabel = 
+    platform === 'google_meet' ? '🚀 Join Google Meet Now &rarr;' :
+    platform === 'zoom' ? '🚀 Join Zoom Meeting Now &rarr;' :
+    platform === 'teams' ? '🚀 Join Teams Meeting Now &rarr;' :
+    '🚀 Join Live Meeting Now &rarr;';
+
+  const gcalTitle = 
+    platform === 'google_meet' ? 'Hindustan Innovation Pvt Ltd – Google Meet Discussion' :
+    platform === 'zoom' ? 'Hindustan Innovation Pvt Ltd – Zoom Meeting' :
+    platform === 'teams' ? 'Hindustan Innovation Pvt Ltd – Microsoft Teams Meeting' :
+    'Hindustan Innovation Pvt Ltd – Official Video Meeting';
+
+  const badgeBg = 
+    platform === 'google_meet' ? 'rgba(249, 115, 22, 0.15)' :
+    platform === 'zoom' ? 'rgba(59, 130, 246, 0.15)' :
+    platform === 'teams' ? 'rgba(99, 102, 241, 0.15)' :
+    'rgba(16, 185, 129, 0.15)';
+
+  const badgeColor = 
+    platform === 'google_meet' ? '#fb923c' :
+    platform === 'zoom' ? '#60a5fa' :
+    platform === 'teams' ? '#818cf8' :
+    '#34d399';
+
+  const badgeBorder = 
+    platform === 'google_meet' ? 'rgba(249, 115, 22, 0.35)' :
+    platform === 'zoom' ? 'rgba(59, 130, 246, 0.35)' :
+    platform === 'teams' ? 'rgba(99, 102, 241, 0.35)' :
+    'rgba(16, 185, 129, 0.35)';
 
   const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-    'Hindustan Innovation Pvt Ltd – Official Video Meeting'
+    gcalTitle
   )}&details=${encodeURIComponent(
-    `Official corporate video meeting invitation from Hindustan Innovation Pvt Ltd.\nJoin Video Link: ${link}\nScheduled Time: ${dateTime || 'As scheduled'}`
+    `Official corporate meeting invitation from Hindustan Innovation Pvt Ltd.\nPlatform: ${platformLabel}\nJoin Video Link: ${link}\nScheduled Time: ${dateTime || 'As scheduled'}`
   )}&location=${encodeURIComponent(link)}`;
 
   return `<!-- HIP_MEETING_START -->
@@ -143,10 +179,10 @@ export function generateMeetingHtml(link: string, dateTime: string, platform: st
     <tr>
       <td align="left" style="vertical-align: middle;">
         <span style="font-size: 15px; margin-right: 6px;">📹</span>
-        <strong style="font-size: 12px; color: #f97316; letter-spacing: 0.5px; text-transform: uppercase;">Official Video Conference Invitation</strong>
+        <strong style="font-size: 12px; color: #f97316; letter-spacing: 0.5px; text-transform: uppercase;">${cardTitle}</strong>
       </td>
       <td align="right" style="vertical-align: middle;">
-        <span style="background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.35); font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 9999px;">
+        <span style="background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder}; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 9999px;">
           ${platformLabel}
         </span>
       </td>
@@ -160,7 +196,7 @@ export function generateMeetingHtml(link: string, dateTime: string, platform: st
     <tr>
       <td style="padding-right: 10px;">
         <a href="${link}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: #ea580c; color: #ffffff; font-weight: 700; font-size: 13px; padding: 10px 22px; text-decoration: none; border-radius: 8px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);">
-          🚀 Join Live Meeting Now &rarr;
+          ${joinButtonLabel}
         </a>
       </td>
       <td>
@@ -174,17 +210,23 @@ export function generateMeetingHtml(link: string, dateTime: string, platform: st
 <!-- HIP_MEETING_END -->`;
 }
 
-export function generateMeetingText(link: string, dateTime: string, platform: string = 'instant'): string {
+export function generateMeetingText(link: string, dateTime: string, platform: string = 'google_meet'): string {
   const platformLabel = 
     platform === 'google_meet' ? 'Google Meet' :
-    platform === 'instant' ? 'Hindustan OS Video Conference' :
     platform === 'zoom' ? 'Zoom Meeting' :
-    platform === 'teams' ? 'Microsoft Teams' : 'Video Conference';
+    platform === 'teams' ? 'Microsoft Teams' :
+    platform === 'instant' ? 'Hindustan OS Video Conference' : 'Video Conference';
+
+  const gcalTitle = 
+    platform === 'google_meet' ? 'Hindustan Innovation Pvt Ltd – Google Meet Discussion' :
+    platform === 'zoom' ? 'Hindustan Innovation Pvt Ltd – Zoom Meeting' :
+    platform === 'teams' ? 'Hindustan Innovation Pvt Ltd – Microsoft Teams Meeting' :
+    'Hindustan Innovation Pvt Ltd – Official Video Meeting';
 
   const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-    'Hindustan Innovation Pvt Ltd – Official Video Meeting'
+    gcalTitle
   )}&details=${encodeURIComponent(
-    `Official corporate video meeting invitation from Hindustan Innovation Pvt Ltd.\nJoin Video Link: ${link}\nScheduled Time: ${dateTime || 'As scheduled'}`
+    `Official corporate meeting invitation from Hindustan Innovation Pvt Ltd.\nPlatform: ${platformLabel}\nJoin Video Link: ${link}\nScheduled Time: ${dateTime || 'As scheduled'}`
   )}&location=${encodeURIComponent(link)}`;
 
   let txt = `\n=== VIDEO MEETING DETAILS ===\nPlatform: ${platformLabel}\n`;
@@ -197,7 +239,7 @@ export function injectMeetingBlock(
   html: string,
   link: string,
   dateTime: string,
-  platform: string = 'instant'
+  platform: string = 'google_meet'
 ): string {
   const block = generateMeetingHtml(link, dateTime, platform);
   if (html.includes('<!-- HIP_MEETING_START -->')) {
@@ -218,7 +260,7 @@ export function injectMeetingTextBlock(
   text: string,
   link: string,
   dateTime: string,
-  platform: string = 'instant'
+  platform: string = 'google_meet'
 ): string {
   const block = generateMeetingText(link, dateTime, platform);
   if (text.includes('=== VIDEO MEETING DETAILS ===')) {
@@ -389,13 +431,23 @@ export default function EmailComposerModal({
   const [newTemplateCategory, setNewTemplateCategory] = useState('internship');
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
-  // Video Meeting Link state (Instant Live Room as primary default, Google Meet, Zoom, Teams)
+  // Video Meeting Link state (Google Meet as preferred default, Instant Room as alternative, Zoom, Teams)
   const [meetingLink, setMeetingLink] = useState('');
-  const [meetingPlatform, setMeetingPlatform] = useState<'google_meet' | 'instant' | 'zoom' | 'teams' | 'custom'>('instant');
+  const [meetingPlatform, setMeetingPlatform] = useState<'google_meet' | 'instant' | 'zoom' | 'teams' | 'custom'>('google_meet');
   const [meetingDateTime, setMeetingDateTime] = useState('');
   const [attachMeetingToEmail, setAttachMeetingToEmail] = useState(true);
 
   const isMeetingAttached = htmlBody.includes('<!-- HIP_MEETING_START -->') || plainText.includes('=== VIDEO MEETING DETAILS ===');
+
+  // Detect platform automatically based on URL
+  const detectPlatformFromUrl = (url: string): 'google_meet' | 'instant' | 'zoom' | 'teams' | 'custom' => {
+    const lower = url.toLowerCase();
+    if (lower.includes('meet.google.com')) return 'google_meet';
+    if (lower.includes('zoom.us')) return 'zoom';
+    if (lower.includes('teams.microsoft.com') || lower.includes('teams.live.com')) return 'teams';
+    if (lower.includes('jit.si')) return 'instant';
+    return meetingPlatform;
+  };
 
   // Generate an instant working live conference room (100% works immediately upon click, zero login)
   const handleGenerateInstantRoom = (customCandidateName?: string) => {
@@ -420,8 +472,8 @@ export default function EmailComposerModal({
       setPlainText((prev) => injectMeetingTextBlock(prev, generated, schedule, 'instant'));
     }
 
-    toast.success('Generated Instant Live Video Room!', {
-      description: 'Works immediately upon clicking without requiring Google account setup!'
+    toast.success('Generated Instant Live Video Room (Alternative)!', {
+      description: 'Zero setup required. Camera, mic & screen sharing work immediately.'
     });
     return generated;
   };
@@ -429,7 +481,25 @@ export default function EmailComposerModal({
   // Launch Google Meet to create real room
   const handleOpenGoogleMeetNew = () => {
     window.open('https://meet.google.com/new', '_blank');
-    toast.info('Google Meet opening in new tab. Create your room, copy the URL, and click "Paste Link" below!');
+    toast.info('Google Meet opened in new tab. Start your meeting, copy the meet URL, and click "Paste Link" below!', {
+      duration: 6000
+    });
+  };
+
+  // Launch Zoom to schedule or start real meeting
+  const handleOpenZoomNew = () => {
+    window.open('https://zoom.us/meeting/schedule', '_blank');
+    toast.info('Zoom opened in new tab. Schedule or start your meeting, copy the invite link, and click "Paste Link" below!', {
+      duration: 6000
+    });
+  };
+
+  // Launch Microsoft Teams to create real room
+  const handleOpenTeamsNew = () => {
+    window.open('https://teams.live.com/meet', '_blank');
+    toast.info('Microsoft Teams opened in new tab. Create your meeting, copy the join link, and click "Paste Link" below!', {
+      duration: 6000
+    });
   };
 
   // Paste URL directly from clipboard
@@ -439,29 +509,18 @@ export default function EmailComposerModal({
       if (text && text.trim()) {
         const cleaned = text.trim();
         setMeetingLink(cleaned);
-        let detectedPlatform: 'google_meet' | 'instant' | 'zoom' | 'teams' | 'custom' = meetingPlatform;
-        if (cleaned.includes('meet.google.com')) {
-          detectedPlatform = 'google_meet';
-          setMeetingPlatform('google_meet');
-        } else if (cleaned.includes('jit.si')) {
-          detectedPlatform = 'instant';
-          setMeetingPlatform('instant');
-        } else if (cleaned.includes('zoom.us')) {
-          detectedPlatform = 'zoom';
-          setMeetingPlatform('zoom');
-        } else if (cleaned.includes('teams.microsoft.com')) {
-          detectedPlatform = 'teams';
-          setMeetingPlatform('teams');
-        }
+        const detected = detectPlatformFromUrl(cleaned);
+        setMeetingPlatform(detected);
 
         if (attachMeetingToEmail) {
           const schedule = meetingDateTime || 'Tomorrow, 04:00 PM IST';
-          setHtmlBody((prev) => injectMeetingBlock(prev, cleaned, schedule, detectedPlatform));
-          setPlainText((prev) => injectMeetingTextBlock(prev, cleaned, schedule, detectedPlatform));
+          setHtmlBody((prev) => injectMeetingBlock(prev, cleaned, schedule, detected));
+          setPlainText((prev) => injectMeetingTextBlock(prev, cleaned, schedule, detected));
         }
-        toast.success('Pasted meeting link from clipboard!');
+        const platformName = detected === 'google_meet' ? 'Google Meet' : detected === 'zoom' ? 'Zoom' : detected === 'teams' ? 'Microsoft Teams' : 'Meeting';
+        toast.success(`Pasted ${platformName} link from clipboard!`);
       } else {
-        toast.error('Clipboard is empty');
+        toast.error('Clipboard is empty. Please copy your meeting URL first.');
       }
     } catch (err) {
       toast.error('Could not access clipboard. Please paste directly into the box.');
@@ -477,7 +536,14 @@ export default function EmailComposerModal({
   const handleInsertOrUpdateMeeting = (customLink?: string, customTime?: string, customPlatform?: string) => {
     const activeLink = customLink || meetingLink.trim();
     if (!activeLink) {
-      toast.error('Please enter or generate a meeting link first');
+      if (meetingPlatform === 'google_meet') {
+        handleOpenGoogleMeetNew();
+      } else if (meetingPlatform === 'zoom') {
+        handleOpenZoomNew();
+      } else if (meetingPlatform === 'teams') {
+        handleOpenTeamsNew();
+      }
+      toast.error(`Please enter or create your ${meetingPlatform === 'google_meet' ? 'Google Meet' : meetingPlatform === 'zoom' ? 'Zoom' : meetingPlatform === 'teams' ? 'Microsoft Teams' : 'meeting'} link first`);
       return;
     }
     const activeTime = customTime !== undefined ? customTime : meetingDateTime.trim();
@@ -491,7 +557,8 @@ export default function EmailComposerModal({
     // Update Plain Text
     setPlainText((prev) => injectMeetingTextBlock(prev, activeLink, activeTime, activePlatform));
 
-    toast.success('Meeting invitation added to letter!');
+    const platformName = activePlatform === 'google_meet' ? 'Google Meet' : activePlatform === 'zoom' ? 'Zoom' : activePlatform === 'teams' ? 'Microsoft Teams' : 'Meeting';
+    toast.success(`${platformName} invitation added to letter!`);
   };
 
   // Toggle attachment of meeting card to email
@@ -501,11 +568,25 @@ export default function EmailComposerModal({
       setAttachMeetingToEmail(false);
       toast.info('Meeting invitation detached from letter');
     } else {
-      let link = meetingLink.trim();
-      if (!link) {
-        link = handleGenerateInstantRoom();
+      if (!meetingLink.trim()) {
+        if (meetingPlatform === 'google_meet') {
+          handleOpenGoogleMeetNew();
+          toast.info('Please create or paste your Google Meet link to attach it to the letter');
+          return;
+        } else if (meetingPlatform === 'zoom') {
+          handleOpenZoomNew();
+          toast.info('Please create or paste your Zoom link to attach it to the letter');
+          return;
+        } else if (meetingPlatform === 'teams') {
+          handleOpenTeamsNew();
+          toast.info('Please create or paste your Teams link to attach it to the letter');
+          return;
+        } else {
+          handleGenerateInstantRoom();
+          return;
+        }
       }
-      handleInsertOrUpdateMeeting(link);
+      handleInsertOrUpdateMeeting(meetingLink);
       setAttachMeetingToEmail(true);
       toast.success('Meeting invitation attached to letter!');
     }
@@ -525,13 +606,9 @@ export default function EmailComposerModal({
       if (initialRecipient && !recipientsList.includes(initialRecipient)) {
         setRecipientsList([initialRecipient]);
       }
-      // Auto-populate Instant Live Video Room as primary default
-      if (!meetingLink) {
-        const roomCode = `HIP-Interview-${Math.floor(1000 + Math.random() * 9000)}`;
-        const initialInstantUrl = `https://meet.jit.si/${roomCode}`;
-        setMeetingLink(initialInstantUrl);
-        setMeetingPlatform('instant');
-
+      // Google Meet is primary preference
+      setMeetingPlatform('google_meet');
+      if (!meetingDateTime) {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         const tomorrowStr = formatDateToCustom(tomorrow);
@@ -612,27 +689,13 @@ export default function EmailComposerModal({
       dateStr: todayStr
     });
 
-    let currentMeeting = meetingLink;
-    if (!currentMeeting) {
-      const cleanName = (candidateName || 'Interview').replace(/[^a-zA-Z0-9]/g, '');
-      currentMeeting = `https://meet.jit.si/HIP-${cleanName}-${Math.floor(1000 + Math.random() * 9000)}`;
-      setMeetingLink(currentMeeting);
-      setMeetingPlatform('instant');
-      if (!meetingDateTime) {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowStr = formatDateToCustom(tomorrow);
-        setMeetingDateTime(`${tomorrowStr}, 04:00 PM IST`);
-      }
-    }
-
     let activeHtml = rendered.htmlBody;
     let activeText = rendered.plainText;
 
-    if (attachMeetingToEmail && currentMeeting.trim()) {
+    if (attachMeetingToEmail && meetingLink.trim()) {
       const activeTime = meetingDateTime || 'Tomorrow, 04:00 PM IST';
-      activeHtml = injectMeetingBlock(activeHtml, currentMeeting.trim(), activeTime, meetingPlatform);
-      activeText = injectMeetingTextBlock(activeText, currentMeeting.trim(), activeTime, meetingPlatform);
+      activeHtml = injectMeetingBlock(activeHtml, meetingLink.trim(), activeTime, meetingPlatform);
+      activeText = injectMeetingTextBlock(activeText, meetingLink.trim(), activeTime, meetingPlatform);
     }
 
     setSubject(rendered.subject);
@@ -1356,13 +1419,24 @@ export default function EmailComposerModal({
                       </button>
                     </div>
 
-                    {/* Platform Selector (Option 2 Instant Live Room is #1 Recommended) */}
+                    {/* Platform Selector: Google Meet is #1 Preferred, Instant Room is #2 Alternative, Zoom #3, Teams #4 */}
                     <div className="grid grid-cols-4 gap-1 p-0.5 bg-slate-200/60 dark:bg-slate-800 rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() => setMeetingPlatform('google_meet')}
+                        className={`text-[10px] font-bold py-1.5 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
+                          meetingPlatform === 'google_meet'
+                            ? 'bg-orange-600 text-white shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                        }`}
+                      >
+                        Google Meet ★
+                      </button>
                       <button
                         type="button"
                         onClick={() => {
                           setMeetingPlatform('instant');
-                          if (!meetingLink || meetingLink.includes('meet.google.com')) {
+                          if (!meetingLink || meetingLink.includes('meet.google.com') || meetingLink.includes('zoom.us') || meetingLink.includes('teams.')) {
                             handleGenerateInstantRoom();
                           }
                         }}
@@ -1372,25 +1446,14 @@ export default function EmailComposerModal({
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                         }`}
                       >
-                        ⚡ Instant (Best)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setMeetingPlatform('google_meet')}
-                        className={`text-[10px] font-bold py-1.5 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
-                          meetingPlatform === 'google_meet'
-                            ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-xs'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                        }`}
-                      >
-                        Google Meet
+                        ⚡ Instant (Alt)
                       </button>
                       <button
                         type="button"
                         onClick={() => setMeetingPlatform('zoom')}
                         className={`text-[10px] font-bold py-1.5 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
                           meetingPlatform === 'zoom'
-                            ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                            ? 'bg-blue-600 text-white shadow-xs'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                         }`}
                       >
@@ -1401,7 +1464,7 @@ export default function EmailComposerModal({
                         onClick={() => setMeetingPlatform('teams')}
                         className={`text-[10px] font-bold py-1.5 px-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
                           meetingPlatform === 'teams'
-                            ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                            ? 'bg-indigo-600 text-white shadow-xs'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                         }`}
                       >
@@ -1410,50 +1473,172 @@ export default function EmailComposerModal({
                     </div>
 
                     {/* Platform Explanation Notice */}
-                    {meetingPlatform === 'instant' ? (
-                      <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-lg p-2.5 text-[11px] text-emerald-800 dark:text-emerald-300 space-y-1">
-                        <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400">
-                          <Sparkles className="h-3.5 w-3.5 shrink-0" />
-                          <span>100% Live Video Conference Ready</span>
+                    {meetingPlatform === 'google_meet' ? (
+                      <div className="bg-orange-500/10 border border-orange-500/25 rounded-xl p-3 text-[11px] text-orange-950 dark:text-orange-200 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 font-bold text-orange-700 dark:text-orange-400">
+                            <Video className="h-3.5 w-3.5 shrink-0 text-orange-600" />
+                            <span>Google Meet (Primary Choice)</span>
+                          </div>
+                          <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-700 dark:text-orange-300">
+                            Preferred
+                          </span>
                         </div>
                         <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-normal">
-                          Zero setup or login required! Anyone can join via camera, mic & screen share. The email automatically includes a <strong>&quot;🚀 Join Live Meeting Now&quot;</strong> button plus a <strong>&quot;📅 Add to Google Calendar&quot;</strong> button!
+                          Official Google Meet rooms must be created via Google servers to avoid &quot;No such meeting&quot; errors. Click <strong>&quot;Create Google Meet Room ↗&quot;</strong>, copy your room link, and click <strong>&quot;Paste Link&quot;</strong> below.
                         </p>
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                          <button
+                            type="button"
+                            onClick={handleOpenGoogleMeetNew}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Create Google Meet Room ↗
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handlePasteFromClipboard}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            Paste Link
+                          </button>
+                        </div>
                       </div>
-                    ) : meetingPlatform === 'google_meet' ? (
-                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 text-[11px] text-amber-800 dark:text-amber-300 space-y-1">
-                        <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-400">
-                          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                          <span>Google Meet Server Requirement</span>
+                    ) : meetingPlatform === 'instant' ? (
+                      <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-xl p-3 text-[11px] text-emerald-950 dark:text-emerald-200 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400">
+                            <Sparkles className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                            <span>Instant Live Room (Alternative)</span>
+                          </div>
+                          <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                            Zero Login Fallback
+                          </span>
                         </div>
                         <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-normal">
-                          Google Meet requires rooms to be created on Google servers first. Click <strong>&quot;Create Google Meet Room ↗&quot;</strong> to start a room, then paste its URL below.
+                          Zero setup or login required! Anyone can join via camera, mic &amp; screen share in browser without Google, Zoom, or Teams accounts.
                         </p>
+                        <div className="flex items-center gap-2 pt-0.5">
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateInstantRoom()}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                          >
+                            <Sparkles className="h-3.5 w-3.5" />
+                            Re-generate Room
+                          </button>
+                        </div>
                       </div>
-                    ) : null}
+                    ) : meetingPlatform === 'zoom' ? (
+                      <div className="bg-blue-500/10 border border-blue-500/25 rounded-xl p-3 text-[11px] text-blue-950 dark:text-blue-200 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 font-bold text-blue-700 dark:text-blue-400">
+                            <Video className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+                            <span>Official Zoom Meeting</span>
+                          </div>
+                          <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-700 dark:text-blue-300">
+                            Zoom
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-normal">
+                          To prevent &quot;Meeting ID does not exist&quot; errors, create your meeting on Zoom, copy the invitation link, and paste it below.
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                          <button
+                            type="button"
+                            onClick={handleOpenZoomNew}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Schedule / Start Zoom Meeting ↗
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handlePasteFromClipboard}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            Paste Link
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-indigo-500/10 border border-indigo-500/25 rounded-xl p-3 text-[11px] text-indigo-950 dark:text-indigo-200 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 font-bold text-indigo-700 dark:text-indigo-400">
+                            <Video className="h-3.5 w-3.5 shrink-0 text-indigo-600" />
+                            <span>Microsoft Teams Meeting</span>
+                          </div>
+                          <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-700 dark:text-indigo-300">
+                            Teams
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-normal">
+                          To prevent invalid meeting errors, create your meeting on Microsoft Teams, copy the join link, and paste it below.
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                          <button
+                            type="button"
+                            onClick={handleOpenTeamsNew}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Create Teams Meeting ↗
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handlePasteFromClipboard}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            Paste Link
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Meeting URL Bar with Quick Actions */}
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Meeting Link URL</span>
+                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                          {meetingPlatform === 'google_meet' ? 'Google Meet URL' : meetingPlatform === 'zoom' ? 'Zoom Invite URL' : meetingPlatform === 'teams' ? 'Teams Join URL' : 'Meeting Room URL'}
+                        </span>
                         <div className="flex items-center gap-1.5">
-                          {meetingPlatform === 'instant' ? (
-                            <button
-                              type="button"
-                              onClick={() => handleGenerateInstantRoom()}
-                              className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5 cursor-pointer"
-                            >
-                              <Sparkles className="h-3 w-3" /> Re-generate Room
-                            </button>
-                          ) : meetingPlatform === 'google_meet' ? (
+                          {meetingPlatform === 'google_meet' ? (
                             <button
                               type="button"
                               onClick={handleOpenGoogleMeetNew}
                               className="text-[10px] font-bold text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-0.5 cursor-pointer"
                             >
-                              <ExternalLink className="h-3 w-3" /> Create Google Meet Room ↗
+                              <ExternalLink className="h-3 w-3" /> Create Room ↗
                             </button>
-                          ) : null}
+                          ) : meetingPlatform === 'instant' ? (
+                            <button
+                              type="button"
+                              onClick={() => handleGenerateInstantRoom()}
+                              className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <Sparkles className="h-3 w-3" /> Re-generate
+                            </button>
+                          ) : meetingPlatform === 'zoom' ? (
+                            <button
+                              type="button"
+                              onClick={handleOpenZoomNew}
+                              className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <ExternalLink className="h-3 w-3" /> Open Zoom ↗
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={handleOpenTeamsNew}
+                              className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <ExternalLink className="h-3 w-3" /> Open Teams ↗
+                            </button>
+                          )}
                           <span className="text-slate-300 dark:text-slate-700">•</span>
                           <button
                             type="button"
@@ -1468,18 +1653,24 @@ export default function EmailComposerModal({
                       <div className="flex gap-1.5">
                         <Input
                           placeholder={
-                            meetingPlatform === 'instant'
+                            meetingPlatform === 'google_meet'
+                              ? 'https://meet.google.com/xxx-yyyy-zzz (Paste Google Meet URL)'
+                              : meetingPlatform === 'instant'
                               ? 'https://meet.jit.si/HIP-...'
-                              : meetingPlatform === 'google_meet'
-                              ? 'https://meet.google.com/xxx-yyyy-zzz (Paste real room URL)'
-                              : 'Paste meeting invite URL...'
+                              : meetingPlatform === 'zoom'
+                              ? 'https://zoom.us/j/... (Paste Zoom Invite URL)'
+                              : 'https://teams.microsoft.com/... (Paste Teams URL)'
                           }
                           value={meetingLink}
                           onChange={(e) => {
                             const val = e.target.value;
                             setMeetingLink(val);
+                            const detected = detectPlatformFromUrl(val);
+                            if (detected !== meetingPlatform && val.trim().length > 10) {
+                              setMeetingPlatform(detected);
+                            }
                             if (attachMeetingToEmail && val.trim()) {
-                              handleInsertOrUpdateMeeting(val, meetingDateTime);
+                              handleInsertOrUpdateMeeting(val, meetingDateTime, detected);
                             }
                           }}
                           className="text-xs rounded-xl h-8.5 bg-white dark:bg-slate-950 font-mono"
@@ -1490,10 +1681,19 @@ export default function EmailComposerModal({
                             variant="outline"
                             size="sm"
                             onClick={() => window.open(meetingLink, '_blank')}
-                            className="h-8.5 px-2 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 shrink-0 cursor-pointer"
-                            title="Open and test live video call now"
+                            className={`h-8.5 px-2 rounded-xl text-xs font-bold shrink-0 cursor-pointer ${
+                              meetingPlatform === 'google_meet'
+                                ? 'text-orange-600 dark:text-orange-400 border-orange-500/30 hover:bg-orange-50 dark:hover:bg-orange-950/40'
+                                : meetingPlatform === 'zoom'
+                                ? 'text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-50 dark:hover:bg-blue-950/40'
+                                : meetingPlatform === 'teams'
+                                ? 'text-indigo-600 dark:text-indigo-400 border-indigo-500/30 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'
+                                : 'text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
+                            }`}
+                            title={`Open and test ${meetingPlatform === 'google_meet' ? 'Google Meet' : meetingPlatform === 'zoom' ? 'Zoom' : meetingPlatform === 'teams' ? 'Teams' : 'video'} room now`}
                           >
-                            <ExternalLink className="h-3.5 w-3.5 mr-1" /> Test
+                            <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                            {meetingPlatform === 'google_meet' ? 'Test Meet' : meetingPlatform === 'zoom' ? 'Test Zoom' : meetingPlatform === 'teams' ? 'Test Teams' : 'Test Call'}
                           </Button>
                         )}
                         {meetingLink && (
