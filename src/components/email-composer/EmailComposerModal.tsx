@@ -11,7 +11,7 @@ import {
   X, Check, AlertCircle, FileText, CheckCircle2,
   Building2, ShieldCheck, Laptop, Smartphone, Wand2, Type, LayoutTemplate,
   Paperclip, Users, Search, Download, Trash2, Calendar, Plus,
-  Video, ExternalLink, Clock, Copy
+  Video, ExternalLink, Clock, Copy, Briefcase, ChevronDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -123,6 +123,32 @@ export function formatDateToCustom(dateInput: string | Date | undefined | null):
 
 export const MEETING_HTML_REGEX = /<!-- HIP_MEETING_START -->[\s\S]*?<!-- HIP_MEETING_END -->/g;
 export const MEETING_TEXT_REGEX = /=== VIDEO MEETING DETAILS ===[\s\S]*?===========================/g;
+
+export const BLANK_LETTERHEAD_HTML = `<div style="font-family: Arial, Helvetica, sans-serif; color: #1e293b; max-width: 680px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+  <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 32px 28px; border-bottom: 4px solid #ea580c;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td>
+          <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;">HINDUSTAN INNOVATION PVT LTD</h1>
+          <p style="color: #ea580c; margin: 4px 0 0 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Operating System for High Performance Teams</p>
+        </td>
+        <td align="right">
+          <span style="display: inline-block; background: rgba(234, 88, 12, 0.15); color: #fb923c; border: 1px solid rgba(234, 88, 12, 0.4); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;">OFFICIAL DISPATCH</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div style="padding: 28px 28px; min-height: 220px;">
+    <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">
+      Start typing your message here, or enter instructions in the left panel and click <strong>"Generate / Rewrite with Groq AI"</strong>.
+    </p>
+    <p style="margin-top: 32px; font-size: 13px; color: #1e293b;">
+      Sincerely,<br/>
+      <strong>Management Team</strong><br/>
+      <span style="color: #64748b; font-size: 12px;">Hindustan Innovation Pvt Ltd</span>
+    </p>
+  </div>
+</div>`;
 
 export function generateMeetingHtml(link: string, dateTime: string, platform: string = 'google_meet'): string {
   const platformLabel = 
@@ -373,7 +399,8 @@ export default function EmailComposerModal({
 
   // Templates state
   const [templates, setTemplates] = useState<EmailTemplateItem[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('none');
+  const [isRoleFieldsOpen, setIsRoleFieldsOpen] = useState(false);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
 
   // Raw base templates before interpolation
@@ -718,6 +745,34 @@ export default function EmailComposerModal({
     }
   }, [open]);
 
+  const handleApplyBlankCanvas = () => {
+    setSelectedTemplateId('none');
+    setRawSubjectTemplate('');
+    setRawHtmlTemplate(BLANK_LETTERHEAD_HTML);
+    setSubject('');
+    let activeHtml = BLANK_LETTERHEAD_HTML;
+    let activeText = 'Start typing your message here, or enter instructions in the left panel and click "Generate / Rewrite with Groq AI".';
+
+    const activeMeetLink = meetingLink.trim() || (() => {
+      try {
+        return (localStorage.getItem('hip_default_google_meet_link') || '').trim();
+      } catch {
+        return '';
+      }
+    })();
+
+    if (attachMeetingToEmail && activeMeetLink) {
+      const activeTime = meetingDateTime || 'Tomorrow, 04:00 PM IST';
+      activeHtml = injectMeetingBlock(activeHtml, activeMeetLink, activeTime, meetingPlatform);
+      activeText = injectMeetingTextBlock(activeText, activeMeetLink, activeTime, meetingPlatform);
+    }
+
+    setHtmlBody(activeHtml);
+    setPlainText(activeText);
+    setIsRoleFieldsOpen(false);
+    setPreviewRenderId((prev) => prev + 1);
+  };
+
   const fetchTemplates = async () => {
     try {
       setLoadingTemplates(true);
@@ -726,13 +781,19 @@ export default function EmailComposerModal({
         const list = res.data.data as EmailTemplateItem[];
         setTemplates(list);
 
-        const match = list.find(t => t.category === initialCategory) || list[0];
-        if (match) {
-          applyTemplate(match);
+        if (initialCategory && initialCategory !== 'none') {
+          const match = list.find(t => t.category === initialCategory);
+          if (match) {
+            applyTemplate(match);
+            return;
+          }
         }
+        // Default to Blank Canvas
+        handleApplyBlankCanvas();
       }
     } catch (err) {
       console.error('Failed to load templates:', err);
+      handleApplyBlankCanvas();
     } finally {
       setLoadingTemplates(false);
     }
@@ -771,6 +832,7 @@ export default function EmailComposerModal({
 
   const applyTemplate = (t: EmailTemplateItem) => {
     setSelectedTemplateId(t.id);
+    setIsRoleFieldsOpen(true);
     setRawSubjectTemplate(t.subject);
     setRawHtmlTemplate(t.htmlBody);
 
@@ -814,6 +876,11 @@ export default function EmailComposerModal({
   };
 
   const handleTemplateChange = (id: string) => {
+    if (id === 'none') {
+      handleApplyBlankCanvas();
+      toast.info('Switched to Blank Canvas (Custom AI Email)');
+      return;
+    }
     const found = templates.find(t => t.id === id);
     if (found) {
       applyTemplate(found);
@@ -895,17 +962,18 @@ export default function EmailComposerModal({
   const handleGenerateWithAi = async () => {
     try {
       setIsGeneratingAi(true);
-      const currentT = templates.find(t => t.id === selectedTemplateId);
+      const isNone = selectedTemplateId === 'none';
+      const currentT = !isNone ? templates.find(t => t.id === selectedTemplateId) : null;
       
       const payload = {
         format: emailFormat,
-        templateCategory: currentT?.category || 'internship',
-        candidateName: candidateName || 'Candidate',
+        templateCategory: isNone ? 'none' : (currentT?.category || 'none'),
+        candidateName: candidateName.trim() || (isNone ? 'Recipient' : 'Candidate'),
         candidateEmail: recipientsList[0] || '',
-        role: candidateRole || 'Software Engineer',
-        stipend,
-        startDate,
-        duration,
+        role: isRoleFieldsOpen ? candidateRole.trim() : '',
+        stipend: isRoleFieldsOpen ? stipend.trim() : '',
+        startDate: isRoleFieldsOpen ? startDate : '',
+        duration: isRoleFieldsOpen ? duration.trim() : '',
         tone,
         prompt: customPrompt,
         meetingLink: meetingLink.trim(),
@@ -1370,6 +1438,11 @@ export default function EmailComposerModal({
                   <SelectValue placeholder="Select official template..." />
                 </SelectTrigger>
                 <SelectContent className="max-h-72">
+                  <SelectItem value="none" className="text-xs font-bold text-orange-600 dark:text-orange-400">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-orange-500" /> None / Blank Canvas (Custom AI Email)
+                    </span>
+                  </SelectItem>
                   {templates.map(t => (
                     <SelectItem key={t.id} value={t.id} className="text-xs">
                       <span className="font-bold text-slate-800 dark:text-slate-200">{t.name}</span>
@@ -1403,7 +1476,9 @@ export default function EmailComposerModal({
                     <Sparkles className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />
                     <span>
                       Drafting as <strong>{emailFormat === 'html' ? 'Rich Corporate Letterhead' : 'Clean Plain Text'}</strong>. 
-                      Fill candidate details below or give custom instructions.
+                      {selectedTemplateId === 'none' 
+                        ? ' Blank Canvas active. Describe what you need in the prompt box below!'
+                        : ' Fill details below or customize with instructions.'}
                     </span>
                   </div>
 
@@ -1413,70 +1488,95 @@ export default function EmailComposerModal({
                       Email Subject Line
                     </label>
                     <Input
-                      placeholder="e.g. Internship Offer Letter – Full Stack Intern at Hindustan Innovation Pvt Ltd"
+                      placeholder={selectedTemplateId === 'none' ? "e.g. Discussion on New Version Release – Team Sync" : "e.g. Internship Offer Letter – Full Stack Intern at Hindustan Innovation"}
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
                       className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-bold"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Candidate / Recipient Name</label>
-                      <Input
-                        placeholder="e.g. Aarav Sharma"
-                        value={candidateName}
-                        onChange={(e) => handleFieldChange('name', e.target.value)}
-                        className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Role / Position</label>
-                      <Input
-                        placeholder="e.g. Full Stack Intern"
-                        value={candidateRole}
-                        onChange={(e) => handleFieldChange('role', e.target.value)}
-                        className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                      />
-                    </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                      Recipient / Candidate Name
+                    </label>
+                    <Input
+                      placeholder="e.g. Aarav Sharma or Team Member"
+                      value={candidateName}
+                      onChange={(e) => handleFieldChange('name', e.target.value)}
+                      className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                    />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2.5">
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Stipend / CTC</label>
-                      <Input
-                        placeholder="e.g. ₹15,000/mo"
-                        value={stipend}
-                        onChange={(e) => handleFieldChange('stipend', e.target.value)}
-                        className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Start Date</label>
-                      <div className="relative inline-flex items-center w-full">
-                        <input
-                          type="date"
-                          value={startDate}
-                          onChange={(e) => handleFieldChange('startDate', e.target.value)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        />
-                        <div className="w-full h-9 px-3 rounded-full border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1.5 shadow-inner transition-colors cursor-pointer group">
-                          <span className="text-[11px] font-bold tracking-wide text-white">
-                            {formatDateToCustom(startDate) || '08-Sep-2026'}
-                          </span>
-                          <Calendar className="h-3.5 w-3.5 text-slate-400 group-hover:text-white transition-colors shrink-0" />
+                  {/* Collapsible Role & Compensation Accordion */}
+                  <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/60 dark:bg-slate-900/40">
+                    <button
+                      type="button"
+                      onClick={() => setIsRoleFieldsOpen(!isRoleFieldsOpen)}
+                      className="w-full px-3.5 py-2.5 flex items-center justify-between text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Briefcase className="h-3.5 w-3.5 text-orange-500" />
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Optional Role & Compensation Details
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-200/60 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                          {isRoleFieldsOpen ? 'Expanded' : 'Optional'}
+                        </span>
+                        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${isRoleFieldsOpen ? 'rotate-180' : ''}`} />
+                      </div>
+                    </button>
+                    {isRoleFieldsOpen && (
+                      <div className="p-3 pt-2 space-y-2.5 border-t border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/50">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Role / Position Title</label>
+                          <Input
+                            placeholder="e.g. Full Stack Intern"
+                            value={candidateRole}
+                            onChange={(e) => handleFieldChange('role', e.target.value)}
+                            className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                          />
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Stipend / CTC</label>
+                            <Input
+                              placeholder="e.g. ₹15,000/mo"
+                              value={stipend}
+                              onChange={(e) => handleFieldChange('stipend', e.target.value)}
+                              className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Start Date</label>
+                            <div className="relative inline-flex items-center w-full">
+                              <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => handleFieldChange('startDate', e.target.value)}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                              />
+                              <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
+                                <span className="text-[10px] font-bold tracking-wide text-white truncate">
+                                  {formatDateToCustom(startDate) || '08-Sep-2026'}
+                                </span>
+                                <Calendar className="h-3 w-3 text-slate-400 group-hover:text-white transition-colors shrink-0" />
+                              </div>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Duration</label>
+                            <Input
+                              placeholder="e.g. 3 Months"
+                              value={duration}
+                              onChange={(e) => handleFieldChange('duration', e.target.value)}
+                              className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Duration</label>
-                      <Input
-                        placeholder="e.g. 3 Months"
-                        value={duration}
-                        onChange={(e) => handleFieldChange('duration', e.target.value)}
-                        className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                      />
-                    </div>
+                    )}
                   </div>
 
                   <div>
