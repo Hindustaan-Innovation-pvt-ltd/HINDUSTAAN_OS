@@ -9,11 +9,21 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { 
   Mail, Sparkles, Send, Eye, Edit3, Printer, RefreshCw, 
   X, Check, AlertCircle, FileText, CheckCircle2,
-  Building2, ShieldCheck, Laptop, Smartphone, Wand2, Type, LayoutTemplate
+  Building2, ShieldCheck, Laptop, Smartphone, Wand2, Type, LayoutTemplate,
+  Paperclip, Users, Search, Download, Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { useUser } from '@/context/UserContext';
+import BulkCsvImportModal from './BulkCsvImportModal';
+
+export interface EmailAttachmentItem {
+  id: string;
+  filename: string;
+  content: string; // base64
+  contentType: string;
+  size: number;
+}
 
 export interface EmailTemplateItem {
   id: string;
@@ -71,6 +81,72 @@ export function htmlToPlainText(html: string): string {
   return text.trim();
 }
 
+// Helper to interpolate raw templates with form values
+export function interpolateTemplate(
+  rawHtml: string,
+  rawSubj: string,
+  data: {
+    name: string;
+    role: string;
+    stipend: string;
+    startDate: string;
+    duration: string;
+    manager: string;
+    refId: string;
+    dateStr: string;
+  }
+) {
+  let endDateStr = '3 Months from joining';
+  try {
+    const d = new Date(data.startDate);
+    if (!isNaN(d.getTime())) {
+      const numMonths = parseInt(data.duration, 10) || 3;
+      d.setMonth(d.getMonth() + numMonths);
+      endDateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+  } catch (e) {
+    endDateStr = '3 Months from joining';
+  }
+
+  const safeName = data.name.trim() || 'Candidate';
+  const safeRole = data.role.trim() || 'Software Engineer Intern';
+  const safeStipend = data.stipend.trim() || '₹15,000 / month';
+  const safeDuration = data.duration.trim() || '3 Months';
+
+  let s = (rawSubj || '')
+    .replace(/{{candidateName}}/g, safeName)
+    .replace(/{{name}}/g, safeName)
+    .replace(/{{employeeName}}/g, safeName)
+    .replace(/{{role}}/g, safeRole)
+    .replace(/{{stipend}}/g, safeStipend);
+
+  let h = (rawHtml || '')
+    .replace(/{{referenceId}}/g, data.refId)
+    .replace(/{{currentDate}}/g, data.dateStr)
+    .replace(/{{candidateName}}/g, safeName)
+    .replace(/{{name}}/g, safeName)
+    .replace(/{{employeeName}}/g, safeName)
+    .replace(/{{role}}/g, safeRole)
+    .replace(/{{stipend}}/g, safeStipend)
+    .replace(/{{annualCTC}}/g, safeStipend)
+    .replace(/{{startDate}}/g, data.startDate)
+    .replace(/{{endDate}}/g, endDateStr)
+    .replace(/{{duration}}/g, safeDuration)
+    .replace(/{{reportingManager}}/g, data.manager)
+    .replace(/{{workLocation}}/g, 'Headquarters / Remote')
+    .replace(/{{projectAccomplished}}/g, 'Full Stack Enterprise Systems Development')
+    .replace(/{{performanceRating}}/g, 'Exemplary / Outstanding')
+    .replace(/{{reviewDate}}/g, data.startDate)
+    .replace(/{{areasOfImprovement}}/g, 'Deepening system architecture & cross-functional documentation')
+    .replace(/{{supportAction}}/g, 'Dedicated 1-on-1 mentorship and weekly technical check-ins');
+
+  return {
+    subject: s,
+    htmlBody: h,
+    plainText: htmlToPlainText(h)
+  };
+}
+
 export default function EmailComposerModal({
   open,
   onOpenChange,
@@ -79,7 +155,7 @@ export default function EmailComposerModal({
   initialCategory = 'internship'
 }: EmailComposerModalProps) {
   const { user } = useUser();
-  const role = user?.role || 'admin';
+  const role = (user?.role || 'admin').toLowerCase();
   const isManager = role === 'manager';
 
   // Format toggle: Rich HTML letterhead vs Simple Plain Email
@@ -89,6 +165,14 @@ export default function EmailComposerModal({
   const [templates, setTemplates] = useState<EmailTemplateItem[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [loadingTemplates, setLoadingTemplates] = useState(false);
+
+  // Raw base templates before interpolation
+  const [rawSubjectTemplate, setRawSubjectTemplate] = useState('');
+  const [rawHtmlTemplate, setRawHtmlTemplate] = useState('');
+  const [currentRefId, setCurrentRefId] = useState('2659');
+  const [currentDateStr, setCurrentDateStr] = useState(
+    new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+  );
 
   // Active email content
   const [activeTab, setActiveTab] = useState<'ai' | 'manual'>('ai');
@@ -113,6 +197,25 @@ export default function EmailComposerModal({
   const [recipientsList, setRecipientsList] = useState<string[]>(initialRecipient ? [initialRecipient] : []);
   const [newRecipientInput, setNewRecipientInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+
+  // Recipient autocomplete suggestions
+  const [recipientSuggestions, setRecipientSuggestions] = useState<Array<{
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    avatarUrl?: string;
+  }>>([]);
+  const [isSearchingRecipients, setIsSearchingRecipients] = useState(false);
+  const [showSuggestionsDropdown, setShowSuggestionsDropdown] = useState(false);
+  const searchDebounceRef = useRef<any>(null);
+
+  // Gmail-style Attachments state
+  const [attachments, setAttachments] = useState<EmailAttachmentItem[]>([]);
+  const fileAttachmentRef = useRef<HTMLInputElement>(null);
+
+  // Bulk CSV / Paste mode modal state
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
   // Fetch templates on mount
   useEffect(() => {
@@ -146,30 +249,82 @@ export default function EmailComposerModal({
 
   const applyTemplate = (t: EmailTemplateItem) => {
     setSelectedTemplateId(t.id);
-    setSubject(t.subject);
-    
-    let body = t.htmlBody;
+    setRawSubjectTemplate(t.subject);
+    setRawHtmlTemplate(t.htmlBody);
+
     const todayStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
     const randomRef = Math.floor(1000 + Math.random() * 9000).toString();
+    setCurrentDateStr(todayStr);
+    setCurrentRefId(randomRef);
 
-    body = body
-      .replace(/{{referenceId}}/g, randomRef)
-      .replace(/{{currentDate}}/g, todayStr)
-      .replace(/{{candidateName}}/g, candidateName || 'Aarav Sharma')
-      .replace(/{{role}}/g, candidateRole || 'Software Engineer Intern')
-      .replace(/{{stipend}}/g, stipend || '₹15,000 / month')
-      .replace(/{{startDate}}/g, startDate || todayStr)
-      .replace(/{{duration}}/g, duration || '3 Months')
-      .replace(/{{reportingManager}}/g, user?.name || 'Engineering Operations');
+    const rendered = interpolateTemplate(t.htmlBody, t.subject, {
+      name: candidateName || 'Aarav Sharma',
+      role: candidateRole,
+      stipend,
+      startDate,
+      duration,
+      manager: user?.name || 'Engineering Operations',
+      refId: randomRef,
+      dateStr: todayStr
+    });
 
-    setHtmlBody(body);
-    setPlainText(htmlToPlainText(body));
+    setSubject(rendered.subject);
+    setHtmlBody(rendered.htmlBody);
+    setPlainText(rendered.plainText);
   };
 
   const handleTemplateChange = (id: string) => {
     const found = templates.find(t => t.id === id);
     if (found) {
       applyTemplate(found);
+    }
+  };
+
+  // Keystroke Live-Sync: Instantly re-renders preview & subject as the user types in any input!
+  const handleFieldChange = (key: 'name' | 'role' | 'stipend' | 'startDate' | 'duration', value: string) => {
+    let newName = candidateName;
+    let newRole = candidateRole;
+    let newStipend = stipend;
+    let newStart = startDate;
+    let newDur = duration;
+
+    if (key === 'name') {
+      setCandidateName(value);
+      newName = value;
+    } else if (key === 'role') {
+      setCandidateRole(value);
+      newRole = value;
+    } else if (key === 'stipend') {
+      setStipend(value);
+      newStipend = value;
+    } else if (key === 'startDate') {
+      setStartDate(value);
+      newStart = value;
+    } else if (key === 'duration') {
+      setDuration(value);
+      newDur = value;
+    }
+
+    if (rawHtmlTemplate) {
+      const rendered = interpolateTemplate(rawHtmlTemplate, rawSubjectTemplate || subject, {
+        name: newName,
+        role: newRole,
+        stipend: newStipend,
+        startDate: newStart,
+        duration: newDur,
+        manager: user?.name || 'Engineering Operations',
+        refId: currentRefId,
+        dateStr: currentDateStr
+      });
+      setSubject(rendered.subject);
+      setHtmlBody(rendered.htmlBody);
+      setPlainText(rendered.plainText);
+    } else {
+      // Direct replace fallback
+      if (key === 'name' && candidateName) {
+        setHtmlBody(prev => prev.replace(new RegExp(candidateName, 'g'), value));
+        setSubject(prev => prev.replace(new RegExp(candidateName, 'g'), value));
+      }
     }
   };
 
@@ -206,9 +361,13 @@ export default function EmailComposerModal({
 
       const res = await api.post('/email/ai-generate', payload);
       if (res.data?.success && res.data.data) {
-        setSubject(res.data.data.subject || subject);
+        const newSubj = res.data.data.subject || subject;
+        const newHtml = res.data.data.htmlBody || htmlBody;
+        setRawSubjectTemplate(newSubj);
+        setRawHtmlTemplate(newHtml);
+        setSubject(newSubj);
+
         if (emailFormat === 'html') {
-          const newHtml = res.data.data.htmlBody || htmlBody;
           setHtmlBody(newHtml);
           setPlainText(res.data.data.textBody ? formatPlainText(res.data.data.textBody) : htmlToPlainText(newHtml));
         } else {
@@ -247,9 +406,13 @@ export default function EmailComposerModal({
         instruction
       });
       if (res.data?.success && res.data.data) {
-        setSubject(res.data.data.subject || subject);
+        const newSubj = res.data.data.subject || subject;
+        const newHtml = res.data.data.htmlBody || htmlBody;
+        setRawSubjectTemplate(newSubj);
+        setRawHtmlTemplate(newHtml);
+        setSubject(newSubj);
+
         if (emailFormat === 'html') {
-          const newHtml = res.data.data.htmlBody || htmlBody;
           setHtmlBody(newHtml);
           setPlainText(res.data.data.textBody ? formatPlainText(res.data.data.textBody) : htmlToPlainText(newHtml));
         } else {
@@ -267,6 +430,84 @@ export default function EmailComposerModal({
     } finally {
       setIsGeneratingAi(false);
     }
+  };
+
+  // Recipient input change with search autocomplete
+  const handleRecipientInputChange = (val: string) => {
+    setNewRecipientInput(val);
+    if (!val.trim()) {
+      setRecipientSuggestions([]);
+      setShowSuggestionsDropdown(false);
+      return;
+    }
+
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(async () => {
+      try {
+        setIsSearchingRecipients(true);
+        const res = await api.get(`/email/search-recipients?q=${encodeURIComponent(val.trim())}`);
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          setRecipientSuggestions(res.data.data);
+          setShowSuggestionsDropdown(true);
+        }
+      } catch (err) {
+        // Silent fallback
+      } finally {
+        setIsSearchingRecipients(false);
+      }
+    }, 180);
+  };
+
+  const selectSuggestion = (targetUser: { name: string; email: string; role: string }) => {
+    addRecipient(targetUser.email);
+    if (!candidateName || candidateName === 'Candidate' || candidateName === 'Aarav Sharma') {
+      handleFieldChange('name', targetUser.name);
+    }
+    setShowSuggestionsDropdown(false);
+    setNewRecipientInput('');
+  };
+
+  // File Attachments Handler
+  const handleFileAttachment = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const currentTotalSize = attachments.reduce((acc, a) => acc + a.size, 0);
+    const newFiles = Array.from(files);
+
+    newFiles.forEach((file) => {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`File "${file.name}" exceeds the 10MB limit.`);
+        return;
+      }
+      if (currentTotalSize + file.size > 12 * 1024 * 1024) {
+        toast.error(`Total attachments cannot exceed 10MB.`);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64Content = (reader.result as string).split(',')[1] || '';
+        setAttachments(prev => [
+          ...prev,
+          {
+            id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            filename: file.name,
+            content: base64Content,
+            contentType: file.type || 'application/octet-stream',
+            size: file.size
+          }
+        ]);
+        toast.success(`Attached "${file.name}"`);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    e.target.value = '';
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments(prev => prev.filter(a => a.id !== id));
   };
 
   // Recipient Management
@@ -387,6 +628,14 @@ export default function EmailComposerModal({
         payload.to = finalRecipients[0];
       }
 
+      if (attachments.length > 0) {
+        payload.attachments = attachments.map(a => ({
+          filename: a.filename,
+          content: a.content,
+          contentType: a.contentType
+        }));
+      }
+
       const res = await api.post(endpoint, payload);
       if (res.data?.success) {
         if (isBulk) {
@@ -460,6 +709,18 @@ export default function EmailComposerModal({
               </button>
             </div>
 
+            {/* Bulk Send Mode Button */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsBulkModalOpen(true)}
+              className="text-xs font-bold gap-1.5 rounded-xl border-indigo-200 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 cursor-pointer shadow-xs"
+            >
+              <Users className="h-3.5 w-3.5 text-indigo-500" />
+              Bulk Send (CSV / Paste)
+            </Button>
+
             {/* Print / Save PDF button */}
             <Button
               type="button"
@@ -528,7 +789,7 @@ export default function EmailComposerModal({
                       <Input
                         placeholder="e.g. Aarav Sharma"
                         value={candidateName}
-                        onChange={(e) => setCandidateName(e.target.value)}
+                        onChange={(e) => handleFieldChange('name', e.target.value)}
                         className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-medium"
                       />
                     </div>
@@ -537,7 +798,7 @@ export default function EmailComposerModal({
                       <Input
                         placeholder="e.g. Full Stack Intern"
                         value={candidateRole}
-                        onChange={(e) => setCandidateRole(e.target.value)}
+                        onChange={(e) => handleFieldChange('role', e.target.value)}
                         className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-medium"
                       />
                     </div>
@@ -549,7 +810,7 @@ export default function EmailComposerModal({
                       <Input
                         placeholder="e.g. ₹15,000/mo"
                         value={stipend}
-                        onChange={(e) => setStipend(e.target.value)}
+                        onChange={(e) => handleFieldChange('stipend', e.target.value)}
                         className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-medium"
                       />
                     </div>
@@ -558,7 +819,7 @@ export default function EmailComposerModal({
                       <Input
                         type="date"
                         value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
+                        onChange={(e) => handleFieldChange('startDate', e.target.value)}
                         className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-medium"
                       />
                     </div>
@@ -567,7 +828,7 @@ export default function EmailComposerModal({
                       <Input
                         placeholder="e.g. 3 Months"
                         value={duration}
-                        onChange={(e) => setDuration(e.target.value)}
+                        onChange={(e) => handleFieldChange('duration', e.target.value)}
                         className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-medium"
                       />
                     </div>
@@ -742,35 +1003,159 @@ export default function EmailComposerModal({
                   ))}
                 </div>
 
-                {/* Add Email Bar */}
-                <div className="flex gap-1.5">
-                  <Input
-                    placeholder="Enter email or paste comma-separated..."
-                    value={newRecipientInput}
-                    onChange={(e) => setNewRecipientInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ',') {
-                        e.preventDefault();
+                {/* Add Email Bar with Live Autocomplete */}
+                <div className="relative">
+                  <div className="flex gap-1.5">
+                    <div className="relative flex-1">
+                      <Input
+                        placeholder="Search workspace member (name/email) or type address..."
+                        value={newRecipientInput}
+                        onChange={(e) => handleRecipientInputChange(e.target.value)}
+                        onFocus={() => {
+                          if (recipientSuggestions.length > 0) setShowSuggestionsDropdown(true);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ',') {
+                            e.preventDefault();
+                            addRecipient();
+                            setShowSuggestionsDropdown(false);
+                          }
+                        }}
+                        className="text-xs h-8.5 pl-8 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+                      />
+                      <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                      {isSearchingRecipients && (
+                        <RefreshCw className="absolute right-2.5 top-2.5 h-3.5 w-3.5 animate-spin text-orange-500" />
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => {
                         addRecipient();
-                      }
-                    }}
-                    className="text-xs h-8.5 rounded-xl bg-white dark:bg-slate-900"
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => addRecipient()}
-                    size="sm"
-                    variant="outline"
-                    className="h-8.5 text-xs font-bold rounded-xl border-slate-200 dark:border-slate-700 cursor-pointer"
-                  >
-                    + Add
-                  </Button>
+                        setShowSuggestionsDropdown(false);
+                      }}
+                      size="sm"
+                      variant="outline"
+                      className="h-8.5 text-xs font-bold rounded-xl border-slate-200 dark:border-slate-700 cursor-pointer"
+                    >
+                      + Add
+                    </Button>
+                  </div>
+
+                  {/* Suggestions Popover Dropdown */}
+                  {showSuggestionsDropdown && recipientSuggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 animate-in fade-in slide-in-from-top-1 duration-150">
+                      <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                        <span>Workspace Members ({recipientSuggestions.length})</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowSuggestionsDropdown(false)}
+                          className="hover:text-slate-600 dark:hover:text-slate-200"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                      {recipientSuggestions.map((userItem) => {
+                        const roleColor =
+                          userItem.role === 'INTERN'
+                            ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'
+                            : userItem.role === 'MANAGER'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                            : userItem.role === 'ADMIN'
+                            ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20'
+                            : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
+
+                        return (
+                          <div
+                            key={userItem.id}
+                            onClick={() => selectSuggestion(userItem)}
+                            className="p-2.5 flex items-center justify-between hover:bg-orange-50/60 dark:hover:bg-orange-950/20 cursor-pointer transition-colors"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="h-7 w-7 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-300 shrink-0">
+                                {userItem.name?.charAt(0)?.toUpperCase() || 'U'}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate leading-tight">
+                                  {userItem.name}
+                                </p>
+                                <p className="text-[11px] text-slate-500 truncate leading-tight">
+                                  {userItem.email}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge className={`text-[10px] font-bold border px-1.5 py-0.5 rounded shrink-0 ml-2 ${roleColor}`}>
+                              {userItem.role}
+                            </Badge>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 {isManager && (
                   <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
                     <ShieldCheck className="h-3 w-3" /> Note: Managers can only dispatch emails to Interns & Employees.
                   </p>
                 )}
+
+                {/* Gmail-Style File Attachments */}
+                <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
+                  <div className="flex items-center justify-between">
+                    <input
+                      type="file"
+                      ref={fileAttachmentRef}
+                      onChange={handleFileAttachment}
+                      multiple
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => fileAttachmentRef.current?.click()}
+                      className="h-7 px-2 text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/30 rounded-lg gap-1.5 cursor-pointer"
+                    >
+                      <Paperclip className="h-3.5 w-3.5" />
+                      <span>Attach Files (PDF, Docs, Images)</span>
+                      <span className="text-[10px] text-slate-400 font-normal">Max 10MB</span>
+                    </Button>
+                    {attachments.length > 0 && (
+                      <span className="text-[10px] font-semibold text-slate-400">
+                        {attachments.length} file{attachments.length > 1 ? 's' : ''} ({(attachments.reduce((acc, a) => acc + a.size, 0) / (1024 * 1024)).toFixed(2)} MB)
+                      </span>
+                    )}
+                  </div>
+
+                  {attachments.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2 max-h-24 overflow-y-auto">
+                      {attachments.map((att) => (
+                        <div
+                          key={att.id}
+                          className="flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] border border-slate-200 dark:border-slate-700 shadow-xs group"
+                        >
+                          <FileText className="h-3 w-3 text-orange-500 shrink-0" />
+                          <span className="font-medium max-w-[140px] truncate" title={att.filename}>
+                            {att.filename}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            {att.size > 1024 * 1024
+                              ? (att.size / (1024 * 1024)).toFixed(1) + ' MB'
+                              : Math.round(att.size / 1024) + ' KB'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeAttachment(att.id)}
+                            className="p-0.5 rounded hover:bg-rose-100 dark:hover:bg-rose-900/40 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                            title="Remove attachment"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Final Dispatch Button */}
@@ -942,6 +1327,22 @@ export default function EmailComposerModal({
           </div>
 
         </div>
+
+        {/* Bulk CSV / Spreadsheet Paste Modal */}
+        <BulkCsvImportModal
+          open={isBulkModalOpen}
+          onOpenChange={setIsBulkModalOpen}
+          templateSubject={rawSubjectTemplate || subject}
+          templateHtml={rawHtmlTemplate || htmlBody}
+          templatePlainText={plainText}
+          format={emailFormat}
+          attachments={attachments}
+          onSuccess={() => {
+            setIsBulkModalOpen(false);
+            onOpenChange(false);
+            if (onSuccess) onSuccess();
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
