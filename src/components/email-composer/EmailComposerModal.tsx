@@ -10,7 +10,8 @@ import {
   Mail, Sparkles, Send, Eye, Edit3, Printer, RefreshCw, 
   X, Check, AlertCircle, FileText, CheckCircle2,
   Building2, ShieldCheck, Laptop, Smartphone, Wand2, Type, LayoutTemplate,
-  Paperclip, Users, Search, Download, Trash2, Calendar, Plus
+  Paperclip, Users, Search, Download, Trash2, Calendar, Plus,
+  Video, ExternalLink, Clock, Copy
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -118,6 +119,55 @@ export function formatDateToCustom(dateInput: string | Date | undefined | null):
     return `${day}-${month}-${year}`;
   }
   return str;
+}
+
+export const MEETING_HTML_REGEX = /<!-- HIP_MEETING_START -->[\s\S]*?<!-- HIP_MEETING_END -->/g;
+export const MEETING_TEXT_REGEX = /=== VIDEO MEETING DETAILS ===[\s\S]*?===========================/g;
+
+export function generateMeetingHtml(link: string, dateTime: string, platform: string = 'google_meet'): string {
+  const platformLabel = 
+    platform === 'google_meet' ? 'Google Meet' :
+    platform === 'zoom' ? 'Zoom Meeting' :
+    platform === 'teams' ? 'Microsoft Teams' : 'Video Conference';
+
+  return `<!-- HIP_MEETING_START -->
+<div id="hip-meeting-card" style="margin: 22px 0; padding: 18px 20px; background: #0f172a; border-radius: 12px; border: 1px solid #334155; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-shadow: 0 8px 20px -4px rgba(0,0,0,0.25);">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+    <tr>
+      <td align="left" style="vertical-align: middle;">
+        <span style="font-size: 15px; margin-right: 6px;">📹</span>
+        <strong style="font-size: 12px; color: #f97316; letter-spacing: 0.5px; text-transform: uppercase;">Official Video Meeting Invitation</strong>
+      </td>
+      <td align="right" style="vertical-align: middle;">
+        <span style="background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.35); font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 9999px;">
+          ${platformLabel}
+        </span>
+      </td>
+    </tr>
+  </table>
+  <div style="font-size: 13px; color: #cbd5e1; line-height: 1.6; margin-bottom: 14px;">
+    ${dateTime ? `<div style="margin-bottom: 5px;"><strong>🗓️ Scheduled Time:</strong> <span style="color: #ffffff; font-weight: 600;">${dateTime}</span></div>` : ''}
+    <div><strong>🔗 Meeting Link:</strong> <a href="${link}" target="_blank" style="color: #38bdf8; text-decoration: underline; word-break: break-all; font-weight: 600;">${link}</a></div>
+  </div>
+  <div style="text-align: left; margin-top: 10px;">
+    <a href="${link}" target="_blank" style="display: inline-block; background: #ea580c; color: #ffffff; font-weight: 700; font-size: 13px; padding: 9px 20px; text-decoration: none; border-radius: 8px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);">
+      🚀 Join ${platformLabel} Now &rarr;
+    </a>
+  </div>
+</div>
+<!-- HIP_MEETING_END -->`;
+}
+
+export function generateMeetingText(link: string, dateTime: string, platform: string = 'google_meet'): string {
+  const platformLabel = 
+    platform === 'google_meet' ? 'Google Meet' :
+    platform === 'zoom' ? 'Zoom Meeting' :
+    platform === 'teams' ? 'Microsoft Teams' : 'Video Conference';
+
+  let txt = `\n=== VIDEO MEETING DETAILS ===\nPlatform: ${platformLabel}\n`;
+  if (dateTime) txt += `Scheduled Time: ${dateTime}\n`;
+  txt += `Meeting Link: ${link}\n===========================\n`;
+  return txt;
 }
 
 // Helper to interpolate raw templates with form values
@@ -277,6 +327,84 @@ export default function EmailComposerModal({
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplateCategory, setNewTemplateCategory] = useState('internship');
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+
+  // Video Meeting Link state (Google Meet, Zoom, Teams)
+  const [meetingLink, setMeetingLink] = useState('');
+  const [meetingPlatform, setMeetingPlatform] = useState<'google_meet' | 'zoom' | 'teams' | 'custom'>('google_meet');
+  const [meetingDateTime, setMeetingDateTime] = useState('');
+
+  const isMeetingAttached = htmlBody.includes('HIP_MEETING_START') || plainText.includes('VIDEO MEETING DETAILS');
+
+  // Generate valid Google Meet link (e.g. https://meet.google.com/xxx-yyyy-zzz)
+  const handleGenerateGoogleMeet = () => {
+    const randStr = (len: number) => {
+      const chars = 'abcdefghijklmnopqrstuvwxyz';
+      return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    };
+    const generated = `https://meet.google.com/${randStr(3)}-${randStr(4)}-${randStr(3)}`;
+    setMeetingLink(generated);
+    setMeetingPlatform('google_meet');
+    if (!meetingDateTime) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = formatDateToCustom(tomorrow);
+      setMeetingDateTime(`${tomorrowStr}, 04:00 PM IST`);
+    }
+    toast.success('Generated Google Meet Link!', { description: generated });
+    return generated;
+  };
+
+  // Insert or update meeting invitation card into email draft
+  const handleInsertOrUpdateMeeting = (customLink?: string, customTime?: string, customPlatform?: string) => {
+    const activeLink = customLink || meetingLink.trim();
+    if (!activeLink) {
+      toast.error('Please enter or generate a meeting link first');
+      return;
+    }
+    const activeTime = customTime !== undefined ? customTime : meetingDateTime.trim();
+    const activePlatform = customPlatform || meetingPlatform;
+
+    const newHtmlBlock = generateMeetingHtml(activeLink, activeTime, activePlatform);
+    const newTextBlock = generateMeetingText(activeLink, activeTime, activePlatform);
+
+    // Update HTML Letterhead
+    setHtmlBody((prev) => {
+      if (MEETING_HTML_REGEX.test(prev)) {
+        return prev.replace(MEETING_HTML_REGEX, newHtmlBlock);
+      }
+      // Insert before closing signature
+      const closingIdx = prev.search(/<(?:p|div)[^>]*>(?:Sincerely|Warm regards|Best regards|Yours sincerely|Authorized Signatory)/i);
+      if (closingIdx !== -1) {
+        return prev.slice(0, closingIdx) + newHtmlBlock + '\n' + prev.slice(closingIdx);
+      }
+      const lastDivIdx = prev.lastIndexOf('</div>');
+      if (lastDivIdx !== -1) {
+        return prev.slice(0, lastDivIdx) + newHtmlBlock + '\n' + prev.slice(lastDivIdx);
+      }
+      return prev + '\n' + newHtmlBlock;
+    });
+
+    // Update Plain Text
+    setPlainText((prev) => {
+      if (MEETING_TEXT_REGEX.test(prev)) {
+        return prev.replace(MEETING_TEXT_REGEX, newTextBlock);
+      }
+      const closingIdx = prev.search(/(?:Sincerely,|Warm regards,|Best regards,|Yours sincerely,)/i);
+      if (closingIdx !== -1) {
+        return prev.slice(0, closingIdx) + newTextBlock + '\n' + prev.slice(closingIdx);
+      }
+      return prev + '\n' + newTextBlock;
+    });
+
+    toast.success('Meeting invitation added to letter!');
+  };
+
+  // Remove meeting invitation from draft
+  const handleRemoveMeeting = () => {
+    setHtmlBody((prev) => prev.replace(MEETING_HTML_REGEX, ''));
+    setPlainText((prev) => prev.replace(MEETING_TEXT_REGEX, ''));
+    toast.info('Meeting invitation removed from draft');
+  };
 
   // Fetch templates on mount
   useEffect(() => {
@@ -448,7 +576,10 @@ export default function EmailComposerModal({
         startDate,
         duration,
         tone,
-        prompt: customPrompt
+        prompt: customPrompt,
+        meetingLink: meetingLink.trim(),
+        meetingDateTime: meetingDateTime.trim(),
+        meetingPlatform: meetingPlatform === 'google_meet' ? 'Google Meet' : meetingPlatform === 'zoom' ? 'Zoom' : meetingPlatform === 'teams' ? 'MS Teams' : 'Video Conference'
       };
 
       const res = await api.post('/email/ai-generate', payload);
@@ -1020,6 +1151,153 @@ export default function EmailComposerModal({
                     />
                   </div>
 
+                  {/* Video Conference / Google Meet Card */}
+                  <div className="bg-slate-50/80 dark:bg-slate-900/70 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 space-y-3 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold">
+                          <Video className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 leading-tight">
+                            Video Meeting / Google Meet
+                          </label>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400">Attach meeting link & schedule</span>
+                        </div>
+                      </div>
+                      <Badge className={`text-[10px] font-bold border px-1.5 py-0.5 rounded ${
+                        isMeetingAttached
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                          : 'bg-slate-200 dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-700'
+                      }`}>
+                        {isMeetingAttached ? '✓ Attached in Letter' : 'Optional'}
+                      </Badge>
+                    </div>
+
+                    {/* Platform Selector */}
+                    <div className="grid grid-cols-3 gap-1.5 p-0.5 bg-slate-200/60 dark:bg-slate-800 rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() => setMeetingPlatform('google_meet')}
+                        className={`text-[11px] font-bold py-1 px-2 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          meetingPlatform === 'google_meet'
+                            ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                        }`}
+                      >
+                        Google Meet
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMeetingPlatform('zoom')}
+                        className={`text-[11px] font-bold py-1 px-2 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          meetingPlatform === 'zoom'
+                            ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                        }`}
+                      >
+                        Zoom
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMeetingPlatform('teams')}
+                        className={`text-[11px] font-bold py-1 px-2 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          meetingPlatform === 'teams'
+                            ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                        }`}
+                      >
+                        MS Teams
+                      </button>
+                    </div>
+
+                    {/* Meeting URL Bar with Quick Actions */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Meeting Link URL</span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={handleGenerateGoogleMeet}
+                            className="text-[10px] font-bold text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                          >
+                            <Sparkles className="h-3 w-3" /> Auto-Generate Link
+                          </button>
+                          <span className="text-slate-300 dark:text-slate-700">•</span>
+                          <a
+                            href="https://meet.google.com/new"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-0.5"
+                            title="Open Google Meet in new tab to create room"
+                          >
+                            Open Meet <ExternalLink className="h-2.5 w-2.5" />
+                          </a>
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <Input
+                          placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                          value={meetingLink}
+                          onChange={(e) => setMeetingLink(e.target.value)}
+                          className="text-xs rounded-xl h-8.5 bg-white dark:bg-slate-950 font-mono"
+                        />
+                        {meetingLink && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(meetingLink);
+                              toast.success('Meeting link copied to clipboard!');
+                            }}
+                            className="h-8.5 px-2.5 rounded-xl text-xs font-bold shrink-0"
+                            title="Copy Link"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Meeting Date & Time */}
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                        Meeting Date & Time Schedule
+                      </label>
+                      <Input
+                        placeholder="e.g. 10-Sep-2026, 04:00 PM IST or Tomorrow 4 PM"
+                        value={meetingDateTime}
+                        onChange={(e) => setMeetingDateTime(e.target.value)}
+                        className="text-xs rounded-xl h-8.5 bg-white dark:bg-slate-950 font-medium"
+                      />
+                    </div>
+
+                    {/* Insert / Remove Buttons */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => handleInsertOrUpdateMeeting()}
+                        className="flex-1 h-8.5 text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <Video className="h-3.5 w-3.5" />
+                        {isMeetingAttached ? 'Update Meeting in Letter' : 'Insert Meeting into Letter'}
+                      </Button>
+                      {isMeetingAttached && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveMeeting}
+                          className="h-8.5 text-xs font-bold rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 gap-1 cursor-pointer"
+                        >
+                          <X className="h-3.5 w-3.5" /> Remove
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
                   <Button
                     type="button"
                     onClick={handleGenerateWithAi}
@@ -1043,6 +1321,20 @@ export default function EmailComposerModal({
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                     <span className="text-[10px] font-bold text-slate-400 block mb-1.5 uppercase tracking-wider">Quick AI Refinement:</span>
                     <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        disabled={isGeneratingAi}
+                        onClick={() => {
+                          let link = meetingLink;
+                          if (!link) {
+                            link = handleGenerateGoogleMeet();
+                          }
+                          handleInsertOrUpdateMeeting(link);
+                        }}
+                        className="text-[10px] font-bold bg-orange-500/10 hover:bg-orange-500 text-orange-600 hover:text-white dark:text-orange-400 dark:hover:text-white px-2.5 py-1 rounded-lg border border-orange-500/30 transition-colors cursor-pointer flex items-center gap-1"
+                      >
+                        <Video className="h-3 w-3" /> + Add Google Meet Invitation
+                      </button>
                       <button
                         type="button"
                         disabled={isGeneratingAi}
@@ -1115,6 +1407,56 @@ export default function EmailComposerModal({
                         className="text-xs font-mono rounded-xl min-h-[260px] bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100"
                       />
                     )}
+                  </div>
+
+                  {/* Quick Meeting Helper in Manual tab */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/70 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Video className="h-4 w-4 text-orange-500 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                          {meetingLink ? meetingLink : 'No meeting link set'}
+                        </p>
+                        <p className="text-[10px] text-slate-400 truncate">
+                          {isMeetingAttached ? '✓ Attached in body' : 'Not yet inserted in body'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {!meetingLink && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={handleGenerateGoogleMeet}
+                          className="h-7 text-[11px] font-bold rounded-lg cursor-pointer"
+                        >
+                          Generate Meet
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          let link = meetingLink;
+                          if (!link) link = handleGenerateGoogleMeet();
+                          handleInsertOrUpdateMeeting(link);
+                        }}
+                        className="h-7 text-[11px] font-bold rounded-lg bg-orange-500 hover:bg-orange-600 text-white cursor-pointer"
+                      >
+                        {isMeetingAttached ? 'Update Meet' : 'Insert Meet'}
+                      </Button>
+                      {isMeetingAttached && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveMeeting}
+                          className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer"
+                          title="Remove meeting"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </TabsContent>
               </Tabs>
@@ -1365,6 +1707,11 @@ export default function EmailComposerModal({
                 {lastSummary && (
                   <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] hidden sm:inline-flex">
                     <CheckCircle2 className="h-3 w-3 mr-1 inline" /> AI Synchronized
+                  </Badge>
+                )}
+                {isMeetingAttached && (
+                  <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 text-[10px] hidden sm:inline-flex items-center gap-1">
+                    <Video className="h-3 w-3 inline" /> {meetingPlatform === 'google_meet' ? 'Google Meet Attached' : 'Meeting Attached'}
                   </Badge>
                 )}
               </div>
