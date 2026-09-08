@@ -11,7 +11,7 @@ import {
   X, Check, AlertCircle, FileText, CheckCircle2,
   Building2, ShieldCheck, Laptop, Smartphone, Wand2, Type, LayoutTemplate,
   Paperclip, Users, Search, Download, Trash2, Calendar, Plus,
-  Video, ExternalLink, Clock, Copy, Briefcase, ChevronDown
+  Video, ExternalLink, Clock, Copy, Briefcase, ChevronDown, Award, Megaphone
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -313,6 +313,14 @@ export function injectMeetingTextBlock(
   return cleanText + '\n' + block;
 }
 
+// Helper to cleanly strip reference number or notice ref from HTML letterhead
+export function stripReferenceFromHtml(html: string): string {
+  return (html || '')
+    .replace(/(Notice Ref|Certificate Ref|Ref):\s*<strong>[^<]*<\/strong>\s*(&nbsp;\|\s*&nbsp;|\|\s*|\s*\|\s*&nbsp;)?/gi, '')
+    .replace(/(Notice Ref|Certificate Ref|Ref):\s*[A-Z0-9\/-]+\s*(&nbsp;\|\s*&nbsp;|\|\s*|\s*\|\s*&nbsp;)?/gi, '')
+    .replace(/<p([^>]*)>\s*(Date:)/g, '<p$1>$2');
+}
+
 // Helper to interpolate raw templates with form values
 export function interpolateTemplate(
   rawHtml: string,
@@ -326,6 +334,12 @@ export function interpolateTemplate(
     manager: string;
     refId: string;
     dateStr: string;
+    includeRef?: boolean;
+    noticeAreas?: string;
+    noticeAction?: string;
+    certProject?: string;
+    certRating?: string;
+    announcementAction?: string;
   }
 ) {
   const formattedStartDate = formatDateToCustom(data.startDate) || '08-Sep-2026';
@@ -357,7 +371,7 @@ export function interpolateTemplate(
     .replace(/{{startDate}}/g, formattedStartDate);
 
   let h = (rawHtml || '')
-    .replace(/{{referenceId}}/g, data.refId)
+    .replace(/{{referenceId}}/g, data.refId || '3796')
     .replace(/{{currentDate}}/g, formattedCurrentDate)
     .replace(/{{candidateName}}/g, safeName)
     .replace(/{{name}}/g, safeName)
@@ -370,11 +384,16 @@ export function interpolateTemplate(
     .replace(/{{duration}}/g, safeDuration)
     .replace(/{{reportingManager}}/g, data.manager)
     .replace(/{{workLocation}}/g, 'Headquarters / Remote')
-    .replace(/{{projectAccomplished}}/g, 'Full Stack Enterprise Systems Development')
-    .replace(/{{performanceRating}}/g, 'Exemplary / Outstanding')
+    .replace(/{{projectAccomplished}}/g, data.certProject?.trim() || 'Full Stack Enterprise Systems Development')
+    .replace(/{{performanceRating}}/g, data.certRating?.trim() || 'Exemplary / Outstanding')
     .replace(/{{reviewDate}}/g, formattedStartDate)
-    .replace(/{{areasOfImprovement}}/g, 'Deepening system architecture & cross-functional documentation')
-    .replace(/{{supportAction}}/g, 'Dedicated 1-on-1 mentorship and weekly technical check-ins');
+    .replace(/{{areasOfImprovement}}/g, data.noticeAreas?.trim() || 'Deepening system architecture & cross-functional documentation')
+    .replace(/{{supportAction}}/g, data.noticeAction?.trim() || 'Dedicated 1-on-1 mentorship and weekly technical check-ins')
+    .replace(/{{actionRequired}}/g, data.announcementAction?.trim() || 'Please review the instructions and align with your team.');
+
+  if (data.includeRef === false) {
+    h = stripReferenceFromHtml(h);
+  }
 
   return {
     subject: s,
@@ -430,6 +449,26 @@ export default function EmailComposerModal({
   const [customPrompt, setCustomPrompt] = useState('');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [lastSummary, setLastSummary] = useState('');
+
+  // Reference / Dispatch ID state & Notice toggle
+  const [includeRefNumber, setIncludeRefNumber] = useState(true);
+  const [customRefId, setCustomRefId] = useState('');
+
+  // Category specific fields
+  const [noticeAreas, setNoticeAreas] = useState('Deepening system architecture & cross-functional documentation');
+  const [noticeAction, setNoticeAction] = useState('Dedicated 1-on-1 mentorship and weekly technical check-ins');
+  const [certProject, setCertProject] = useState('Full Stack Enterprise Systems Development');
+  const [certRating, setCertRating] = useState('Exemplary / Outstanding');
+  const [announcementAction, setAnnouncementAction] = useState('Please review the documentation and align with your team.');
+
+  // Edit Pre-Existing Template modal state
+  const [isEditTemplateOpen, setIsEditTemplateOpen] = useState(false);
+  const [editTemplateId, setEditTemplateId] = useState('');
+  const [editTemplateName, setEditTemplateName] = useState('');
+  const [editTemplateCategory, setEditTemplateCategory] = useState('notice');
+  const [editTemplateSubject, setEditTemplateSubject] = useState('');
+  const [editTemplateHtmlBody, setEditTemplateHtmlBody] = useState('');
+  const [isUpdatingTemplate, setIsUpdatingTemplate] = useState(false);
 
   // Recipients
   const [recipientsList, setRecipientsList] = useState<string[]>(initialRecipient ? [initialRecipient] : []);
@@ -851,8 +890,14 @@ export default function EmailComposerModal({
       startDate,
       duration,
       manager: user?.name || 'Engineering Operations',
-      refId: randomRef,
-      dateStr: todayStr
+      refId: customRefId || randomRef,
+      dateStr: todayStr,
+      includeRef: includeRefNumber,
+      noticeAreas,
+      noticeAction,
+      certProject,
+      certRating,
+      announcementAction
     });
 
     let activeHtml = rendered.htmlBody;
@@ -878,61 +923,151 @@ export default function EmailComposerModal({
     setPreviewRenderId((prev) => prev + 1);
   };
 
-  const handleTemplateChange = (id: string) => {
-    if (id === 'none') {
-      handleApplyBlankCanvas();
-      toast.info('Switched to Blank Canvas (Custom AI Email)');
+  // Open Edit Template modal with current template's data
+  const handleOpenEditTemplate = () => {
+    const current = templates.find((t) => t.id === selectedTemplateId);
+    if (!current) return;
+    setEditTemplateId(current.id);
+    setEditTemplateName(current.name);
+    setEditTemplateCategory(current.category);
+    setEditTemplateSubject(current.subject);
+    setEditTemplateHtmlBody(current.htmlBody);
+    setIsEditTemplateOpen(true);
+  };
+
+  // Save changes to existing template via PUT /api/email/templates/:id
+  const handleSaveEditedTemplate = async () => {
+    if (!editTemplateName.trim()) {
+      toast.error('Template name cannot be empty');
       return;
     }
-    const found = templates.find(t => t.id === id);
-    if (found) {
-      applyTemplate(found);
+    if (!editTemplateSubject.trim()) {
+      toast.error('Subject line template cannot be empty');
+      return;
+    }
+    if (!editTemplateHtmlBody.trim()) {
+      toast.error('Template HTML body cannot be empty');
+      return;
+    }
+
+    try {
+      setIsUpdatingTemplate(true);
+      const res = await api.put(`/email/templates/${editTemplateId}`, {
+        name: editTemplateName.trim(),
+        category: editTemplateCategory,
+        subject: editTemplateSubject.trim(),
+        htmlBody: editTemplateHtmlBody
+      });
+
+      if (res.data?.success && res.data.data) {
+        const updated = res.data.data as EmailTemplateItem;
+        setTemplates((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+
+        if (selectedTemplateId === updated.id) {
+          setRawSubjectTemplate(updated.subject);
+          setRawHtmlTemplate(updated.htmlBody);
+
+          const rendered = interpolateTemplate(updated.htmlBody, updated.subject, {
+            name: candidateName || 'Candidate',
+            role: candidateRole,
+            stipend,
+            startDate,
+            duration,
+            manager: user?.name || 'Engineering Operations',
+            refId: customRefId || currentRefId,
+            dateStr: currentDateStr,
+            includeRef: includeRefNumber,
+            noticeAreas,
+            noticeAction,
+            certProject,
+            certRating,
+            announcementAction
+          });
+
+          let activeHtml = rendered.htmlBody;
+          let activeText = rendered.plainText;
+          if (attachMeetingToEmail && meetingLink.trim()) {
+            activeHtml = injectMeetingBlock(activeHtml, meetingLink.trim(), meetingDateTime.trim(), meetingPlatform);
+            activeText = injectMeetingTextBlock(activeText, meetingLink.trim(), meetingDateTime.trim(), meetingPlatform);
+          }
+          setSubject(rendered.subject);
+          setHtmlBody(activeHtml);
+          setPlainText(activeText);
+          setPreviewRenderId((prev) => prev + 1);
+        }
+
+        toast.success(`Template "${updated.name}" updated successfully!`);
+        setIsEditTemplateOpen(false);
+      }
+    } catch (err: any) {
+      console.error('Failed to update template:', err);
+      toast.error(err.response?.data?.message || 'Failed to update template');
+    } finally {
+      setIsUpdatingTemplate(false);
     }
   };
 
-  // Keystroke Live-Sync: Instantly re-renders preview & subject as the user types in any input!
-  const handleFieldChange = (key: 'name' | 'role' | 'stipend' | 'startDate' | 'duration', value: string) => {
-    let newName = candidateName;
-    let newRole = candidateRole;
-    let newStipend = stipend;
-    let newStart = startDate;
-    let newDur = duration;
-
-    if (key === 'name') {
-      setCandidateName(value);
-      newName = value;
-    } else if (key === 'role') {
-      setCandidateRole(value);
-      newRole = value;
-    } else if (key === 'stipend') {
-      setStipend(value);
-      newStipend = value;
-    } else if (key === 'startDate') {
-      setStartDate(value);
-      newStart = value;
-    } else if (key === 'duration') {
-      setDuration(value);
-      newDur = value;
-    }
+  // Re-renders the preview instantly with any overridden field values
+  const triggerLiveRender = (overrides?: {
+    name?: string;
+    role?: string;
+    stipend?: string;
+    startDate?: string;
+    duration?: string;
+    noticeAreas?: string;
+    noticeAction?: string;
+    certProject?: string;
+    certRating?: string;
+    announcementAction?: string;
+    includeRef?: boolean;
+    refId?: string;
+  }) => {
+    const valName = overrides?.name !== undefined ? overrides.name : candidateName;
+    const valRole = overrides?.role !== undefined ? overrides.role : candidateRole;
+    const valStipend = overrides?.stipend !== undefined ? overrides.stipend : stipend;
+    const valStart = overrides?.startDate !== undefined ? overrides.startDate : startDate;
+    const valDur = overrides?.duration !== undefined ? overrides.duration : duration;
+    const valNoticeAreas = overrides?.noticeAreas !== undefined ? overrides.noticeAreas : noticeAreas;
+    const valNoticeAction = overrides?.noticeAction !== undefined ? overrides.noticeAction : noticeAction;
+    const valCertProj = overrides?.certProject !== undefined ? overrides.certProject : certProject;
+    const valCertRate = overrides?.certRating !== undefined ? overrides.certRating : certRating;
+    const valAnnAction = overrides?.announcementAction !== undefined ? overrides.announcementAction : announcementAction;
+    const valIncludeRef = overrides?.includeRef !== undefined ? overrides.includeRef : includeRefNumber;
+    const valRefId = overrides?.refId !== undefined ? overrides.refId : (customRefId || currentRefId);
 
     if (rawHtmlTemplate) {
       const rendered = interpolateTemplate(rawHtmlTemplate, rawSubjectTemplate || subject, {
-        name: newName,
-        role: newRole,
-        stipend: newStipend,
-        startDate: newStart,
-        duration: newDur,
+        name: valName,
+        role: valRole,
+        stipend: valStipend,
+        startDate: valStart,
+        duration: valDur,
         manager: user?.name || 'Engineering Operations',
-        refId: currentRefId,
-        dateStr: currentDateStr
+        refId: valRefId,
+        dateStr: currentDateStr,
+        includeRef: valIncludeRef,
+        noticeAreas: valNoticeAreas,
+        noticeAction: valNoticeAction,
+        certProject: valCertProj,
+        certRating: valCertRate,
+        announcementAction: valAnnAction
       });
 
       let activeHtml = rendered.htmlBody;
       let activeText = rendered.plainText;
 
-      if (attachMeetingToEmail && meetingLink.trim()) {
-        activeHtml = injectMeetingBlock(activeHtml, meetingLink.trim(), meetingDateTime.trim(), meetingPlatform);
-        activeText = injectMeetingTextBlock(activeText, meetingLink.trim(), meetingDateTime.trim(), meetingPlatform);
+      const activeMeetLink = meetingLink.trim() || (() => {
+        try {
+          return (localStorage.getItem('hip_default_google_meet_link') || '').trim();
+        } catch {
+          return '';
+        }
+      })();
+
+      if (attachMeetingToEmail && activeMeetLink) {
+        const activeTime = meetingDateTime || 'Tomorrow, 04:00 PM IST';
+        activeHtml = injectMeetingBlock(activeHtml, activeMeetLink, activeTime, meetingPlatform);
+        activeText = injectMeetingTextBlock(activeText, activeMeetLink, activeTime, meetingPlatform);
       }
 
       setSubject(rendered.subject);
@@ -940,13 +1075,69 @@ export default function EmailComposerModal({
       setPlainText(activeText);
       setPreviewRenderId((prev) => prev + 1);
     } else {
-      // Direct replace fallback
-      if (key === 'name' && candidateName) {
-        setHtmlBody(prev => prev.replace(new RegExp(candidateName, 'g'), value));
-        setSubject(prev => prev.replace(new RegExp(candidateName, 'g'), value));
+      if (overrides?.name !== undefined && candidateName) {
+        setHtmlBody((prev) => prev.replace(new RegExp(candidateName, 'g'), overrides.name!));
+        setSubject((prev) => prev.replace(new RegExp(candidateName, 'g'), overrides.name!));
         setPreviewRenderId((prev) => prev + 1);
       }
     }
+  };
+
+  const handleTemplateChange = (id: string) => {
+    if (id === 'none') {
+      handleApplyBlankCanvas();
+      toast.info('Switched to Blank Canvas (Custom AI Email)');
+      return;
+    }
+    const found = templates.find((t) => t.id === id);
+    if (found) {
+      applyTemplate(found);
+    }
+  };
+
+  // Keystroke Live-Sync: Instantly re-renders preview & subject as the user types in any input!
+  const handleFieldChange = (key: string, value: string) => {
+    if (key === 'name') {
+      setCandidateName(value);
+      triggerLiveRender({ name: value });
+    } else if (key === 'role') {
+      setCandidateRole(value);
+      triggerLiveRender({ role: value });
+    } else if (key === 'stipend') {
+      setStipend(value);
+      triggerLiveRender({ stipend: value });
+    } else if (key === 'startDate') {
+      setStartDate(value);
+      triggerLiveRender({ startDate: value });
+    } else if (key === 'duration') {
+      setDuration(value);
+      triggerLiveRender({ duration: value });
+    } else if (key === 'noticeAreas') {
+      setNoticeAreas(value);
+      triggerLiveRender({ noticeAreas: value });
+    } else if (key === 'noticeAction') {
+      setNoticeAction(value);
+      triggerLiveRender({ noticeAction: value });
+    } else if (key === 'certProject') {
+      setCertProject(value);
+      triggerLiveRender({ certProject: value });
+    } else if (key === 'certRating') {
+      setCertRating(value);
+      triggerLiveRender({ certRating: value });
+    } else if (key === 'announcementAction') {
+      setAnnouncementAction(value);
+      triggerLiveRender({ announcementAction: value });
+    }
+  };
+
+  const handleToggleRefNumber = (checked: boolean) => {
+    setIncludeRefNumber(checked);
+    triggerLiveRender({ includeRef: checked });
+  };
+
+  const handleCustomRefChange = (val: string) => {
+    setCustomRefId(val);
+    triggerLiveRender({ refId: val || currentRefId });
   };
 
   // Switch format toggle (HTML vs Plain Text)
@@ -966,19 +1157,20 @@ export default function EmailComposerModal({
     try {
       setIsGeneratingAi(true);
       const isNone = selectedTemplateId === 'none';
-      const currentT = !isNone ? templates.find(t => t.id === selectedTemplateId) : null;
-      
+      const currentT = !isNone ? templates.find((t) => t.id === selectedTemplateId) : null;
+      const isCompRelevant = currentT?.category === 'internship' || currentT?.category === 'offer_letter' || isNone;
+
       const payload = {
         format: emailFormat,
         templateCategory: isNone ? 'none' : (currentT?.category || 'none'),
         candidateName: candidateName.trim() || (isNone ? 'Recipient' : 'Candidate'),
         candidateEmail: recipientsList[0] || '',
         role: isRoleFieldsOpen ? candidateRole.trim() : '',
-        stipend: isRoleFieldsOpen ? stipend.trim() : '',
+        stipend: isRoleFieldsOpen && isCompRelevant ? stipend.trim() : '',
         startDate: isRoleFieldsOpen ? startDate : '',
-        duration: isRoleFieldsOpen ? duration.trim() : '',
+        duration: isRoleFieldsOpen && (currentT?.category === 'internship' || isNone) ? duration.trim() : '',
         tone,
-        prompt: customPrompt,
+        prompt: customPrompt + (currentT?.category === 'notice' ? ` Key discussion objectives: ${noticeAreas}. Support action: ${noticeAction}.` : ''),
         meetingLink: meetingLink.trim(),
         meetingDateTime: meetingDateTime.trim(),
         meetingPlatform: meetingPlatform === 'google_meet' ? 'Google Meet' : meetingPlatform === 'zoom' ? 'Zoom' : meetingPlatform === 'teams' ? 'MS Teams' : 'Video Conference'
@@ -1419,13 +1611,25 @@ export default function EmailComposerModal({
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                   <FileText className="h-4 w-4 text-orange-500" /> Choose Pre-Fixed Template Preset
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setIsCreateTemplateOpen(true)}
-                  className="text-[11px] font-bold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 flex items-center gap-1 cursor-pointer transition-colors"
-                >
-                  <Plus className="h-3.5 w-3.5" /> + New Template
-                </button>
+                <div className="flex items-center gap-2">
+                  {selectedTemplateId !== 'none' && (
+                    <button
+                      type="button"
+                      onClick={handleOpenEditTemplate}
+                      className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 flex items-center gap-1 cursor-pointer transition-colors bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded-md"
+                      title="Edit this preset template's name, subject, or HTML layout"
+                    >
+                      <Edit3 className="h-3 w-3" /> Edit Template
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateTemplateOpen(true)}
+                    className="text-[11px] font-bold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> + New Template
+                  </button>
+                </div>
               </div>
               <Select 
                 value={selectedTemplateId} 
@@ -1500,7 +1704,14 @@ export default function EmailComposerModal({
 
                   <div>
                     <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                      Recipient / Candidate Name
+                      {(() => {
+                        const activeT = templates.find((t) => t.id === selectedTemplateId);
+                        const cat = selectedTemplateId === 'none' ? 'none' : (activeT?.category || 'general');
+                        if (cat === 'notice') return 'Recipient / Employee Name';
+                        if (cat === 'certificate') return 'Recipient / Intern Name';
+                        if (cat === 'announcement') return 'Recipient / Target Audience';
+                        return 'Recipient / Candidate Name';
+                      })()}
                     </label>
                     <Input
                       placeholder="e.g. Aarav Sharma or Team Member"
@@ -1510,77 +1721,424 @@ export default function EmailComposerModal({
                     />
                   </div>
 
-                  {/* Collapsible Role & Compensation Accordion */}
-                  <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/60 dark:bg-slate-900/40">
-                    <button
-                      type="button"
-                      onClick={() => setIsRoleFieldsOpen(!isRoleFieldsOpen)}
-                      className="w-full px-3.5 py-2.5 flex items-center justify-between text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="h-3.5 w-3.5 text-orange-500" />
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                          Optional Role & Compensation Details
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-200/60 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                          {isRoleFieldsOpen ? 'Expanded' : 'Optional'}
-                        </span>
-                        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${isRoleFieldsOpen ? 'rotate-180' : ''}`} />
-                      </div>
-                    </button>
-                    {isRoleFieldsOpen && (
-                      <div className="p-3 pt-2 space-y-2.5 border-t border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/50">
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Role / Position Title</label>
-                          <Input
-                            placeholder="e.g. Full Stack Intern"
-                            value={candidateRole}
-                            onChange={(e) => handleFieldChange('role', e.target.value)}
-                            className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                          />
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Stipend / CTC</label>
-                            <Input
-                              placeholder="e.g. ₹15,000/mo"
-                              value={stipend}
-                              onChange={(e) => handleFieldChange('stipend', e.target.value)}
-                              className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                            />
+                  {/* Collapsible Category-Specific Details Accordion */}
+                  {(() => {
+                    const activeT = templates.find((t) => t.id === selectedTemplateId);
+                    const activeCategory = selectedTemplateId === 'none' ? 'none' : (activeT?.category || 'general');
+
+                    return (
+                      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/60 dark:bg-slate-900/40">
+                        <button
+                          type="button"
+                          onClick={() => setIsRoleFieldsOpen(!isRoleFieldsOpen)}
+                          className="w-full px-3.5 py-2.5 flex items-center justify-between text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2">
+                            {activeCategory === 'notice' ? (
+                              <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                            ) : activeCategory === 'certificate' ? (
+                              <Award className="h-3.5 w-3.5 text-orange-500" />
+                            ) : activeCategory === 'offer_letter' ? (
+                              <Briefcase className="h-3.5 w-3.5 text-emerald-500" />
+                            ) : activeCategory === 'announcement' ? (
+                              <Megaphone className="h-3.5 w-3.5 text-blue-500" />
+                            ) : (
+                              <Briefcase className="h-3.5 w-3.5 text-orange-500" />
+                            )}
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                              {activeCategory === 'notice'
+                                ? 'Performance Review & Notice Details'
+                                : activeCategory === 'certificate'
+                                ? 'Experience Certificate Details'
+                                : activeCategory === 'offer_letter'
+                                ? 'Employment Terms & CTC Compensation'
+                                : activeCategory === 'internship'
+                                ? 'Internship Terms & Stipend Details'
+                                : activeCategory === 'announcement'
+                                ? 'Corporate Announcement Details'
+                                : 'Optional Role & Details'}
+                            </span>
                           </div>
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Start Date</label>
-                            <div className="relative inline-flex items-center w-full">
-                              <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => handleFieldChange('startDate', e.target.value)}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                              />
-                              <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
-                                <span className="text-[10px] font-bold tracking-wide text-white truncate">
-                                  {formatDateToCustom(startDate) || '08-Sep-2026'}
-                                </span>
-                                <Calendar className="h-3 w-3 text-slate-400 group-hover:text-white transition-colors shrink-0" />
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-semibold text-slate-400 bg-slate-200/60 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                              {isRoleFieldsOpen ? 'Expanded' : 'Configure'}
+                            </span>
+                            <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${isRoleFieldsOpen ? 'rotate-180' : ''}`} />
+                          </div>
+                        </button>
+                        {isRoleFieldsOpen && (
+                          <div className="p-3 pt-2 space-y-2.5 border-t border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/50">
+                            {/* Notice / Reference Tracking ID Checkbox Control */}
+                            {activeCategory !== 'none' && activeCategory !== 'announcement' && (
+                              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-100/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60">
+                                <label className="flex items-center gap-2 cursor-pointer text-[11px] font-semibold text-slate-700 dark:text-slate-300 select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={includeRefNumber}
+                                    onChange={(e) => handleToggleRefNumber(e.target.checked)}
+                                    className="rounded border-slate-300 text-orange-500 focus:ring-orange-400 h-3.5 w-3.5 cursor-pointer"
+                                  />
+                                  <span>
+                                    {activeCategory === 'notice'
+                                      ? 'Include Notice Ref (HIPL/NOT/...)'
+                                      : activeCategory === 'certificate'
+                                      ? 'Include Certificate Ref'
+                                      : 'Include Official Ref Number'}
+                                  </span>
+                                </label>
+                                {includeRefNumber && (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] text-slate-400 font-mono">Ref ID:</span>
+                                    <Input
+                                      value={customRefId}
+                                      onChange={(e) => handleCustomRefChange(e.target.value)}
+                                      placeholder={currentRefId}
+                                      className="text-xs h-7 w-20 px-2 font-mono font-bold bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                                      title="Customize reference tracking number"
+                                    />
+                                  </div>
+                                )}
                               </div>
-                            </div>
+                            )}
+
+                            {/* PERFORMANCE REVIEW / NOTICE CATEGORY (NO STIPEND! NO DURATION!) */}
+                            {activeCategory === 'notice' && (
+                              <>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Employee Role / Designation
+                                  </label>
+                                  <Input
+                                    placeholder="e.g. Full Stack Intern / Software Engineer"
+                                    value={candidateRole}
+                                    onChange={(e) => handleFieldChange('role', e.target.value)}
+                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Discussion / Review Date
+                                  </label>
+                                  <div className="relative inline-flex items-center w-full">
+                                    <input
+                                      type="date"
+                                      value={startDate}
+                                      onChange={(e) => handleFieldChange('startDate', e.target.value)}
+                                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    />
+                                    <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
+                                      <span className="text-[10px] font-bold tracking-wide text-white truncate">
+                                        {formatDateToCustom(startDate) || '08-Sep-2026'}
+                                      </span>
+                                      <Calendar className="h-3 w-3 text-slate-400 group-hover:text-white transition-colors shrink-0" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Key Discussion Objectives / Focus Areas
+                                  </label>
+                                  <Input
+                                    placeholder="e.g. Deepening system architecture & cross-functional documentation"
+                                    value={noticeAreas}
+                                    onChange={(e) => handleFieldChange('noticeAreas', e.target.value)}
+                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Mentorship & Guidance Support Plan
+                                  </label>
+                                  <Input
+                                    placeholder="e.g. Dedicated 1-on-1 mentorship and weekly technical check-ins"
+                                    value={noticeAction}
+                                    onChange={(e) => handleFieldChange('noticeAction', e.target.value)}
+                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                  />
+                                </div>
+                              </>
+                            )}
+
+                            {/* CERTIFICATE CATEGORY */}
+                            {activeCategory === 'certificate' && (
+                              <>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Role / Position Title
+                                  </label>
+                                  <Input
+                                    placeholder="e.g. Full Stack Intern"
+                                    value={candidateRole}
+                                    onChange={(e) => handleFieldChange('role', e.target.value)}
+                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Issue / Completion Date
+                                    </label>
+                                    <div className="relative inline-flex items-center w-full">
+                                      <input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => handleFieldChange('startDate', e.target.value)}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                      />
+                                      <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
+                                        <span className="text-[10px] font-bold tracking-wide text-white truncate">
+                                          {formatDateToCustom(startDate) || '08-Sep-2026'}
+                                        </span>
+                                        <Calendar className="h-3 w-3 text-slate-400 group-hover:text-white transition-colors shrink-0" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Tenure Duration
+                                    </label>
+                                    <Input
+                                      placeholder="e.g. 3 Months"
+                                      value={duration}
+                                      onChange={(e) => handleFieldChange('duration', e.target.value)}
+                                      className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Core Project Accomplished / Domain
+                                  </label>
+                                  <Input
+                                    placeholder="e.g. Full Stack Enterprise Systems Development"
+                                    value={certProject}
+                                    onChange={(e) => handleFieldChange('certProject', e.target.value)}
+                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Performance Rating
+                                  </label>
+                                  <Input
+                                    placeholder="e.g. Exemplary / Outstanding"
+                                    value={certRating}
+                                    onChange={(e) => handleFieldChange('certRating', e.target.value)}
+                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                  />
+                                </div>
+                              </>
+                            )}
+
+                            {/* FULL-TIME EMPLOYMENT OFFER */}
+                            {activeCategory === 'offer_letter' && (
+                              <>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Designation / Role Title
+                                  </label>
+                                  <Input
+                                    placeholder="e.g. Software Engineer"
+                                    value={candidateRole}
+                                    onChange={(e) => handleFieldChange('role', e.target.value)}
+                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Annual CTC Compensation
+                                    </label>
+                                    <Input
+                                      placeholder="e.g. ₹6,00,000 PA"
+                                      value={stipend}
+                                      onChange={(e) => handleFieldChange('stipend', e.target.value)}
+                                      className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Joining Date
+                                    </label>
+                                    <div className="relative inline-flex items-center w-full">
+                                      <input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => handleFieldChange('startDate', e.target.value)}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                      />
+                                      <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
+                                        <span className="text-[10px] font-bold tracking-wide text-white truncate">
+                                          {formatDateToCustom(startDate) || '08-Sep-2026'}
+                                        </span>
+                                        <Calendar className="h-3 w-3 text-slate-400 group-hover:text-white transition-colors shrink-0" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+
+                            {/* INTERNSHIP CATEGORY */}
+                            {activeCategory === 'internship' && (
+                              <>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Role / Position Title
+                                  </label>
+                                  <Input
+                                    placeholder="e.g. Full Stack Intern"
+                                    value={candidateRole}
+                                    onChange={(e) => handleFieldChange('role', e.target.value)}
+                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Monthly Stipend
+                                    </label>
+                                    <Input
+                                      placeholder="e.g. ₹15,000/mo"
+                                      value={stipend}
+                                      onChange={(e) => handleFieldChange('stipend', e.target.value)}
+                                      className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Start Date
+                                    </label>
+                                    <div className="relative inline-flex items-center w-full">
+                                      <input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => handleFieldChange('startDate', e.target.value)}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                      />
+                                      <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
+                                        <span className="text-[10px] font-bold tracking-wide text-white truncate">
+                                          {formatDateToCustom(startDate) || '08-Sep-2026'}
+                                        </span>
+                                        <Calendar className="h-3 w-3 text-slate-400 group-hover:text-white transition-colors shrink-0" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Duration
+                                    </label>
+                                    <Input
+                                      placeholder="e.g. 3 Months"
+                                      value={duration}
+                                      onChange={(e) => handleFieldChange('duration', e.target.value)}
+                                      className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                    />
+                                  </div>
+                                </div>
+                              </>
+                            )}
+
+                            {/* ANNOUNCEMENT CATEGORY */}
+                            {activeCategory === 'announcement' && (
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Effective Date
+                                  </label>
+                                  <div className="relative inline-flex items-center w-full">
+                                    <input
+                                      type="date"
+                                      value={startDate}
+                                      onChange={(e) => handleFieldChange('startDate', e.target.value)}
+                                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    />
+                                    <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
+                                      <span className="text-[10px] font-bold tracking-wide text-white truncate">
+                                        {formatDateToCustom(startDate) || '08-Sep-2026'}
+                                      </span>
+                                      <Calendar className="h-3 w-3 text-slate-400 group-hover:text-white transition-colors shrink-0" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Action Required / Deadline
+                                  </label>
+                                  <Input
+                                    placeholder="e.g. Review & confirm by tomorrow"
+                                    value={announcementAction}
+                                    onChange={(e) => handleFieldChange('announcementAction', e.target.value)}
+                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* NONE / BLANK CANVAS / FALLBACK */}
+                            {activeCategory !== 'notice' && activeCategory !== 'certificate' && activeCategory !== 'offer_letter' && activeCategory !== 'internship' && activeCategory !== 'announcement' && (
+                              <>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                    Role / Position Title (Optional)
+                                  </label>
+                                  <Input
+                                    placeholder="e.g. Full Stack Intern"
+                                    value={candidateRole}
+                                    onChange={(e) => handleFieldChange('role', e.target.value)}
+                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Stipend / CTC (Optional)
+                                    </label>
+                                    <Input
+                                      placeholder="e.g. ₹15,000/mo"
+                                      value={stipend}
+                                      onChange={(e) => handleFieldChange('stipend', e.target.value)}
+                                      className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Start Date
+                                    </label>
+                                    <div className="relative inline-flex items-center w-full">
+                                      <input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => handleFieldChange('startDate', e.target.value)}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                      />
+                                      <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
+                                        <span className="text-[10px] font-bold tracking-wide text-white truncate">
+                                          {formatDateToCustom(startDate) || '08-Sep-2026'}
+                                        </span>
+                                        <Calendar className="h-3 w-3 text-slate-400 group-hover:text-white transition-colors shrink-0" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Duration (Optional)
+                                    </label>
+                                    <Input
+                                      placeholder="e.g. 3 Months"
+                                      value={duration}
+                                      onChange={(e) => handleFieldChange('duration', e.target.value)}
+                                      className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                    />
+                                  </div>
+                                </div>
+                              </>
+                            )}
                           </div>
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Duration</label>
-                            <Input
-                              placeholder="e.g. 3 Months"
-                              value={duration}
-                              onChange={(e) => handleFieldChange('duration', e.target.value)}
-                              className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                            />
-                          </div>
-                        </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })()}
 
                   <div>
                     <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1.5">Communication Tone</label>
@@ -2747,6 +3305,141 @@ export default function EmailComposerModal({
                 ) : (
                   <>
                     <Check className="h-3.5 w-3.5" /> Save as Preset Template
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Pre-Existing Template Dialog */}
+        <Dialog open={isEditTemplateOpen} onOpenChange={setIsEditTemplateOpen}>
+          <DialogContent className="sm:max-w-[650px] p-6 rounded-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <DialogHeader className="pb-2 border-b border-slate-100 dark:border-slate-800">
+              <DialogTitle className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Edit3 className="h-4 w-4 text-orange-500" /> Edit Template: {editTemplateName || 'Official Template'}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">
+                Modify this pre-existing template's name, category, default subject line, and HTML letterhead structure.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3.5 py-3 overflow-y-auto flex-1 pr-1">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Template Name
+                  </label>
+                  <Input
+                    placeholder="e.g. Performance Discussion & Review Notice"
+                    value={editTemplateName}
+                    onChange={(e) => setEditTemplateName(e.target.value)}
+                    className="text-xs rounded-xl h-9"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Category
+                  </label>
+                  <Select value={editTemplateCategory} onValueChange={setEditTemplateCategory}>
+                    <SelectTrigger className="text-xs rounded-xl h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="internship">Internship Offer / Agreement</SelectItem>
+                      <SelectItem value="offer_letter">Full-Time Employment Offer</SelectItem>
+                      <SelectItem value="certificate">Experience Certificate</SelectItem>
+                      <SelectItem value="notice">Performance / Review Notice</SelectItem>
+                      <SelectItem value="announcement">Corporate Announcement</SelectItem>
+                      <SelectItem value="custom">Custom Workspace Template</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Default Subject Line Template
+                </label>
+                <Input
+                  value={editTemplateSubject}
+                  onChange={(e) => setEditTemplateSubject(e.target.value)}
+                  className="text-xs rounded-xl h-9 font-semibold"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Template Body (HTML / Letterhead)
+                  </label>
+                  <span className="text-[10px] text-slate-400">Supports standard HTML & dynamic tags</span>
+                </div>
+                <Textarea
+                  value={editTemplateHtmlBody}
+                  onChange={(e) => setEditTemplateHtmlBody(e.target.value)}
+                  className="text-xs font-mono rounded-xl min-h-[220px] bg-slate-900 text-slate-100 p-3 leading-relaxed border-slate-700"
+                />
+              </div>
+
+              {/* Variable Quick Reference */}
+              <div className="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-[10px] text-slate-500">
+                <span className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Insert Dynamic Variable Tags:</span>
+                <div className="flex flex-wrap gap-1 font-mono text-[10px]">
+                  {[
+                    '{{candidateName}}',
+                    '{{employeeName}}',
+                    '{{role}}',
+                    '{{referenceId}}',
+                    '{{currentDate}}',
+                    '{{startDate}}',
+                    '{{reviewDate}}',
+                    '{{stipend}}',
+                    '{{annualCTC}}',
+                    '{{duration}}',
+                    '{{areasOfImprovement}}',
+                    '{{supportAction}}',
+                    '{{projectAccomplished}}',
+                    '{{performanceRating}}'
+                  ].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setEditTemplateHtmlBody((prev) => prev + tag)}
+                      className="bg-slate-200/70 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-700 dark:text-slate-300 hover:bg-orange-500/20 hover:text-orange-500 cursor-pointer transition-colors"
+                      title="Click to append to template body"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditTemplateOpen(false)}
+                className="text-xs font-bold rounded-xl cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSaveEditedTemplate}
+                disabled={isUpdatingTemplate || !editTemplateName.trim() || !editTemplateHtmlBody.trim()}
+                className="text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer"
+              >
+                {isUpdatingTemplate ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Saving Changes...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-3.5 w-3.5" /> Save Changes
                   </>
                 )}
               </Button>
