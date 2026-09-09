@@ -347,6 +347,8 @@ export function interpolateTemplate(
     interviewLocation?: string;
     interviewTopics?: string;
     interviewTools?: string;
+    workLocation?: string;
+    reportingManager?: string;
   }
 ) {
   const formattedStartDate = formatDateToCustom(data.startDate) || '08-Sep-2026';
@@ -376,6 +378,7 @@ export function interpolateTemplate(
     .replace(/{{employeeName}}/g, safeName)
     .replace(/{{role}}/g, safeRole)
     .replace(/{{stipend}}/g, safeStipend)
+    .replace(/{{annualCTC}}/g, safeStipend)
     .replace(/{{startDate}}/g, formattedStartDate)
     .replace(/{{interviewDate}}/g, formattedInterviewDate)
     .replace(/{{interviewTime}}/g, data.interviewTime || '3:30 PM');
@@ -392,8 +395,8 @@ export function interpolateTemplate(
     .replace(/{{startDate}}/g, formattedStartDate)
     .replace(/{{endDate}}/g, endDateStr)
     .replace(/{{duration}}/g, safeDuration)
-    .replace(/{{reportingManager}}/g, data.manager)
-    .replace(/{{workLocation}}/g, 'Headquarters / Remote')
+    .replace(/{{reportingManager}}/g, data.reportingManager || data.manager || 'Operations & HR Team')
+    .replace(/{{workLocation}}/g, data.workLocation || 'Hindustaan Innovations Private Limited, Raipur, Chhattisgarh')
     .replace(/{{projectAccomplished}}/g, data.certProject?.trim() || 'Full Stack Enterprise Systems Development')
     .replace(/{{performanceRating}}/g, data.certRating?.trim() || 'Exemplary / Outstanding')
     .replace(/{{reviewDate}}/g, formattedStartDate)
@@ -416,6 +419,79 @@ export function interpolateTemplate(
     htmlBody: h,
     plainText: htmlToPlainText(h)
   };
+}
+
+export const TEMPLATE_CATEGORIES = [
+  { value: 'interview', label: 'Meeting Invitation' },
+  { value: 'joining_letter', label: 'Joining Letter' },
+  { value: 'offer_letter', label: 'Offer Letter' },
+  { value: 'custom', label: 'Custom Workspace Template' },
+];
+
+function CategoryDropdown({
+  value,
+  onChange,
+  className = ''
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  className?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [isOpen]);
+
+  const selected = TEMPLATE_CATEGORIES.find((c) => c.value === value) || TEMPLATE_CATEGORIES[0];
+
+  return (
+    <div className={`relative w-full ${className}`} ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full h-9 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-100 flex items-center justify-between gap-2 shadow-xs hover:border-orange-500 dark:hover:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all cursor-pointer"
+      >
+        <span className="truncate">{selected.label}</span>
+        <ChevronDown className={`h-4 w-4 text-slate-400 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-1 z-[150] bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl p-1 max-h-60 overflow-y-auto">
+          {TEMPLATE_CATEGORIES.map((cat) => {
+            const isCurrent = cat.value === value;
+            return (
+              <button
+                key={cat.value}
+                type="button"
+                onClick={() => {
+                  onChange(cat.value);
+                  setIsOpen(false);
+                }}
+                className={`w-full px-3 py-2 text-xs font-semibold rounded-lg flex items-center justify-between text-left transition-colors cursor-pointer ${
+                  isCurrent
+                    ? 'bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 font-bold'
+                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <span>{cat.label}</span>
+                {isCurrent && <Check className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function EmailComposerModal({
@@ -487,6 +563,8 @@ export default function EmailComposerModal({
   const [certProject, setCertProject] = useState('Full Stack Enterprise Systems Development');
   const [certRating, setCertRating] = useState('Exemplary / Outstanding');
   const [announcementAction, setAnnouncementAction] = useState('Please review the documentation and align with your team.');
+  const [workLocation, setWorkLocation] = useState('Hindustaan Innovations Private Limited, Raipur, Chhattisgarh');
+  const [reportingManager, setReportingManager] = useState('Operations & HR Team');
 
   // Edit Pre-Existing Template modal state
   const [isEditTemplateOpen, setIsEditTemplateOpen] = useState(false);
@@ -551,8 +629,22 @@ export default function EmailComposerModal({
   // New Custom Template modal state
   const [isCreateTemplateOpen, setIsCreateTemplateOpen] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
-  const [newTemplateCategory, setNewTemplateCategory] = useState('internship');
+  const [newTemplateCategory, setNewTemplateCategory] = useState('interview');
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+
+  // Quick Rename Modal state
+  const [isQuickRenameOpen, setIsQuickRenameOpen] = useState(false);
+  const [renameTemplateId, setRenameTemplateId] = useState('');
+  const [renameTemplateName, setRenameTemplateName] = useState('');
+  const [isRenamingTemplate, setIsRenamingTemplate] = useState(false);
+
+  // Delete Confirmation Modal state
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deleteTargetTemplate, setDeleteTargetTemplate] = useState<EmailTemplateItem | null>(null);
+
+  // Manage All Presets Modal state
+  const [isManageTemplatesOpen, setIsManageTemplatesOpen] = useState(false);
+  const returnToManageRef = useRef(false);
 
   // Video Meeting Link state (Google Meet as preferred default, Instant Room as alternative, Zoom, Teams)
   const [meetingLink, setMeetingLink] = useState(() => {
@@ -928,11 +1020,13 @@ export default function EmailComposerModal({
 
     const rendered = interpolateTemplate(t.htmlBody, t.subject, {
       name: candidateName || 'Aarav Sharma',
-      role: candidateRole || (t.category === 'interview' ? 'Graphic Designer & Social Media Manager' : ''),
-      stipend,
+      role: candidateRole || (t.category === 'interview' ? 'Graphic Designer & Social Media Manager' : t.category === 'joining_letter' ? 'Software Engineer' : 'Full Stack Developer'),
+      stipend: stipend || (t.category === 'offer_letter' ? '₹6,00,000 PA' : ''),
       startDate,
-      duration,
-      manager: user?.name || 'Engineering Operations',
+      duration: duration || (t.category === 'offer_letter' ? '6 Months Probation' : ''),
+      manager: reportingManager || user?.name || 'Operations & HR Team',
+      workLocation: workLocation || 'Hindustaan Innovations Private Limited, Raipur, Chhattisgarh',
+      reportingManager: reportingManager || user?.name || 'Operations & HR Team',
       refId: customRefId || randomRef,
       dateStr: todayStr,
       includeRef: includeRefNumber,
@@ -1022,7 +1116,9 @@ export default function EmailComposerModal({
             stipend,
             startDate,
             duration,
-            manager: user?.name || 'Engineering Operations',
+            manager: reportingManager || user?.name || 'Operations & HR Team',
+            workLocation: workLocation || 'Hindustaan Innovations Private Limited, Raipur, Chhattisgarh',
+            reportingManager: reportingManager || user?.name || 'Operations & HR Team',
             refId: customRefId || currentRefId,
             dateStr: currentDateStr,
             includeRef: includeRefNumber,
@@ -1053,6 +1149,10 @@ export default function EmailComposerModal({
 
         toast.success(`Template "${updated.name}" updated successfully!`);
         setIsEditTemplateOpen(false);
+        if (returnToManageRef.current) {
+          setIsManageTemplatesOpen(true);
+          returnToManageRef.current = false;
+        }
       }
     } catch (err: any) {
       console.error('Failed to update template:', err);
@@ -1065,19 +1165,73 @@ export default function EmailComposerModal({
   // Delete template via DELETE /api/email/templates/:id
   const handleDeleteTemplate = async () => {
     if (!editTemplateId) return;
-    if (!window.confirm(`Are you sure you want to permanently delete/remove template "${editTemplateName}"?`)) {
+    handlePromptDeleteTemplate(editTemplateId);
+  };
+
+  // Open quick rename modal
+  const handleOpenQuickRename = (templateId: string) => {
+    const target = templates.find((t) => t.id === templateId);
+    if (!target) return;
+    setRenameTemplateId(target.id);
+    setRenameTemplateName(target.name);
+    setIsQuickRenameOpen(true);
+  };
+
+  // Save quick rename via PUT /api/email/templates/:id
+  const handleSaveQuickRename = async () => {
+    if (!renameTemplateName.trim()) {
+      toast.error('Template name cannot be empty');
       return;
     }
     try {
+      setIsRenamingTemplate(true);
+      const res = await api.put(`/email/templates/${renameTemplateId}`, {
+        name: renameTemplateName.trim()
+      });
+      if (res.data?.success && res.data.data) {
+        const updated = res.data.data as EmailTemplateItem;
+        setTemplates((prev) => prev.map((t) => (t.id === updated.id ? { ...t, name: updated.name } : t)));
+        toast.success(`Template renamed to "${updated.name}" successfully!`);
+        setIsQuickRenameOpen(false);
+        if (returnToManageRef.current) {
+          setIsManageTemplatesOpen(true);
+          returnToManageRef.current = false;
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to rename template');
+    } finally {
+      setIsRenamingTemplate(false);
+    }
+  };
+
+  // Open delete confirm modal
+  const handlePromptDeleteTemplate = (templateId: string) => {
+    const target = templates.find((t) => t.id === templateId);
+    if (!target) return;
+    setDeleteTargetTemplate(target);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  // Execute template deletion via DELETE /api/email/templates/:id
+  const handleConfirmDeleteTemplate = async () => {
+    if (!deleteTargetTemplate) return;
+    try {
       setIsDeletingTemplate(true);
-      const res = await api.delete(`/email/templates/${editTemplateId}`);
+      const res = await api.delete(`/email/templates/${deleteTargetTemplate.id}`);
       if (res.data?.success) {
-        toast.success(`Template "${editTemplateName}" deleted successfully!`);
-        setTemplates((prev) => prev.filter((t) => t.id !== editTemplateId));
-        if (selectedTemplateId === editTemplateId) {
+        toast.success(`Template "${deleteTargetTemplate.name}" deleted successfully!`);
+        setTemplates((prev) => prev.filter((t) => t.id !== deleteTargetTemplate.id));
+        if (selectedTemplateId === deleteTargetTemplate.id) {
           handleApplyBlankCanvas();
         }
-        setIsEditTemplateOpen(false);
+        setIsDeleteConfirmOpen(false);
+        setDeleteTargetTemplate(null);
+        if (isEditTemplateOpen) setIsEditTemplateOpen(false);
+        if (returnToManageRef.current) {
+          setIsManageTemplatesOpen(true);
+          returnToManageRef.current = false;
+        }
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to delete template');
@@ -1188,12 +1342,16 @@ export default function EmailComposerModal({
     interviewLocation?: string;
     interviewTopics?: string;
     interviewTools?: string;
+    workLocation?: string;
+    reportingManager?: string;
   }) => {
     const valName = overrides?.name !== undefined ? overrides.name : candidateName;
     const valRole = overrides?.role !== undefined ? overrides.role : candidateRole;
     const valStipend = overrides?.stipend !== undefined ? overrides.stipend : stipend;
     const valStart = overrides?.startDate !== undefined ? overrides.startDate : startDate;
     const valDur = overrides?.duration !== undefined ? overrides.duration : duration;
+    const valWorkLoc = overrides?.workLocation !== undefined ? overrides.workLocation : workLocation;
+    const valRepMgr = overrides?.reportingManager !== undefined ? overrides.reportingManager : reportingManager;
     const valNoticeAreas = overrides?.noticeAreas !== undefined ? overrides.noticeAreas : noticeAreas;
     const valNoticeAction = overrides?.noticeAction !== undefined ? overrides.noticeAction : noticeAction;
     const valCertProj = overrides?.certProject !== undefined ? overrides.certProject : certProject;
@@ -1215,7 +1373,9 @@ export default function EmailComposerModal({
         stipend: valStipend,
         startDate: valStart,
         duration: valDur,
-        manager: user?.name || 'Engineering Operations',
+        manager: valRepMgr || user?.name || 'Operations & HR Team',
+        workLocation: valWorkLoc,
+        reportingManager: valRepMgr,
         refId: valRefId,
         dateStr: currentDateStr,
         includeRef: valIncludeRef,
@@ -1291,6 +1451,12 @@ export default function EmailComposerModal({
     } else if (key === 'duration') {
       setDuration(value);
       triggerLiveRender({ duration: value });
+    } else if (key === 'workLocation') {
+      setWorkLocation(value);
+      triggerLiveRender({ workLocation: value });
+    } else if (key === 'reportingManager') {
+      setReportingManager(value);
+      triggerLiveRender({ reportingManager: value });
     } else if (key === 'noticeAreas') {
       setNoticeAreas(value);
       triggerLiveRender({ noticeAreas: value });
@@ -1355,7 +1521,7 @@ export default function EmailComposerModal({
       setIsGeneratingAi(true);
       const isNone = selectedTemplateId === 'none';
       const currentT = !isNone ? templates.find((t) => t.id === selectedTemplateId) : null;
-      const isCompRelevant = currentT?.category === 'internship' || currentT?.category === 'offer_letter' || isNone;
+      const isCompRelevant = currentT?.category === 'offer_letter' || isNone;
 
       const payload = {
         format: emailFormat,
@@ -1365,9 +1531,9 @@ export default function EmailComposerModal({
         role: isRoleFieldsOpen ? candidateRole.trim() : '',
         stipend: isRoleFieldsOpen && isCompRelevant ? stipend.trim() : '',
         startDate: isRoleFieldsOpen ? startDate : '',
-        duration: isRoleFieldsOpen && (currentT?.category === 'internship' || isNone) ? duration.trim() : '',
+        duration: isRoleFieldsOpen && (currentT?.category === 'offer_letter' || isNone) ? duration.trim() : '',
         tone,
-        prompt: customPrompt + (currentT?.category === 'notice' ? ` Key discussion objectives: ${noticeAreas}. Support action: ${noticeAction}.` : ''),
+        prompt: customPrompt,
         meetingLink: meetingLink.trim(),
         meetingDateTime: meetingDateTime.trim(),
         meetingPlatform: meetingPlatform === 'google_meet' ? 'Google Meet' : meetingPlatform === 'zoom' ? 'Zoom' : meetingPlatform === 'teams' ? 'MS Teams' : 'Video Conference'
@@ -1716,7 +1882,8 @@ export default function EmailComposerModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         showCloseButton={true}
         className="!max-w-[96vw] sm:!max-w-[96vw] w-[96vw] h-[94vh] max-h-[96vh] p-0 gap-0 overflow-hidden bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col shadow-2xl z-50"
@@ -1736,7 +1903,7 @@ export default function EmailComposerModal({
                 </Badge>
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500 hidden sm:block">
-                Draft official corporate offers, experience certificates, or clean plain emails with live preview.
+                Draft official meeting invitations, joining letters, offer letters, or clean plain emails with live preview.
               </DialogDescription>
             </div>
           </div>
@@ -1824,17 +1991,15 @@ export default function EmailComposerModal({
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                   <FileText className="h-4 w-4 text-orange-500" /> Choose Pre-Fixed Template Preset
                 </label>
-                <div className="flex items-center gap-2">
-                  {selectedTemplateId !== 'none' && (
-                    <button
-                      type="button"
-                      onClick={handleOpenEditTemplate}
-                      className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 flex items-center gap-1 cursor-pointer transition-colors bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded-md"
-                      title="Edit this preset template's name, subject, or HTML layout"
-                    >
-                      <Edit3 className="h-3 w-3" /> Edit Template
-                    </button>
-                  )}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsManageTemplatesOpen(true)}
+                    className="text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer transition-colors bg-slate-200/60 dark:bg-slate-800 hover:bg-slate-300/60 dark:hover:bg-slate-700 px-2 py-0.5 rounded-md"
+                    title="View, rename or delete any workspace template preset"
+                  >
+                    <Settings className="h-3 w-3 text-slate-500" /> Manage Presets
+                  </button>
                   <button
                     type="button"
                     onClick={() => setIsCreateTemplateOpen(true)}
@@ -1849,6 +2014,8 @@ export default function EmailComposerModal({
                 onValueChange={(val) => {
                   if (val === '__add_new__') {
                     setIsCreateTemplateOpen(true);
+                  } else if (val === '__manage_all__') {
+                    setIsManageTemplatesOpen(true);
                   } else {
                     handleTemplateChange(val);
                   }
@@ -1863,15 +2030,24 @@ export default function EmailComposerModal({
                       <Sparkles className="h-3.5 w-3.5 text-orange-500" /> None / Blank Canvas (Custom AI Email)
                     </span>
                   </SelectItem>
-                  {templates.map(t => (
-                    <SelectItem key={t.id} value={t.id} className="text-xs">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">{t.name}</span>
-                      <span className="text-[10px] text-slate-400 ml-2">({t.category})</span>
-                    </SelectItem>
-                  ))}
+                  {templates.map(t => {
+                    const catObj = TEMPLATE_CATEGORIES.find(c => c.value === t.category);
+                    const catLabel = catObj ? catObj.label : t.category;
+                    return (
+                      <SelectItem key={t.id} value={t.id} className="text-xs">
+                        <span className="font-bold text-slate-800 dark:text-slate-200">{t.name}</span>
+                        <span className="text-[10px] text-slate-400 ml-2">({catLabel})</span>
+                      </SelectItem>
+                    );
+                  })}
                   <SelectItem value="__add_new__" className="text-xs font-bold text-orange-600 dark:text-orange-400 border-t border-slate-100 dark:border-slate-800 mt-1 cursor-pointer">
                     <span className="flex items-center gap-1.5">
                       <Plus className="h-3.5 w-3.5 text-orange-500" /> + Add / Save Current as New Template
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="__manage_all__" className="text-xs font-bold text-slate-600 dark:text-slate-400 cursor-pointer">
+                    <span className="flex items-center gap-1.5">
+                      <Settings className="h-3.5 w-3.5 text-slate-500" /> ⚙️ Manage / Rename / Delete Templates...
                     </span>
                   </SelectItem>
                 </SelectContent>
@@ -1908,7 +2084,7 @@ export default function EmailComposerModal({
                       Email Subject Line
                     </label>
                     <Input
-                      placeholder={selectedTemplateId === 'none' ? "e.g. Discussion on New Version Release – Team Sync" : "e.g. Internship Offer Letter – Full Stack Intern at Hindustan Innovation"}
+                      placeholder={selectedTemplateId === 'none' ? "e.g. Discussion on New Version Release – Team Sync" : "e.g. Meeting Invitation – Software Engineer at Hindustan Innovation"}
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
                       className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-bold"
@@ -1917,17 +2093,10 @@ export default function EmailComposerModal({
 
                   <div>
                     <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                      {(() => {
-                        const activeT = templates.find((t) => t.id === selectedTemplateId);
-                        const cat = selectedTemplateId === 'none' ? 'none' : (activeT?.category || 'general');
-                        if (cat === 'notice') return 'Recipient / Employee Name';
-                        if (cat === 'certificate') return 'Recipient / Intern Name';
-                        if (cat === 'announcement') return 'Recipient / Target Audience';
-                        return 'Recipient / Candidate Name';
-                      })()}
+                      Recipient / Candidate Name
                     </label>
                     <Input
-                      placeholder="e.g. Aarav Sharma or Team Member"
+                      placeholder="e.g. Aarav Sharma"
                       value={candidateName}
                       onChange={(e) => handleFieldChange('name', e.target.value)}
                       className="text-xs rounded-xl h-9 bg-slate-50 dark:bg-slate-800/60 font-medium"
@@ -1949,30 +2118,20 @@ export default function EmailComposerModal({
                           <div className="flex items-center gap-2">
                             {activeCategory === 'interview' ? (
                               <Video className="h-3.5 w-3.5 text-orange-500" />
-                            ) : activeCategory === 'notice' ? (
-                              <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
-                            ) : activeCategory === 'certificate' ? (
-                              <Award className="h-3.5 w-3.5 text-orange-500" />
+                            ) : activeCategory === 'joining_letter' ? (
+                              <FileText className="h-3.5 w-3.5 text-blue-500" />
                             ) : activeCategory === 'offer_letter' ? (
                               <Briefcase className="h-3.5 w-3.5 text-emerald-500" />
-                            ) : activeCategory === 'announcement' ? (
-                              <Megaphone className="h-3.5 w-3.5 text-blue-500" />
                             ) : (
                               <Briefcase className="h-3.5 w-3.5 text-orange-500" />
                             )}
                             <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                               {activeCategory === 'interview'
-                                ? 'Interview Invitation & Schedule Details'
-                                : activeCategory === 'notice'
-                                ? 'Performance Review & Notice Details'
-                                : activeCategory === 'certificate'
-                                ? 'Experience Certificate Details'
+                                ? 'Meeting & Interview Schedule Details'
+                                : activeCategory === 'joining_letter'
+                                ? 'Joining & Reporting Details'
                                 : activeCategory === 'offer_letter'
-                                ? 'Employment Terms & CTC Compensation'
-                                : activeCategory === 'internship'
-                                ? 'Internship Terms & Stipend Details'
-                                : activeCategory === 'announcement'
-                                ? 'Corporate Announcement Details'
+                                ? 'Employment Offer & Compensation Terms'
                                 : 'Optional Role & Details'}
                             </span>
                           </div>
@@ -1985,8 +2144,8 @@ export default function EmailComposerModal({
                         </button>
                         {isRoleFieldsOpen && (
                           <div className="p-3 pt-2 space-y-2.5 border-t border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/50">
-                            {/* Notice / Reference Tracking ID Checkbox Control */}
-                            {activeCategory !== 'none' && activeCategory !== 'announcement' && activeCategory !== 'interview' && (
+                            {/* Reference Tracking ID Checkbox Control */}
+                            {activeCategory !== 'none' && activeCategory !== 'interview' && (
                               <div className="flex items-center justify-between p-2 rounded-lg bg-slate-100/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60">
                                 <label className="flex items-center gap-2 cursor-pointer text-[11px] font-semibold text-slate-700 dark:text-slate-300 select-none">
                                   <input
@@ -1996,10 +2155,10 @@ export default function EmailComposerModal({
                                     className="rounded border-slate-300 text-orange-500 focus:ring-orange-400 h-3.5 w-3.5 cursor-pointer"
                                   />
                                   <span>
-                                    {activeCategory === 'notice'
-                                      ? 'Include Notice Ref (HIPL/NOT/...)'
-                                      : activeCategory === 'certificate'
-                                      ? 'Include Certificate Ref'
+                                    {activeCategory === 'joining_letter'
+                                      ? 'Include Joining Ref (HIPL/JL/...)'
+                                      : activeCategory === 'offer_letter'
+                                      ? 'Include Offer Ref (HIPL/OFR/...)'
                                       : 'Include Official Ref Number'}
                                   </span>
                                 </label>
@@ -2018,7 +2177,7 @@ export default function EmailComposerModal({
                               </div>
                             )}
 
-                            {/* CANDIDATE INTERVIEW SHORTLIST (NO STIPEND! NO DURATION!) */}
+                            {/* 1. MEETING INVITATION CATEGORY */}
                             {activeCategory === 'interview' && (
                               <>
                                 <div>
@@ -2035,7 +2194,7 @@ export default function EmailComposerModal({
                                 <div className="grid grid-cols-2 gap-2">
                                   <div>
                                     <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                      Interview Date
+                                      Meeting Date
                                     </label>
                                     <div className="relative inline-flex items-center w-full">
                                       <input
@@ -2054,7 +2213,7 @@ export default function EmailComposerModal({
                                   </div>
                                   <div>
                                     <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                      Interview Time
+                                      Meeting Time
                                     </label>
                                     <Input
                                       placeholder="e.g. 3:30 PM"
@@ -2067,7 +2226,7 @@ export default function EmailComposerModal({
                                 <div className="grid grid-cols-2 gap-2">
                                   <div>
                                     <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                      Interview Mode
+                                      Meeting Mode
                                     </label>
                                     <Input
                                       placeholder="e.g. In person or Google Meet"
@@ -2078,7 +2237,7 @@ export default function EmailComposerModal({
                                   </div>
                                   <div>
                                     <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                      Interview Location
+                                      Location / Address
                                     </label>
                                     <Input
                                       placeholder="e.g. Hindustaan Innovations Private Limited, Raipur, Chhattisgarh"
@@ -2101,7 +2260,7 @@ export default function EmailComposerModal({
                                 </div>
                                 <div>
                                   <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                    Familiarity with Tools
+                                    Required Tools / Familiarity
                                   </label>
                                   <Input
                                     placeholder="e.g. Canva, Photoshop, Illustrator, video editing tools"
@@ -2113,73 +2272,15 @@ export default function EmailComposerModal({
                               </>
                             )}
 
-                            {/* PERFORMANCE REVIEW / NOTICE CATEGORY (NO STIPEND! NO DURATION!) */}
-                            {activeCategory === 'notice' && (
+                            {/* 2. JOINING LETTER CATEGORY */}
+                            {activeCategory === 'joining_letter' && (
                               <>
                                 <div>
                                   <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                    Employee Role / Designation
+                                    Designation / Role Title
                                   </label>
                                   <Input
-                                    placeholder="e.g. Full Stack Intern / Software Engineer"
-                                    value={candidateRole}
-                                    onChange={(e) => handleFieldChange('role', e.target.value)}
-                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                    Discussion / Review Date
-                                  </label>
-                                  <div className="relative inline-flex items-center w-full">
-                                    <input
-                                      type="date"
-                                      value={startDate}
-                                      onChange={(e) => handleFieldChange('startDate', e.target.value)}
-                                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                    />
-                                    <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
-                                      <span className="text-[10px] font-bold tracking-wide text-white truncate">
-                                        {formatDateToCustom(startDate) || '08-Sep-2026'}
-                                      </span>
-                                      <Calendar className="h-3 w-3 text-slate-400 group-hover:text-white transition-colors shrink-0" />
-                                    </div>
-                                  </div>
-                                </div>
-                                <div>
-                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                    Key Discussion Objectives / Focus Areas
-                                  </label>
-                                  <Input
-                                    placeholder="e.g. Deepening system architecture & cross-functional documentation"
-                                    value={noticeAreas}
-                                    onChange={(e) => handleFieldChange('noticeAreas', e.target.value)}
-                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                    Mentorship & Guidance Support Plan
-                                  </label>
-                                  <Input
-                                    placeholder="e.g. Dedicated 1-on-1 mentorship and weekly technical check-ins"
-                                    value={noticeAction}
-                                    onChange={(e) => handleFieldChange('noticeAction', e.target.value)}
-                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                                  />
-                                </div>
-                              </>
-                            )}
-
-                            {/* CERTIFICATE CATEGORY */}
-                            {activeCategory === 'certificate' && (
-                              <>
-                                <div>
-                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                    Role / Position Title
-                                  </label>
-                                  <Input
-                                    placeholder="e.g. Full Stack Intern"
+                                    placeholder="e.g. Software Engineer"
                                     value={candidateRole}
                                     onChange={(e) => handleFieldChange('role', e.target.value)}
                                     className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
@@ -2188,7 +2289,7 @@ export default function EmailComposerModal({
                                 <div className="grid grid-cols-2 gap-2">
                                   <div>
                                     <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                      Issue / Completion Date
+                                      Date of Joining
                                     </label>
                                     <div className="relative inline-flex items-center w-full">
                                       <input
@@ -2207,42 +2308,31 @@ export default function EmailComposerModal({
                                   </div>
                                   <div>
                                     <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                      Tenure Duration
+                                      Reporting Authority / Manager
                                     </label>
                                     <Input
-                                      placeholder="e.g. 3 Months"
-                                      value={duration}
-                                      onChange={(e) => handleFieldChange('duration', e.target.value)}
+                                      placeholder="e.g. Operations & HR Team"
+                                      value={reportingManager}
+                                      onChange={(e) => handleFieldChange('reportingManager', e.target.value)}
                                       className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
                                     />
                                   </div>
                                 </div>
                                 <div>
                                   <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                    Core Project Accomplished / Domain
+                                    Work Location / Office Address
                                   </label>
                                   <Input
-                                    placeholder="e.g. Full Stack Enterprise Systems Development"
-                                    value={certProject}
-                                    onChange={(e) => handleFieldChange('certProject', e.target.value)}
-                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                    Performance Rating
-                                  </label>
-                                  <Input
-                                    placeholder="e.g. Exemplary / Outstanding"
-                                    value={certRating}
-                                    onChange={(e) => handleFieldChange('certRating', e.target.value)}
+                                    placeholder="e.g. Hindustaan Innovations, Raipur, Chhattisgarh"
+                                    value={workLocation}
+                                    onChange={(e) => handleFieldChange('workLocation', e.target.value)}
                                     className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
                                   />
                                 </div>
                               </>
                             )}
 
-                            {/* FULL-TIME EMPLOYMENT OFFER */}
+                            {/* 3. OFFER LETTER CATEGORY */}
                             {activeCategory === 'offer_letter' && (
                               <>
                                 <div>
@@ -2259,10 +2349,10 @@ export default function EmailComposerModal({
                                 <div className="grid grid-cols-2 gap-2">
                                   <div>
                                     <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                      Annual CTC Compensation
+                                      Compensation / Annual CTC
                                     </label>
                                     <Input
-                                      placeholder="e.g. ₹6,00,000 PA"
+                                      placeholder="e.g. ₹6,00,000 PA or ₹25,000/mo"
                                       value={stipend}
                                       onChange={(e) => handleFieldChange('stipend', e.target.value)}
                                       className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
@@ -2270,7 +2360,7 @@ export default function EmailComposerModal({
                                   </div>
                                   <div>
                                     <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                      Joining Date
+                                      Commencement Date
                                     </label>
                                     <div className="relative inline-flex items-center w-full">
                                       <input
@@ -2288,114 +2378,53 @@ export default function EmailComposerModal({
                                     </div>
                                   </div>
                                 </div>
-                              </>
-                            )}
-
-                            {/* INTERNSHIP CATEGORY */}
-                            {activeCategory === 'internship' && (
-                              <>
-                                <div>
-                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                    Role / Position Title
-                                  </label>
-                                  <Input
-                                    placeholder="e.g. Full Stack Intern"
-                                    value={candidateRole}
-                                    onChange={(e) => handleFieldChange('role', e.target.value)}
-                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                                  />
-                                </div>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-2 gap-2">
                                   <div>
                                     <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                      Monthly Stipend
+                                      Probation / Tenure Duration
                                     </label>
                                     <Input
-                                      placeholder="e.g. ₹15,000/mo"
-                                      value={stipend}
-                                      onChange={(e) => handleFieldChange('stipend', e.target.value)}
-                                      className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                      Start Date
-                                    </label>
-                                    <div className="relative inline-flex items-center w-full">
-                                      <input
-                                        type="date"
-                                        value={startDate}
-                                        onChange={(e) => handleFieldChange('startDate', e.target.value)}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                      />
-                                      <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
-                                        <span className="text-[10px] font-bold tracking-wide text-white truncate">
-                                          {formatDateToCustom(startDate) || '08-Sep-2026'}
-                                        </span>
-                                        <Calendar className="h-3 w-3 text-slate-400 group-hover:text-white transition-colors shrink-0" />
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                      Duration
-                                    </label>
-                                    <Input
-                                      placeholder="e.g. 3 Months"
+                                      placeholder="e.g. 6 Months Probation"
                                       value={duration}
                                       onChange={(e) => handleFieldChange('duration', e.target.value)}
                                       className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
                                     />
                                   </div>
-                                </div>
-                              </>
-                            )}
-
-                            {/* ANNOUNCEMENT CATEGORY */}
-                            {activeCategory === 'announcement' && (
-                              <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                    Effective Date
-                                  </label>
-                                  <div className="relative inline-flex items-center w-full">
-                                    <input
-                                      type="date"
-                                      value={startDate}
-                                      onChange={(e) => handleFieldChange('startDate', e.target.value)}
-                                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                      Reporting Authority
+                                    </label>
+                                    <Input
+                                      placeholder="e.g. Operations & HR Team"
+                                      value={reportingManager}
+                                      onChange={(e) => handleFieldChange('reportingManager', e.target.value)}
+                                      className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
                                     />
-                                    <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
-                                      <span className="text-[10px] font-bold tracking-wide text-white truncate">
-                                        {formatDateToCustom(startDate) || '08-Sep-2026'}
-                                      </span>
-                                      <Calendar className="h-3 w-3 text-slate-400 group-hover:text-white transition-colors shrink-0" />
-                                    </div>
                                   </div>
                                 </div>
                                 <div>
                                   <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                    Action Required / Deadline
+                                    Work Mode / Location
                                   </label>
                                   <Input
-                                    placeholder="e.g. Review & confirm by tomorrow"
-                                    value={announcementAction}
-                                    onChange={(e) => handleFieldChange('announcementAction', e.target.value)}
+                                    placeholder="e.g. Raipur, Chhattisgarh (Hybrid)"
+                                    value={workLocation}
+                                    onChange={(e) => handleFieldChange('workLocation', e.target.value)}
                                     className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
                                   />
                                 </div>
-                              </div>
+                              </>
                             )}
 
-                            {/* NONE / BLANK CANVAS / FALLBACK */}
-                            {activeCategory !== 'notice' && activeCategory !== 'certificate' && activeCategory !== 'offer_letter' && activeCategory !== 'internship' && activeCategory !== 'announcement' && (
+                            {/* 4. BLANK CANVAS / FALLBACK */}
+                            {activeCategory !== 'interview' && activeCategory !== 'joining_letter' && activeCategory !== 'offer_letter' && (
                               <>
                                 <div>
                                   <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
                                     Role / Position Title (Optional)
                                   </label>
                                   <Input
-                                    placeholder="e.g. Full Stack Intern"
+                                    placeholder="e.g. Software Engineer"
                                     value={candidateRole}
                                     onChange={(e) => handleFieldChange('role', e.target.value)}
                                     className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
@@ -2407,7 +2436,7 @@ export default function EmailComposerModal({
                                       Stipend / CTC (Optional)
                                     </label>
                                     <Input
-                                      placeholder="e.g. ₹15,000/mo"
+                                      placeholder="e.g. ₹25,000/mo"
                                       value={stipend}
                                       onChange={(e) => handleFieldChange('stipend', e.target.value)}
                                       className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
@@ -2437,7 +2466,7 @@ export default function EmailComposerModal({
                                       Duration (Optional)
                                     </label>
                                     <Input
-                                      placeholder="e.g. 3 Months"
+                                      placeholder="e.g. 6 Months"
                                       value={duration}
                                       onChange={(e) => handleFieldChange('duration', e.target.value)}
                                       className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
@@ -3523,452 +3552,703 @@ export default function EmailComposerModal({
             if (onSuccess) onSuccess();
           }}
         />
-
-        {/* Create / Save Preset Template Modal */}
-        <Dialog open={isCreateTemplateOpen} onOpenChange={setIsCreateTemplateOpen}>
-          <DialogContent className="max-w-md p-6 bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[60]">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <FileText className="h-4 w-4 text-orange-500" /> Save as Preset Template
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500">
-                Save the current letter content and subject as a reusable official template in workspace presets.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-2">
-              <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                  Template Name <span className="text-rose-500">*</span>
-                </label>
-                <Input
-                  placeholder="e.g. Probation Extension & Performance Review"
-                  value={newTemplateName}
-                  onChange={(e) => setNewTemplateName(e.target.value)}
-                  className="text-xs rounded-xl h-9"
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                  Category
-                </label>
-                <Select value={newTemplateCategory} onValueChange={setNewTemplateCategory}>
-                  <SelectTrigger className="text-xs rounded-xl h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="interview">Candidate Shortlist & Interview</SelectItem>
-                    <SelectItem value="internship">Internship Offer / Agreement</SelectItem>
-                    <SelectItem value="offer_letter">Full-Time Employment Offer</SelectItem>
-                    <SelectItem value="certificate">Experience Certificate</SelectItem>
-                    <SelectItem value="notice">Performance / Review Notice</SelectItem>
-                    <SelectItem value="announcement">Corporate Announcement</SelectItem>
-                    <SelectItem value="custom">Custom Workspace Template</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                  Subject Line Template
-                </label>
-                <Input
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="text-xs rounded-xl h-9 text-slate-700 dark:text-slate-300 font-bold"
-                />
-              </div>
-
-              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-[11px] text-slate-500">
-                <p className="font-semibold text-slate-700 dark:text-slate-300 mb-1">Captured Letter Content:</p>
-                <p className="line-clamp-2 italic text-slate-600 dark:text-slate-400">
-                  {emailFormat === 'html'
-                    ? (htmlBody.replace(/<[^>]+>/g, ' ').slice(0, 120) || 'Empty HTML content')
-                    : (plainText.slice(0, 120) || 'Empty plain text')}...
-                </p>
-                <p className="text-[10px] text-orange-600 dark:text-orange-400 font-semibold mt-1">
-                  Format: {emailFormat === 'html' ? 'Rich HTML Letterhead' : 'Plain Text'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsCreateTemplateOpen(false)}
-                className="text-xs font-bold rounded-xl cursor-pointer"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleSaveNewTemplate}
-                disabled={isSavingTemplate || !newTemplateName.trim()}
-                className="text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer"
-              >
-                {isSavingTemplate ? (
-                  <>
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Saving Preset...
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-3.5 w-3.5" /> Save as Preset Template
-                  </>
-                )}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit Pre-Existing Template Dialog */}
-        <Dialog open={isEditTemplateOpen} onOpenChange={setIsEditTemplateOpen}>
-          <DialogContent className="sm:max-w-[680px] p-6 rounded-2xl max-h-[90vh] flex flex-col overflow-hidden">
-            <DialogHeader className="pb-2 border-b border-slate-100 dark:border-slate-800">
-              <DialogTitle className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Edit3 className="h-4 w-4 text-orange-500" /> Edit Template: {editTemplateName || 'Official Template'}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500">
-                Rename, modify category, edit default subject line, adjust template structure, or delete/remove this template.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-3.5 py-3 overflow-y-auto flex-1 pr-1">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Template Name / Rename
-                  </label>
-                  <Input
-                    placeholder="e.g. Candidate Shortlist & Interview Invitation"
-                    value={editTemplateName}
-                    onChange={(e) => setEditTemplateName(e.target.value)}
-                    className="text-xs rounded-xl h-9"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Category
-                  </label>
-                  <Select value={editTemplateCategory} onValueChange={setEditTemplateCategory}>
-                    <SelectTrigger className="text-xs rounded-xl h-9">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="interview">Candidate Shortlist & Interview</SelectItem>
-                      <SelectItem value="internship">Internship Offer / Agreement</SelectItem>
-                      <SelectItem value="offer_letter">Full-Time Employment Offer</SelectItem>
-                      <SelectItem value="certificate">Experience Certificate</SelectItem>
-                      <SelectItem value="notice">Performance / Review Notice</SelectItem>
-                      <SelectItem value="announcement">Corporate Announcement</SelectItem>
-                      <SelectItem value="custom">Custom Workspace Template</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                  Default Subject Line Template
-                </label>
-                <Input
-                  value={editTemplateSubject}
-                  onChange={(e) => setEditTemplateSubject(e.target.value)}
-                  className="text-xs rounded-xl h-9 font-semibold"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Template Body (HTML / Letterhead)
-                  </label>
-                  <span className="text-[10px] text-slate-400">Supports standard HTML & dynamic tags</span>
-                </div>
-                <Textarea
-                  value={editTemplateHtmlBody}
-                  onChange={(e) => setEditTemplateHtmlBody(e.target.value)}
-                  className="text-xs font-mono rounded-xl min-h-[220px] bg-slate-900 text-slate-100 p-3 leading-relaxed border-slate-700"
-                />
-              </div>
-
-              {/* Variable Quick Reference */}
-              <div className="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-[10px] text-slate-500">
-                <span className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Insert Dynamic Variable Tags:</span>
-                <div className="flex flex-wrap gap-1 font-mono text-[10px]">
-                  {[
-                    '{{candidateName}}',
-                    '{{employeeName}}',
-                    '{{role}}',
-                    '{{referenceId}}',
-                    '{{currentDate}}',
-                    '{{interviewDate}}',
-                    '{{interviewTime}}',
-                    '{{interviewMode}}',
-                    '{{interviewLocation}}',
-                    '{{interviewTopics}}',
-                    '{{interviewTools}}',
-                    '{{startDate}}',
-                    '{{reviewDate}}',
-                    '{{stipend}}',
-                    '{{annualCTC}}',
-                    '{{duration}}',
-                    '{{areasOfImprovement}}',
-                    '{{supportAction}}',
-                    '{{projectAccomplished}}',
-                    '{{performanceRating}}'
-                  ].map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => setEditTemplateHtmlBody((prev) => prev + tag)}
-                      className="bg-slate-200/70 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-700 dark:text-slate-300 hover:bg-orange-500/20 hover:text-orange-500 cursor-pointer transition-colors"
-                      title="Click to append to template body"
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 gap-2">
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={handleDeleteTemplate}
-                disabled={isDeletingTemplate}
-                className="text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white gap-1.5 cursor-pointer"
-                title="Permanently remove this template"
-              >
-                {isDeletingTemplate ? (
-                  <>
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Removing...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-3.5 w-3.5" /> Delete / Remove Template
-                  </>
-                )}
-              </Button>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsEditTemplateOpen(false)}
-                  className="text-xs font-bold rounded-xl cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleSaveEditedTemplate}
-                  disabled={isUpdatingTemplate || !editTemplateName.trim() || !editTemplateHtmlBody.trim()}
-                  className="text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer"
-                >
-                  {isUpdatingTemplate ? (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Saving Changes...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-3.5 w-3.5" /> Save Changes
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Dynamic Encrypted SMTP Configuration Dialog */}
-        <Dialog open={isSmtpConfigOpen} onOpenChange={setIsSmtpConfigOpen}>
-          <DialogContent className="sm:max-w-[540px] p-6 rounded-2xl max-h-[90vh] flex flex-col overflow-hidden bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 shadow-2xl z-[70]">
-            <DialogHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center justify-between">
-                <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-orange-500/10 text-orange-600 flex items-center justify-center">
-                    <Settings className="h-4 w-4" />
-                  </div>
-                  SMTP Server Configuration
-                </DialogTitle>
-                <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px] font-bold px-2 py-0.5 flex items-center gap-1">
-                  <Lock className="h-3 w-3" /> AES-256-GCM Encrypted
-                </Badge>
-              </div>
-              <DialogDescription className="text-xs text-slate-500 mt-1">
-                Configure your custom or corporate SMTP credentials. Your password is encrypted with AES-256-GCM in the database.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-3.5 py-3 overflow-y-auto flex-1 pr-1">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    SMTP Host <span className="text-rose-500">*</span>
-                  </label>
-                  <Input
-                    placeholder="e.g. smtp.gmail.com or mail.hindustaan.com"
-                    value={smtpHost}
-                    onChange={(e) => setSmtpHost(e.target.value)}
-                    className="text-xs rounded-xl h-9 font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Port
-                  </label>
-                  <Input
-                    type="number"
-                    placeholder="465"
-                    value={smtpPort}
-                    onChange={(e) => setSmtpPort(Number(e.target.value) || 465)}
-                    className="text-xs rounded-xl h-9 font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                <div>
-                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">SSL / TLS Encryption</p>
-                  <p className="text-[11px] text-slate-500">Recommended true for port 465 (SMTPS) or direct SSL</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={smtpSecure}
-                  onChange={(e) => setSmtpSecure(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400 cursor-pointer"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Username / SMTP Email <span className="text-rose-500">*</span>
-                  </label>
-                  <Input
-                    placeholder="e.g. hr@hindustaan.com"
-                    value={smtpUserEmail}
-                    onChange={(e) => setSmtpUserEmail(e.target.value)}
-                    className="text-xs rounded-xl h-9 font-medium"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Password {hasConfiguredSmtp ? '(Saved ✓)' : ''}
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowSmtpPassword(!showSmtpPassword)}
-                      className="text-[10px] text-orange-500 hover:text-orange-600 font-bold"
-                    >
-                      {showSmtpPassword ? 'Hide' : 'Show'}
-                    </button>
-                  </div>
-                  <Input
-                    type={showSmtpPassword ? 'text' : 'password'}
-                    placeholder={hasConfiguredSmtp ? '•••••••• (Leave blank to keep saved)' : 'Enter SMTP password'}
-                    value={smtpPassword}
-                    onChange={(e) => setSmtpPassword(e.target.value)}
-                    className="text-xs rounded-xl h-9 font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Sender Display Name
-                  </label>
-                  <Input
-                    placeholder="e.g. Hindustaan Innovations HR"
-                    value={smtpSenderName}
-                    onChange={(e) => setSmtpSenderName(e.target.value)}
-                    className="text-xs rounded-xl h-9 font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    From / Reply-To Email
-                  </label>
-                  <Input
-                    placeholder="e.g. hr@hindustaan.com (optional)"
-                    value={smtpSenderEmail}
-                    onChange={(e) => setSmtpSenderEmail(e.target.value)}
-                    className="text-xs rounded-xl h-9 font-medium"
-                  />
-                </div>
-              </div>
-
-              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-700 dark:text-amber-400 flex items-start gap-2">
-                <ShieldCheck className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                <span>
-                  For Gmail, make sure to generate an <strong>App Password</strong> with 2-Step Verification enabled in your Google Account.
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleTestSmtp}
-                disabled={isTestingSmtp || !smtpHost.trim() || !smtpUserEmail.trim()}
-                className="text-xs font-bold rounded-xl gap-1.5 cursor-pointer"
-              >
-                {isTestingSmtp ? (
-                  <>
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin text-orange-500" /> Testing Connection...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Test Connection
-                  </>
-                )}
-              </Button>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsSmtpConfigOpen(false)}
-                  className="text-xs font-bold rounded-xl cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleSaveSmtp}
-                  disabled={isSavingSmtp || !smtpHost.trim() || !smtpUserEmail.trim()}
-                  className="text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer shadow-sm"
-                >
-                  {isSavingSmtp ? (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-3.5 w-3.5" /> Save Configuration
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </DialogContent>
     </Dialog>
-  );
+
+    {/* Create / Save Preset Template Modal */}
+    <Dialog open={isCreateTemplateOpen} onOpenChange={setIsCreateTemplateOpen}>
+      <DialogContent className="max-w-md p-6 bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[110]">
+        <DialogHeader>
+          <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <FileText className="h-4 w-4 text-orange-500" /> Save as Preset Template
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-500">
+            Save the current letter content and subject as a reusable official template in workspace presets.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              Template Name <span className="text-rose-500">*</span>
+            </label>
+            <Input
+              placeholder="e.g. Probation Extension & Performance Review"
+              value={newTemplateName}
+              onChange={(e) => setNewTemplateName(e.target.value)}
+              className="text-xs rounded-xl h-9"
+              autoFocus
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              Category
+            </label>
+            <CategoryDropdown
+              value={newTemplateCategory}
+              onChange={setNewTemplateCategory}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              Subject Line Template
+            </label>
+            <Input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="text-xs rounded-xl h-9 text-slate-700 dark:text-slate-300 font-bold"
+            />
+          </div>
+
+          <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-[11px] text-slate-500">
+            <p className="font-semibold text-slate-700 dark:text-slate-300 mb-1">Captured Letter Content:</p>
+            <p className="line-clamp-2 italic text-slate-600 dark:text-slate-400">
+              {emailFormat === 'html'
+                ? (htmlBody.replace(/<[^>]+>/g, ' ').slice(0, 120) || 'Empty HTML content')
+                : (plainText.slice(0, 120) || 'Empty plain text')}...
+            </p>
+            <p className="text-[10px] text-orange-600 dark:text-orange-400 font-semibold mt-1">
+              Format: {emailFormat === 'html' ? 'Rich HTML Letterhead' : 'Plain Text'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsCreateTemplateOpen(false)}
+            className="text-xs font-bold rounded-xl cursor-pointer"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSaveNewTemplate}
+            disabled={isSavingTemplate || !newTemplateName.trim()}
+            className="text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer"
+          >
+            {isSavingTemplate ? (
+              <>
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Saving Preset...
+              </>
+            ) : (
+              <>
+                <Check className="h-3.5 w-3.5" /> Save as Preset Template
+              </>
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Edit Pre-Existing Template Dialog */}
+    <Dialog
+      open={isEditTemplateOpen}
+      onOpenChange={(open) => {
+        setIsEditTemplateOpen(open);
+        if (!open && returnToManageRef.current) {
+          setIsManageTemplatesOpen(true);
+          returnToManageRef.current = false;
+        }
+      }}
+    >
+      <DialogContent className="sm:max-w-[680px] p-6 rounded-2xl max-h-[90vh] flex flex-col overflow-hidden z-[140]">
+        <DialogHeader className="pb-2 border-b border-slate-100 dark:border-slate-800">
+          <DialogTitle className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <Edit3 className="h-4 w-4 text-orange-500" /> Edit Template: {editTemplateName || 'Official Template'}
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-500">
+            Rename, modify category, edit default subject line, adjust template structure, or delete/remove this template.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3.5 py-3 overflow-y-auto flex-1 pr-1">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                Template Name (Rename)
+              </label>
+              <Input
+                placeholder="e.g. Candidate Shortlist & Interview Invitation"
+                value={editTemplateName}
+                onChange={(e) => setEditTemplateName(e.target.value)}
+                className="text-xs rounded-xl h-9"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                Category
+              </label>
+              <CategoryDropdown
+                value={editTemplateCategory}
+                onChange={setEditTemplateCategory}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              Default Subject Line Template
+            </label>
+            <Input
+              value={editTemplateSubject}
+              onChange={(e) => setEditTemplateSubject(e.target.value)}
+              className="text-xs rounded-xl h-9 font-semibold"
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Template Body (HTML / Letterhead)
+              </label>
+              <span className="text-[10px] text-slate-400">Supports standard HTML & dynamic tags</span>
+            </div>
+            <Textarea
+              value={editTemplateHtmlBody}
+              onChange={(e) => setEditTemplateHtmlBody(e.target.value)}
+              className="text-xs font-mono rounded-xl min-h-[220px] bg-slate-900 text-slate-100 p-3 leading-relaxed border-slate-700"
+            />
+          </div>
+
+          {/* Variable Quick Reference */}
+          <div className="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-[10px] text-slate-500">
+            <span className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Insert Dynamic Variable Tags:</span>
+            <div className="flex flex-wrap gap-1 font-mono text-[10px]">
+              {[
+                '{{candidateName}}',
+                '{{employeeName}}',
+                '{{role}}',
+                '{{referenceId}}',
+                '{{currentDate}}',
+                '{{interviewDate}}',
+                '{{interviewTime}}',
+                '{{interviewMode}}',
+                '{{interviewLocation}}',
+                '{{interviewTopics}}',
+                '{{interviewTools}}',
+                '{{startDate}}',
+                '{{reviewDate}}',
+                '{{stipend}}',
+                '{{annualCTC}}',
+                '{{duration}}',
+                '{{workLocation}}',
+                '{{reportingManager}}'
+              ].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setEditTemplateHtmlBody((prev) => prev + tag)}
+                  className="bg-slate-200/70 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-700 dark:text-slate-300 hover:bg-orange-500/20 hover:text-orange-500 cursor-pointer transition-colors"
+                  title="Click to append to template body"
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 gap-2">
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={() => handlePromptDeleteTemplate(editTemplateId)}
+            disabled={isDeletingTemplate}
+            className="text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white gap-1.5 cursor-pointer"
+            title="Permanently remove this template"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Delete Template
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsEditTemplateOpen(false);
+                if (returnToManageRef.current) {
+                  setIsManageTemplatesOpen(true);
+                  returnToManageRef.current = false;
+                }
+              }}
+              className="text-xs font-bold rounded-xl cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSaveEditedTemplate}
+              disabled={isUpdatingTemplate || !editTemplateName.trim()}
+              className="text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer"
+            >
+              {isUpdatingTemplate ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Saving Changes...
+                </>
+              ) : (
+                <>
+                  <Check className="h-3.5 w-3.5" /> Save Changes
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Quick Rename Template Modal */}
+    <Dialog
+      open={isQuickRenameOpen}
+      onOpenChange={(open) => {
+        setIsQuickRenameOpen(open);
+        if (!open && returnToManageRef.current) {
+          setIsManageTemplatesOpen(true);
+          returnToManageRef.current = false;
+        }
+      }}
+    >
+      <DialogContent className="max-w-md p-6 bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[140]">
+        <DialogHeader>
+          <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Edit3 className="h-4 w-4 text-orange-500" /> Rename Template
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-500">
+            Update the official display name for this template preset in the workspace.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSaveQuickRename();
+          }}
+          className="space-y-4 py-2"
+        >
+          <div>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              Template Name <span className="text-rose-500">*</span>
+            </label>
+            <Input
+              value={renameTemplateName}
+              onChange={(e) => setRenameTemplateName(e.target.value)}
+              placeholder="e.g. Senior Software Engineer Offer Letter"
+              className="text-xs rounded-xl h-9 font-semibold"
+              autoFocus
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsQuickRenameOpen(false);
+                if (returnToManageRef.current) {
+                  setIsManageTemplatesOpen(true);
+                  returnToManageRef.current = false;
+                }
+              }}
+              className="text-xs font-bold rounded-xl cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isRenamingTemplate || !renameTemplateName.trim()}
+              className="text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer shadow-sm"
+            >
+              {isRenamingTemplate ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Renaming...
+                </>
+              ) : (
+                <>
+                  <Check className="h-3.5 w-3.5" /> Save New Name
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+    {/* Delete Confirmation Modal */}
+    <Dialog
+      open={isDeleteConfirmOpen}
+      onOpenChange={(open) => {
+        setIsDeleteConfirmOpen(open);
+        if (!open && returnToManageRef.current) {
+          setIsManageTemplatesOpen(true);
+          returnToManageRef.current = false;
+        }
+      }}
+    >
+      <DialogContent className="max-w-md p-6 bg-white dark:bg-[#0B1120] border-rose-200 dark:border-rose-950/60 rounded-2xl shadow-2xl z-[150]">
+        <DialogHeader>
+          <DialogTitle className="text-base font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2">
+            <Trash2 className="h-5 w-5 text-rose-500" /> Delete Template Preset?
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-600 dark:text-slate-400 pt-1 leading-relaxed">
+            Are you sure you want to permanently delete template <strong className="text-slate-900 dark:text-white">&quot;{deleteTargetTemplate?.name}&quot;</strong>? This template preset will be removed from workspace presets and cannot be recovered.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setIsDeleteConfirmOpen(false);
+              setDeleteTargetTemplate(null);
+              if (returnToManageRef.current) {
+                setIsManageTemplatesOpen(true);
+                returnToManageRef.current = false;
+              }
+            }}
+            className="text-xs font-bold rounded-xl cursor-pointer"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleConfirmDeleteTemplate}
+            disabled={isDeletingTemplate}
+            className="text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white gap-1.5 cursor-pointer shadow-sm"
+          >
+            {isDeletingTemplate ? (
+              <>
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Deleting...
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-3.5 w-3.5" /> Permanently Delete
+              </>
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Manage Workspace Templates Modal */}
+    <Dialog open={isManageTemplatesOpen} onOpenChange={setIsManageTemplatesOpen}>
+      <DialogContent className="sm:max-w-[700px] p-6 rounded-2xl max-h-[85vh] flex flex-col overflow-hidden bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 z-[115]">
+        <DialogHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <FileText className="h-4 w-4 text-orange-500" /> Manage Official Template Presets
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500 mt-0.5">
+                Rename, edit, or delete any preset email template in your workspace.
+              </DialogDescription>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                setIsManageTemplatesOpen(false);
+                setIsCreateTemplateOpen(true);
+              }}
+              className="text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1 cursor-pointer shadow-2xs"
+            >
+              <Plus className="h-3.5 w-3.5" /> + New Template
+            </Button>
+          </div>
+        </DialogHeader>
+
+        <div className="py-3 flex-1 overflow-y-auto space-y-2 pr-1">
+          {templates.length === 0 ? (
+            <div className="text-center py-12 text-xs text-slate-400">
+              No custom templates saved yet. Click &quot;+ New Template&quot; to create one.
+            </div>
+          ) : (
+            templates.map((t) => (
+              <div
+                key={t.id}
+                className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between gap-3 hover:border-orange-300 dark:hover:border-orange-500/30 transition-all"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate">
+                      {t.name}
+                    </span>
+                    <Badge variant="outline" className="text-[10px] uppercase font-bold py-0 px-1.5 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-500/30 shrink-0">
+                      {(() => {
+                        const catObj = TEMPLATE_CATEGORIES.find((c) => c.value === t.category);
+                        return catObj ? catObj.label : t.category;
+                      })()}
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                    Subject: {t.subject}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleTemplateChange(t.id);
+                      setIsManageTemplatesOpen(false);
+                    }}
+                    className="px-2.5 py-1 text-xs font-bold rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-colors cursor-pointer shadow-2xs"
+                    title="Load and use this template right now"
+                  >
+                    Use
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      returnToManageRef.current = true;
+                      setIsManageTemplatesOpen(false);
+                      handleOpenQuickRename(t.id);
+                    }}
+                    className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-orange-500 dark:hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-colors cursor-pointer"
+                    title="Rename template"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      returnToManageRef.current = true;
+                      setIsManageTemplatesOpen(false);
+                      setSelectedTemplateId(t.id);
+                      setEditTemplateId(t.id);
+                      setEditTemplateName(t.name);
+                      setEditTemplateCategory(t.category);
+                      setEditTemplateSubject(t.subject);
+                      setEditTemplateHtmlBody(t.htmlBody);
+                      setIsEditTemplateOpen(true);
+                    }}
+                    className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                    title="Full layout & HTML editor"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      returnToManageRef.current = true;
+                      setIsManageTemplatesOpen(false);
+                      handlePromptDeleteTemplate(t.id);
+                    }}
+                    className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors cursor-pointer"
+                    title="Delete template"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsManageTemplatesOpen(false)}
+            className="text-xs font-bold rounded-xl cursor-pointer"
+          >
+            Close
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Dynamic AES-256-GCM Encrypted SMTP Configuration Modal */}
+    <Dialog open={isSmtpConfigOpen} onOpenChange={setIsSmtpConfigOpen}>
+      <DialogContent className="max-w-lg p-6 bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[110]">
+        <DialogHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-orange-500/10 text-orange-600 flex items-center justify-center font-bold">
+                <KeyRound className="h-4 w-4" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold text-slate-900 dark:text-white">
+                  SMTP Server Configuration
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-500">
+                  Custom SMTP provider with AES-256-GCM authenticated encryption.
+                </DialogDescription>
+              </div>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-3.5 py-3">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                SMTP Host <span className="text-rose-500">*</span>
+              </label>
+              <Input
+                placeholder="e.g. smtp.gmail.com or mail.domain.com"
+                value={smtpHost}
+                onChange={(e) => setSmtpHost(e.target.value)}
+                className="text-xs rounded-xl h-9 font-medium"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                Port
+              </label>
+              <Input
+                type="number"
+                placeholder="465"
+                value={smtpPort}
+                onChange={(e) => setSmtpPort(Number(e.target.value))}
+                className="text-xs rounded-xl h-9 font-medium"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+            <input
+              type="checkbox"
+              id="smtpSecureCheckbox"
+              checked={smtpSecure}
+              onChange={(e) => setSmtpSecure(e.target.checked)}
+              className="rounded border-slate-300 text-orange-500 focus:ring-orange-400 h-3.5 w-3.5 cursor-pointer"
+            />
+            <label htmlFor="smtpSecureCheckbox" className="text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+              SSL / TLS Secure Connection (Recommended for port 465)
+            </label>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                User / Login Email <span className="text-rose-500">*</span>
+              </label>
+              <Input
+                placeholder="e.g. hr@company.com"
+                value={smtpUserEmail}
+                onChange={(e) => setSmtpUserEmail(e.target.value)}
+                className="text-xs rounded-xl h-9 font-medium"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1 flex items-center justify-between">
+                <span>Password / App Key</span>
+                {hasConfiguredSmtp && !smtpPassword && (
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-0.5">
+                    <Check className="h-3 w-3" /> Saved & Active
+                  </span>
+                )}
+              </label>
+              <div className="relative">
+                <Input
+                  type={showSmtpPassword ? 'text' : 'password'}
+                  placeholder={hasConfiguredSmtp ? '•••••••••••• (Leave blank to keep)' : 'App-Specific Password'}
+                  value={smtpPassword}
+                  onChange={(e) => setSmtpPassword(e.target.value)}
+                  className="text-xs rounded-xl h-9 font-medium pr-8"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSmtpPassword(!showSmtpPassword)}
+                  className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  {showSmtpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                Sender Display Name
+              </label>
+              <Input
+                placeholder="e.g. Hindustaan Innovations HR"
+                value={smtpSenderName}
+                onChange={(e) => setSmtpSenderName(e.target.value)}
+                className="text-xs rounded-xl h-9 font-medium"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                Sender Email (From)
+              </label>
+              <Input
+                placeholder="e.g. hr@company.com (optional)"
+                value={smtpSenderEmail}
+                onChange={(e) => setSmtpSenderEmail(e.target.value)}
+                className="text-xs rounded-xl h-9 font-medium"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleTestSmtp}
+            disabled={isTestingSmtp || !smtpHost.trim() || !smtpUserEmail.trim()}
+            className="text-xs font-bold rounded-xl gap-1.5 cursor-pointer"
+          >
+            {isTestingSmtp ? (
+              <>
+                <RefreshCw className="h-3.5 w-3.5 animate-spin text-orange-500" /> Testing Connection...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Test Connection
+              </>
+            )}
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSmtpConfigOpen(false)}
+              className="text-xs font-bold rounded-xl cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSaveSmtp}
+              disabled={isSavingSmtp || !smtpHost.trim() || !smtpUserEmail.trim()}
+              className="text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer shadow-sm"
+            >
+              {isSavingSmtp ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Saving...
+                </>
+              ) : (
+                <>
+                  <Check className="h-3.5 w-3.5" /> Save Configuration
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  </>
+);
 }
