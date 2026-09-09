@@ -2058,11 +2058,11 @@ export default function EmailComposerModal({
             <div className="p-4 flex-1">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
                 <TabsList className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl mb-4">
-                  <TabsTrigger value="ai" className="rounded-lg text-xs font-bold gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-orange-600 data-[state=active]:shadow-xs cursor-pointer py-1.5">
-                    <Wand2 className="h-3.5 w-3.5 text-orange-500" /> AI Assistant (Groq)
+                  <TabsTrigger value="ai" className="rounded-lg text-xs font-bold gap-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-orange-600 dark:data-[state=active]:text-orange-400 data-[state=active]:shadow-xs cursor-pointer py-1.5 transition-colors">
+                    <Wand2 className="h-3.5 w-3.5 text-orange-500 shrink-0" /> AI Assistant (Groq)
                   </TabsTrigger>
-                  <TabsTrigger value="manual" className="rounded-lg text-xs font-bold gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-orange-600 data-[state=active]:shadow-xs cursor-pointer py-1.5">
-                    <Edit3 className="h-3.5 w-3.5 text-slate-500" /> Manual Customizer
+                  <TabsTrigger value="manual" className="rounded-lg text-xs font-bold gap-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-orange-600 dark:data-[state=active]:text-orange-400 data-[state=active]:shadow-xs cursor-pointer py-1.5 transition-colors">
+                    <Edit3 className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" /> Manual Customizer
                   </TabsTrigger>
                 </TabsList>
 
