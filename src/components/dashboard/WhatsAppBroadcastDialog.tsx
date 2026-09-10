@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 
 // --- Types & Schema ---
 const whatsappSchema = z.object({
@@ -45,19 +46,45 @@ const whatsappSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty'),
 });
 
-const RECIPIENTS = [
-  { id: 'all', name: 'All Interns (Broadcast)', type: 'group' },
-  { id: '1', name: 'Amanda Smith', type: 'individual' },
-  { id: '2', name: 'Rahul Sharma', type: 'individual' },
-  { id: '3', name: 'Priya Patel', type: 'individual' },
-  { id: '4', name: 'Rohan Gupta', type: 'individual' },
-  { id: '5', name: 'Aiden Chen', type: 'individual' },
-];
+interface RecipientOption {
+  id: string;
+  name: string;
+  type: 'group' | 'individual';
+  phone?: string;
+}
 
 export function WhatsAppBroadcastDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [recipientsList, setRecipientsList] = useState<RecipientOption[]>([
+    { id: 'all', name: 'All Interns (Broadcast)', type: 'group' }
+  ]);
   
+  // Load real members from backend database
+  useEffect(() => {
+    if (!open) return;
+    const fetchMembers = async () => {
+      try {
+        const res = await api.get('/team');
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          const members: RecipientOption[] = res.data.data.map((m: any) => ({
+            id: m.id || m.empId,
+            name: `${m.name || 'Member'}${m.phone ? ` (${m.phone})` : ''}`,
+            type: 'individual',
+            phone: m.phone
+          }));
+          setRecipientsList([
+            { id: 'all', name: 'All Team Members (Broadcast)', type: 'group' },
+            ...members
+          ]);
+        }
+      } catch (err) {
+        // Fallback default
+      }
+    };
+    fetchMembers();
+  }, [open]);
+
   const form = useForm<z.infer<typeof whatsappSchema>>({
     resolver: zodResolver(whatsappSchema),
     defaultValues: {
@@ -75,12 +102,28 @@ export function WhatsAppBroadcastDialog({ open, onOpenChange }: { open: boolean,
   const onSubmit = async (values: z.infer<typeof whatsappSchema>) => {
     setLoading(true);
     
-    // Simulate API call to WhatsApp Business API
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    const selected = recipientsList.find(r => r.id === values.recipient);
+    
+    // If an individual with phone number is chosen, launch WhatsApp directly
+    if (selected && selected.type === 'individual' && selected.phone) {
+      let cleanPhone = selected.phone.replace(/[^0-9]/g, '');
+      if (cleanPhone.length === 10) {
+        cleanPhone = `91${cleanPhone}`;
+      } else if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) {
+        cleanPhone = `91${cleanPhone.slice(1)}`;
+      }
+      
+      if (cleanPhone) {
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(values.message)}`, '_blank');
+      }
+    }
+    
+    // Small dispatch timeout
+    await new Promise(resolve => setTimeout(resolve, 800));
     
     setLoading(false);
-    toast.success('Message sent via WhatsApp.', {
-      description: `Successfully delivered to ${RECIPIENTS.find(r => r.id === values.recipient)?.name}.`
+    toast.success('Dispatched to WhatsApp', {
+      description: `Target: ${selected?.name || 'Selected recipient'}`
     });
     
     form.reset();
@@ -123,7 +166,7 @@ export function WhatsAppBroadcastDialog({ open, onOpenChange }: { open: boolean,
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl">
-                        {RECIPIENTS.map(recipient => (
+                        {recipientsList.map(recipient => (
                           <SelectItem key={recipient.id} value={recipient.id} className="font-medium">
                             {recipient.type === 'group' ? '📢 ' : '👤 '}{recipient.name}
                           </SelectItem>

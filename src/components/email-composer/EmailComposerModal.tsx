@@ -12,7 +12,7 @@ import {
   Building2, ShieldCheck, Laptop, Smartphone, Wand2, Type, LayoutTemplate,
   Paperclip, Users, Search, Download, Trash2, Calendar, Plus,
   Video, ExternalLink, Clock, Copy, Briefcase, ChevronDown, Award, Megaphone,
-  Settings, Lock, EyeOff, KeyRound
+  Settings, Lock, EyeOff, KeyRound, Undo2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -81,6 +81,18 @@ export function htmlToPlainText(html: string): string {
   text = text.replace(/\n\s+\n/g, '\n\n');
   text = text.replace(/\n{3,}/g, '\n\n');
   return text.trim();
+}
+
+// Convert plain text into styled HTML wrapper for raw HTML syncing
+export function plainTextToHtml(text: string): string {
+  if (!text) return '';
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+  return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; white-space: pre-wrap; padding: 24px;">${escaped}</div>`;
 }
 
 // Formats any date into strict DD-MMM-YYYY (e.g. 08-Sep-2026)
@@ -428,6 +440,52 @@ export const TEMPLATE_CATEGORIES = [
   { value: 'custom', label: 'Custom Workspace Template' },
 ];
 
+export interface RolePreset {
+  role: string;
+  label: string;
+  topics: string;
+  tools: string;
+}
+
+export const ROLE_PRESETS: RolePreset[] = [
+  {
+    role: 'Full Stack Developer',
+    label: 'Full Stack Developer',
+    topics: 'frontend architecture, REST APIs, database schema design, state management, full-lifecycle deployment',
+    tools: 'React, Node.js, Express, PostgreSQL / MongoDB, Git, Tailwind CSS'
+  },
+  {
+    role: 'Frontend Developer',
+    label: 'Frontend Developer',
+    topics: 'responsive UI components, React hooks, performance optimization, CSS layout systems, client-side caching',
+    tools: 'React, TypeScript, Next.js / Vite, Tailwind CSS, HTML5/CSS3'
+  },
+  {
+    role: 'Backend Developer',
+    label: 'Backend Developer',
+    topics: 'API gateway design, microservices, database queries & indexing, authentication/JWT, server performance',
+    tools: 'Node.js, Express, PostgreSQL, Prisma ORM, Redis, Docker'
+  },
+  {
+    role: 'ML & Gen AI Engineer',
+    label: 'ML & Gen AI Engineer',
+    topics: 'LLM integration, Prompt engineering, RAG pipelines, fine-tuning, embeddings & vector databases, Python data processing',
+    tools: 'Python, PyTorch, LangChain / LlamaIndex, OpenAI / Groq APIs, Hugging Face, FAISS / Pinecone'
+  },
+  {
+    role: 'UI/UX & Graphic Designer',
+    label: 'UI/UX & Graphic Designer',
+    topics: 'user research, wireframing, high-fidelity prototypes, design system consistency, branding & visual storytelling',
+    tools: 'Figma, Canva, Adobe Photoshop, Illustrator, Adobe XD'
+  },
+  {
+    role: 'None',
+    label: 'None / Custom Role (Clear preset)',
+    topics: '',
+    tools: ''
+  }
+];
+
 function CategoryDropdown({
   value,
   onChange,
@@ -537,10 +595,18 @@ export default function EmailComposerModal({
   const [stipend, setStipend] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [duration, setDuration] = useState('');
-  const [tone, setTone] = useState('Formal & Encouraging');
+  const [tone, setTone] = useState('Formal & Professional');
   const [customPrompt, setCustomPrompt] = useState('');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [lastSummary, setLastSummary] = useState('');
+  // Multi-step AI Generation & Refinement history stack for undo
+  const [draftHistory, setDraftHistory] = useState<Array<{
+    subject: string;
+    htmlBody: string;
+    plainText: string;
+    tone?: string;
+  }>>([]);
+  const previousDraftState = draftHistory.length > 0 ? draftHistory[draftHistory.length - 1] : null;
 
   // Reference / Dispatch ID state & Notice toggle
   const [includeRefNumber, setIncludeRefNumber] = useState(true);
@@ -1261,19 +1327,26 @@ export default function EmailComposerModal({
 
   // Test SMTP Connection
   const handleTestSmtp = async () => {
-    if (!smtpHost.trim() || !smtpUserEmail.trim()) {
-      toast.error('Please enter Host and User Email');
+    const host = smtpHost.trim() || 'smtp.gmail.com';
+    const email = smtpUserEmail.trim();
+    if (!email) {
+      toast.error('Please enter your SMTP Login Email');
+      return;
+    }
+    if (!smtpPassword.trim() && !hasConfiguredSmtp) {
+      toast.error('Please enter your 16-character Gmail App Password');
       return;
     }
     try {
       setIsTestingSmtp(true);
       const res = await api.post('/email/config/test', {
-        host: smtpHost.trim(),
-        port: Number(smtpPort) || 465,
-        secure: smtpSecure,
-        userEmail: smtpUserEmail.trim(),
-        password: smtpPassword,
-        senderEmail: smtpSenderEmail.trim() || smtpUserEmail.trim()
+        host,
+        port: 465,
+        secure: true,
+        userEmail: email,
+        password: smtpPassword.trim(),
+        senderName: smtpSenderName.trim() || 'Hindustaan Innovations HR',
+        senderEmail: smtpSenderEmail.trim() || email
       });
       if (res.data?.success) {
         toast.success('SMTP Connection Verified Successfully!', {
@@ -1291,25 +1364,31 @@ export default function EmailComposerModal({
 
   // Save Dynamic SMTP Configuration
   const handleSaveSmtp = async () => {
-    if (!smtpHost.trim() || !smtpUserEmail.trim()) {
-      toast.error('Host and User Email are required');
+    const host = smtpHost.trim() || 'smtp.gmail.com';
+    const email = smtpUserEmail.trim();
+    if (!email) {
+      toast.error('Login Email is required');
+      return;
+    }
+    if (!smtpPassword.trim() && !hasConfiguredSmtp) {
+      toast.error('Password is required for first-time SMTP setup');
       return;
     }
     try {
       setIsSavingSmtp(true);
       const res = await api.post('/email/config', {
-        host: smtpHost.trim(),
-        port: Number(smtpPort) || 465,
-        secure: smtpSecure,
-        userEmail: smtpUserEmail.trim(),
-        password: smtpPassword,
-        senderName: smtpSenderName.trim(),
-        senderEmail: smtpSenderEmail.trim() || smtpUserEmail.trim(),
+        host,
+        port: 465,
+        secure: true,
+        userEmail: email,
+        password: smtpPassword.trim(),
+        senderName: smtpSenderName.trim() || 'Hindustaan Innovations HR',
+        senderEmail: smtpSenderEmail.trim() || email,
         isDefault: true
       });
       if (res.data?.success) {
         toast.success('SMTP Configuration Saved & Encrypted!', {
-          description: 'Credentials secured with AES-256-GCM in database.'
+          description: 'Credentials secured with AES-256-GCM and shared across all computers.'
         });
         setHasConfiguredSmtp(true);
         setSmtpPassword('');
@@ -1366,7 +1445,31 @@ export default function EmailComposerModal({
     const valInterviewTopics = overrides?.interviewTopics !== undefined ? overrides.interviewTopics : interviewTopics;
     const valInterviewTools = overrides?.interviewTools !== undefined ? overrides.interviewTools : interviewTools;
 
-    if (rawHtmlTemplate) {
+    // 1. BLANK CANVAS or custom draft mode: Protect user draft from being overwritten!
+    if (selectedTemplateId === 'none' || (rawHtmlTemplate && !rawHtmlTemplate.includes('{{'))) {
+      if (overrides?.name !== undefined) {
+        const newName = overrides.name;
+        const oldName = candidateName;
+
+        const replaceName = (content: string) => {
+          if (!content) return content;
+          if (oldName && oldName.trim() && content.includes(oldName.trim())) {
+            return content.split(oldName.trim()).join(newName.trim() || '[Employee Name]');
+          }
+          return content
+            .replace(/\[(Employee Name|Candidate Name|Recipient Name|Candidate|Employee)\]/gi, newName.trim() || '[Employee Name]')
+            .replace(/{{(candidateName|name|employeeName)}}/g, newName.trim() || '[Employee Name]');
+        };
+
+        setPlainText(prev => replaceName(prev));
+        setHtmlBody(prev => replaceName(prev));
+        setSubject(prev => replaceName(prev));
+        setPreviewRenderId(prev => prev + 1);
+      }
+      return;
+    }
+
+    if (rawHtmlTemplate && rawHtmlTemplate.includes('{{')) {
       const rendered = interpolateTemplate(rawHtmlTemplate, rawSubjectTemplate || subject, {
         name: valName,
         role: valRole,
@@ -1417,6 +1520,7 @@ export default function EmailComposerModal({
       if (overrides?.name !== undefined && candidateName) {
         setHtmlBody((prev) => prev.replace(new RegExp(candidateName, 'g'), overrides.name!));
         setSubject((prev) => prev.replace(new RegExp(candidateName, 'g'), overrides.name!));
+        setPlainText((prev) => prev.replace(new RegExp(candidateName, 'g'), overrides.name!));
         setPreviewRenderId((prev) => prev + 1);
       }
     }
@@ -1493,6 +1597,31 @@ export default function EmailComposerModal({
     }
   };
 
+  const handleRoleSelect = (selectedRole: string) => {
+    if (selectedRole === 'None') {
+      setCandidateRole('');
+      setInterviewTopics('');
+      setInterviewTools('');
+      triggerLiveRender({ role: '', interviewTopics: '', interviewTools: '' });
+      return;
+    }
+
+    const preset = ROLE_PRESETS.find(p => p.role === selectedRole);
+    if (preset) {
+      setCandidateRole(preset.role);
+      setInterviewTopics(preset.topics);
+      setInterviewTools(preset.tools);
+      triggerLiveRender({ 
+        role: preset.role, 
+        interviewTopics: preset.topics, 
+        interviewTools: preset.tools 
+      });
+    } else {
+      setCandidateRole(selectedRole);
+      triggerLiveRender({ role: selectedRole });
+    }
+  };
+
   const handleToggleRefNumber = (checked: boolean) => {
     setIncludeRefNumber(checked);
     triggerLiveRender({ includeRef: checked });
@@ -1542,8 +1671,8 @@ export default function EmailComposerModal({
       const res = await api.post('/email/ai-generate', payload);
       if (res.data?.success && res.data.data) {
         const newSubj = res.data.data.subject || subject;
-        let newHtml = res.data.data.htmlBody || htmlBody;
-        let newText = res.data.data.textBody ? formatPlainText(res.data.data.textBody) : htmlToPlainText(newHtml);
+        let newText = res.data.data.textBody ? formatPlainText(res.data.data.textBody) : (res.data.data.htmlBody ? htmlToPlainText(res.data.data.htmlBody) : plainText);
+        let newHtml = res.data.data.htmlBody || (newText ? plainTextToHtml(newText) : htmlBody);
 
         // Strip any rogue duplicate AI meeting cards so only ONE official meeting card exists
         newHtml = stripAllMeetingBlocks(newHtml);
@@ -1557,6 +1686,15 @@ export default function EmailComposerModal({
           const schedule = meetingDateTime || 'Tomorrow, 04:00 PM IST';
           newHtml = injectMeetingBlock(newHtml, activeMeet, schedule, meetingPlatform);
           newText = injectMeetingTextBlock(newText, activeMeet, schedule, meetingPlatform);
+        }
+
+        if (subject || plainText || htmlBody) {
+          setDraftHistory(prev => [...prev, {
+            subject,
+            htmlBody,
+            plainText,
+            tone
+          }]);
         }
 
         setRawSubjectTemplate(newSubj);
@@ -1594,9 +1732,17 @@ export default function EmailComposerModal({
         instruction
       });
       if (res.data?.success && res.data.data) {
+        // Save current draft snapshot before applying refinement to multi-step undo history
+        setDraftHistory(prev => [...prev, {
+          subject,
+          htmlBody,
+          plainText,
+          tone
+        }]);
+
         const newSubj = res.data.data.subject || subject;
-        let newHtml = res.data.data.htmlBody || htmlBody;
-        let newText = res.data.data.textBody ? formatPlainText(res.data.data.textBody) : htmlToPlainText(newHtml);
+        let newText = res.data.data.textBody ? formatPlainText(res.data.data.textBody) : (res.data.data.htmlBody ? htmlToPlainText(res.data.data.htmlBody) : plainText);
+        let newHtml = res.data.data.htmlBody || (newText ? plainTextToHtml(newText) : htmlBody);
 
         // Strip any rogue duplicate AI meeting cards so only ONE official meeting card exists
         newHtml = stripAllMeetingBlocks(newHtml);
@@ -1625,6 +1771,103 @@ export default function EmailComposerModal({
       toast.error(err.response?.data?.message || 'Failed to refine draft');
     } finally {
       setIsGeneratingAi(false);
+    }
+  };
+
+  // Undo last AI transformation and restore previous draft (multi-step undo)
+  const handleUndoLastAiChange = () => {
+    if (draftHistory.length === 0) return;
+    const previous = draftHistory[draftHistory.length - 1];
+    setRawSubjectTemplate(previous.subject);
+    setRawHtmlTemplate(previous.htmlBody);
+    setSubject(previous.subject);
+    setHtmlBody(previous.htmlBody);
+    setPlainText(previous.plainText);
+    if (previous.tone) {
+      setTone(previous.tone);
+    }
+    setDraftHistory(prev => prev.slice(0, -1));
+    setPreviewRenderId(prev => prev + 1);
+    toast.info(`Reverted AI change (${draftHistory.length - 1} remaining in history)`);
+  };
+
+  // Communication Tone toggle & live AI refinement with undo
+  const handleToneClick = async (selectedTone: string) => {
+    if (isGeneratingAi) return;
+
+    // If clicking the already selected tone, toggle off / undo
+    if (tone === selectedTone) {
+      const defaultTone = 'None / Standard';
+      setTone(defaultTone);
+      // If the latest history entry was this tone adjustment, undo it directly
+      if (draftHistory.length > 0) {
+        handleUndoLastAiChange();
+      } else {
+        toast.info(`Tone deselected (Neutral tone active)`);
+      }
+      return;
+    }
+
+    const prevTone = tone;
+    setTone(selectedTone);
+
+    const activeContent = emailFormat === 'text' ? plainText.trim() : htmlBody.trim();
+    // If draft already has content, live refine it with AI and save previous state to draftHistory
+    if (activeContent.length > 30 && selectedTone !== 'None / Standard') {
+      try {
+        setIsGeneratingAi(true);
+        setDraftHistory(prev => [...prev, {
+          subject,
+          htmlBody,
+          plainText,
+          tone: prevTone
+        }]);
+
+        const instruction = `Adjust the tone and writing style of this email to be ${selectedTone}, keeping all core details, requirements, links, and dates unchanged.`;
+        const res = await api.post('/email/ai-generate', {
+          format: emailFormat,
+          isRefine: true,
+          currentSubject: subject,
+          currentContent: emailFormat === 'text' ? plainText : htmlBody,
+          instruction
+        });
+
+        if (res.data?.success && res.data.data) {
+          const newSubj = res.data.data.subject || subject;
+          let newText = res.data.data.textBody ? formatPlainText(res.data.data.textBody) : (res.data.data.htmlBody ? htmlToPlainText(res.data.data.htmlBody) : plainText);
+          let newHtml = res.data.data.htmlBody || (newText ? plainTextToHtml(newText) : htmlBody);
+
+          newHtml = stripAllMeetingBlocks(newHtml);
+          newText = stripAllMeetingTextBlocks(newText);
+
+          const activeMeet = meetingLink.trim() || (() => {
+            try { return (localStorage.getItem('hip_default_google_meet_link') || '').trim(); } catch { return ''; }
+          })();
+
+          if (attachMeetingToEmail && activeMeet) {
+            const schedule = meetingDateTime || 'Tomorrow, 04:00 PM IST';
+            newHtml = injectMeetingBlock(newHtml, activeMeet, schedule, meetingPlatform);
+            newText = injectMeetingTextBlock(newText, activeMeet, schedule, meetingPlatform);
+          }
+
+          setRawSubjectTemplate(newSubj);
+          setRawHtmlTemplate(newHtml);
+          setSubject(newSubj);
+          setHtmlBody(newHtml);
+          setPlainText(newText);
+          setLastSummary(res.data.data.summary || `Tone refined to ${selectedTone}`);
+          setPreviewRenderId(prev => prev + 1);
+          toast.success(`Tone applied: ${selectedTone}`, {
+            description: 'Click "Undo AI Change" or re-click this tone button to revert.'
+          });
+        }
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Failed to apply tone');
+      } finally {
+        setIsGeneratingAi(false);
+      }
+    } else {
+      toast.info(`Tone selected: "${selectedTone}"`);
     }
   };
 
@@ -1908,35 +2151,7 @@ export default function EmailComposerModal({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 pr-8">
-            {/* Format Selector: Rich HTML vs Plain Text */}
-            <div className="flex items-center bg-slate-200/80 dark:bg-slate-800 p-1 rounded-xl border border-slate-300 dark:border-slate-700">
-              <button
-                type="button"
-                onClick={() => handleFormatToggle('html')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  emailFormat === 'html'
-                    ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <LayoutTemplate className="h-3.5 w-3.5" />
-                <span>Rich HTML Letterhead</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleFormatToggle('text')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  emailFormat === 'text'
-                    ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <Type className="h-3.5 w-3.5" />
-                <span>Simple Plain Text</span>
-              </button>
-            </div>
-
+          <div className="flex items-center gap-2 pr-8">
             {/* SMTP Settings Button */}
             <Button
               type="button"
@@ -1964,18 +2179,6 @@ export default function EmailComposerModal({
               <Users className="h-3.5 w-3.5 text-indigo-500" />
               Bulk Send (CSV / Paste)
             </Button>
-
-            {/* Print / Save PDF button */}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handlePrintOrPdf}
-              className="text-xs font-bold gap-1.5 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 cursor-pointer shadow-xs"
-            >
-              <Printer className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
-              Print / Save PDF
-            </Button>
           </div>
         </div>
 
@@ -1985,6 +2188,232 @@ export default function EmailComposerModal({
           {/* Left Column: Form & AI Controls (Comfortable 460px width) */}
           <div className="w-full lg:w-[480px] xl:w-[520px] border-r border-slate-200 dark:border-slate-800 flex flex-col h-full bg-white dark:bg-[#0B1120] overflow-y-auto shrink-0 custom-scrollbar">
             
+            {/* 1. Sender Info Bar */}
+            <div className="px-4 py-2 bg-slate-50/90 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs shrink-0">
+              <div className="flex items-center gap-1.5 min-w-0 truncate">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">From:</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                  {smtpSenderName || 'Hindustaan Innovations HR'}
+                </span>
+                <span className="text-slate-500 font-mono text-[10px] truncate">
+                  &lt;{smtpSenderEmail || smtpUserEmail || 'hr@hindustaan.com'}&gt;
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  fetchSmtpConfig();
+                  setIsSmtpConfigOpen(true);
+                }}
+                className="text-[10px] font-bold text-orange-600 hover:text-orange-700 dark:text-orange-400 flex items-center gap-1 shrink-0 ml-2 cursor-pointer"
+                title="Configure SMTP Server"
+              >
+                <Settings className="h-3 w-3" /> SMTP
+              </button>
+            </div>
+
+            {/* 2. Recipients & Quick Target Selection */}
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 space-y-2.5 shrink-0">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5 text-orange-500" /> Recipients ({recipientsList.length})
+                </label>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-slate-400 font-medium">Quick Target:</span>
+                  {!isManager && (
+                    <>
+                      <button type="button" onClick={() => addRecipient('all')} className="text-[10px] font-bold text-orange-600 bg-orange-500/10 px-1.5 py-0.5 rounded cursor-pointer hover:bg-orange-500 hover:text-white transition-colors">+ All</button>
+                      <button type="button" onClick={() => addRecipient('managers')} className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded cursor-pointer hover:bg-emerald-500 hover:text-white transition-colors">+ Managers</button>
+                    </>
+                  )}
+                  <button type="button" onClick={() => addRecipient('interns')} className="text-[10px] font-bold text-indigo-600 bg-indigo-500/10 px-1.5 py-0.5 rounded cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors">+ Interns</button>
+                  <button type="button" onClick={() => addRecipient('employees')} className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded cursor-pointer hover:bg-emerald-500 hover:text-white transition-colors">+ Employees</button>
+                </div>
+              </div>
+
+              {/* Recipient Badges */}
+              <div className="min-h-[36px] max-h-24 overflow-y-auto p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-wrap items-center gap-1.5 custom-scrollbar">
+                {recipientsList.length === 0 && (
+                  <span className="text-[11px] text-slate-400 pl-1">No recipient added yet. Type email below...</span>
+                )}
+                {recipientsList.map((rec, idx) => (
+                  <Badge key={idx} className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-md text-[11px] font-bold flex items-center gap-1">
+                    {rec}
+                    <button type="button" onClick={() => removeRecipient(idx)} className="hover:text-rose-500 cursor-pointer">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+
+              {/* Add Email Bar with Live Autocomplete */}
+              <div ref={recipientContainerRef} className="relative">
+                <div className="flex gap-1.5">
+                  <div className="relative flex-1">
+                    <Input
+                      placeholder="Search workspace member (name/email) or type address..."
+                      value={newRecipientInput}
+                      onChange={(e) => handleRecipientInputChange(e.target.value)}
+                      onFocus={() => {
+                        if (newRecipientInput.trim() || recipientSuggestions.length > 0) {
+                          setShowSuggestionsDropdown(true);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          addRecipient();
+                        }
+                      }}
+                      className="text-xs h-8.5 pl-8 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:border-orange-500"
+                    />
+                    <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                    {isSearchingRecipients && (
+                      <RefreshCw className="absolute right-2.5 top-2.5 h-3.5 w-3.5 animate-spin text-orange-500" />
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => addRecipient()}
+                    size="sm"
+                    variant="outline"
+                    className="h-8.5 text-xs font-bold rounded-xl border-slate-200 dark:border-slate-700 hover:border-orange-500 hover:text-orange-600 cursor-pointer shadow-xs"
+                  >
+                    + Add
+                  </Button>
+                </div>
+
+                {/* Suggestions Popover Dropdown */}
+                {showSuggestionsDropdown && (newRecipientInput.trim() || recipientSuggestions.length > 0) && (
+                  <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                      <span>Workspace Members ({recipientSuggestions.length})</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowSuggestionsDropdown(false)}
+                        className="hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+
+                    {isSearchingRecipients && recipientSuggestions.length === 0 ? (
+                      <div className="p-3.5 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                        <RefreshCw className="h-3.5 w-3.5 animate-spin text-orange-500" /> Searching workspace members...
+                      </div>
+                    ) : recipientSuggestions.length === 0 ? (
+                      <div className="p-3 text-center text-xs text-slate-400">
+                        No workspace member found for &ldquo;{newRecipientInput}&rdquo;. Press Enter or &quot;+ Add&quot; to use as email.
+                      </div>
+                    ) : (
+                      recipientSuggestions.map((userItem) => {
+                        const roleUpper = (userItem.role || 'INTERN').toUpperCase();
+                        const roleColor =
+                          roleUpper === 'INTERN'
+                            ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'
+                            : roleUpper === 'MANAGER'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                            : roleUpper === 'ADMIN'
+                            ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20'
+                            : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
+
+                        return (
+                          <div
+                            key={userItem.id}
+                            onClick={() => selectSuggestion(userItem)}
+                            className="p-2.5 flex items-center justify-between hover:bg-orange-50/70 dark:hover:bg-orange-950/30 cursor-pointer transition-colors group"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="h-7 w-7 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold text-xs flex items-center justify-center shrink-0 border border-orange-500/20">
+                                {userItem.name?.charAt(0)?.toUpperCase() || 'U'}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-orange-600 transition-colors truncate leading-tight">
+                                  {userItem.name}
+                                </p>
+                                <p className="text-[11px] text-slate-600 dark:text-slate-300 font-mono font-medium truncate leading-tight mt-0.5">
+                                  {userItem.email}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0 ml-2">
+                              <Badge className={`text-[10px] font-bold border px-1.5 py-0.5 rounded ${roleColor}`}>
+                                {roleUpper}
+                              </Badge>
+                              <span className="text-[10px] text-orange-600 dark:text-orange-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                + Select
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
+              {isManager && (
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                  <ShieldCheck className="h-3 w-3" /> Note: Managers can only dispatch emails to Interns & Employees.
+                </p>
+              )}
+
+              {/* 3. Attach Files */}
+              <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between">
+                <input
+                  type="file"
+                  ref={fileAttachmentRef}
+                  onChange={handleFileAttachment}
+                  multiple
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => fileAttachmentRef.current?.click()}
+                  className="h-7 px-2 text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/30 rounded-lg gap-1.5 cursor-pointer"
+                >
+                  <Paperclip className="h-3.5 w-3.5" />
+                  <span>Attach Files</span>
+                  <span className="text-[10px] text-slate-400 font-normal">(PDF, Docs, Max 10MB)</span>
+                </Button>
+                {attachments.length > 0 && (
+                  <span className="text-[10px] font-semibold text-slate-500">
+                    {attachments.length} file{attachments.length > 1 ? 's' : ''} ({(attachments.reduce((acc, a) => acc + a.size, 0) / (1024 * 1024)).toFixed(2)} MB)
+                  </span>
+                )}
+              </div>
+
+              {attachments.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1 max-h-24 overflow-y-auto custom-scrollbar">
+                  {attachments.map((att) => (
+                    <div
+                      key={att.id}
+                      className="flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] border border-slate-200 dark:border-slate-700 shadow-xs group"
+                    >
+                      <FileText className="h-3 w-3 text-orange-500 shrink-0" />
+                      <span className="font-medium max-w-[130px] truncate" title={att.filename}>
+                        {att.filename}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {att.size > 1024 * 1024
+                          ? (att.size / (1024 * 1024)).toFixed(1) + ' MB'
+                          : Math.round(att.size / 1024) + ' KB'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(att.id)}
+                        className="p-0.5 rounded hover:bg-rose-100 dark:hover:bg-rose-900/40 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                        title="Remove attachment"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Template Selector Bar */}
             <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/40">
               <div className="flex items-center justify-between mb-1.5">
@@ -2103,6 +2532,19 @@ export default function EmailComposerModal({
                     />
                   </div>
 
+                  {/* Custom Instructions right after Candidate Name */}
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                      Custom Instructions / Specific Requirements
+                    </label>
+                    <Textarea
+                      placeholder="e.g. Mention 3-month probation period, remote working option, and reporting to senior tech lead."
+                      value={customPrompt}
+                      onChange={(e) => setCustomPrompt(e.target.value)}
+                      className="text-xs rounded-xl min-h-[70px] bg-slate-50 dark:bg-slate-800/60"
+                    />
+                  </div>
+
                   {/* Collapsible Category-Specific Details Accordion */}
                   {(() => {
                     const activeT = templates.find((t) => t.id === selectedTemplateId);
@@ -2181,15 +2623,43 @@ export default function EmailComposerModal({
                             {activeCategory === 'interview' && (
                               <>
                                 <div>
-                                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                    Candidate Role / Designation
-                                  </label>
-                                  <Input
-                                    placeholder="e.g. Graphic Designer & Social Media Manager"
-                                    value={candidateRole}
-                                    onChange={(e) => handleFieldChange('role', e.target.value)}
-                                    className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                                  />
+                                  <div className="flex items-center justify-between mb-1">
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">
+                                      Candidate Role / Designation
+                                    </label>
+                                    <span className="text-[9px] text-orange-500 font-semibold">Presets auto-fill topics & tools</span>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <Select
+                                      value={ROLE_PRESETS.some(p => p.role === candidateRole) ? candidateRole : (candidateRole ? 'custom' : 'None')}
+                                      onValueChange={(val) => {
+                                        if (val === 'custom') return;
+                                        handleRoleSelect(val);
+                                      }}
+                                    >
+                                      <SelectTrigger className="w-full text-xs font-bold rounded-lg bg-slate-50 dark:bg-slate-800/60 h-8 border-slate-200 dark:border-slate-700">
+                                        <SelectValue placeholder="Select Role (e.g. Full Stack, Backend, ML...)" />
+                                      </SelectTrigger>
+                                      <SelectContent className="max-h-64">
+                                        {ROLE_PRESETS.map((p) => (
+                                          <SelectItem key={p.role} value={p.role} className="text-xs font-medium">
+                                            {p.role === 'None' ? 'None (Clear topics & tools)' : p.label}
+                                          </SelectItem>
+                                        ))}
+                                        {candidateRole && !ROLE_PRESETS.some(p => p.role === candidateRole) && (
+                                          <SelectItem value="custom" className="text-xs font-bold text-orange-600">
+                                            Custom: {candidateRole}
+                                          </SelectItem>
+                                        )}
+                                      </SelectContent>
+                                    </Select>
+                                    <Input
+                                      placeholder="Or customize / type specific role title..."
+                                      value={candidateRole}
+                                      onChange={(e) => handleFieldChange('role', e.target.value)}
+                                      className="text-xs rounded-lg h-7.5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 font-medium"
+                                    />
+                                  </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                   <div>
@@ -2223,36 +2693,87 @@ export default function EmailComposerModal({
                                     />
                                   </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-2">
                                   <div>
                                     <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
                                       Meeting Mode
                                     </label>
-                                    <Input
-                                      placeholder="e.g. In person or Google Meet"
-                                      value={interviewMode}
-                                      onChange={(e) => handleFieldChange('interviewMode', e.target.value)}
-                                      className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                                    />
+                                    <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handleFieldChange('interviewMode', 'In person');
+                                          handleRemoveMeeting();
+                                        }}
+                                        className={`text-xs font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                                          interviewMode.toLowerCase().includes('in person') || interviewMode.toLowerCase().includes('offline')
+                                            ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-xs'
+                                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                                        }`}
+                                      >
+                                        <Building2 className="h-3.5 w-3.5" /> In person
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handleFieldChange('interviewMode', 'Online');
+                                        }}
+                                        className={`text-xs font-bold py-1.5 px-3 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                                          interviewMode.toLowerCase().includes('online') || interviewMode.toLowerCase().includes('meet') || interviewMode.toLowerCase().includes('virtual')
+                                            ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-xs'
+                                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                                        }`}
+                                      >
+                                        <Video className="h-3.5 w-3.5" /> Online (Meet Link)
+                                      </button>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                                      Location / Address
-                                    </label>
-                                    <Input
-                                      placeholder="e.g. Hindustaan Innovations Private Limited, Raipur, Chhattisgarh"
-                                      value={interviewLocation}
-                                      onChange={(e) => handleFieldChange('interviewLocation', e.target.value)}
-                                      className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
-                                    />
-                                  </div>
+
+                                  {(interviewMode.toLowerCase().includes('in person') || interviewMode.toLowerCase().includes('offline')) ? (
+                                    <div>
+                                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                                        Office / Physical Location Address
+                                      </label>
+                                      <Input
+                                        placeholder="e.g. Hindustaan Innovations Private Limited, Raipur, Chhattisgarh"
+                                        value={interviewLocation}
+                                        onChange={(e) => handleFieldChange('interviewLocation', e.target.value)}
+                                        className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <div className="flex items-center justify-between mb-1">
+                                        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">
+                                          Google Meet / Video Meeting Link
+                                        </label>
+                                        <button
+                                          type="button"
+                                          onClick={handleOpenGoogleMeetNew}
+                                          className="text-[10px] font-bold text-orange-600 hover:underline flex items-center gap-0.5 cursor-pointer"
+                                        >
+                                          <ExternalLink className="h-3 w-3" /> Create Room ↗
+                                        </button>
+                                      </div>
+                                      <Input
+                                        placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                                        value={meetingLink}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          setMeetingLink(val);
+                                          handleInsertOrUpdateMeeting(val, interviewTime);
+                                        }}
+                                        className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-mono text-slate-900 dark:text-slate-100"
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                                 <div>
                                   <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
                                     Discussion Topics & Experience Focus
                                   </label>
                                   <Input
-                                    placeholder="e.g. graphic designing, social media management, content creation, branding"
+                                    placeholder="e.g. frontend architecture, REST APIs, database schema design"
                                     value={interviewTopics}
                                     onChange={(e) => handleFieldChange('interviewTopics', e.target.value)}
                                     className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
@@ -2263,7 +2784,7 @@ export default function EmailComposerModal({
                                     Required Tools / Familiarity
                                   </label>
                                   <Input
-                                    placeholder="e.g. Canva, Photoshop, Illustrator, video editing tools"
+                                    placeholder="e.g. React, Node.js, Express, PostgreSQL"
                                     value={interviewTools}
                                     onChange={(e) => handleFieldChange('interviewTools', e.target.value)}
                                     className="text-xs rounded-lg h-8 bg-slate-50 dark:bg-slate-800/60 font-medium"
@@ -2482,39 +3003,44 @@ export default function EmailComposerModal({
                   })()}
 
                   <div>
-                    <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1.5">Communication Tone</label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block">Communication Tone</label>
+                      {tone && tone !== 'None / Standard' && (
+                        <button
+                          type="button"
+                          disabled={isGeneratingAi}
+                          onClick={() => handleToneClick(tone)}
+                          className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline cursor-pointer font-semibold flex items-center gap-0.5"
+                          title="Deselect tone and undo change"
+                        >
+                          <Undo2 className="h-2.5 w-2.5" /> Deselect / Reset
+                        </button>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {['Formal & Professional', 'Warm & Welcoming', 'Direct & Concise', 'Performance Oriented'].map((t) => (
+                      {['Formal & Professional', 'Warm & Welcoming', 'Direct & Concise', 'Performance Oriented', 'None / Standard'].map((t) => (
                         <button
                           key={t}
                           type="button"
-                          onClick={() => setTone(t)}
-                          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                          disabled={isGeneratingAi}
+                          onClick={() => handleToneClick(t)}
+                          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
                             tone === t
                               ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
                               : 'bg-slate-50 dark:bg-slate-800/70 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-orange-300'
                           }`}
+                          title={tone === t ? 'Click to toggle off / undo tone' : `Click to apply ${t} tone`}
                         >
+                          {tone === t && <Check className="h-3 w-3" />}
                           {t}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                      Custom Instructions / Specific Requirements
-                    </label>
-                    <Textarea
-                      placeholder="e.g. Mention 3-month probation period, remote working option, and reporting to senior tech lead."
-                      value={customPrompt}
-                      onChange={(e) => setCustomPrompt(e.target.value)}
-                      className="text-xs rounded-xl min-h-[70px] bg-slate-50 dark:bg-slate-800/60"
-                    />
-                  </div>
-
-                  {/* Video Conference / Google Meet Card */}
-                  <div className="bg-slate-50/80 dark:bg-slate-900/70 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 space-y-3 shadow-2xs">
+                  {/* Video Conference / Google Meet Card (Hidden when In-Person mode is selected) */}
+                  {(!interviewMode.toLowerCase().includes('in person') && !interviewMode.toLowerCase().includes('offline')) && (
+                    <div className="bg-slate-50/80 dark:bg-slate-900/70 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 space-y-3 shadow-2xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="h-7 w-7 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold">
@@ -2936,6 +3462,7 @@ export default function EmailComposerModal({
                       )}
                     </div>
                   </div>
+                )}
 
                   <Button
                     type="button"
@@ -2960,28 +3487,54 @@ export default function EmailComposerModal({
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                     <span className="text-[10px] font-bold text-slate-400 block mb-1.5 uppercase tracking-wider">Quick AI Refinement:</span>
                     <div className="flex flex-wrap gap-1.5">
-                      <button
-                        type="button"
-                        disabled={isGeneratingAi}
-                        onClick={() => {
-                          let link = meetingLink;
-                          if (!link) {
-                            const saved = localStorage.getItem('hip_default_google_meet_link');
-                            if (saved) {
-                              link = saved;
-                              setMeetingLink(saved);
-                            } else {
-                              handleOpenGoogleMeetNew();
-                              toast.info('Google Meet opened! Create your room and paste the link to attach it.');
-                              return;
+                      {/* 1. Google Meet Invitation Toggle (Add / Remove) */}
+                      {isMeetingAttached ? (
+                        <button
+                          type="button"
+                          disabled={isGeneratingAi}
+                          onClick={handleRemoveMeeting}
+                          className="text-[10px] font-bold bg-rose-500/10 hover:bg-rose-500 text-rose-600 hover:text-white dark:text-rose-400 dark:hover:text-white px-2.5 py-1 rounded-lg border border-rose-500/30 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                          title="Click to remove Google Meet invitation from email"
+                        >
+                          <X className="h-3 w-3" /> ✓ Remove Google Meet
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isGeneratingAi}
+                          onClick={() => {
+                            let link = meetingLink;
+                            if (!link) {
+                              const saved = localStorage.getItem('hip_default_google_meet_link');
+                              if (saved) {
+                                link = saved;
+                                setMeetingLink(saved);
+                              } else {
+                                handleOpenGoogleMeetNew();
+                                toast.info('Google Meet opened! Create your room and paste the link to attach it.');
+                                return;
+                              }
                             }
-                          }
-                          handleInsertOrUpdateMeeting(link);
-                        }}
-                        className="text-[10px] font-bold bg-orange-500/10 hover:bg-orange-500 text-orange-600 hover:text-white dark:text-orange-400 dark:hover:text-white px-2.5 py-1 rounded-lg border border-orange-500/30 transition-colors cursor-pointer flex items-center gap-1"
-                      >
-                        <Video className="h-3 w-3" /> + Add Google Meet Invitation
-                      </button>
+                            handleInsertOrUpdateMeeting(link);
+                          }}
+                          className="text-[10px] font-bold bg-orange-500/10 hover:bg-orange-500 text-orange-600 hover:text-white dark:text-orange-400 dark:hover:text-white px-2.5 py-1 rounded-lg border border-orange-500/30 transition-colors cursor-pointer flex items-center gap-1"
+                        >
+                          <Video className="h-3 w-3" /> + Add Google Meet Invitation
+                        </button>
+                      )}
+
+                      {/* 2. Undo AI Refinement Button */}
+                      {draftHistory.length > 0 && (
+                        <button
+                          type="button"
+                          disabled={isGeneratingAi}
+                          onClick={handleUndoLastAiChange}
+                          className="text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500 text-amber-700 hover:text-white dark:text-amber-300 dark:hover:text-slate-950 px-2.5 py-1 rounded-lg border border-amber-500/40 transition-all cursor-pointer flex items-center gap-1 shadow-2xs animate-in fade-in"
+                          title="Undo AI changes (reverts NDA clause, formality, tone, bullets)"
+                        >
+                          <Undo2 className="h-3 w-3" /> ↶ Undo AI Change {draftHistory.length > 1 ? `(${draftHistory.length})` : ''}
+                        </button>
+                      )}
                       <button
                         type="button"
                         disabled={isGeneratingAi}
@@ -3132,219 +3685,13 @@ export default function EmailComposerModal({
               </Tabs>
             </div>
 
-            {/* Bottom Recipient & Dispatching Bar */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-950 space-y-3 shrink-0">
-              
-              {/* Recipient Input */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                    Recipients ({recipientsList.length})
-                  </label>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-slate-400 font-medium">Quick Target:</span>
-                    {!isManager && (
-                      <>
-                        <button type="button" onClick={() => addRecipient('all')} className="text-[10px] font-bold text-orange-600 bg-orange-500/10 px-1.5 py-0.5 rounded cursor-pointer hover:bg-orange-500 hover:text-white transition-colors">+ All</button>
-                        <button type="button" onClick={() => addRecipient('managers')} className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded cursor-pointer hover:bg-emerald-500 hover:text-white transition-colors">+ Managers</button>
-                      </>
-                    )}
-                    <button type="button" onClick={() => addRecipient('interns')} className="text-[10px] font-bold text-indigo-600 bg-indigo-500/10 px-1.5 py-0.5 rounded cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors">+ Interns</button>
-                    <button type="button" onClick={() => addRecipient('employees')} className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded cursor-pointer hover:bg-emerald-500 hover:text-white transition-colors">+ Employees</button>
-                  </div>
-                </div>
-
-                {/* Recipient Badges */}
-                <div className="min-h-[38px] p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-wrap items-center gap-1.5 mb-2">
-                  {recipientsList.length === 0 && (
-                    <span className="text-[11px] text-slate-400 pl-1">No recipient added. Type email below...</span>
-                  )}
-                  {recipientsList.map((rec, idx) => (
-                    <Badge key={idx} className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-md text-[11px] font-bold flex items-center gap-1">
-                      {rec}
-                      <button type="button" onClick={() => removeRecipient(idx)} className="hover:text-rose-500 cursor-pointer">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-
-                {/* Add Email Bar with Live Autocomplete */}
-                <div ref={recipientContainerRef} className="relative">
-                  <div className="flex gap-1.5">
-                    <div className="relative flex-1">
-                      <Input
-                        placeholder="Search workspace member (name/email) or type address..."
-                        value={newRecipientInput}
-                        onChange={(e) => handleRecipientInputChange(e.target.value)}
-                        onFocus={() => {
-                          if (newRecipientInput.trim() || recipientSuggestions.length > 0) {
-                            setShowSuggestionsDropdown(true);
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ',') {
-                            e.preventDefault();
-                            addRecipient();
-                          }
-                        }}
-                        className="text-xs h-8.5 pl-8 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:border-orange-500"
-                      />
-                      <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                      {isSearchingRecipients && (
-                        <RefreshCw className="absolute right-2.5 top-2.5 h-3.5 w-3.5 animate-spin text-orange-500" />
-                      )}
-                    </div>
-                    <Button
-                      type="button"
-                      onClick={() => addRecipient()}
-                      size="sm"
-                      variant="outline"
-                      className="h-8.5 text-xs font-bold rounded-xl border-slate-200 dark:border-slate-700 hover:border-orange-500 hover:text-orange-600 cursor-pointer shadow-xs"
-                    >
-                      + Add
-                    </Button>
-                  </div>
-
-                  {/* Suggestions Popover Dropdown */}
-                  {showSuggestionsDropdown && (newRecipientInput.trim() || recipientSuggestions.length > 0) && (
-                    <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 animate-in fade-in slide-in-from-top-1 duration-150">
-                      <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                        <span>Workspace Members ({recipientSuggestions.length})</span>
-                        <button
-                          type="button"
-                          onClick={() => setShowSuggestionsDropdown(false)}
-                          className="hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-
-                      {isSearchingRecipients && recipientSuggestions.length === 0 ? (
-                        <div className="p-3.5 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-                          <RefreshCw className="h-3.5 w-3.5 animate-spin text-orange-500" /> Searching workspace members...
-                        </div>
-                      ) : recipientSuggestions.length === 0 ? (
-                        <div className="p-3 text-center text-xs text-slate-400">
-                          No workspace member found for &ldquo;{newRecipientInput}&rdquo;. Press Enter or &quot;+ Add&quot; to use as email.
-                        </div>
-                      ) : (
-                        recipientSuggestions.map((userItem) => {
-                          const roleUpper = (userItem.role || 'INTERN').toUpperCase();
-                          const roleColor =
-                            roleUpper === 'INTERN'
-                              ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'
-                              : roleUpper === 'MANAGER'
-                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                              : roleUpper === 'ADMIN'
-                              ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20'
-                              : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
-
-                          return (
-                            <div
-                              key={userItem.id}
-                              onClick={() => selectSuggestion(userItem)}
-                              className="p-2.5 flex items-center justify-between hover:bg-orange-50/70 dark:hover:bg-orange-950/30 cursor-pointer transition-colors group"
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <div className="h-7 w-7 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold text-xs flex items-center justify-center shrink-0 border border-orange-500/20">
-                                  {userItem.name?.charAt(0)?.toUpperCase() || 'U'}
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-orange-600 transition-colors truncate leading-tight">
-                                    {userItem.name}
-                                  </p>
-                                  <p className="text-[11px] text-slate-600 dark:text-slate-300 font-mono font-medium truncate leading-tight mt-0.5">
-                                    {userItem.email}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0 ml-2">
-                                <Badge className={`text-[10px] font-bold border px-1.5 py-0.5 rounded ${roleColor}`}>
-                                  {roleUpper}
-                                </Badge>
-                                <span className="text-[10px] text-orange-600 dark:text-orange-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                                  + Select
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  )}
-                </div>
-                {isManager && (
-                  <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
-                    <ShieldCheck className="h-3 w-3" /> Note: Managers can only dispatch emails to Interns & Employees.
-                  </p>
-                )}
-
-                {/* Gmail-Style File Attachments */}
-                <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
-                  <div className="flex items-center justify-between">
-                    <input
-                      type="file"
-                      ref={fileAttachmentRef}
-                      onChange={handleFileAttachment}
-                      multiple
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => fileAttachmentRef.current?.click()}
-                      className="h-7 px-2 text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/30 rounded-lg gap-1.5 cursor-pointer"
-                    >
-                      <Paperclip className="h-3.5 w-3.5" />
-                      <span>Attach Files (PDF, Docs, Images)</span>
-                      <span className="text-[10px] text-slate-400 font-normal">Max 10MB</span>
-                    </Button>
-                    {attachments.length > 0 && (
-                      <span className="text-[10px] font-semibold text-slate-400">
-                        {attachments.length} file{attachments.length > 1 ? 's' : ''} ({(attachments.reduce((acc, a) => acc + a.size, 0) / (1024 * 1024)).toFixed(2)} MB)
-                      </span>
-                    )}
-                  </div>
-
-                  {attachments.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-2 max-h-24 overflow-y-auto">
-                      {attachments.map((att) => (
-                        <div
-                          key={att.id}
-                          className="flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] border border-slate-200 dark:border-slate-700 shadow-xs group"
-                        >
-                          <FileText className="h-3 w-3 text-orange-500 shrink-0" />
-                          <span className="font-medium max-w-[140px] truncate" title={att.filename}>
-                            {att.filename}
-                          </span>
-                          <span className="text-[10px] text-slate-400">
-                            {att.size > 1024 * 1024
-                              ? (att.size / (1024 * 1024)).toFixed(1) + ' MB'
-                              : Math.round(att.size / 1024) + ' KB'}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => removeAttachment(att.id)}
-                            className="p-0.5 rounded hover:bg-rose-100 dark:hover:bg-rose-900/40 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
-                            title="Remove attachment"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Final Dispatch Button */}
+            {/* Bottom Primary Dispatching Action */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-950 shrink-0">
               <Button
                 type="button"
                 onClick={handleSendEmail}
                 disabled={isSending || isGeneratingAi}
-                className="w-full h-10.5 rounded-xl font-bold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 shadow-lg text-xs gap-2 cursor-pointer"
+                className="w-full h-11 rounded-xl font-bold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 shadow-lg text-xs gap-2 cursor-pointer"
               >
                 {isSending ? (
                   <>
@@ -3393,29 +3740,19 @@ export default function EmailComposerModal({
               </div>
 
               <div className="flex items-center gap-2.5">
-                {/* Device Viewport Toggle */}
-                <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                {/* Revert / Undo AI Refinement Button */}
+                {draftHistory.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => setPreviewDevice('desktop')}
-                    className={`px-2 py-1 rounded text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer ${
-                      previewDevice === 'desktop' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs' : 'text-slate-400 hover:text-slate-700'
-                    }`}
-                    title="Desktop Preview"
+                    disabled={isGeneratingAi}
+                    onClick={handleUndoLastAiChange}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500 text-amber-600 hover:text-white dark:text-amber-300 dark:hover:text-slate-950 flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs animate-in fade-in"
+                    title="Undo AI changes (reverts NDA clause, formality, tone, bullets)"
                   >
-                    <Laptop className="h-3.5 w-3.5" /> Desktop
+                    <Undo2 className="h-3.5 w-3.5" />
+                    ↶ Undo AI Change {draftHistory.length > 1 ? `(${draftHistory.length})` : ''}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewDevice('mobile')}
-                    className={`px-2 py-1 rounded text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer ${
-                      previewDevice === 'mobile' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs' : 'text-slate-400 hover:text-slate-700'
-                    }`}
-                    title="Mobile Preview"
-                  >
-                    <Smartphone className="h-3.5 w-3.5" /> Mobile
-                  </button>
-                </div>
+                )}
 
                 {/* In-Place WYSIWYG Editable Toggle */}
                 <button
@@ -3479,7 +3816,12 @@ export default function EmailComposerModal({
                   <div className="p-6 sm:p-8 space-y-5 bg-white dark:bg-slate-900 min-h-[500px]">
                     {/* Simulated Mail Header */}
                     <div className="pb-4 border-b border-slate-200 dark:border-slate-800 text-xs space-y-2 text-slate-600 dark:text-slate-400">
-                      <p><strong className="text-slate-900 dark:text-slate-100 font-bold">From:</strong> Hindustan OS &lt;kushinde13@gmail.com&gt;</p>
+                      <p>
+                        <strong className="text-slate-900 dark:text-slate-100 font-bold">From:</strong>{' '}
+                        <span className="text-slate-800 dark:text-slate-200">
+                          {smtpSenderName || 'Hindustaan Innovations HR'} &lt;{smtpSenderEmail || smtpUserEmail || 'hr@hindustaan.com'}&gt;
+                        </span>
+                      </p>
                       <p><strong className="text-slate-900 dark:text-slate-100 font-bold">To:</strong> <span className="text-slate-800 dark:text-slate-200">{recipientsList.length > 0 ? recipientsList.join(', ') : 'recipient@example.com'}</span></p>
                       <div className="flex items-center gap-1.5">
                         <strong className="text-slate-900 dark:text-slate-100 font-bold shrink-0">Subject:</strong>
@@ -4073,7 +4415,7 @@ export default function EmailComposerModal({
 
     {/* Dynamic AES-256-GCM Encrypted SMTP Configuration Modal */}
     <Dialog open={isSmtpConfigOpen} onOpenChange={setIsSmtpConfigOpen}>
-      <DialogContent className="max-w-lg p-6 bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[110]">
+      <DialogContent className="max-w-md p-6 bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[110]">
         <DialogHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -4082,119 +4424,78 @@ export default function EmailComposerModal({
               </div>
               <div>
                 <DialogTitle className="text-base font-bold text-slate-900 dark:text-white">
-                  SMTP Server Configuration
+                  Gmail SMTP Configuration
                 </DialogTitle>
                 <DialogDescription className="text-xs text-slate-500">
-                  Custom SMTP provider with AES-256-GCM authenticated encryption.
+                  Secured with AES-256-GCM and synced across all your computers automatically.
                 </DialogDescription>
               </div>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="space-y-3.5 py-3">
-          <div className="grid grid-cols-3 gap-2">
-            <div className="col-span-2">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                SMTP Host <span className="text-rose-500">*</span>
-              </label>
-              <Input
-                placeholder="e.g. smtp.gmail.com or mail.domain.com"
-                value={smtpHost}
-                onChange={(e) => setSmtpHost(e.target.value)}
-                className="text-xs rounded-xl h-9 font-medium"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                Port
-              </label>
-              <Input
-                type="number"
-                placeholder="465"
-                value={smtpPort}
-                onChange={(e) => setSmtpPort(Number(e.target.value))}
-                className="text-xs rounded-xl h-9 font-medium"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-            <input
-              type="checkbox"
-              id="smtpSecureCheckbox"
-              checked={smtpSecure}
-              onChange={(e) => setSmtpSecure(e.target.checked)}
-              className="rounded border-slate-300 text-orange-500 focus:ring-orange-400 h-3.5 w-3.5 cursor-pointer"
-            />
-            <label htmlFor="smtpSecureCheckbox" className="text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-              SSL / TLS Secure Connection (Recommended for port 465)
+        <div className="space-y-4 py-3">
+          {/* 1. Gmail Address */}
+          <div>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              Gmail Address <span className="text-rose-500">*</span>
             </label>
+            <Input
+              placeholder="e.g. hr@company.com or yourname@gmail.com"
+              value={smtpUserEmail}
+              onChange={(e) => {
+                setSmtpUserEmail(e.target.value);
+                setSmtpSenderEmail(e.target.value);
+              }}
+              className="text-xs rounded-xl h-9.5 font-medium"
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                User / Login Email <span className="text-rose-500">*</span>
-              </label>
+          {/* 2. Gmail App Password (16 chars) */}
+          <div>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1 flex items-center justify-between">
+              <span>Gmail App Password (16 chars) <span className="text-rose-500">*</span></span>
+              {hasConfiguredSmtp && (
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-0.5">
+                  <Check className="h-3 w-3" /> Saved & Active in DB
+                </span>
+              )}
+            </label>
+            <div className="relative">
               <Input
-                placeholder="e.g. hr@company.com"
-                value={smtpUserEmail}
-                onChange={(e) => setSmtpUserEmail(e.target.value)}
-                className="text-xs rounded-xl h-9 font-medium"
+                type={showSmtpPassword ? 'text' : 'password'}
+                placeholder={hasConfiguredSmtp ? '•••••••••••••••• (Saved in DB - leave blank to keep)' : '16-character Google App Password'}
+                value={smtpPassword}
+                onChange={(e) => setSmtpPassword(e.target.value)}
+                className="text-xs rounded-xl h-9.5 font-medium pr-8 font-mono"
               />
+              <button
+                type="button"
+                onClick={() => setShowSmtpPassword(!showSmtpPassword)}
+                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                {showSmtpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
-            <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1 flex items-center justify-between">
-                <span>Password / App Key</span>
-                {hasConfiguredSmtp && !smtpPassword && (
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-0.5">
-                    <Check className="h-3 w-3" /> Saved & Active
-                  </span>
-                )}
-              </label>
-              <div className="relative">
-                <Input
-                  type={showSmtpPassword ? 'text' : 'password'}
-                  placeholder={hasConfiguredSmtp ? '•••••••••••• (Leave blank to keep)' : 'App-Specific Password'}
-                  value={smtpPassword}
-                  onChange={(e) => setSmtpPassword(e.target.value)}
-                  className="text-xs rounded-xl h-9 font-medium pr-8"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowSmtpPassword(!showSmtpPassword)}
-                  className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                >
-                  {showSmtpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
+            <span className="text-[10px] text-slate-400 mt-1 block">
+              Leave blank to keep current saved password from the database.
+            </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                Sender Display Name
-              </label>
-              <Input
-                placeholder="e.g. Hindustaan Innovations HR"
-                value={smtpSenderName}
-                onChange={(e) => setSmtpSenderName(e.target.value)}
-                className="text-xs rounded-xl h-9 font-medium"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                Sender Email (From)
-              </label>
-              <Input
-                placeholder="e.g. hr@company.com (optional)"
-                value={smtpSenderEmail}
-                onChange={(e) => setSmtpSenderEmail(e.target.value)}
-                className="text-xs rounded-xl h-9 font-medium"
-              />
-            </div>
+          {/* 3. Sender Display Name */}
+          <div>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              Sender Display Name
+            </label>
+            <Input
+              placeholder="e.g. Suyash ML & GEN AI or Hindustaan Innovations HR"
+              value={smtpSenderName}
+              onChange={(e) => setSmtpSenderName(e.target.value)}
+              className="text-xs rounded-xl h-9.5 font-medium"
+            />
+            <span className="text-[10px] text-slate-400 mt-1 block">
+              Recipients will see: <strong className="text-slate-600 dark:text-slate-300">{smtpSenderName || 'Your Name'} &lt;{smtpUserEmail || 'your-email@gmail.com'}&gt;</strong>
+            </span>
           </div>
         </div>
 
@@ -4204,12 +4505,12 @@ export default function EmailComposerModal({
             variant="outline"
             size="sm"
             onClick={handleTestSmtp}
-            disabled={isTestingSmtp || !smtpHost.trim() || !smtpUserEmail.trim()}
+            disabled={isTestingSmtp || (!smtpHost.trim() && !hasConfiguredSmtp) || (!smtpUserEmail.trim() && !hasConfiguredSmtp)}
             className="text-xs font-bold rounded-xl gap-1.5 cursor-pointer"
           >
             {isTestingSmtp ? (
               <>
-                <RefreshCw className="h-3.5 w-3.5 animate-spin text-orange-500" /> Testing Connection...
+                <RefreshCw className="h-3.5 w-3.5 animate-spin text-orange-500" /> Testing...
               </>
             ) : (
               <>
@@ -4232,7 +4533,7 @@ export default function EmailComposerModal({
               type="button"
               size="sm"
               onClick={handleSaveSmtp}
-              disabled={isSavingSmtp || !smtpHost.trim() || !smtpUserEmail.trim()}
+              disabled={isSavingSmtp || (!smtpHost.trim() && !hasConfiguredSmtp) || (!smtpUserEmail.trim() && !hasConfiguredSmtp)}
               className="text-xs font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-1.5 cursor-pointer shadow-sm"
             >
               {isSavingSmtp ? (

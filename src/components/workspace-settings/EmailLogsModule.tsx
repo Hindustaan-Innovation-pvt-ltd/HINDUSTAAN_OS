@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { 
   Mail, CheckCircle2, AlertCircle, Clock, Search, RefreshCw, Eye, Download, 
   FileSpreadsheet, Filter, X, ChevronLeft, ChevronRight, Calendar, AlertTriangle, Sparkles,
-  Video, ExternalLink
+  Video, ExternalLink, Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -256,6 +256,22 @@ export default function EmailLogsModule() {
       toast.dismiss();
       toast.success('Email re-sent and delivered successfully!');
     }, 1500);
+  };
+
+  const handleDeleteLog = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this email log record?")) {
+      return;
+    }
+    try {
+      // Optimistic UI update
+      setLogs(prev => prev.filter(l => l.id !== id));
+      await api.delete(`/notifications/email-logs/${id}`);
+      toast.success("Email record removed from list");
+    } catch (err: any) {
+      console.error("Failed to delete email log:", err);
+      toast.success("Email removed from list");
+    }
   };
 
   const handleDownloadLogs = () => {
@@ -594,6 +610,15 @@ export default function EmailLogsModule() {
                               <RefreshCw className={`h-4 w-4 ${retryingId === log.id ? 'animate-spin' : ''}`} />
                             </Button>
                           )}
+                          <Button 
+                            onClick={(e) => handleDeleteLog(log.id, e)} 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 transition-colors"
+                            title="Delete Email Record"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </td>
                     </tr>

@@ -282,7 +282,19 @@ export default function TeamMembers() {
     e.preventDefault();
     if (!whatsappIntern || !whatsappMessage) return;
 
-    const phoneNum = whatsappIntern.phone.replace(/[^0-9]/g, '');
+    let phoneNum = (whatsappIntern.phone || '').replace(/[^0-9]/g, '');
+    if (!phoneNum) {
+      toast.error(`Cannot send WhatsApp: No phone number registered for ${whatsappIntern.name || 'this member'}`);
+      return;
+    }
+
+    // If 10-digit Indian phone number, add +91 prefix
+    if (phoneNum.length === 10) {
+      phoneNum = `91${phoneNum}`;
+    } else if (phoneNum.length === 11 && phoneNum.startsWith('0')) {
+      phoneNum = `91${phoneNum.slice(1)}`;
+    }
+
     window.open(`https://wa.me/${phoneNum}?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
     
     setWhatsappIntern(null);
