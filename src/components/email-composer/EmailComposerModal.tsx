@@ -62,11 +62,11 @@ export function htmlToPlainText(html: string): string {
   let text = html;
   text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
   text = text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+  text = text.replace(/<br\s*[\/]?>[ \t]*\r?\n?/gi, '\n');
   text = text.replace(/<\/tr>/gi, '\n');
-  text = text.replace(/<\/p>/gi, '\n\n');
+  text = text.replace(/<\/p>/gi, '\n');
   text = text.replace(/<\/div>/gi, '\n');
-  text = text.replace(/<br\s*[\/]?>/gi, '\n');
-  text = text.replace(/<\/h[1-6]>/gi, '\n\n');
+  text = text.replace(/<\/h[1-6]>/gi, '\n');
   text = text.replace(/<td[^>]*>/gi, '  ');
   text = text.replace(/<[^>]+>/g, '');
   text = text
@@ -76,11 +76,20 @@ export function htmlToPlainText(html: string): string {
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'");
-  text = text.replace(/\\n/g, '\n');
-  text = text.replace(/[ \t]+/g, ' ');
-  text = text.replace(/\n\s+\n/g, '\n\n');
-  text = text.replace(/\n{3,}/g, '\n\n');
-  return text.trim();
+
+  const lines = text.split('\n').map(l => l.trim());
+  const cleaned: string[] = [];
+  let blankCount = 0;
+  for (const line of lines) {
+    if (!line) {
+      blankCount++;
+      if (blankCount <= 1) cleaned.push('');
+    } else {
+      blankCount = 0;
+      cleaned.push(line);
+    }
+  }
+  return cleaned.join('\n').trim();
 }
 
 // Convert plain text into styled HTML wrapper for raw HTML syncing
