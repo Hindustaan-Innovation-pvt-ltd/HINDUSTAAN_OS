@@ -121,7 +121,7 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
           </Select>
         </SettingsRow>
         
-        <SettingsRow title="Default Currency" description="Used for financial reporting and budget tracking.">
+        <SettingsRow title="Default Currency" description="Used for financial reporting and organizational billing.">
           <Select 
             value={data.currency || 'INR'} 
             onValueChange={(val) => updateField('currency', val)}

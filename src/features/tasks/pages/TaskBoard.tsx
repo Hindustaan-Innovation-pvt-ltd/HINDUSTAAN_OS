@@ -7,6 +7,7 @@ import CreateTaskModal from '../components/CreateTaskModal';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/lib/auth';
+import { formatToMMDDYYYY } from '@/context/ProjectContext';
 
 // --- Types & Mock Data ---
 
@@ -123,20 +124,30 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
   const mapBackendTask = (t: any): Task => {
     const assignees = t.assignees || [];
     const firstAssignee = assignees[0] || {};
+    const rawStatus = (t.status || '').toLowerCase().replace(/[\s_-]+/g, '');
+    const normalizedStatus: Status = 
+      rawStatus === 'done' || rawStatus === 'completed' ? 'Done' :
+      rawStatus === 'inprogress' ? 'In Progress' :
+      rawStatus === 'inreview' ? 'In Review' : 'To Do';
+
+    const rawPriority = (t.priority || '').toLowerCase();
+    const normalizedPriority: Priority =
+      rawPriority === 'high' ? 'High' :
+      rawPriority === 'low' ? 'Low' :
+      rawPriority === 'critical' ? 'Critical' : 'Normal';
+
     return {
       id: t.id,
       title: t.title,
       description: t.desc || t.description || '',
       project_tag: t.project_tag || t.project?.name || 'General',
-      projectId: t.projectId,
+      projectId: t.projectId || t.project?.id,
       project_status: t.project_status || t.project?.status,
       assignee_name: t.assignee_name || t.assignee?.name || firstAssignee.user?.name || firstAssignee.name || 'Unassigned',
       assignee_id: t.assignee_id || t.assigneeId || firstAssignee.userId || firstAssignee.user?.id || firstAssignee.id || 'unassigned',
-      priority: t.priority === 'High' ? 'High' : t.priority === 'Low' ? 'Low' : t.priority === 'Normal' ? 'Normal' : t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
+      priority: normalizedPriority,
       due_date: t.due_date || safeDateString(t.dueDate),
-      status: t.status === 'Done' || t.status === 'done' || t.status === 'completed' ? 'Done' :
-        t.status === 'In Progress' || t.status === 'in-progress' ? 'In Progress' :
-          t.status === 'In Review' || t.status === 'in-review' ? 'In Review' : 'To Do'
+      status: normalizedStatus
     };
   };
 
@@ -173,6 +184,18 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
 
   useEffect(() => {
     fetchTasksData();
+
+    const handleUpdate = () => {
+      fetchTasksData();
+    };
+
+    window.addEventListener('task_created', handleUpdate);
+    window.addEventListener('task_updated', handleUpdate);
+
+    return () => {
+      window.removeEventListener('task_created', handleUpdate);
+      window.removeEventListener('task_updated', handleUpdate);
+    };
   }, []);
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -295,6 +318,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
       const res = await api.patch(`/tasks/${taskId}/status`, { status: backendStatus });
       if (res.data?.success) {
         logActivity(currentUserName, `moved task to ${status}`, task.title, 'task');
+        window.dispatchEvent(new CustomEvent('task_updated'));
       }
     } catch (err: any) {
       console.error(err);
@@ -320,6 +344,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
         assigneeId: updatedTask.assignee_id || undefined
       });
       toast.success('Task updated successfully');
+      window.dispatchEvent(new CustomEvent('task_updated'));
     } catch (e: any) {
       console.error(e);
       toast.error('Failed to update task', { description: e.response?.data?.message || e.message });
@@ -343,6 +368,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
       });
       if (res.data?.success) {
         toast.success('Task created successfully');
+        window.dispatchEvent(new CustomEvent('task_created'));
         fetchTasksData();
       }
     } catch (e: any) {
@@ -560,7 +586,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                               )}>
                                 {deadlineStatus === 'past' || deadlineStatus === 'today' ? <AlertTriangle className="h-3.5 w-3.5" /> : <Calendar className="h-3.5 w-3.5" />}
                                 <span className="text-xs font-semibold">
-                                  Deadline: {task.due_date} 
+                                  Deadline: {formatToMMDDYYYY(task.due_date)} 
                                   {deadlineStatus === 'past' && <span className="ml-1.5 text-[9px] uppercase tracking-wider font-bold bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 px-1.5 py-0.5 rounded-full">Past Due</span>}
                                   {deadlineStatus === 'today' && <span className="ml-1.5 text-[9px] uppercase tracking-wider font-bold bg-rose-500 text-white dark:bg-rose-500 dark:text-white px-1.5 py-0.5 rounded-full">Today</span>}
                                   {deadlineStatus === 'tomorrow' && <span className="ml-1.5 text-[9px] uppercase tracking-wider font-bold bg-orange-500 text-white dark:bg-orange-500 dark:text-white px-1.5 py-0.5 rounded-full">Tomorrow</span>}

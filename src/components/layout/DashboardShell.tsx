@@ -58,10 +58,8 @@ const employeeNavigation = [
   { name: 'My Tasks', icon: CheckSquare },
   { name: 'Work Logs', icon: Clock },
   { name: 'Leave Management', icon: CalendarRange },
-  { name: 'Daily Standup', icon: Mic },
   { name: 'Projects', icon: FolderKanban },
   // { name: 'Milestones', icon: Flag },
-  { name: 'Contribution Scores', icon: Trophy },
   { name: 'Settings', icon: Settings },
 ];
 
@@ -73,8 +71,6 @@ const managerNavigation = [
   { name: 'Progress Tracker', icon: BarChart2 },
   { name: 'Work Logs', icon: Clock },
   { name: 'Leave Management', icon: CalendarRange },
-  { name: 'Daily Standups', icon: Mic },
-  { name: 'Contribution Scores', icon: Trophy },
   { name: 'Team Members', icon: Users },
   { name: 'Email Logs', icon: Mail },
   { name: 'Settings', icon: Settings },
@@ -90,8 +86,7 @@ const adminNavigationGroups = [
       { name: 'Tasks', icon: CheckSquare },
       { name: 'Team Members', icon: Users },
       { name: 'Gantt Timeline', icon: CalendarDays },
-      { name: 'Leave Management', icon: CalendarRange },
-      { name: 'Contribution Scores', icon: Activity }
+      { name: 'Leave Management', icon: CalendarRange }
     ]
   },
   {
@@ -437,7 +432,6 @@ export default function DashboardShell({
       case 'Leave Management': navigate(role === 'admin' ? '/admin/leave-management' : role === 'manager' ? '/manager/leave-management' : '/employee/leave'); break;
       case 'Subscription Management': navigate('/admin/subscriptions'); break;
       case 'Dashboard': navigate(`/${role}/dashboard`); break;
-      case 'Time Tracking': navigate('/time-tracking'); break;
       case 'Tasks':
       case 'My Tasks': navigate('/tasks'); break;
       case 'Projects': navigate('/projects'); break;
@@ -453,9 +447,6 @@ export default function DashboardShell({
       case 'Team Members':
       case 'Team': navigate('/team'); break;
       case 'Work Logs': navigate('/work-logs'); break;
-      case 'Daily Standup':
-      case 'Daily Standups': navigate('/daily-standups'); break;
-      case 'Contribution Scores': navigate('/contribution-scores'); break;
       case 'Roles & Permissions': navigate('/roles'); break;
       case 'Workspace Settings - General': navigate('/admin/workspace/general'); break;
       case 'Workspace Settings - Security & Access': navigate('/security'); break;
@@ -475,7 +466,6 @@ export default function DashboardShell({
     if (path === '/profile/edit') return 'Edit Profile';
     if (path === '/admin/leave-management' || path === '/admin/leaves' || path === '/manager/leave-management' || path === '/employee/leave') return 'Leave Management';
     if (path === '/admin/subscriptions') return 'Subscription Management';
-    if (path === '/time-tracking') return 'Time Tracking';
     if (path === '/tasks') return role === 'employee' ? 'My Tasks' : 'Tasks';
     if (path === '/projects') return 'Projects';
     if (path === '/timeline') return 'Gantt Timeline';
@@ -484,8 +474,6 @@ export default function DashboardShell({
     if (path === '/settings') return 'Settings';
     if (path === '/team') return 'Team Members';
     if (path === '/work-logs') return 'Work Logs';
-    if (path === '/daily-standups') return role === 'employee' ? 'Daily Standup' : 'Daily Standups';
-    if (path === '/contribution-scores') return 'Contribution Scores';
     if (path === '/roles') return 'Roles & Permissions';
     if (path === '/admin/workspace/general') return 'Workspace Settings - General';
     if (path === '/security') return 'Workspace Settings - Security & Access';
@@ -719,7 +707,7 @@ export default function DashboardShell({
           {/* Global Footer */}
           <footer className="w-full py-4 px-6 mt-auto border-t border-slate-200/60 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-semibold text-slate-400 dark:text-slate-500 bg-white/30 dark:bg-slate-950/30 shrink-0">
             <p>Hindustaan Innovations Pvt. Ltd.</p>
-            <p>&copy; 2026 Project OS All rights reserved</p>
+            <p>&copy; 2026 Hindustaan Innovation All rights reserved</p>
           </footer>
         </main>
 

@@ -122,8 +122,6 @@ export default function InternDashboard({ }: InternDashboardProps) {
   const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
   const [isTasksModalOpen, setIsTasksModalOpen] = useState(false);
   const [isHoursModalOpen, setIsHoursModalOpen] = useState(false);
-  const [isContributionModalOpen, setIsContributionModalOpen] = useState(false);
-  const [isStandupModalOpen, setIsStandupModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [extensionDays, setExtensionDays] = useState(1);
@@ -288,9 +286,6 @@ export default function InternDashboard({ }: InternDashboardProps) {
     };
   }, [currentUserName]);
 
-  // Read todays standup
-  const [todaysStandup, setTodaysStandup] = useState<any>(null);
-
   const getProgress = (status: string) => {
     switch (status) {
       case 'Done': return 100;
@@ -311,12 +306,12 @@ export default function InternDashboard({ }: InternDashboardProps) {
   });
   const lastDataRef = React.useRef<string | null>(null);
 
-  const overallScore = dashboardData?.contribution?.overallScore ?? 0;
   const tasksCompleted = dashboardData?.performance?.completedTasks ?? 0;
   const tasksTotal = dashboardData?.performance?.totalTasks ?? 0;
   const hoursLoggedValue = dashboardData?.performance?.totalHours ?? 0;
   const milestonesCompleted = dashboardData?.performance?.completedMilestones ?? 0;
   const milestonesTotal = dashboardData?.totalMilestones ?? 0;
+  const completionRate = dashboardData?.performance?.completionRate ?? (tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0);
 
   const fetchDashboard = async () => {
     try {
@@ -329,18 +324,6 @@ export default function InternDashboard({ }: InternDashboardProps) {
         React.startTransition(() => {
           setDashboardData(res.data.data);
           localStorage.setItem('intern_dashboard_data', JSON.stringify(res.data.data));
-          // Hydrate todaysStandup from live data
-          if (res.data.data.standupStatus?.submittedToday) {
-            setTodaysStandup({
-              status: 'Submitted',
-              time: res.data.data.standupStatus.submissionTime || '',
-              yesterday: res.data.data.standupStatus.yesterday || '',
-              today: res.data.data.standupStatus.today || '',
-              blockers: res.data.data.standupStatus.blockers || 'None'
-            });
-          } else {
-            setTodaysStandup(null);
-          }
           // Hydrate logged hours
           if (typeof res.data.data.loggedHours === 'number') {
             setLoggedHours(res.data.data.loggedHours);
@@ -857,52 +840,46 @@ export default function InternDashboard({ }: InternDashboardProps) {
           </CardContent>
         </Card>
 
-        {/* Contribution Score */}
-        <Card onClick={() => setIsContributionModalOpen(true)} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+        {/* Completed Tasks */}
+        <Card onClick={() => setIsTasksModalOpen(true)} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
           <CardContent className="p-5 flex items-center justify-between h-full gap-4">
             <div className="flex flex-col h-full justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                <Trophy className="h-5 w-5" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-5 w-5" />
               </div>
               <div className="mt-4">
-                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Contribution</p>
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Completed</p>
                 <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center">
-                  ↑ +6 this week
+                  {completedTasksCount} / {tasksTotal || (activeTasksCount + completedTasksCount)} tasks
                 </p>
               </div>
             </div>
             <div className="relative h-16 w-16 flex items-center justify-center shrink-0">
               <svg className="w-full h-full transform -rotate-90">
                 <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-slate-100 dark:text-slate-800" />
-                <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray="175" strokeDashoffset={175 - (175 * overallScore) / 100} className="text-orange-500" />
+                <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray="175" strokeDashoffset={175 - (175 * completionRate) / 100} className="text-emerald-500" />
               </svg>
-              <span className="absolute text-sm font-black text-slate-900 dark:text-white">{overallScore}%</span>
+              <span className="absolute text-sm font-black text-slate-900 dark:text-white">{completionRate}%</span>
             </div>
           </CardContent>
         </Card>
 
-        {/* Standup Status */}
-        <Card onClick={() => setIsStandupModalOpen(true)} className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+        {/* Milestones Progress */}
+        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-5 flex flex-col justify-between h-full gap-4">
             <div className="flex items-center justify-between">
-              <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", todaysStandup ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400")}>
-                {todaysStandup ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                <Target className="h-5 w-5" />
               </div>
-              {todaysStandup ? (
-                <Badge variant="outline" className="border-emerald-200 text-emerald-700 bg-emerald-50 dark:border-emerald-900/50 dark:text-emerald-400 dark:bg-emerald-500/10 font-bold">✅ Submitted</Badge>
-              ) : (
-                <Badge variant="outline" className="border-rose-200 text-rose-700 bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:bg-rose-500/10 font-bold">❌ Not Submitted</Badge>
-              )}
+              <Badge variant="outline" className="border-purple-200 text-purple-700 bg-purple-50 dark:border-purple-900/50 dark:text-purple-400 dark:bg-purple-500/10 font-bold">
+                {milestonesCompleted} / {milestonesTotal || 1} Done
+              </Badge>
             </div>
             <div>
-              <p className="text-2xl font-black text-slate-900 dark:text-white">Standup</p>
-              {todaysStandup ? (
-                <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">
-                  {todaysStandup.time?.startsWith('Logged at') ? todaysStandup.time : `Logged at ${todaysStandup.time}`}
-                </p>
-              ) : (
-                <p className="text-sm font-bold text-rose-500 dark:text-rose-400 mt-1">Action Required</p>
-              )}
+              <p className="text-2xl font-black text-slate-900 dark:text-white">Milestones</p>
+              <div className="flex items-center gap-3 mt-2">
+                <Progress value={milestonesTotal > 0 ? (milestonesCompleted / milestonesTotal) * 100 : (milestonesCompleted > 0 ? 100 : 0)} className="h-1.5 flex-1 bg-slate-100 dark:bg-slate-800 [&>div]:bg-purple-500" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1031,18 +1008,18 @@ export default function InternDashboard({ }: InternDashboardProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 items-start mt-4 md:mt-5">
 
         <div className="space-y-4 md:space-y-5 h-full">
-          {/* Contribution Progress */}
+          {/* Performance Progress */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-full">
             <CardHeader className="p-4 md:p-5 pb-3">
               <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center">
                 <Target className="mr-2 h-4 w-4 text-orange-500" />
-                Contribution Breakdown
+                Performance Overview
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col p-4 md:p-5 pt-0">
               <div className="flex items-end gap-2 mb-4">
-                <span className="text-5xl font-black text-slate-900 dark:text-white">{overallScore}%</span>
-                <span className="text-sm font-bold text-slate-500 mb-1">Overall Score</span>
+                <span className="text-5xl font-black text-slate-900 dark:text-white">{completionRate}%</span>
+                <span className="text-sm font-bold text-slate-500 mb-1">Completion Rate</span>
               </div>
               <div className="space-y-3">
                 <div className="space-y-2">
@@ -1072,7 +1049,7 @@ export default function InternDashboard({ }: InternDashboardProps) {
         </div>
 
         <div className="space-y-4 md:space-y-5 h-full">
-          {/* Upcoming Deadlines (rich card from DailyStandups) */}
+          {/* Upcoming Deadlines */}
           <Card className="rounded-2xl border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col h-full">
             <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800">
               <CardTitle className="text-base flex items-center whitespace-nowrap">
@@ -1193,66 +1170,6 @@ export default function InternDashboard({ }: InternDashboardProps) {
         currentUser={{ name: currentUserName, email }}
       />
 
-      <Dialog open={isContributionModalOpen} onOpenChange={setIsContributionModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Contribution Details</DialogTitle>
-          </DialogHeader>
-          <div className="py-6 flex flex-col items-center text-center">
-            <div className="h-20 w-20 rounded-full bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center mb-4">
-              <Trophy className="h-10 w-10 text-purple-500" />
-            </div>
-            <h3 className="text-4xl font-black mb-2 text-slate-900 dark:text-white">{overallScore}%</h3>
-            <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mb-4">↑ +6 points this week</p>
-            <p className="text-sm text-slate-500 px-4">Your contribution score is a unified metric calculated automatically based on your <strong>completed tasks</strong>, <strong>logged hours</strong>, and <strong>milestones achieved</strong>.</p>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isStandupModalOpen} onOpenChange={setIsStandupModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Daily Standup</DialogTitle>
-          </DialogHeader>
-          <div className="py-6 flex flex-col items-center text-center">
-            <div className={cn("h-20 w-20 rounded-full flex items-center justify-center mb-4", todaysStandup ? "bg-emerald-50 dark:bg-emerald-500/10" : "bg-rose-50 dark:bg-rose-500/10")}>
-              {todaysStandup ? <CheckCircle2 className="h-10 w-10 text-emerald-500" /> : <AlertCircle className="h-10 w-10 text-rose-500" />}
-            </div>
-
-            {todaysStandup ? (
-              <>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Standup Submitted</h3>
-                <p className="text-sm text-slate-500 mt-2">Logged today at {todaysStandup.time}</p>
-
-                <div className="mt-6 w-full text-left bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-3">
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Yesterday</p>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">{todaysStandup.yesterday || "No update"}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Today</p>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">{todaysStandup.today || "No update"}</p>
-                  </div>
-                  {todaysStandup.blockers && todaysStandup.blockers.toLowerCase() !== "none" && todaysStandup.blockers.toLowerCase() !== "none." && (
-                    <div>
-                      <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-1">Blockers</p>
-                      <p className="text-sm text-rose-600 dark:text-rose-400">{todaysStandup.blockers}</p>
-                    </div>
-                  )}
-                </div>
-
-                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-6 bg-emerald-50 dark:bg-emerald-900/30 py-2 px-4 rounded-full inline-block">Great job keeping the team updated!</p>
-              </>
-            ) : (
-              <>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Standup Not Submitted</h3>
-                <p className="text-sm text-slate-500 mt-2 px-4">You haven't submitted your daily standup yet.</p>
-                <p className="text-xs font-semibold text-rose-500 mt-6 bg-rose-50 dark:bg-rose-900/30 py-2 px-4 rounded-full inline-block">Please go to the Daily Standup tab to submit!</p>
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <WhatsAppBroadcastDialog open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen} />
       <FigjamDialog open={isFigjamOpen} onOpenChange={setIsFigjamOpen} />

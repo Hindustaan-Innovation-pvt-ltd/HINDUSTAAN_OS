@@ -104,7 +104,7 @@ export default function HelpSupport({ session }: { session?: any }) {
                 <FileText className="h-5 w-5 text-indigo-500 shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">New Documentation Added</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">"Using Standups" was added to the Docs portal.</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">"Kanban Task Management" was added to the Docs portal.</p>
                 </div>
                 <span className="text-xs text-slate-400 ml-auto">Yesterday</span>
               </div>

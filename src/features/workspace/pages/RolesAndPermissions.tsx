@@ -163,7 +163,7 @@ export default function RolesAndPermissions() {
     { 
       name: 'Intern', 
       count: usersList.filter(u => u.role === 'employee' || u.role === 'intern').length, 
-      desc: 'Task assignment capability, daily standups log, work hours logs, and profile self-service.',
+      desc: 'Task assignment capability, work hours logs, project milestones, and profile self-service.',
       icon: UserCheck,
       color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
     }

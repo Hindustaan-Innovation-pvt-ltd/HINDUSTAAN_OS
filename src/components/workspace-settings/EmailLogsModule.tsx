@@ -818,7 +818,6 @@ export default function EmailLogsModule() {
                 else if (val === 'reset-password') setTestSubject('Password Reset Successful');
                 else if (val === 'task-assigned') setTestSubject('New Task Assigned');
                 else if (val === 'task-completed') setTestSubject('Task Marked Completed');
-                else if (val === 'standup-reminder') setTestSubject('Daily Standup Reminder');
                 else if (val === 'announcement') setTestSubject('Workspace Announcement');
               }}>
                 <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-800/50">
@@ -832,7 +831,6 @@ export default function EmailLogsModule() {
                   <SelectItem value="reset-password">reset-password.ejs (Confirmation)</SelectItem>
                   <SelectItem value="task-assigned">task-assigned.ejs (Task Update)</SelectItem>
                   <SelectItem value="task-completed">task-completed.ejs (Task Completion)</SelectItem>
-                  <SelectItem value="standup-reminder">standup-reminder.ejs (Daily Reminder)</SelectItem>
                   <SelectItem value="announcement">announcement.ejs (Broadcast)</SelectItem>
                 </SelectContent>
               </Select>

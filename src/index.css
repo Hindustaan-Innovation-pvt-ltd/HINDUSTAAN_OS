@@ -280,6 +280,15 @@ body.dark {
   }
 }
 
+/* Prominent drop shadow for logo ONLY in Light Mode */
+html:not(.dark) .light-mode-logo-shadow {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.40)) drop-shadow(0 6px 14px rgba(0, 0, 0, 0.22)) !important;
+}
+
+html.dark .light-mode-logo-shadow {
+  filter: none !important;
+}
+
 /* Hide scrollbar for elements while keeping them scrollable */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;

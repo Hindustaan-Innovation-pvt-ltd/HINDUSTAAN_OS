@@ -38,7 +38,7 @@ interface WorkspaceContextType {
 }
 
 const DEFAULT_CONFIG: WorkspaceConfig = {
-  workspaceName: 'Project OS',
+  workspaceName: 'Hindustaan Innovation',
   workspaceLogo: '',
   defaultTimezone: 'Asia/Kolkata',
   language: 'English',
@@ -72,8 +72,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       const legacy = localStorage.getItem('workspace_auth_config');
       const parsed = saved ? JSON.parse(saved) : (legacy ? JSON.parse(legacy) : {});
       const merged = { ...DEFAULT_CONFIG, ...parsed };
-      if (merged.workspaceName === 'Hindustaan OS') {
-        merged.workspaceName = 'Project OS';
+      if (merged.workspaceName === 'Hindustaan OS' || merged.workspaceName === 'Project OS') {
+        merged.workspaceName = 'Hindustaan Innovation';
       }
       if (merged.themeMode === 'system') {
         merged.themeMode = 'dark';
@@ -146,6 +146,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           smtpPass: newConfig.smtpPass || null,
           whatsappWebhook: newConfig.whatsappWebhook || null
         });
+      }
+      if ('ipRestrictions' in newConfig && typeof newConfig.ipRestrictions === 'string') {
+        const ips = newConfig.ipRestrictions.split(',').map(s => s.trim()).filter(Boolean);
+        await api.put('/settings/security', { ipWhitelist: ips });
       }
     } catch (e) {
       console.error("Failed to save workspace settings to backend:", e);

@@ -845,12 +845,12 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
                     <div>
                       <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center">
                         <Clock className="mr-2 h-4 w-4 text-orange-500" />
-                        Work Logs & Standups
+                        Work Logs & Time
                       </h3>
                       <div className="space-y-3">
                         {isBefore(selectedDay, startOfDay(new Date())) ? (
                           <div className="text-sm text-slate-500 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg font-medium">
-                            3 standups submitted. 24 hours logged across team.
+                            24 hours logged across team.
                           </div>
                         ) : (
                           <div className="text-sm text-slate-400 italic p-3 text-center border border-slate-100 dark:border-slate-800 rounded-lg">
@@ -887,7 +887,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
             <form onSubmit={handleScheduleSubmit} className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="title" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Title</Label>
-                <Input id="title" name="title" placeholder={scheduleType === 'event' ? "e.g. Q3 Roadmap Review" : "e.g. Weekly Standup Sync"} required className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500" />
+                <Input id="title" name="title" placeholder={scheduleType === 'event' ? "e.g. Q3 Roadmap Review" : "e.g. Weekly Team Sync"} required className="rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-orange-500" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
