@@ -57,6 +57,7 @@ const employeeNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
   { name: 'My Tasks', icon: CheckSquare },
   { name: 'Work Logs', icon: Clock },
+  { name: 'Attendance Logs', icon: History },
   { name: 'Leave Management', icon: CalendarRange },
   { name: 'Projects', icon: FolderKanban },
   // { name: 'Milestones', icon: Flag },
@@ -70,6 +71,7 @@ const managerNavigation = [
   { name: 'Gantt Timeline', icon: CalendarDays },
   { name: 'Progress Tracker', icon: BarChart2 },
   { name: 'Work Logs', icon: Clock },
+  { name: 'Attendance Logs', icon: History },
   { name: 'Leave Management', icon: CalendarRange },
   { name: 'Team Members', icon: Users },
   { name: 'Email Logs', icon: Mail },
@@ -85,6 +87,7 @@ const adminNavigationGroups = [
       { name: 'Projects', icon: FolderKanban },
       { name: 'Tasks', icon: CheckSquare },
       { name: 'Team Members', icon: Users },
+      { name: 'Attendance Logs', icon: History },
       { name: 'Gantt Timeline', icon: CalendarDays },
       { name: 'Leave Management', icon: CalendarRange }
     ]
@@ -382,7 +385,10 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
               <Activity className="h-4 w-4 ml-2" />
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => setIsHistoryModalOpen(true)}
+              onClick={() => {
+                onNavigate('Attendance Logs');
+                if (isMobile) setSidebarOpen(false);
+              }}
               className="cursor-pointer text-violet-600 dark:text-violet-400 focus:bg-violet-50 dark:focus:bg-violet-500/10 text-sm font-medium rounded-xl flex items-center justify-between py-2.5 transition-colors mb-1"
             >
               Attendance Logs
@@ -447,6 +453,7 @@ export default function DashboardShell({
       case 'Team Members':
       case 'Team': navigate('/team'); break;
       case 'Work Logs': navigate('/work-logs'); break;
+      case 'Attendance Logs': navigate('/attendance-logs'); break;
       case 'Roles & Permissions': navigate('/roles'); break;
       case 'Workspace Settings - General': navigate('/admin/workspace/general'); break;
       case 'Workspace Settings - Security & Access': navigate('/security'); break;
@@ -474,6 +481,7 @@ export default function DashboardShell({
     if (path === '/settings') return 'Settings';
     if (path === '/team') return 'Team Members';
     if (path === '/work-logs') return 'Work Logs';
+    if (path === '/attendance-logs' || path === '/attendance') return 'Attendance Logs';
     if (path === '/roles') return 'Roles & Permissions';
     if (path === '/admin/workspace/general') return 'Workspace Settings - General';
     if (path === '/security') return 'Workspace Settings - Security & Access';
@@ -634,7 +642,7 @@ export default function DashboardShell({
                     <Menu className="h-6 w-6" aria-hidden="true" />
                   </button>
                 </SheetTrigger>
-                <SheetContent side="left" showCloseButton={false} className="p-0 w-70 border-r border-slate-200 dark:border-[#5B7CFF]/20 flex flex-col">
+                <SheetContent side="left" showCloseButton={false} className="p-0 w-72 sm:w-80 border-r border-slate-200 dark:border-[#5B7CFF]/20 flex flex-col">
                   <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={handleNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={280} startResizing={() => { }} isMobile={true} toggleSidebar={toggleSidebar} />
                 </SheetContent>
               </Sheet>

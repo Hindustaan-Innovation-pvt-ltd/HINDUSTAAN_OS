@@ -313,7 +313,7 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
                   <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-slate-400">Employee Productivity Table</h3>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left">
+                  <table className="w-full min-w-[650px] text-left">
                     <thead className="border-b border-white/[0.05]">
                       <tr>{['Employee','Projects','Tasks','Total Logged','Pending'].map(h=><th key={h} className="px-8 py-5 text-xs font-bold uppercase tracking-wider text-slate-500">{h}</th>)}</tr>
                     </thead>

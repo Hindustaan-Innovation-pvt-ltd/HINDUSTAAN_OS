@@ -67,7 +67,7 @@ export default function SecuritySettings({ session }: { session?: any }) {
 
   const [officeHoursStart, setOfficeHoursStart] = useState<string>('09:00 AM');
   const [officeHoursEnd, setOfficeHoursEnd] = useState<string>('07:00 PM');
-  const [officeWifiIps, setOfficeWifiIps] = useState<string>('127.0.0.1, ::1, 192.168.1.1');
+  const [officeWifiIps, setOfficeWifiIps] = useState<string>('192.168.1.0/24, 192.168.1.*, 192.168.1.1, 127.0.0.1');
 
   const fetchSecurityConfig = async () => {
     try {
@@ -361,7 +361,7 @@ export default function SecuritySettings({ session }: { session?: any }) {
               </div>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
-              <table className="w-full text-sm text-left">
+              <table className="w-full min-w-[650px] text-sm text-left">
                 <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold">
                   <tr>
                     <th className="px-5 py-3">User</th>
@@ -622,7 +622,7 @@ export default function SecuritySettings({ session }: { session?: any }) {
                   <Input 
                     value={officeWifiIps} 
                     onChange={(e) => setOfficeWifiIps(e.target.value)}
-                    placeholder="e.g. 192.168.1.1, 192.168.1.0/24, 127.0.0.1" 
+                    placeholder="e.g. 192.168.1.0/24, 192.168.1.*, 192.168.1.1, 127.0.0.1" 
                     className="bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 rounded-xl font-mono text-xs" 
                   />
                 </div>
