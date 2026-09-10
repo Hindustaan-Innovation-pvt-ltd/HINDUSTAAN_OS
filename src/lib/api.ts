@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://hindustaan-os-backend.onrender.com/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://balrhhbt6nfprkuk4xh3whxs.187.127.177.2.sslip.io/api',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -116,7 +116,7 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = user?.refreshToken;
-        const baseURL = import.meta.env.VITE_API_URL || 'https://hindustaan-os-backend.onrender.com/api';
+        const baseURL = import.meta.env.VITE_API_URL || 'http://balrhhbt6nfprkuk4xh3whxs.187.127.177.2.sslip.io/api';
         const refreshResponse = await axios.post(
           `${baseURL}/auth/refresh`,
           refreshToken ? { refreshToken } : {},
