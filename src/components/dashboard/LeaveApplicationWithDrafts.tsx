@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Zap, FileText, RotateCcw, Loader2, Keyboard } from 'lucide-react';
+import { Send, Sparkles, Zap, FileText, RotateCcw, Loader2, Keyboard, Wand2, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -35,16 +35,23 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
   const [startDate, setStartDate] = useState('');
   const [reason, setReason] = useState('');
 
-  // AI & Undo State
+  // AI & Custom Instruction State
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
+  const [customInstruction, setCustomInstruction] = useState('');
+  const [showInstructionBox, setShowInstructionBox] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const instructionInputRef = useRef<HTMLInputElement | null>(null);
 
   // AI Generation & Refinement Handler
-  const handleAiDraft = async (tone: 'standard' | 'crisp' | 'formal' = 'standard') => {
+  const handleAiDraft = async (
+    tone: 'standard' | 'crisp' | 'formal' = 'standard',
+    instructionOverride?: string
+  ) => {
     if (isAiLoading) return;
 
     const displayType = leaveType === 'other' ? (customType.trim() || 'Custom Leave') : leaveType;
+    const activeInstruction = instructionOverride !== undefined ? instructionOverride : customInstruction.trim();
 
     setIsAiLoading(true);
     try {
@@ -54,6 +61,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
         date: startDate || undefined,
         reasonNotes: reason.trim() || undefined,
         currentText: reason.trim() || undefined,
+        customInstruction: activeInstruction || undefined,
         tone,
       });
 
@@ -63,12 +71,13 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
         setHistory((prev) => [...prev, reason]);
         setReason(generatedDraft);
 
-        const toneMessage =
-          tone === 'crisp'
-            ? 'Refined into crisp 2-line minimalist note'
-            : tone === 'formal'
-            ? 'Refined into formal leave letter'
-            : 'AI draft generated successfully';
+        const toneMessage = activeInstruction
+          ? `Drafted following custom instruction: "${activeInstruction.slice(0, 45)}${activeInstruction.length > 45 ? '...' : ''}"`
+          : tone === 'crisp'
+          ? 'Refined into crisp 2-line minimalist note'
+          : tone === 'formal'
+          ? 'Refined into formal leave letter'
+          : 'AI draft generated successfully';
 
         toast.success('AI Draft Updated', {
           description: toneMessage,
@@ -102,13 +111,17 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
         e.preventDefault();
+        setShowInstructionBox(true);
+        setTimeout(() => {
+          instructionInputRef.current?.focus();
+        }, 100);
         handleAiDraft('standard');
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [leaveType, customType, startDate, reason, isAiLoading]);
+  }, [leaveType, customType, startDate, reason, customInstruction, isAiLoading]);
 
   // Form Submit Handler
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -153,6 +166,8 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
       setCustomType('');
       setStartDate('');
       setReason('');
+      setCustomInstruction('');
+      setShowInstructionBox(false);
       setHistory([]);
 
       toast.success('Leave application submitted.', {
@@ -163,6 +178,13 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
       });
     }
   };
+
+  const quickInstructions = [
+    { label: '📞 Reachable on call', value: 'Mention that I will remain reachable on phone for urgent matters' },
+    { label: '🤝 Handover complete', value: 'Mention that all urgent tasks and handover notes have been given to team members' },
+    { label: '⚡ Just 1 sentence', value: 'Keep the leave note strictly 1 short polite sentence' },
+    { label: '🏥 Doctor visit', value: 'Mention medical consultation and doctor appointment scheduled' },
+  ];
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -262,6 +284,31 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
 
                     <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowInstructionBox((prev) => {
+                          const next = !prev;
+                          if (next) {
+                            setTimeout(() => instructionInputRef.current?.focus(), 100);
+                          }
+                          return next;
+                        });
+                      }}
+                      className={`rounded-lg h-7 px-2 text-xs font-medium border gap-1 transition-all ${
+                        showInstructionBox
+                          ? 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/60 dark:text-purple-200 dark:border-purple-700'
+                          : 'text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60 hover:bg-purple-50 dark:hover:bg-purple-950/40'
+                      }`}
+                      title="Add specific custom instruction for AI to follow"
+                    >
+                      <Wand2 className="h-3 w-3" />
+                      <span>Custom Prompt</span>
+                      {showInstructionBox ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    </Button>
+
+                    <Button
+                      type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => handleAiDraft('crisp')}
@@ -303,6 +350,70 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
                   </div>
                 </div>
 
+                {/* Collapsible Custom AI Instruction Box */}
+                {showInstructionBox && (
+                  <div className="p-3 rounded-2xl bg-linear-to-r from-purple-50/80 via-indigo-50/60 to-purple-50/80 dark:from-purple-950/40 dark:via-indigo-950/30 dark:to-purple-950/40 border border-purple-200/80 dark:border-purple-800/60 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-900 dark:text-purple-200">
+                        <Wand2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                        <span>Custom AI Instruction</span>
+                        <span className="font-normal text-[11px] text-purple-600/70 dark:text-purple-400/70">(AI will strictly shape the letter based on this)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowInstructionBox(false)}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-md"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Input
+                        ref={instructionInputRef}
+                        value={customInstruction}
+                        onChange={(e) => setCustomInstruction(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAiDraft('standard');
+                          }
+                        }}
+                        placeholder='e.g., "Mention that I will be available on phone after 4 PM", "Sound urgent due to family emergency"...'
+                        className="h-9 text-xs bg-white dark:bg-slate-900 border-purple-200 dark:border-purple-800/80 focus-visible:ring-purple-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => handleAiDraft('standard')}
+                        disabled={isAiLoading || (!customInstruction.trim() && !reason.trim())}
+                        className="h-9 px-3.5 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-xl shrink-0 gap-1.5 shadow-md shadow-purple-600/20"
+                      >
+                        {isAiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                        <span>Write with Instruction</span>
+                      </Button>
+                    </div>
+
+                    {/* Quick suggestion pills */}
+                    <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Quick suggestions:</span>
+                      {quickInstructions.map((q, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setCustomInstruction(q.value);
+                            handleAiDraft('standard', q.value);
+                          }}
+                          className="text-[11px] px-2 py-0.5 rounded-full bg-white/90 dark:bg-slate-900/90 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-colors cursor-pointer"
+                        >
+                          {q.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <Textarea
                   ref={textareaRef}
                   value={reason}
@@ -313,7 +424,9 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
                 />
 
                 <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1 pt-1">
-                  <span>Tip: Type brief notes and click <strong>Draft with AI</strong> or press <strong>Ctrl+L</strong>.</span>
+                  <span>
+                    Tip: Click <strong>Custom Prompt</strong> or press <strong>Ctrl+L</strong> to give special instructions (e.g. handover, emergency, reachable hours).
+                  </span>
                   {history.length > 0 && <span>Draft version: {history.length + 1}</span>}
                 </div>
               </div>
