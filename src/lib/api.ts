@@ -1,7 +1,18 @@
 import axios from 'axios';
 
+const getBaseURL = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && envUrl.startsWith('http')) {
+    return envUrl;
+  }
+  if (import.meta.env.DEV) {
+    return envUrl || '/api';
+  }
+  return 'https://panel.allindiahub.com/api';
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://panel.allindiahub.com/api',
+  baseURL: getBaseURL(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -116,7 +127,7 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = user?.refreshToken;
-        const baseURL = import.meta.env.VITE_API_URL || 'https://panel.allindiahub.com/api';
+        const baseURL = getBaseURL();
         const refreshResponse = await axios.post(
           `${baseURL}/auth/refresh`,
           refreshToken ? { refreshToken } : {},

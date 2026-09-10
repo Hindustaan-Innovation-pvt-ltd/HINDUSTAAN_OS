@@ -19,14 +19,14 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     // Resolve Socket.IO server URL cleanly across dev and production environments
     const getSocketUrl = () => {
-      if (import.meta.env.VITE_SOCKET_URL) {
+      if (import.meta.env.DEV) {
+        return import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_PROXY_TARGET || 'http://localhost:3000';
+      }
+      if (import.meta.env.VITE_SOCKET_URL && !import.meta.env.VITE_SOCKET_URL.includes('localhost')) {
         return import.meta.env.VITE_SOCKET_URL;
       }
       if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.startsWith('http')) {
         return import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '');
-      }
-      if (import.meta.env.DEV) {
-        return import.meta.env.VITE_PROXY_TARGET || 'http://localhost:3000';
       }
       return 'https://panel.allindiahub.com';
     };
