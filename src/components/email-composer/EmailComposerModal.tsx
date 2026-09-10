@@ -609,7 +609,7 @@ export default function EmailComposerModal({
   const previousDraftState = draftHistory.length > 0 ? draftHistory[draftHistory.length - 1] : null;
 
   // Reference / Dispatch ID state & Notice toggle
-  const [includeRefNumber, setIncludeRefNumber] = useState(true);
+  const [includeRefNumber, setIncludeRefNumber] = useState(false);
   const [customRefId, setCustomRefId] = useState('');
 
   // Category specific fields
@@ -2586,38 +2586,6 @@ export default function EmailComposerModal({
                         </button>
                         {isRoleFieldsOpen && (
                           <div className="p-3 pt-2 space-y-2.5 border-t border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/50">
-                            {/* Reference Tracking ID Checkbox Control */}
-                            {activeCategory !== 'none' && activeCategory !== 'interview' && (
-                              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-100/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60">
-                                <label className="flex items-center gap-2 cursor-pointer text-[11px] font-semibold text-slate-700 dark:text-slate-300 select-none">
-                                  <input
-                                    type="checkbox"
-                                    checked={includeRefNumber}
-                                    onChange={(e) => handleToggleRefNumber(e.target.checked)}
-                                    className="rounded border-slate-300 text-orange-500 focus:ring-orange-400 h-3.5 w-3.5 cursor-pointer"
-                                  />
-                                  <span>
-                                    {activeCategory === 'joining_letter'
-                                      ? 'Include Joining Ref (HIPL/JL/...)'
-                                      : activeCategory === 'offer_letter'
-                                      ? 'Include Offer Ref (HIPL/OFR/...)'
-                                      : 'Include Official Ref Number'}
-                                  </span>
-                                </label>
-                                {includeRefNumber && (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[10px] text-slate-400 font-mono">Ref ID:</span>
-                                    <Input
-                                      value={customRefId}
-                                      onChange={(e) => handleCustomRefChange(e.target.value)}
-                                      placeholder={currentRefId}
-                                      className="text-xs h-7 w-20 px-2 font-mono font-bold bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
-                                      title="Customize reference tracking number"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            )}
 
                             {/* 1. MEETING INVITATION CATEGORY */}
                             {activeCategory === 'interview' && (
