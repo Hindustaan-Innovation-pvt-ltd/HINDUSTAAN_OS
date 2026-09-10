@@ -100,7 +100,7 @@ export const WorkLogTable = ({ logs, currentUser, onStatusChange, onDelete, onRo
   return (
     <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[750px]">
           <thead className="bg-slate-50/50 dark:bg-slate-800/20 border-b border-slate-200/60 dark:border-slate-800">
             <tr>
               <SortableHeader label="Employee" sortKey="name" />

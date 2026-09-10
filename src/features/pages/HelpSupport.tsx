@@ -187,7 +187,7 @@ export default function HelpSupport({ session }: { session?: any }) {
               </Button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
+              <table className="w-full min-w-[600px] text-left text-sm whitespace-nowrap">
                 <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
                   <tr>
                     <th className="px-6 py-4 font-semibold">Ticket ID</th>
@@ -231,7 +231,7 @@ export default function HelpSupport({ session }: { session?: any }) {
               </Button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
+              <table className="w-full min-w-[600px] text-left text-sm whitespace-nowrap">
                 <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
                   <tr>
                     <th className="px-6 py-4 font-semibold">Bug ID</th>

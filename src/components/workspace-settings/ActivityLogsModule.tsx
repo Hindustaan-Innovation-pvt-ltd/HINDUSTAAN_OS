@@ -442,7 +442,7 @@ export const ActivityLogsModule: React.FC = () => {
           <div className="flex items-center gap-2 flex-wrap">
             {/* Module Filter */}
             <Select value={selectedModule} onValueChange={setSelectedModule}>
-              <SelectTrigger className="h-10 w-[170px] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold text-xs">
+              <SelectTrigger className="h-10 w-full sm:w-[170px] flex-1 sm:flex-none min-w-[140px] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold text-xs">
                 <Filter className="h-3.5 w-3.5 mr-1.5 text-slate-400" />
                 <SelectValue placeholder="Module: All" />
               </SelectTrigger>
@@ -457,7 +457,7 @@ export const ActivityLogsModule: React.FC = () => {
 
             {/* Role Filter */}
             <Select value={selectedRole} onValueChange={setSelectedRole}>
-              <SelectTrigger className="h-10 w-[130px] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold text-xs">
+              <SelectTrigger className="h-10 w-full sm:w-[130px] flex-1 sm:flex-none min-w-[120px] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold text-xs">
                 <SelectValue placeholder="Role: All" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
@@ -471,7 +471,7 @@ export const ActivityLogsModule: React.FC = () => {
 
             {/* HTTP Method Filter */}
             <Select value={selectedMethod} onValueChange={setSelectedMethod}>
-              <SelectTrigger className="h-10 w-[130px] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold text-xs">
+              <SelectTrigger className="h-10 w-full sm:w-[130px] flex-1 sm:flex-none min-w-[120px] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold text-xs">
                 <SelectValue placeholder="Method: All" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
@@ -486,7 +486,7 @@ export const ActivityLogsModule: React.FC = () => {
 
             {/* Status Filter */}
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="h-10 w-[140px] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold text-xs">
+              <SelectTrigger className="h-10 w-full sm:w-[140px] flex-1 sm:flex-none min-w-[120px] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold text-xs">
                 <SelectValue placeholder="Status: All" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
@@ -498,7 +498,7 @@ export const ActivityLogsModule: React.FC = () => {
 
             {/* Sort Order */}
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="h-10 w-[140px] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold text-xs">
+              <SelectTrigger className="h-10 w-full sm:w-[140px] flex-1 sm:flex-none min-w-[120px] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold text-xs">
                 <SelectValue placeholder="Sort: Newest" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
@@ -512,8 +512,8 @@ export const ActivityLogsModule: React.FC = () => {
 
       {/* Audit Logs Table */}
       <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="overflow-hidden">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[850px] text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-900/50 text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 <th className="py-3 px-3">Timestamp</th>

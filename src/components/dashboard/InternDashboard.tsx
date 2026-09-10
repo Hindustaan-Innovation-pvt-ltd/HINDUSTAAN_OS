@@ -753,7 +753,7 @@ export default function InternDashboard({ }: InternDashboardProps) {
             </div>
           )}
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl shadow-sm shrink-0">
-            <div className="flex items-center gap-3 pr-3 border-r border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-3 pr-0 sm:pr-3 border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800 pb-2 sm:pb-0 w-full sm:w-auto">
               <div className={cn("h-3 w-3 rounded-full shrink-0", dashboardData?.isSessionExpired ? "bg-rose-500" : (dashboardData?.isOnline || dashboardData?.checkinTime) ? "bg-emerald-500 animate-pulse" : "bg-slate-400")} />
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</p>
@@ -762,7 +762,7 @@ export default function InternDashboard({ }: InternDashboardProps) {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4 px-2">
+            <div className="flex items-center gap-4 px-0 sm:px-2 py-1 sm:py-0">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Check In</p>
                 <p className="text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400">
@@ -776,7 +776,7 @@ export default function InternDashboard({ }: InternDashboardProps) {
                 </p>
               </div>
             </div>
-            <div className="pl-3 border-l border-slate-200 dark:border-slate-800 flex items-center gap-4">
+            <div className="pl-0 sm:pl-3 border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-800 pt-2 sm:pt-0 flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Duration</p>
                 <p className="text-sm font-mono font-black text-orange-600 dark:text-orange-400">

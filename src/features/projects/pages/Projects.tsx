@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Briefcase, LayoutTemplate, Plus, ChevronRight, MoreVertical, Search, Filter, Edit2, Trash2, X, ChevronDown, Check, CalendarDays, BarChart2, Users, AlertTriangle, TrendingUp, CalendarIcon, RotateCcw, FolderKanban, CheckSquare } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Briefcase, LayoutTemplate, Plus, ChevronRight, MoreVertical, Search, Filter, Edit2, Trash2, X, ChevronDown, Check, CalendarDays, BarChart2, Users, AlertTriangle, TrendingUp, CalendarIcon, RotateCcw, FolderKanban, CheckSquare, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -36,6 +36,19 @@ export default function Projects({ session }: { session?: any }) {
   const currentUserId = user?.id || session?.user?.id || localStorage.getItem('userId') || 'manager-1';
 
   const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [selectedTimelineProjectId, setSelectedTimelineProjectId] = useState<string | null>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+
+  const handleSelectProjectForTimeline = (project: any) => {
+    if (selectedTimelineProjectId === project.id) {
+      setSelectedTimelineProjectId(null);
+    } else {
+      setSelectedTimelineProjectId(project.id);
+      setTimeout(() => {
+        timelineRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+    }
+  };
   const [newProject, setNewProject] = useState({ 
     name: '', 
     manager: currentUserName, 
@@ -192,10 +205,15 @@ export default function Projects({ session }: { session?: any }) {
         strokeColor: palette.stroke,
         headerBg: palette.bg,
         headerBorder: palette.border,
-        timelineTasks: pTasks.slice(0, 4) // Show up to 4 tasks per project
+        timelineTasks: pTasks
       };
-    }); // Show all projects in this view
+    });
   }, [displayedProjects, selectedWeekDate]);
+
+  const selectedTimelineProject = React.useMemo(() => {
+    if (!selectedTimelineProjectId) return null;
+    return groupedProjects.find(p => p.id === selectedTimelineProjectId) || null;
+  }, [groupedProjects, selectedTimelineProjectId]);
 
   if (selectedProject) {
     const liveProject = projects.find((p: any) => p.id === selectedProject.id) || selectedProject;
@@ -253,11 +271,18 @@ export default function Projects({ session }: { session?: any }) {
             const isPastDue = project.deadline && project.deadline !== 'TBD' && new Date(project.deadline).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
 
 
+            const isSelectedForTimeline = selectedTimelineProjectId === project.id;
+
             return (
               <div
                 key={project.id}
-                className="group relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/80 dark:border-slate-800/80 rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_20px_40px_rgb(0,0,0,0.5)] hover:bg-white/90 dark:hover:bg-slate-900/90 transition-all duration-500 hover:-translate-y-1.5 cursor-pointer overflow-hidden flex flex-col"
-                onClick={() => setSelectedProject(project)}
+                className={cn(
+                  "group relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border rounded-[1.5rem] transition-all duration-500 hover:-translate-y-1.5 cursor-pointer overflow-hidden flex flex-col",
+                  isSelectedForTimeline
+                    ? "ring-2 ring-orange-500 border-orange-500 shadow-xl dark:shadow-orange-950/40 bg-white/95 dark:bg-slate-900/95"
+                    : "border-white/80 dark:border-slate-800/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_20px_40px_rgb(0,0,0,0.5)] hover:bg-white/90 dark:hover:bg-slate-900/90"
+                )}
+                onClick={() => handleSelectProjectForTimeline(project)}
               >
                 {/* Premium Background Gradient Glow */}
                 <div
@@ -278,6 +303,12 @@ export default function Projects({ session }: { session?: any }) {
                     </div>
 
                     <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                      {isSelectedForTimeline && (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/80 px-2 py-0.5 rounded-md border border-orange-200 dark:border-orange-800 animate-pulse">
+                          <CheckCircle2 className="w-2.5 h-2.5" /> Timeline Open
+                        </span>
+                      )}
+
                       <Badge variant={
                         project.status === 'Completed' ? 'default' :
                           project.status === 'In Progress' ? 'secondary' :
@@ -301,7 +332,17 @@ export default function Projects({ session }: { session?: any }) {
                               <MoreVertical className="h-3.5 w-3.5" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40 rounded-xl border-slate-200 dark:border-slate-800 shadow-2xl p-1 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl z-[100]">
+                          <DropdownMenuContent align="end" className="w-44 rounded-xl border-slate-200 dark:border-slate-800 shadow-2xl p-1 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl z-[100]">
+                            <DropdownMenuItem className="font-bold text-xs cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-orange-600 dark:text-orange-400" onClick={() => {
+                              handleSelectProjectForTimeline(project);
+                            }}>
+                              <LayoutTemplate className="mr-2 h-3.5 w-3.5" /> {isSelectedForTimeline ? 'Hide Timeline' : 'View Timeline'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="font-bold text-xs cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => {
+                              setSelectedProject(project);
+                            }}>
+                              <ExternalLink className="mr-2 h-3.5 w-3.5" /> View Details
+                            </DropdownMenuItem>
                             <DropdownMenuItem className="font-bold text-xs cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => {
                               setEditingProjectId(project.id);
                               setNewProject({
@@ -396,6 +437,29 @@ export default function Projects({ session }: { session?: any }) {
                       />
                     </div>
                   </div>
+
+                  <div className="pt-3 border-t border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between">
+                    <span className={cn(
+                      "text-[11px] font-bold flex items-center gap-1.5 transition-colors",
+                      isSelectedForTimeline
+                        ? "text-orange-600 dark:text-orange-400"
+                        : "text-slate-500 dark:text-slate-400 group-hover:text-orange-600 dark:group-hover:text-orange-400"
+                    )}>
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {isSelectedForTimeline ? "Timeline Active" : "Click to view timeline"}
+                    </span>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProject(project);
+                      }}
+                      className="text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors"
+                      title="Open full project details"
+                    >
+                      Details <ChevronRight className="h-3 w-3" />
+                    </button>
+                  </div>
                 </div>
               </div>
             )
@@ -403,84 +467,115 @@ export default function Projects({ session }: { session?: any }) {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+      {/* Execution Timeline - Visible only when clicked on a specific project */}
+      {selectedTimelineProject ? (
+        <div ref={timelineRef} className="bg-white dark:bg-slate-900 border-2 border-orange-500/40 dark:border-orange-500/30 rounded-2xl shadow-lg overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-3 duration-300 scroll-mt-6">
 
-        {/* Panel Toolbar */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
-          <div className="flex items-center space-x-2">
-            <LayoutTemplate className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-            <h3 className="font-bold text-slate-900 dark:text-white">Execution Timeline</h3>
-          </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="flex items-center text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                <CalendarDays className="h-4 w-4 mr-1.5 text-slate-400" />
-                {format(startOfCurrentWeek, 'MMM d')} - {format(addDays(startOfCurrentWeek, 6), 'MMM d')}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-auto p-0 rounded-2xl shadow-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 z-[100]">
-              <Calendar
-                mode="single"
-                selected={selectedWeekDate}
-                onSelect={(date) => date && setSelectedWeekDate(date)}
-                className="p-3"
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        {/* Gantt Chart Container */}
-        <div className="p-6 overflow-x-auto hide-scrollbar">
-          <div className="min-w-[700px]">
-
-            {/* Timeline Header (Days) */}
-            <div className="flex">
-              {/* Spacer for task names */}
-              <div className="w-48 shrink-0"></div>
-              {/* Day Columns */}
-              <div className="flex-1 grid grid-cols-7 gap-2">
-                {weekDays.map(day => (
-                  <div key={day.toISOString()} className="text-center pb-4 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                    <div className="mb-1">{format(day, 'EEE')}</div>
-                    <div className={cn("text-xs", isSameDay(day, new Date()) && "text-orange-500 dark:text-orange-400")}>{format(day, 'd')}</div>
-                  </div>
-                ))}
+          {/* Panel Toolbar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 gap-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="h-9 w-9 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 shadow-xs">
+                <LayoutTemplate className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base">Execution Timeline</h3>
+                  <Badge variant="outline" className="font-extrabold text-xs bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800">
+                    {selectedTimelineProject.name}
+                  </Badge>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Showing weekly task schedule and execution durations for <strong>{selectedTimelineProject.name}</strong>.
+                </p>
               </div>
             </div>
 
-            {/* Gantt Rows */}
-            <div className="mt-6 space-y-8 relative">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="flex items-center text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors shadow-xs">
+                    <CalendarDays className="h-4 w-4 mr-1.5 text-slate-400" />
+                    {format(startOfCurrentWeek, 'MMM d')} - {format(addDays(startOfCurrentWeek, 6), 'MMM d')}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-auto p-0 rounded-2xl shadow-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 z-[100]">
+                  <Calendar
+                    mode="single"
+                    selected={selectedWeekDate}
+                    onSelect={(date) => date && setSelectedWeekDate(date)}
+                    className="p-3"
+                  />
+                </PopoverContent>
+              </Popover>
 
-              {/* Vertical Grid Lines */}
-              <div className="absolute inset-0 flex ml-48 pointer-events-none">
-                <div className="flex-1 grid grid-cols-7 gap-2 h-full">
-                  {[0, 1, 2, 3, 4, 5, 6].map(i => (
-                    <div key={i} className="border-r border-slate-100 dark:border-slate-700/80 h-full"></div>
+              <button
+                onClick={() => setSelectedProject(selectedTimelineProject)}
+                className="flex items-center text-xs font-bold text-white bg-slate-900 dark:bg-slate-100 dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white px-3 py-1.5 rounded-lg transition-colors shadow-xs"
+                title="Open full project view with milestones"
+              >
+                <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Full Details
+              </button>
+
+              <button
+                onClick={() => setSelectedTimelineProjectId(null)}
+                className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                title="Close timeline"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Gantt Chart Container */}
+          <div className="p-6 overflow-x-auto hide-scrollbar">
+            <div className="min-w-[700px]">
+
+              {/* Timeline Header (Days) */}
+              <div className="flex">
+                {/* Spacer for task names */}
+                <div className="w-48 shrink-0"></div>
+                {/* Day Columns */}
+                <div className="flex-1 grid grid-cols-7 gap-2">
+                  {weekDays.map(day => (
+                    <div key={day.toISOString()} className="text-center pb-4 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                      <div className="mb-1">{format(day, 'EEE')}</div>
+                      <div className={cn("text-xs font-bold", isSameDay(day, new Date()) && "text-orange-500 dark:text-orange-400")}>{format(day, 'd')}</div>
+                    </div>
                   ))}
                 </div>
               </div>
 
-              {/* Grouped by Project */}
-              {groupedProjects.map((project) => (
-                <div key={project.id} className="relative z-10 space-y-3">
+              {/* Gantt Rows for the Selected Project */}
+              <div className="mt-6 space-y-8 relative">
+
+                {/* Vertical Grid Lines */}
+                <div className="absolute inset-0 flex ml-48 pointer-events-none">
+                  <div className="flex-1 grid grid-cols-7 gap-2 h-full">
+                    {[0, 1, 2, 3, 4, 5, 6].map(i => (
+                      <div key={i} className="border-r border-slate-100 dark:border-slate-700/80 h-full"></div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="relative z-10 space-y-3">
                   {/* Project Header Divider (Full Width) */}
-                  <div className={cn("flex items-center justify-between mb-3 px-4 py-2.5 rounded-xl border w-full col-span-full shadow-sm", project.headerBg, project.headerBorder)}>
+                  <div className={cn("flex items-center justify-between mb-3 px-4 py-2.5 rounded-xl border w-full col-span-full shadow-sm", selectedTimelineProject.headerBg, selectedTimelineProject.headerBorder)}>
                     <div className="flex items-center gap-3">
-                      <div className={cn("h-6 w-6 rounded-md flex items-center justify-center shadow-sm", project.iconColor)}>
+                      <div className={cn("h-6 w-6 rounded-md flex items-center justify-center shadow-sm", selectedTimelineProject.iconColor)}>
                         <FolderKanban className="h-3 w-3" />
                       </div>
-                      <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">{project.name}</p>
+                      <p className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">{selectedTimelineProject.name}</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge variant="outline" className={cn("text-[10px] font-bold bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-slate-800 dark:text-slate-200", project.headerBorder)}>
-                        {project.tasks?.length || 0} Tasks
+                      <Badge variant="outline" className={cn("text-[10px] font-bold bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-slate-800 dark:text-slate-200", selectedTimelineProject.headerBorder)}>
+                        {selectedTimelineProject.tasks?.length || 0} Tasks
                       </Badge>
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline-block">Lead: {project.manager}</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline-block">Lead: {selectedTimelineProject.manager}</span>
                     </div>
                   </div>
 
                   {/* Task Bars or Completed Status */}
-                  {project.isCompleted ? (
+                  {selectedTimelineProject.isCompleted ? (
                     <div className="flex items-center relative group animate-in fade-in slide-in-from-right-4 duration-500">
                       <div className="w-48 shrink-0 pr-4 border-l-4 pl-3 py-1 border-emerald-500">
                         <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Completed</p>
@@ -494,22 +589,22 @@ export default function Projects({ session }: { session?: any }) {
                           </div>
                           <div className="flex items-center space-x-3 text-[10px]">
                             <span className="bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded-md border border-emerald-200/50 dark:border-emerald-800/30">
-                              {project.tasks?.length * 4 || 0} Days Taken
+                              {(selectedTimelineProject.tasks?.length || 1) * 4} Days Taken
                             </span>
                             <span className="bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded-md border border-emerald-200/50 dark:border-emerald-800/30 text-emerald-800 dark:text-emerald-300">
-                              {(project.tasks?.length * 4 || 0) * 8} Hours Logged
+                              {((selectedTimelineProject.tasks?.length || 1) * 4) * 8} Hours Logged
                             </span>
                           </div>
                         </div>
                       </div>
                     </div>
-                  ) : project.timelineTasks.length > 0 ? (
-                    project.timelineTasks.map((task: any) => (
+                  ) : selectedTimelineProject.timelineTasks && selectedTimelineProject.timelineTasks.length > 0 ? (
+                    selectedTimelineProject.timelineTasks.map((task: any) => (
                       <div key={task.id} className="flex items-center relative group animate-in fade-in slide-in-from-right-4 duration-500">
                         {/* Task Name Label */}
                         <div
                           className="w-48 shrink-0 pr-4 border-l-4 pl-3 py-1"
-                          style={{ borderColor: project.strokeColor || '#cbd5e1' }}
+                          style={{ borderColor: selectedTimelineProject.strokeColor || '#cbd5e1' }}
                         >
                           <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{task.name}</p>
                           <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">{task.assignee}</p>
@@ -523,7 +618,7 @@ export default function Projects({ session }: { session?: any }) {
                                 className="h-8 rounded-lg shadow-sm flex items-center px-3 text-xs font-bold text-white whitespace-nowrap overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md cursor-pointer"
                                 style={{
                                   gridColumn: `${task.start + 1} / span ${task.duration}`,
-                                  backgroundColor: project.strokeColor || '#f97316'
+                                  backgroundColor: selectedTimelineProject.strokeColor || '#f97316'
                                 }}
                               >
                                 {task.name}
@@ -556,16 +651,31 @@ export default function Projects({ session }: { session?: any }) {
                       <div className="w-48 shrink-0 pr-4 border-l-4 pl-3 py-1 border-slate-200 dark:border-slate-800">
                         <p className="text-sm font-bold text-slate-400 dark:text-slate-600 truncate">No tasks scheduled</p>
                       </div>
+                      <div className="flex-1 text-xs text-slate-400 italic py-2">
+                        No active tasks have been scheduled for this project yet.
+                      </div>
                     </div>
                   )}
                 </div>
-              ))}
 
+              </div>
             </div>
           </div>
-        </div>
 
-      </div>
+        </div>
+      ) : (
+        <div className="p-8 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/20 text-center flex flex-col items-center justify-center space-y-3">
+          <div className="h-12 w-12 rounded-2xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center shadow-inner">
+            <LayoutTemplate className="h-6 w-6" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Execution Timeline</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md">
+              Click on any project card above to view its execution timeline, task schedule, and daily breakdown.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* New Project Modal */}
       {isModalOpen && (

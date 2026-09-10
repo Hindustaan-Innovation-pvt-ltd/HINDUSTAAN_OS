@@ -748,7 +748,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
                     <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/60 overflow-hidden">
                       <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
+                        <table className="w-full min-w-[500px] text-sm text-left">
                           <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/60 dark:text-slate-400 border-b border-slate-105 dark:border-slate-800">
                             <tr>
                               <th className="px-4 py-3 font-bold">Device & Location</th>
@@ -1347,7 +1347,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
             {/* Directory Table Card */}
             <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden">
-              <CardHeader className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30 flex flex-row items-center justify-between">
+              <CardHeader className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">
                     {showOnlyRole === 'manager' ? 'Manager Directory' : 'Interns Directory'}
@@ -1369,7 +1369,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </Button>
               </CardHeader>
               <CardContent className="p-0 overflow-x-auto">
-                <table className="w-full text-sm text-left">
+                <table className="w-full min-w-[750px] text-sm text-left">
                   <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/60 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                     <tr>
                       <th className="px-6 py-4 font-bold">User / ID</th>

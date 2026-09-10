@@ -517,7 +517,7 @@ export default function EmailLogsModule() {
       {/* Email Logs Table */}
       <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full min-w-[900px] text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
                 <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Recipient</th>

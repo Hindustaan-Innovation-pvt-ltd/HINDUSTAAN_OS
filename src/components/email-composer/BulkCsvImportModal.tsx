@@ -358,8 +358,8 @@ Ananya Patel,ananya@example.com,Data Science Intern,₹15,000 / month,01-Oct-202
                 </button>
               </div>
 
-              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden max-h-[220px] overflow-y-auto">
-                <table className="w-full text-xs text-left">
+              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden max-h-[220px] overflow-y-auto overflow-x-auto">
+                <table className="w-full min-w-[650px] text-xs text-left">
                   <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-bold sticky top-0">
                     <tr>
                       <th className="p-2.5">#</th>
