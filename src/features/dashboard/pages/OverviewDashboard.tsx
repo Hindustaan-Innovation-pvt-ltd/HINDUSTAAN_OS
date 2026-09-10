@@ -21,6 +21,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Sparkles } from 'lucide-react';
 import EmailComposerModal from '@/components/email-composer/EmailComposerModal';
+import { formatToMMDDYYYY } from '@/context/ProjectContext';
 
 // --- Mock Data ---
 
@@ -303,7 +304,7 @@ export default function OverviewDashboard() {
                         id: t.id,
                         project: 'Upcoming Task',
                         task: t.title,
-                        dueDate: new Date(t.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                        dueDate: formatToMMDDYYYY(t.dueDate),
                         daysLeft,
                         color: t.priority === 'high' ? 'bg-rose-500' : 'bg-amber-500',
                         bgColor: t.priority === 'high' ? 'bg-rose-50 dark:bg-rose-500/10' : 'bg-amber-50 dark:bg-amber-500/10',

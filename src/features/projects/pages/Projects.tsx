@@ -14,7 +14,7 @@ const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const GANTT_TASKS: any[] = [];
 
-import { useProjects } from '@/context/ProjectContext';
+import { useProjects, formatToMMDDYYYY } from '@/context/ProjectContext';
 import { useNotifications } from '@/context/NotificationContext';
 import { useUser } from '@/context/UserContext';
 import api from '@/lib/api';
@@ -41,7 +41,6 @@ export default function Projects({ session }: { session?: any }) {
     manager: currentUserName, 
     managerId: currentUserId, 
     deadline: '', 
-    budget: '', 
     priority: 'Medium', 
     tasks: [] as any[] 
   });
@@ -94,8 +93,7 @@ export default function Projects({ session }: { session?: any }) {
         manager: newProject.manager,
         managerId: newProject.managerId,
         deadline: newProject.deadline,
-        tasks: newProject.tasks,
-        budget: newProject.budget ? (newProject.budget.toString().startsWith('₹') ? newProject.budget : `₹${newProject.budget.replace('$', '')}`) : 'TBD'
+        tasks: newProject.tasks
       });
       toast.success("Project Updated Successfully!", {
         description: `"${newProject.name}" details have been saved.`
@@ -119,8 +117,7 @@ export default function Projects({ session }: { session?: any }) {
         strokeColor: randomColor.strokeColor,
         manager: newProject.manager || 'Unassigned',
         managerId: newProject.managerId || '',
-        deadline: newProject.deadline || 'TBD',
-        budget: newProject.budget ? (newProject.budget.toString().startsWith('₹') ? newProject.budget : `₹${newProject.budget.replace('$', '')}`) : 'TBD'
+        deadline: newProject.deadline ? formatToMMDDYYYY(newProject.deadline) : 'TBD'
       };
 
       addProject(project);
@@ -139,7 +136,7 @@ export default function Projects({ session }: { session?: any }) {
 
     setIsModalOpen(false);
     setEditingProjectId(null);
-    setNewProject({ name: '', manager: currentUserName, managerId: currentUserId, deadline: '', budget: '', priority: 'Medium', tasks: [] });
+    setNewProject({ name: '', manager: currentUserName, managerId: currentUserId, deadline: '', priority: 'Medium', tasks: [] });
   };
 
   const startOfCurrentWeek = startOfWeek(selectedWeekDate, { weekStartsOn: 1 });
@@ -217,7 +214,7 @@ export default function Projects({ session }: { session?: any }) {
         {role === 'manager' && (
           <button onClick={() => {
             setEditingProjectId(null);
-            setNewProject({ name: '', manager: currentUserName, managerId: currentUserId, deadline: '', budget: '', priority: 'Medium', tasks: [] });
+            setNewProject({ name: '', manager: currentUserName, managerId: currentUserId, deadline: '', priority: 'Medium', tasks: [] });
             setIsModalOpen(true);
           }} className="flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 shrink-0">
             <Plus className="h-4 w-4 mr-1.5" /> New Project
@@ -312,7 +309,6 @@ export default function Projects({ session }: { session?: any }) {
                                 manager: project.manager,
                                 managerId: project.managerId || '',
                                 deadline: project.endDate || '',
-                                budget: project.budget && project.budget !== 'TBD' ? project.budget.replace('$', '') : '',
                                 priority: 'Medium',
                                 tasks: (project.tasks || []).map((t: any) => ({
                                   id: t.id,
@@ -371,26 +367,16 @@ export default function Projects({ session }: { session?: any }) {
 
                 <div className="p-5 bg-slate-50/50 dark:bg-slate-900/30 flex-1 flex flex-col justify-between space-y-4 relative z-10">
                   <div className="flex justify-between items-center bg-white/50 dark:bg-slate-950/50 p-3 rounded-xl border border-slate-100/50 dark:border-slate-800/50 backdrop-blur-sm">
-                    {(role === 'manager' || role === 'admin') && (
-                      <>
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-1 mb-1 text-slate-500 dark:text-slate-400">
-                            <TrendingUp className="h-3 w-3" />
-                            <span className="text-[9px] font-black uppercase tracking-wider">Budget</span>
-                          </div>
-                          <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{project.budget}</span>
-                        </div>
-                        <div className="w-px h-6 bg-slate-200 dark:bg-slate-800" />
-                      </>
-                    )}
-                    <div className={cn("flex flex-col", (role === 'manager' || role === 'admin') ? "items-end" : "items-start")}>
-                      <div className={cn("flex items-center gap-1 mb-1", isPastDue ? "text-rose-600 dark:text-rose-500" : "text-slate-500 dark:text-slate-400")}>
-                        {isPastDue ? <AlertTriangle className="h-3 w-3" /> : <CalendarIcon className="h-3 w-3" />}
-                        <span className="text-[9px] font-black uppercase tracking-wider">Deadline</span>
+                    <div className="flex items-center gap-2">
+                      <div className={cn("p-2 rounded-lg", isPastDue ? "bg-rose-500/10 text-rose-500" : "bg-orange-500/10 text-orange-500")}>
+                        {isPastDue ? <AlertTriangle className="h-4 w-4" /> : <CalendarIcon className="h-4 w-4" />}
                       </div>
-                      <span className={cn("text-sm font-bold flex items-center gap-1.5", isPastDue ? "text-rose-600 dark:text-rose-500" : "text-slate-800 dark:text-slate-200")}>
-                        {project.deadline} {isPastDue && <span className="text-[10px] bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 px-1.5 py-0.5 rounded uppercase tracking-wider">Past Due</span>}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Target Deadline (MM-DD-YYYY)</span>
+                        <span className={cn("text-sm font-bold flex items-center gap-1.5", isPastDue ? "text-rose-600 dark:text-rose-500" : "text-slate-800 dark:text-slate-200")}>
+                          {project.deadline} {isPastDue && <span className="text-[10px] bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 px-1.5 py-0.5 rounded uppercase tracking-wider">Past Due</span>}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -649,31 +635,23 @@ export default function Projects({ session }: { session?: any }) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Deadline</label>
-                  <div className="relative">
-                    <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                    <input
-                      type="date"
-                      value={newProject.deadline}
-                      onChange={(e) => setNewProject({ ...newProject, deadline: e.target.value })}
-                      className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all [color-scheme:light] dark:[color-scheme:dark]"
-                    />
-                  </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Deadline (MM-DD-YYYY)
+                  </label>
+                  <span className="text-[11px] font-mono font-semibold text-slate-400">
+                    {newProject.deadline ? `Selected: ${formatToMMDDYYYY(newProject.deadline)}` : 'Format: MM-DD-YYYY'}
+                  </span>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Estimated Budget (₹)</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">₹</span>
-                    <input
-                      type="number"
-                      placeholder="e.g. 50000"
-                      value={newProject.budget}
-                      onChange={(e) => setNewProject({ ...newProject, budget: e.target.value })}
-                      className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                    />
-                  </div>
+                <div className="relative">
+                  <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={newProject.deadline}
+                    onChange={(e) => setNewProject({ ...newProject, deadline: e.target.value })}
+                    className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all [color-scheme:light] dark:[color-scheme:dark]"
+                  />
                 </div>
               </div>
 
@@ -805,7 +783,7 @@ export default function Projects({ session }: { session?: any }) {
                   rows={3}
                   value={deletionReason}
                   onChange={e => setDeletionReason(e.target.value)}
-                  placeholder="Explain why this project is being deleted (e.g. Scope completed, Budget reallocated, Merged into another module)..."
+                  placeholder="Explain why this project is being deleted (e.g. Scope completed, Timeline updated, Merged into another module)..."
                   className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>

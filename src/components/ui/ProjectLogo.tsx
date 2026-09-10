@@ -1,35 +1,42 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
+import brandLogoImg from '@/assets/Frame 134.png';
+
+import { useTheme } from '@/context/ThemeContext';
+
 export interface ProjectLogoProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   size?: 'large' | 'sidebar';
 }
 
 export function ProjectLogo({ size = 'large', className, ...props }: ProjectLogoProps) {
+  let isLight = false;
+  try {
+    const themeContext = useTheme();
+    isLight = themeContext.theme === 'light';
+  } catch {
+    isLight = typeof document !== 'undefined' && !document.documentElement.classList.contains('dark');
+  }
+
   return (
     <div className={cn(
       "flex items-center justify-center transition-all duration-300",
       "bg-transparent border-none p-0 shadow-none w-full",
       className
     )}>
-      {/* Light Mode Logo */}
       <img
-        src="/project-os-logo.png"
-        alt="Project OS"
+        src={brandLogoImg}
+        alt="Hindustaan Innovation"
         className={cn(
-          size === 'large' ? "project-logo" : "sidebar-logo",
-          "transition-all duration-300 transform scale-[1.3] dark:scale-[1.4] block dark:hidden drop-shadow-[0_0_12px_rgba(125,145,255,0.35)]"
+          size === 'large' ? "h-16 w-auto" : "h-8 w-auto",
+          "object-contain transition-all duration-300 light-mode-logo-shadow",
+          className
         )}
-        {...props}
-      />
-      {/* Dark Mode Logo */}
-      <img
-        src="/project-os-logo-dark.png"
-        alt="Project OS"
-        className={cn(
-          size === 'large' ? "project-logo" : "sidebar-logo",
-          "transition-all duration-300 transform scale-[1.3] dark:scale-[1.4] hidden dark:block drop-shadow-[0_0_12px_rgba(125,145,255,0.35)]"
-        )}
+        style={{
+          filter: isLight 
+            ? 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.40)) drop-shadow(0 6px 14px rgba(0, 0, 0, 0.22))' 
+            : 'none'
+        }}
         {...props}
       />
     </div>

@@ -178,9 +178,6 @@ export function EmployeeNotificationBell({ onNavigate }: NotificationBellProps =
     } else if (notification.category === 'Tasks') {
       targetPath = (isManager || role === 'admin') ? '/manager/tasks' : '/employee/tasks';
       targetView = (isManager || role === 'admin') ? 'Tasks' : 'My Tasks';
-    } else if (notification.category === 'Standups') {
-      targetPath = isManager ? '/manager/daily-standups' : '/employee/time-standup'; 
-      targetView = isManager ? 'Daily Standups' : 'Daily Standup';
     } else {
       targetPath = isManager ? '/manager/dashboard' : '/employee/dashboard';
       targetView = 'Dashboard';

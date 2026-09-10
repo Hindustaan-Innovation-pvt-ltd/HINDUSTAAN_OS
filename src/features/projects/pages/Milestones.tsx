@@ -9,14 +9,12 @@ import { useTheme } from '@/context/ThemeContext';
 
 import { useProjects } from '@/context/ProjectContext';
 
-// --- Mock Data ---
-const contributionData = {
+// --- Performance Data ---
+const performanceData = {
   'Today': { score: 87, tasks: 32, hours: 28, miles: 18 },
   'This Week': { score: 72, tasks: 24, hours: 20, miles: 12 },
   'This Month': { score: 94, tasks: 38, hours: 32, miles: 22 },
 };
-
-const TEAM: string[] = [];
 
 function MetricCard({ name, data, period, onPeriodChange }: { name: string, data: any, period: string, onPeriodChange: (p: string) => void }) {
   const { score, tasks, hours, miles } = data[period as keyof typeof data];
@@ -65,8 +63,8 @@ function MetricCard({ name, data, period, onPeriodChange }: { name: string, data
                 <circle cx="64" cy="64" r="56" fill="transparent" stroke="#f97316" strokeWidth="12" strokeDasharray="351.8" strokeDashoffset={351.8 - (351.8 * score) / 100} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
               </svg>
               <div className="absolute flex flex-col items-center">
-                <span className="text-3xl font-extrabold text-slate-900 dark:text-white">{score}</span>
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Score</span>
+                <span className="text-3xl font-extrabold text-slate-900 dark:text-white">{score}%</span>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Progress</span>
               </div>
             </div>
           </div>
@@ -143,13 +141,12 @@ export default function Milestones({ session }: { session?: any }) {
       
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Milestones & Contribution</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Review your performance scores and team contribution metrics.</p>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Milestones & Progress</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Review your milestone achievements and project progress.</p>
       </div>
 
       {/* Content Rendering based on Role */}
       {role === 'manager' ? (
-        <>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
           {/* Project Progress */}
@@ -208,30 +205,13 @@ export default function Milestones({ session }: { session?: any }) {
             </CardContent>
           </Card>
         </div>
-        
-        {/* Manager View: All Employee Contributions */}
-        <div className="mt-12">
-          <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white mb-6">Team Contributions</h3>
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            {TEAM.map(member => (
-              <MetricCard 
-                key={member}
-                name={member}
-                data={contributionData}
-                period={globalPeriod}
-                onPeriodChange={setGlobalPeriod}
-              />
-            ))}
-          </div>
-        </div>
-        </>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Contributions & Rules */}
+          {/* Left Column: Performance & Rules */}
           <div className="lg:col-span-6 space-y-8 flex flex-col h-full">
             <MetricCard 
-              name="My Contributions"
-              data={contributionData}
+              name="My Performance"
+              data={performanceData}
               period={globalPeriod}
               onPeriodChange={setGlobalPeriod}
             />
@@ -254,7 +234,7 @@ export default function Milestones({ session }: { session?: any }) {
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">How much task completion gets one Milestone?</h4>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                      Every <strong className="text-orange-600 dark:text-orange-400">5 resolved tasks</strong> on your Kanban board triggers <strong className="text-orange-600 dark:text-orange-400">1 Milestone</strong> level-up. Complete tasks to unlock badges and increase your final contribution score!
+                      Every <strong className="text-orange-600 dark:text-orange-400">5 resolved tasks</strong> on your Kanban board triggers <strong className="text-orange-600 dark:text-orange-400">1 Milestone</strong> level-up. Complete tasks to unlock badges and advance your milestone tiers!
                     </p>
                   </div>
                 </div>
@@ -368,12 +348,12 @@ export default function Milestones({ session }: { session?: any }) {
               </CardContent>
             </Card>
 
-            {/* Card 2: Contribution Trend */}
+            {/* Card 2: Activity Trend */}
             <Card className="shadow-sm border-slate-200 dark:border-slate-700/60 rounded-2xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center">
                   <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
-                  Contribution Trend
+                  Activity Trend
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-2 space-y-4">
@@ -398,7 +378,7 @@ export default function Milestones({ session }: { session?: any }) {
                 </div>
                 <div className="text-xs space-y-1 mt-2">
                   <div className="flex justify-between items-center font-semibold text-slate-600 dark:text-slate-400">
-                    <span>Average Contribution:</span>
+                    <span>Average Activity:</span>
                     <span className="font-extrabold text-slate-900 dark:text-white">75%</span>
                   </div>
                   <div className="flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">

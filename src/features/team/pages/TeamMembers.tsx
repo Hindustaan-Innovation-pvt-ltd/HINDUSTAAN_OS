@@ -23,6 +23,22 @@ import { toast } from 'sonner';
 import { getCurrentUser, type User } from '@/lib/auth';
 import api from '@/lib/api';
 import { AssignTaskDialog } from '../../tasks/components/AssignTaskDialog';
+import { formatToMMDDYYYY } from '@/context/ProjectContext';
+
+const getTaskStatusBadge = (status?: string | null) => {
+  if (!status) return null;
+  const s = status.toLowerCase();
+  if (s.includes('done') || s.includes('completed')) {
+    return <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 text-[10px] px-1.5 py-0 font-bold">Done</Badge>;
+  }
+  if (s.includes('review')) {
+    return <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 border-purple-200 dark:border-purple-800 text-[10px] px-1.5 py-0 font-bold">In Review</Badge>;
+  }
+  if (s.includes('progress')) {
+    return <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800 text-[10px] px-1.5 py-0 font-bold">In Progress</Badge>;
+  }
+  return <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200 dark:border-blue-800 text-[10px] px-1.5 py-0 font-bold">To Do</Badge>;
+};
 
 // Removed generateMockInterns as we only use API now
 
@@ -50,10 +66,20 @@ export default function TeamMembers() {
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const [activeMainTab, setActiveMainTab] = useState<'active' | 'pending'>('active');
 
-  // Approval Dialog States
   const [approvingUser, setApprovingUser] = useState<any | null>(null);
   const [empIdInput, setEmpIdInput] = useState('');
   const [isApprovingSubmit, setIsApprovingSubmit] = useState(false);
+
+  // Add Employee Dialog States
+  const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
+  const [newEmpName, setNewEmpName] = useState('');
+  const [newEmpEmail, setNewEmpEmail] = useState('');
+  const [newEmpPassword, setNewEmpPassword] = useState('Emp@2026!');
+  const [newEmpDept, setNewEmpDept] = useState('Engineering');
+  const [newEmpDesignation, setNewEmpDesignation] = useState('Software Engineer Intern');
+  const [newEmpPhone, setNewEmpPhone] = useState('');
+  const [newEmpId, setNewEmpId] = useState('');
+  const [isAddingEmployee, setIsAddingEmployee] = useState(false);
 
   const [stats, setStats] = useState({
     totalInterns: 0,
@@ -120,6 +146,9 @@ export default function TeamMembers() {
       score: typeof m.score === 'string' ? parseFloat(m.score) || 0 : m.score ?? 0,
       attendance: typeof m.attendance === 'string' ? parseFloat(m.attendance) || 0 : m.attendance ?? 0,
       currentTask: m.currentTask || 'No active task',
+      currentTaskStatus: m.currentTaskStatus || null,
+      currentTaskExecutionDate: m.currentTaskExecutionDate || null,
+      tasks: m.tasks || [],
       hoursLogged: typeof m.hoursLogged === 'string' ? parseFloat(m.hoursLogged) || 0 : m.hoursLogged ?? 0,
       status: m.status || 'Offline',
       isOnline: m.isOnline || m.status === 'Online',
@@ -359,6 +388,48 @@ export default function TeamMembers() {
     }
   };
 
+  const handleAddEmployeeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmpName.trim() || !newEmpEmail.trim()) {
+      toast.error('Name and Email are required.');
+      return;
+    }
+
+    setIsAddingEmployee(true);
+    try {
+      const res = await api.post('/team/members', {
+        name: newEmpName.trim(),
+        email: newEmpEmail.trim().toLowerCase(),
+        password: newEmpPassword.trim() || 'Emp@2026!',
+        department: newEmpDept,
+        designation: newEmpDesignation.trim() || 'Intern Developer',
+        phoneWa: newEmpPhone.trim() || undefined,
+        empId: newEmpId.trim() || undefined
+      });
+
+      if (res.data?.success) {
+        toast.success(`Employee "${newEmpName}" added successfully!`);
+        setIsAddEmployeeOpen(false);
+        setNewEmpName('');
+        setNewEmpEmail('');
+        setNewEmpPassword('Emp@2026!');
+        setNewEmpDept('Engineering');
+        setNewEmpDesignation('Software Engineer Intern');
+        setNewEmpPhone('');
+        setNewEmpId('');
+        fetchData();
+      } else {
+        toast.error(res.data?.message || 'Failed to add employee.');
+      }
+    } catch (err: any) {
+      console.error('Add employee error:', err);
+      const msg = err.response?.data?.message || err.message || 'Failed to add employee.';
+      toast.error(msg);
+    } finally {
+      setIsAddingEmployee(false);
+    }
+  };
+
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-6 animate-in fade-in duration-300 pb-10">
       
@@ -375,7 +446,15 @@ export default function TeamMembers() {
         </div>
         
         <div className="flex items-center gap-3">
-          {/* Invite Intern button removed as requested */}
+          {(currentUser?.role === 'manager' || currentUser?.role === 'admin') && (
+            <Button
+              onClick={() => setIsAddEmployeeOpen(true)}
+              className="bg-orange-600 hover:bg-orange-700 text-white font-bold h-10 px-4 rounded-xl shadow-sm flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Employee
+            </Button>
+          )}
         </div>
       </div>
 
@@ -651,10 +730,19 @@ export default function TeamMembers() {
                           </p>
                         </div>
                         <div className="space-y-1.5 flex-1">
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Current Task</p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Current Task</p>
+                            {intern.currentTaskStatus && getTaskStatusBadge(intern.currentTaskStatus)}
+                          </div>
                           <p className="text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md" title={intern.currentTask}>
                             {intern.currentTask}
                           </p>
+                          {intern.currentTaskExecutionDate && (
+                            <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1">
+                              <Calendar className="h-3 w-3 text-orange-500 shrink-0" />
+                              <span>Exec: {formatToMMDDYYYY(intern.currentTaskExecutionDate)}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
@@ -792,6 +880,9 @@ export default function TeamMembers() {
                   <div className="px-6 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md z-10">
                     <TabsList className="bg-transparent border-0 p-0 h-12 w-full justify-start gap-6 rounded-none">
                       <TabsTrigger value="overview" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-orange-500 rounded-none px-0 h-12 font-bold text-slate-500 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white">Overview</TabsTrigger>
+                      <TabsTrigger value="tasks" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-orange-500 rounded-none px-0 h-12 font-bold text-slate-500 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white">
+                        Tasks ({(memberDetail?.tasks || selectedIntern?.tasks || []).length})
+                      </TabsTrigger>
                       <TabsTrigger value="activity" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-orange-500 rounded-none px-0 h-12 font-bold text-slate-500 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white">Activity</TabsTrigger>
                       <TabsTrigger value="performance" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-orange-500 rounded-none px-0 h-12 font-bold text-slate-500 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white">Performance</TabsTrigger>
                     </TabsList>
@@ -821,6 +912,49 @@ export default function TeamMembers() {
                         )}
                       </div>
                     </div>
+                  </TabsContent>
+
+                  <TabsContent value="tasks" className="m-0 p-6 space-y-4">
+                    {detailLoading ? (
+                      <div className="flex items-center justify-center py-12 text-slate-500 font-medium">
+                        <Loader2 className="h-5 w-5 animate-spin mr-2 text-orange-500" /> Loading tasks from database...
+                      </div>
+                    ) : ((memberDetail?.tasks && memberDetail.tasks.length > 0) || (selectedIntern?.tasks && selectedIntern.tasks.length > 0)) ? (
+                      <div className="space-y-3">
+                        {(memberDetail?.tasks || selectedIntern?.tasks || []).map((t: any) => (
+                          <div key={t.id} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                            <div className="flex items-start justify-between gap-3 mb-2">
+                              <div>
+                                <h5 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{t.title}</h5>
+                                {t.project_tag && (
+                                  <span className="inline-block font-semibold text-slate-500 dark:text-slate-400 text-xs mt-1">
+                                    Project: <span className="text-slate-800 dark:text-slate-200 font-bold">{t.project_tag}</span>
+                                  </span>
+                                )}
+                              </div>
+                              <div className="shrink-0">
+                                {getTaskStatusBadge(t.status)}
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                              <span className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
+                                <Calendar className="h-3.5 w-3.5 text-orange-500" />
+                                <span>Execution Date: {formatToMMDDYYYY(t.executionDate || t.dueDate || t.startDate)}</span>
+                              </span>
+                              {t.priority && (
+                                <Badge variant="outline" className="text-[10px] uppercase tracking-wider font-bold border-slate-200 dark:border-slate-700">
+                                  {t.priority}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 text-sm font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+                        No tasks assigned to this team member yet.
+                      </div>
+                    )}
                   </TabsContent>
                   
                   <TabsContent value="activity" className="m-0 p-6">
@@ -855,7 +989,7 @@ export default function TeamMembers() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
                             <span className="text-3xl font-black text-orange-600 dark:text-orange-500 mb-1">{memberDetail?.performance?.score ?? selectedIntern.score}%</span>
-                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Contribution</span>
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Performance Rate</span>
                           </div>
                           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
                             <span className="text-3xl font-black text-emerald-600 dark:text-emerald-500 mb-1">{memberDetail?.performance?.attendance ?? selectedIntern.attendance}%</span>
@@ -1117,6 +1251,149 @@ export default function TeamMembers() {
               Confirm & Approve
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Employee Dialog */}
+      <Dialog open={isAddEmployeeOpen} onOpenChange={setIsAddEmployeeOpen}>
+        <DialogContent className="sm:max-w-[500px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/30">
+            <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
+              Add New Employee / Intern
+            </DialogTitle>
+            <p className="text-xs font-semibold text-slate-400">
+              Create an employee profile with direct login credentials. They will use this email and password to log in.
+            </p>
+          </DialogHeader>
+
+          <form onSubmit={handleAddEmployeeSubmit}>
+            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Full Name *
+                </label>
+                <Input
+                  required
+                  value={newEmpName}
+                  onChange={(e) => setNewEmpName(e.target.value)}
+                  placeholder="e.g. John Doe"
+                  className="rounded-lg border-slate-200 dark:border-slate-800"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Email Address *
+                </label>
+                <Input
+                  type="email"
+                  required
+                  value={newEmpEmail}
+                  onChange={(e) => setNewEmpEmail(e.target.value)}
+                  placeholder="e.g. john@hindustaan.in"
+                  className="rounded-lg border-slate-200 dark:border-slate-800"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Login Password *
+                </label>
+                <Input
+                  type="text"
+                  value={newEmpPassword}
+                  onChange={(e) => setNewEmpPassword(e.target.value)}
+                  placeholder="e.g. Emp@2026!"
+                  className="rounded-lg border-slate-200 dark:border-slate-800 font-mono text-sm"
+                />
+                <p className="text-[11px] text-slate-400">
+                  The employee will use this password along with their email to log in.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Department
+                  </label>
+                  <select
+                    value={newEmpDept}
+                    onChange={(e) => setNewEmpDept(e.target.value)}
+                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer"
+                  >
+                    <option value="Engineering">Engineering</option>
+                    <option value="Operations">Operations</option>
+                    <option value="HR">HR</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Sales">Sales</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Designation
+                  </label>
+                  <Input
+                    value={newEmpDesignation}
+                    onChange={(e) => setNewEmpDesignation(e.target.value)}
+                    placeholder="e.g. Junior Developer"
+                    className="rounded-lg border-slate-200 dark:border-slate-800"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Phone / WhatsApp
+                  </label>
+                  <Input
+                    type="tel"
+                    value={newEmpPhone}
+                    onChange={(e) => setNewEmpPhone(e.target.value)}
+                    placeholder="e.g. +91 9876543210"
+                    className="rounded-lg border-slate-200 dark:border-slate-800"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Employee ID (Optional)
+                  </label>
+                  <Input
+                    value={newEmpId}
+                    onChange={(e) => setNewEmpId(e.target.value)}
+                    placeholder="e.g. EMP-1005"
+                    className="rounded-lg border-slate-200 dark:border-slate-800"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="p-6 border-t border-slate-100 dark:border-slate-850 gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddEmployeeOpen(false)}
+                className="h-10 rounded-xl font-bold"
+                disabled={isAddingEmployee}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold"
+                disabled={isAddingEmployee}
+              >
+                {isAddingEmployee ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                ) : (
+                  <Plus className="h-4 w-4 mr-1.5" />
+                )}
+                Add Employee
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

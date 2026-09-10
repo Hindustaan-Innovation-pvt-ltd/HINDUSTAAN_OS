@@ -33,7 +33,6 @@ export default function Login({
 
   // Authentication Modes
   const [isOTPMode, setIsOTPMode] = useState(false);
-  const [mockRole, setMockRole] = useState(isAdminLogin ? 'admin' : defaultRole);
 
   // OTP State
   const [showOTPDialog, setShowOTPDialog] = useState(false);
@@ -70,11 +69,9 @@ export default function Login({
   }, [showOTPDialog, otpState]);
 
   const validateUser = () => {
-    // Return a dummy user to bypass client-side list validation
-    // as we now perform actual validation via backend APIs.
     return {
       email: email,
-      role: mockRole,
+      role: 'employee',
       name: 'User'
     };
   };
@@ -85,75 +82,33 @@ export default function Login({
 
     try {
       console.log("Data is sending to backend successfully");
-      // Connect to backend via loginUser
       const user = await loginUser(email, password, true);
       if (!user) {
-        toast.error('Authentication Error', { description: 'Login failed.' });
+        toast.error('Authentication Error', { description: 'Login failed. Please check your credentials.' });
         setLoading(false);
         return;
       }
 
-      if (isAdminLogin) {
-        if (user.role !== 'admin') {
-          toast.error('Incorrect Access Type', {
-            description: 'This screen is restricted to administrators.',
-          });
-          setLoading(false);
-          return;
-        }
-        toast.success('Access granted.', { description: 'Welcome to Hindustaan OS!' });
-        if (onMockLogin) {
-          onMockLogin('admin', email);
-        } else {
-          window.location.href = '/admin/dashboard';
-        }
-        return;
-      }
-
-      if (user.role !== mockRole) {
-        toast.error('Incorrect Access Type', {
-          description: `Your account is registered as ${user.role.charAt(0).toUpperCase() + user.role.slice(1)}.\n\nPlease switch to ${user.role.charAt(0).toUpperCase() + user.role.slice(1)} Access.`,
-        });
-        setLoading(false);
-        return;
-      }
-
-      if (user.role === 'employee') {
-        let userId = 'u-4';
-        let userName = user.name || 'Tanvy Pandey';
-
-        if (email.toLowerCase().includes('amanda')) {
-          userId = 'u-1';
-          userName = 'Amanda Smith';
-        } else if (email.toLowerCase().includes('rahul')) {
-          userId = 'u-2';
-          userName = 'Rahul Sharma';
-        } else if (email.toLowerCase().includes('priya')) {
-          userId = 'u-3';
-          userName = 'Priya Patel';
-        }
-
-        // Track specific intern login for Manager Dashboard & WorkLogs
-        localStorage.setItem(`login_time_${userId}`, Date.now().toString());
-
-      }
-
-      toast.success('Access granted.', { description: 'Welcome to Hindustaan OS!' });
-      console.log("Login successfully");
+      toast.success('Access granted.', { description: `Welcome back, ${user.name}!` });
 
       if (onMockLogin) {
         onMockLogin(user.role, email);
       } else {
-        window.location.href = `/${user.role}/dashboard`;
+        if (user.role === 'admin') {
+          window.location.href = '/admin/dashboard';
+        } else if (user.role === 'manager') {
+          window.location.href = '/manager/dashboard';
+        } else {
+          window.location.href = '/dashboard';
+        }
       }
     } catch (err: any) {
       if (err.message && err.message.includes('User not found')) {
-        console.error("Login failed: User not found or invalid credentials.");
         toast.error('Account Not Found', {
-          description: 'No matching account exists in the database with this email. Please verify the address or click "Register" to create a new workspace account.',
+          description: 'No matching account exists with this email. Please contact your manager or administrator.',
         });
       } else {
-        toast.error('Authentication Error', { description: err.message });
+        toast.error('Authentication Error', { description: err.message || 'Login failed.' });
       }
     } finally {
       setLoading(false);
@@ -278,7 +233,7 @@ export default function Login({
         <div className="hidden lg:flex flex-col justify-center w-[45%] xl:w-[50%] p-12 xl:p-24 border-r border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-sm z-10">
           <div className="max-w-xl">
             <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 whitespace-nowrap">
-              Welcome to <span className="text-transparent bg-clip-text bg-linear-to-r from-orange-500 to-green-600">Project OS</span>
+              Welcome to <span className="text-transparent bg-clip-text bg-linear-to-r from-orange-500 to-green-600">Hindustaan Innovation</span>
             </h1>
 
             <p className="text-lg text-slate-600 dark:text-slate-400 mb-12 max-w-md font-medium leading-relaxed">
@@ -308,15 +263,12 @@ export default function Login({
           <div className="w-full max-w-md">
             <div className="rounded-3xl border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 lg:p-5 lg:py-4 xl:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500">
 
-              <div className="flex flex-col items-center text-center mb-4 lg:mb-2.5">
-                <div className="hover:scale-[1.03] transition-all duration-300">
-                  <BrandLogo variant="auth" />
-                </div>
-                <div className="mt-2 flex flex-col items-center">
-                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-                    Internal Workspace Portal
-                  </p>
-                </div>
+              <div className="flex items-center justify-center mb-5 lg:mb-3">
+                <BrandLogo 
+                  variant="auth-horizontal" 
+                  subtitle="Internal Workspace Portal" 
+                  className="hover:scale-[1.02] transition-all duration-300"
+                />
               </div>
 
               <form className="space-y-4 lg:space-y-3" onSubmit={isOTPMode ? handleOTPRequest : handlePasswordLogin}>
@@ -402,35 +354,6 @@ export default function Login({
                   </button>
                 </div>
 
-                {!isAdminLogin && (
-                  <div className="flex items-center justify-center space-x-1.5 bg-slate-100 dark:bg-slate-800 p-1 lg:p-0.5 rounded-xl w-full">
-                    <button
-                      type="button"
-                      onClick={() => setMockRole('manager')}
-                      className={cn(
-                        "flex-1 py-1.5 lg:py-1 text-[11px] font-bold rounded-lg transition-all",
-                        mockRole === 'manager'
-                          ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                      )}
-                    >
-                      Manager Access
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMockRole('employee')}
-                      className={cn(
-                        "flex-1 py-1.5 lg:py-1 text-[11px] font-bold rounded-lg transition-all",
-                        mockRole === 'employee'
-                          ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                      )}
-                    >
-                      Employee Access
-                    </button>
-                  </div>
-                )}
-
                 <div>
                   <button
                     type="submit"
@@ -448,43 +371,11 @@ export default function Login({
                   </button>
                 </div>
 
-                {!isAdminLogin ? (
-                  <>
-                    <div className="text-center pt-3 pb-1 lg:pt-1.5 lg:pb-0.5">
-                      <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Don't have an account? </span>
-                      <button
-                        type="button"
-                        onClick={() => navigate('/register')}
-                        className="text-[13px] font-extrabold text-orange-600 hover:text-orange-700 hover:underline transition-all ml-1"
-                      >
-                        Create Account
-                      </button>
-                    </div>
-                    <div className="text-center pt-1 pb-0.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigate('/admin/login');
-                        }}
-                        className="text-[11px] font-bold text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-all underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4"
-                      >
-                        Administrator Access
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center pt-3 pb-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigate('/login');
-                      }}
-                      className="text-[11px] font-bold text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-all underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4"
-                    >
-                      Return to Employee/Manager Login
-                    </button>
-                  </div>
-                )}
+                <div className="text-center pt-3 pb-1">
+                  <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">
+                    Accounts are managed by workspace administration.
+                  </p>
+                </div>
               </form>
             </div>
           </div>

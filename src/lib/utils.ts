@@ -46,7 +46,7 @@ export function getRelativeTime(timestamp: number | string | Date, short = false
   return date.toLocaleDateString();
 }
 
-export function logActivity(user: string, action: string, target: string, type: 'task' | 'log' | 'project' | 'standup' | 'assign' | 'login' | 'meeting') {
+export function logActivity(user: string, action: string, target: string, type: 'task' | 'log' | 'project' | 'assign' | 'login' | 'meeting') {
   const storedFeed = localStorage.getItem('hindustaan_activity_feed');
   const feed = storedFeed ? JSON.parse(storedFeed) : [];
   const newActivity = {

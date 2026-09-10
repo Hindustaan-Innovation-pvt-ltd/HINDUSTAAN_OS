@@ -8,7 +8,6 @@ import RoleBasedRouter from '../components/dashboard/RoleBasedRouter';
 import AdminDashboard from '../features/dashboard/pages/AdminDashboard';
 import RolesAndPermissions from '../features/workspace/pages/RolesAndPermissions';
 import TaskBoard from '../features/tasks/pages/TaskBoard';
-import TimeAndStandup from '../features/leaves/pages/TimeAndStandup';
 import Milestones from '../features/projects/pages/Milestones';
 import AboutUs from '../features/pages/AboutUs';
 import Projects from '../features/projects/pages/Projects';
@@ -17,8 +16,6 @@ import TeamMembers from '../features/team/pages/TeamMembers';
 import GanttTimeline from '../features/projects/pages/GanttTimeline';
 import ProgressTracker from '../features/leaves/pages/ProgressTracker';
 import WorkLogs from '../features/leaves/pages/WorkLogs';
-import DailyStandups from '../features/leaves/pages/DailyStandups';
-import ContributionScores from '../features/leaves/pages/ContributionScores';
 import Register from '../features/auth/pages/Register';
 import ProfileView from '../features/team/pages/ProfileView';
 import ProfileEdit from '../features/team/pages/ProfileEdit';
@@ -81,9 +78,9 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/logout" element={<Logout />} />
-      <Route path="/login" element={<Login defaultRole="manager" />} />
-      <Route path="/admin/login" element={<Login isAdminLogin={true} defaultRole="admin" />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/admin/login" element={<Login isAdminLogin={true} />} />
+      <Route path="/register" element={<Navigate to="/login" replace />} />
 
       {/* Protected Layout */}
       <Route
@@ -103,7 +100,6 @@ function AppRoutes() {
         <Route path="/manager/dashboard" element={role === 'manager' ? <RoleBasedRouter /> : <Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/admin/dashboard" element={role === 'admin' ? <RoleBasedRouter /> : <Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/tasks" element={<TaskBoard />} />
-        <Route path="/time-tracking" element={<TimeAndStandup />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/timeline" element={<GanttTimeline />} />
         <Route path="/performance" element={<ProgressTracker />} />
@@ -134,8 +130,6 @@ function AppRoutes() {
         <Route path="/admin/activity-logs" element={<ActivityLogsModule />} />
         <Route path="/admin/subscriptions" element={<Subscriptions />} />
         <Route path="/work-logs" element={<WorkLogs />} />
-        <Route path="/daily-standups" element={<DailyStandups />} />
-        <Route path="/contribution-scores" element={<ContributionScores />} />
       </Route>
 
       <Route path="*" element={<Navigate to={`/${role}/dashboard`} replace />} />

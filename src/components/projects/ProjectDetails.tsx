@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, CheckCircle2, Clock, Flag, LayoutGrid, Target, Users, CheckSquare, Plus, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, Flag, LayoutGrid, Target, Users, CheckSquare, Plus, Loader2, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useProjects } from '@/context/ProjectContext';
+import { useProjects, formatToMMDDYYYY } from '@/context/ProjectContext';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -268,18 +268,29 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                       project?.status === 'Aborted' ? "opacity-75 grayscale cursor-not-allowed" : "hover:shadow-md cursor-pointer"
                     )}>
                       <div className="flex flex-col gap-2 mb-3">
-                        <p className={cn("text-sm font-semibold leading-tight",
-                          project?.status === 'Aborted' ? "text-slate-500 dark:text-slate-400 line-through" : "text-slate-900 dark:text-white"
-                        )}>{task?.title}</p>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={cn("text-sm font-semibold leading-tight",
+                            project?.status === 'Aborted' ? "text-slate-500 dark:text-slate-400 line-through" : "text-slate-900 dark:text-white"
+                          )}>{task?.title}</p>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 font-bold border-slate-200 dark:border-slate-700">
+                            {task?.status || status}
+                          </Badge>
+                        </div>
                         {project?.status === 'Aborted' && (
                           <Badge variant="destructive" className="w-fit text-[8px] py-0 px-1 leading-tight uppercase bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200/50">Aborted</Badge>
                         )}
                       </div>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
                         <div className="flex items-center gap-1.5">
                           <Users className="h-3 w-3 text-slate-400" />
-                          <span className="text-xs font-medium text-slate-500">{task?.assignee}</span>
+                          <span className="text-xs font-medium text-slate-500 truncate max-w-[100px]">{task?.assignee || task?.assignee_name || 'Unassigned'}</span>
                         </div>
+                        {(task?.due_date || task?.executionDate || task?.dueDate || task?.start_date) && (
+                          <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                            <Calendar className="h-3 w-3 text-orange-500 shrink-0" />
+                            <span>{formatToMMDDYYYY(task?.due_date || task?.executionDate || task?.dueDate || task?.start_date)}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Clock, AlertTriangle, CheckCircle2, PlayCircle, Calendar, ShieldAlert, Search, X } from 'lucide-react';
+import { Clock, AlertTriangle, CheckCircle2, PlayCircle, Calendar, ShieldAlert, Search, X, Wifi } from 'lucide-react';
 import api from '@/lib/api';
 import { useUser } from '@/context/UserContext';
 
@@ -16,6 +16,7 @@ interface AttendanceRecord {
   attendanceStatus: string;
   statusDisplay: string;
   invalidReason?: string;
+  ipAddress?: string;
   userName?: string;
   userRole?: string;
   userEmail?: string;
@@ -251,7 +252,7 @@ export default function AttendanceHistoryModal({ isOpen, onClose, userId, userNa
                               {rec.statusDisplay}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-4 text-xs text-slate-400 mt-1.5">
+                          <div className="flex items-center gap-4 text-xs text-slate-400 mt-1.5 flex-wrap">
                             <div>
                               <span className="text-slate-500 mr-1">Check In:</span>
                               <span className="font-medium text-slate-300">{formatTime(rec.checkInTime)}</span>
@@ -264,6 +265,12 @@ export default function AttendanceHistoryModal({ isOpen, onClose, userId, userNa
                               <span className="text-slate-500 mr-1">Max Policy Limit:</span>
                               <span className="font-medium text-slate-300">{rec.configuredWorkingHours}h</span>
                             </div>
+                            {rec.ipAddress && (
+                              <div className="flex items-center gap-1 text-emerald-400 font-mono text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                                <Wifi className="h-3 w-3 text-emerald-400" />
+                                <span>Office Wi-Fi: {rec.ipAddress}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

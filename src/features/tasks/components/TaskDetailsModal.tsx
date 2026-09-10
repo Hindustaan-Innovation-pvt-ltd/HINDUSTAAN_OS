@@ -51,6 +51,7 @@ const STATUSES: Status[] = ['To Do', 'In Progress', 'In Review', 'Done'];
 
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { formatToMMDDYYYY } from '@/context/ProjectContext';
 
 function formatRelativeTime(dateStr: string) {
   try {
@@ -344,8 +345,15 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
             {/* Due Date */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
-                <Calendar className="h-3.5 w-3.5 mr-1.5" /> Target Deadline
+              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                <span className="flex items-center">
+                  <Calendar className="h-3.5 w-3.5 mr-1.5" /> Target Deadline (MM-DD-YYYY)
+                </span>
+                {editedTask.due_date && (
+                  <span className="text-[10px] text-orange-600 dark:text-orange-400 font-semibold normal-case">
+                    {formatToMMDDYYYY(editedTask.due_date)}
+                  </span>
+                )}
               </label>
               {canEditMainFields ? (
                 <input
@@ -357,7 +365,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                 />
               ) : (
                 <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 inline-block">
-                  {editedTask.due_date}
+                  {formatToMMDDYYYY(editedTask.due_date)}
                 </div>
               )}
             </div>

@@ -41,7 +41,7 @@ import { Label } from '@/components/ui/label';
 import { ProjectCalendarWidget } from './ProjectCalendarWidget';
 import { Separator } from '@/components/ui/separator';
 import { AssignTaskDialog } from '../../features/tasks/components/AssignTaskDialog';
-import { useProjects } from '@/context/ProjectContext';
+import { useProjects, formatToMMDDYYYY } from '@/context/ProjectContext';
 import { useNotifications } from '@/context/NotificationContext';
 import { useSocket } from '@/context/SocketContext';
 
@@ -194,11 +194,12 @@ function ManagerDashboardInner() {
         const dbTasks = tasksRes.data.data.map((t: any) => ({
           id: t.id,
           title: t.title,
-          status: t.status === 'done' || t.status === 'completed' ? 'Done' :
-            t.status === 'in-progress' ? 'In Progress' : 'To Do',
-          priority: t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
-          due_date: t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          assignee_name: t.assignees?.[0]?.user?.name || t.assignee?.name || 'Unassigned'
+          status: t.status === 'done' || t.status === 'completed' || t.status === 'Done' ? 'Done' :
+            t.status === 'in-progress' || t.status === 'In Progress' || t.status === 'in_progress' ? 'In Progress' :
+            t.status === 'in-review' || t.status === 'In Review' ? 'In Review' : 'To Do',
+          priority: t.priority === 'high' || t.priority === 'High' ? 'High' : t.priority === 'low' || t.priority === 'Low' ? 'Low' : 'Medium',
+          due_date: t.due_date || (t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : 'TBD'),
+          assignee_name: t.assignee_name || t.assignees?.[0]?.user?.name || t.assignee?.name || 'Unassigned'
         }));
         setTasks(dbTasks);
       }
@@ -214,6 +215,8 @@ function ManagerDashboardInner() {
       fetchDashboard();
     };
     window.addEventListener('auth_status_changed', handleAuthStatus);
+    window.addEventListener('task_created', handleAuthStatus);
+    window.addEventListener('task_updated', handleAuthStatus);
 
     if (socket) {
       socket.on('dashboard_update', () => {
@@ -223,11 +226,15 @@ function ManagerDashboardInner() {
       return () => {
         socket.off('dashboard_update');
         window.removeEventListener('auth_status_changed', handleAuthStatus);
+        window.removeEventListener('task_created', handleAuthStatus);
+        window.removeEventListener('task_updated', handleAuthStatus);
       };
     }
 
     return () => {
       window.removeEventListener('auth_status_changed', handleAuthStatus);
+      window.removeEventListener('task_created', handleAuthStatus);
+      window.removeEventListener('task_updated', handleAuthStatus);
     };
   }, [fetchDashboard, socket]);
 
@@ -316,6 +323,9 @@ function ManagerDashboardInner() {
         id: t.id,
         task: t.title || t.task,
         priority: t.priority || 'High',
+        status: t.status || 'In Progress',
+        due_date: t.due_date || t.dueDate || '',
+        formattedDate: formatToMMDDYYYY(t.due_date || t.dueDate || ''),
         assignee: t.assignee_name || t.assignee || 'Unassigned'
       }));
   }, [tasks]);
@@ -524,14 +534,16 @@ function ManagerDashboardInner() {
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
           <CardContent className="p-5 flex flex-col justify-between h-full gap-4">
             <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                <CalendarClock className="h-5 w-5" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-5 w-5" />
               </div>
-              <Badge variant="outline" className="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10">Sync at 11</Badge>
+              <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10">Completed</Badge>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">{dashboardStats?.pendingStandupsCount ?? 0}</p>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Pending Standups</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-white">
+                {(tasks || []).filter((t: any) => t.status === 'Done').length}
+              </p>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tasks Completed</p>
             </div>
           </CardContent>
         </Card>
@@ -675,7 +687,7 @@ function ManagerDashboardInner() {
                             <Button
                               onClick={async () => {
                                 try {
-                                  await api.patch(`/standups/${blocker.id}/resolve-blocker`);
+                                  await api.patch(`/tasks/${blocker.id}/status`, { status: 'in-progress' });
                                   // Invalidate cache so the next poll fetches fresh resolved state
                                   lastDataRef.current = null;
                                   await fetchDashboard();
@@ -785,14 +797,27 @@ function ManagerDashboardInner() {
                   (isAllDeadlinesOpen ? dynamicDeadlines : dynamicDeadlines.slice(0, 4)).map((deadline) => (
                     <div key={deadline.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
                       <div className="flex flex-col gap-1.5">
-                        <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{deadline.task}</p>
                         <div className="flex items-center gap-2">
-                          <Avatar className="h-5 w-5 rounded-full">
-                            <AvatarFallback className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[8px] font-bold">
-                              {(deadline.assignee || 'Unassigned').split(' ').map((n: string) => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{deadline.assignee || 'Unassigned'}</span>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{deadline.task}</p>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded border-orange-200 text-orange-600 bg-orange-50 dark:bg-orange-950/30 font-bold">
+                            {deadline.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <Avatar className="h-5 w-5 rounded-full">
+                              <AvatarFallback className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[8px] font-bold">
+                                {(deadline.assignee || 'Unassigned').split(' ').map((n: string) => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{deadline.assignee || 'Unassigned'}</span>
+                          </div>
+                          {deadline.due_date && (
+                            <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                              <CalendarIcon className="h-3 w-3 text-orange-500" />
+                              {formatToMMDDYYYY(deadline.due_date)}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <DropdownMenu>
