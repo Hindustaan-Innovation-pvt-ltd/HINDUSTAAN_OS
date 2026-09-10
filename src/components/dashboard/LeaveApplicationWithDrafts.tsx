@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ProjectDatePicker } from '@/components/ui/project-date-picker';
+import { useUser } from '@/context/UserContext';
 import api from '@/lib/api';
 
 interface LeaveApplicationWithDraftsProps {
@@ -29,6 +30,8 @@ const parseLocalDate = (dateStr: string) => {
 };
 
 export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplicationWithDraftsProps) {
+  const { user } = useUser();
+
   // Form State
   const [leaveType, setLeaveType] = useState('casual');
   const [customType, setCustomType] = useState('');
@@ -58,6 +61,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
       const res = await api.post('/leaves/ai-draft', {
         leaveType: displayType,
         customType: leaveType === 'other' ? customType.trim() : undefined,
+        applicantName: user?.name || undefined,
         date: startDate || undefined,
         reasonNotes: reason.trim() || undefined,
         currentText: reason.trim() || undefined,
