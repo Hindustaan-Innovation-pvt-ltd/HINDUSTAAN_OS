@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Clock, AlertTriangle, CheckCircle2, PlayCircle, Calendar, ShieldAlert, Search, X, Wifi } from 'lucide-react';
+import { Clock, AlertTriangle, CheckCircle2, PlayCircle, Calendar, ShieldAlert, Search, X, Wifi, Globe, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import api from '@/lib/api';
 import { useUser } from '@/context/UserContext';
 
@@ -142,14 +143,28 @@ export default function AttendanceHistoryModal({ isOpen, onClose, userId, userNa
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col bg-slate-900/95 border-slate-800 text-white rounded-2xl backdrop-blur-xl shadow-2xl p-6">
-        <DialogHeader className="pb-4 border-b border-slate-800">
-          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
-            <Clock className="h-5 w-5 text-violet-400" />
-            Attendance History & Policy Log {userName ? `(${userName})` : ""}
-          </DialogTitle>
-          <p className="text-xs text-slate-400 mt-1">
-            Review session timelines and compliance with maximum working hours limits.
-          </p>
+        <DialogHeader className="pb-4 border-b border-slate-800 flex flex-row items-center justify-between">
+          <div>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
+              <Clock className="h-5 w-5 text-violet-400" />
+              Attendance History & Policy Log {userName ? `(${userName})` : ""}
+            </DialogTitle>
+            <p className="text-xs text-slate-400 mt-1">
+              Review session timelines and compliance with maximum working hours limits.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              onClose();
+              window.location.href = '/attendance-logs';
+            }}
+            className="text-xs font-bold border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-white rounded-xl flex items-center gap-1.5 h-8 mr-6"
+          >
+            <ExternalLink className="h-3.5 w-3.5 text-orange-400" />
+            Open Full Page
+          </Button>
         </DialogHeader>
 
         {/* ── ADMIN FILTERS ── */}
@@ -266,9 +281,9 @@ export default function AttendanceHistoryModal({ isOpen, onClose, userId, userNa
                               <span className="font-medium text-slate-300">{rec.configuredWorkingHours}h</span>
                             </div>
                             {rec.ipAddress && (
-                              <div className="flex items-center gap-1 text-emerald-400 font-mono text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                                <Wifi className="h-3 w-3 text-emerald-400" />
-                                <span>Office Wi-Fi: {rec.ipAddress}</span>
+                              <div className="flex items-center gap-1 text-slate-200 font-mono text-[11px] bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+                                <Globe className="h-3 w-3 text-orange-400" />
+                                <span>IP: {rec.ipAddress}</span>
                               </div>
                             )}
                           </div>

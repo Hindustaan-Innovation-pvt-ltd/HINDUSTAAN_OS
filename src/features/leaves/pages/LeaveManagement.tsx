@@ -613,7 +613,7 @@ export default function LeaveManagement() {
                 <CardDescription>Track the status of your past and upcoming leaves.</CardDescription>
               </CardHeader>
               <div className="overflow-x-auto p-4 md:p-6">
-                <table className="w-full text-sm text-left border-collapse">
+                <table className="w-full min-w-[650px] text-sm text-left border-collapse">
                   <thead className="text-xs text-slate-500 font-black uppercase tracking-wider bg-slate-50 dark:bg-slate-900 rounded-xl">
                     <tr>
                       <th className="px-6 py-4 rounded-l-xl">Applied On</th>
@@ -1145,7 +1145,7 @@ export default function LeaveManagement() {
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
+                      <table className="w-full min-w-[750px] text-left border-collapse">
                         <thead>
                           <tr className="border-b border-white/10 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
                             <th className="pb-3 pr-4">Member</th>

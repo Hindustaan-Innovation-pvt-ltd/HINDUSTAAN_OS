@@ -31,6 +31,7 @@ import DeliveryChannelsModule from '@/components/workspace-settings/DeliveryChan
 import ActivityLogsModule from '@/components/workspace-settings/ActivityLogsModule';
 import SecuritySettings from '../features/workspace/pages/SecuritySettings';
 import Subscriptions from '../features/workspace/pages/Subscriptions';
+import AttendanceLogs from '../features/attendance/pages/AttendanceLogs';
 
 import { ThemeProvider } from '@/context/ThemeContext';
 import { ProjectProvider } from '@/context/ProjectContext';
@@ -130,6 +131,8 @@ function AppRoutes() {
         <Route path="/admin/activity-logs" element={<ActivityLogsModule />} />
         <Route path="/admin/subscriptions" element={<Subscriptions />} />
         <Route path="/work-logs" element={<WorkLogs />} />
+        <Route path="/attendance-logs" element={<AttendanceLogs />} />
+        <Route path="/attendance" element={<AttendanceLogs />} />
       </Route>
 
       <Route path="*" element={<Navigate to={`/${role}/dashboard`} replace />} />

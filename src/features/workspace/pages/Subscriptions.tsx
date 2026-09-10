@@ -309,7 +309,7 @@ export default function Subscriptions() {
             <div>
               <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Billing history</h4>
               <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left">
+                <table className="w-full min-w-[550px] text-xs text-left">
                   <thead>
                     <tr className="text-slate-400 uppercase border-b border-slate-100 dark:border-slate-800 pb-2">
                       <th className="pb-2 font-bold">Invoice ID</th>

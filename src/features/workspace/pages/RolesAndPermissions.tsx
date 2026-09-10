@@ -339,7 +339,7 @@ export default function RolesAndPermissions() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0 overflow-x-auto">
-                <table className="w-full text-sm text-left">
+                <table className="w-full min-w-[650px] text-sm text-left">
                   <thead className="text-xs text-slate-500 uppercase bg-slate-50/80 dark:bg-slate-900/50 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                     <tr>
                       <th className="px-6 py-4 font-bold">User</th>

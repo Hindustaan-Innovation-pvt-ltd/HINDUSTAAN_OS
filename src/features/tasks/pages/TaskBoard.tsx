@@ -442,7 +442,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
             <button
               onClick={() => scroll('left')}
               className={cn(
-                "absolute -left-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all cursor-pointer",
+                "hidden sm:flex absolute -left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all cursor-pointer",
                 currentUser.role === 'intern' ? "opacity-100" : "opacity-0 group-hover/board:opacity-100"
               )}
               title="Scroll Left"
@@ -456,7 +456,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
             <button
               onClick={() => scroll('right')}
               className={cn(
-                "absolute -right-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all cursor-pointer",
+                "hidden sm:flex absolute -right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all cursor-pointer",
                 currentUser.role === 'intern' ? "opacity-100" : "opacity-0 group-hover/board:opacity-100"
               )}
               title="Scroll Right"
@@ -484,7 +484,7 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
                     currentUser.role === 'intern' && "h-fit",
                     isSidebarMinimized
                       ? "min-w-[250px] lg:min-w-0 max-w-[380px] lg:max-w-none flex-1"
-                      : "min-w-[320px] max-w-[320px] shrink-0"
+                      : "min-w-[280px] sm:min-w-[320px] max-w-[85vw] sm:max-w-[320px] shrink-0"
                   )}
                   onDragOver={currentUser.role === 'manager' ? handleDragOver : undefined}
                   onDrop={currentUser.role === 'manager' ? (e) => handleDrop(e, columnStatus) : undefined}
