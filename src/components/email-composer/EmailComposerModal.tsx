@@ -1458,21 +1458,28 @@ export default function EmailComposerModal({
     if (selectedTemplateId === 'none' || (rawHtmlTemplate && !rawHtmlTemplate.includes('{{'))) {
       if (overrides?.name !== undefined) {
         const newName = overrides.name;
-        const oldName = candidateName;
 
-        const replaceName = (content: string) => {
+        const replaceNameInBody = (content: string) => {
           if (!content) return content;
-          if (oldName && oldName.trim() && content.includes(oldName.trim())) {
-            return content.split(oldName.trim()).join(newName.trim() || '[Employee Name]');
+          let res = content
+            .replace(/\[(Employee Name|Candidate Name|Recipient Name|Candidate|Employee|Name)\]/gi, newName.trim() || '[Recipient Name]')
+            .replace(/{{(candidateName|name|employeeName)}}/g, newName.trim() || '[Recipient Name]');
+
+          if (newName.trim()) {
+            // Safely update salutations like "<p>Dear ...," or "Dear ...," without touching any regular words in the body
+            res = res.replace(/(<(?:p|div|span)[^>]*>\s*(?:Dear|Hi|Hello)\s+)[^,<]+([,\n<])/im, `$1${newName.trim()}$2`);
+            res = res.replace(/^(Dear|Hi|Hello)\s+[^,\n]+([,\n])/im, `$1 ${newName.trim()}$2`);
           }
-          return content
-            .replace(/\[(Employee Name|Candidate Name|Recipient Name|Candidate|Employee)\]/gi, newName.trim() || '[Employee Name]')
-            .replace(/{{(candidateName|name|employeeName)}}/g, newName.trim() || '[Employee Name]');
+          return res;
         };
 
-        setPlainText(prev => replaceName(prev));
-        setHtmlBody(prev => replaceName(prev));
-        setSubject(prev => replaceName(prev));
+        setPlainText(prev => replaceNameInBody(prev));
+        setHtmlBody(prev => replaceNameInBody(prev));
+        // In subject, only replace explicit placeholder variables, never words
+        setSubject(prev => prev
+          .replace(/\[(Employee Name|Candidate Name|Recipient Name|Candidate|Employee|Name)\]/gi, newName.trim() || '')
+          .replace(/{{(candidateName|name|employeeName)}}/g, newName.trim() || '')
+        );
         setPreviewRenderId(prev => prev + 1);
       }
       return;
