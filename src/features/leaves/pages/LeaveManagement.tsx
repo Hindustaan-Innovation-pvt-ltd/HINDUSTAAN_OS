@@ -372,9 +372,10 @@ export default function LeaveManagement() {
 
   const onSubmitLeave = (leave: {
     type: string;
+    customType?: string;
     emergencyContact: string;
     startDate: string;
-    endDate: string;
+    endDate?: string;
     reason: string;
   }) => {
     const typeMapping: Record<string, string> = {
@@ -382,15 +383,17 @@ export default function LeaveManagement() {
       sick: "Sick",
       wfh: "Casual",
       half: "Casual",
-      emergency: "Unpaid"
+      emergency: "Unpaid",
+      other: "Casual"
     };
 
     const type = typeMapping[leave.type] || "Casual";
 
     api.post('/leaves', {
       type,
+      customType: leave.customType,
       startDate: new Date(leave.startDate).toISOString(),
-      endDate: new Date(leave.endDate).toISOString(),
+      endDate: leave.endDate ? new Date(leave.endDate).toISOString() : new Date(leave.startDate).toISOString(),
       reason: leave.reason
     }).then((res: any) => {
       if (res.data?.success) {
