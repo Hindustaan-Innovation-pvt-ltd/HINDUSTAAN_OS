@@ -29,7 +29,7 @@ import api from '@/lib/api';
 // Comprehensive Default Data for Search Fallback & Merging
 const DEFAULT_PROJECTS = [
   { id: 'p1', title: 'Crime Prediction System', status: 'Ongoing', type: 'Project' },
-  { id: 'p2', title: 'Project OS Dashboard', status: 'In Progress', type: 'Project' },
+  { id: 'p2', title: 'Hindustaan Innovation Dashboard', status: 'In Progress', type: 'Project' },
   { id: 'p3', title: 'Authentication Flow', status: 'Blocked', type: 'Project' },
   { id: 'p4', title: 'Hindustaan OS Platform', status: 'Ongoing', type: 'Project' },
   { id: 'p5', title: 'AI Analytics Engine', status: 'In Progress', type: 'Project' },
@@ -42,7 +42,7 @@ const DEFAULT_TASKS = [
   { id: 't1', title: 'Design Login Screen', assignee: 'Tanvy Pandey', status: 'Due Tomorrow', priority: 'High', type: 'Task' },
   { id: 't2', title: 'Build Dashboard UI', assignee: 'Amanda Smith', status: 'In Progress', priority: 'Normal', type: 'Task' },
   { id: 't3', title: 'Setup Kanban Board', assignee: 'Rahul Sharma', status: 'Done', priority: 'Low', type: 'Task' },
-  { id: 't4', title: 'Implement Standup Filter', assignee: 'Bhupesh Dewangan', status: 'In Progress', priority: 'High', type: 'Task' },
+  { id: 't4', title: 'Implement Analytics Filter', assignee: 'Bhupesh Dewangan', status: 'In Progress', priority: 'High', type: 'Task' },
   { id: 't5', title: 'Optimize Database Queries', assignee: 'Rahul Sharma', status: 'In Progress', priority: 'High', type: 'Task' },
   { id: 't6', title: 'QA Regression Testing', assignee: 'Riya Sharma', status: 'Due in 3 days', priority: 'Normal', type: 'Task' },
   { id: 't7', title: 'CI/CD Pipeline Setup', assignee: 'Karan Patel', status: 'Done', priority: 'Normal', type: 'Task' },
@@ -60,24 +60,15 @@ const DEFAULT_MEMBERS = [
   { id: 'u8', name: 'Karan Patel', role: 'DevOps Intern', department: 'Infrastructure', type: 'Team Member' },
 ];
 
-const DEFAULT_STANDUPS = [
-  { id: 's1', user: 'Bhupesh Dewangan', date: 'Today', summary: 'Implemented dashboard filter and standup search', type: 'Standup' },
-  { id: 's2', user: 'Tanvy Pandey', date: 'Today', summary: 'Worked on login UI and authentication flow', type: 'Standup' },
-  { id: 's3', user: 'Amanda Smith', date: 'Today', summary: 'Designed user profile layouts and design system', type: 'Standup' },
-  { id: 's4', user: 'Rahul Sharma', date: 'Yesterday', summary: 'Built REST API endpoints for attendance logs', type: 'Standup' },
-  { id: 's5', user: 'Anchal', date: 'Yesterday', summary: 'Reviewed milestone progress and quarterly roadmap', type: 'Standup' },
-  { id: 's6', user: 'Ayush', date: 'Today', summary: 'Fixed responsive layout bugs on mobile devices', type: 'Standup' },
-];
-
 const DEFAULT_LOGS = [
-  { id: 'l1', user: 'Bhupesh Dewangan', task: 'Standup Module Enhancement', date: 'Today', type: 'Work Log' },
+  { id: 'l1', user: 'Bhupesh Dewangan', task: 'Task Module Enhancement', date: 'Today', type: 'Work Log' },
   { id: 'l2', user: 'Amanda Smith', task: 'Dashboard UI Layout', date: 'Yesterday', type: 'Work Log' },
   { id: 'l3', user: 'Tanvy Pandey', task: 'Authentication Flow Validation', date: 'Yesterday', type: 'Work Log' },
   { id: 'l4', user: 'Rahul Sharma', task: 'API Endpoint Refactoring', date: '2 days ago', type: 'Work Log' },
 ];
 
 const DEFAULT_MILESTONES = [
-  { id: 'm1', title: 'Phase 1 Complete', date: 'Jul 15, 2026', project: 'Project OS', type: 'Milestone' },
+  { id: 'm1', title: 'Phase 1 Complete', date: 'Jul 15, 2026', project: 'Hindustaan Innovation', type: 'Milestone' },
   { id: 'm2', title: 'MVP Release', date: 'Aug 1, 2026', project: 'Crime Prediction', type: 'Milestone' },
 ];
 
@@ -97,7 +88,7 @@ const RECENT_SEARCHES = [
   'MVP Complete'
 ];
 
-const FILTERS = ['All', 'Projects', 'Tasks', 'Team', 'Milestones', 'Work Logs', 'Standups'];
+const FILTERS = ['All', 'Projects', 'Tasks', 'Team', 'Milestones', 'Work Logs'];
 
 export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
   const [query, setQuery] = useState('');
@@ -108,7 +99,6 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
   const [projectsList, setProjectsList] = useState<any[]>(DEFAULT_PROJECTS);
   const [tasksList, setTasksList] = useState<any[]>(DEFAULT_TASKS);
   const [membersList, setMembersList] = useState<any[]>(DEFAULT_MEMBERS);
-  const [standupsList, setStandupsList] = useState<any[]>(DEFAULT_STANDUPS);
   const [logsList, setLogsList] = useState<any[]>(DEFAULT_LOGS);
 
   // Load live data from localStorage and API when modal opens
@@ -174,24 +164,6 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
         }
       }
 
-      const savedStandups = localStorage.getItem('hindustaan_standup_history') || localStorage.getItem('hindustaan_standups');
-      if (savedStandups) {
-        const parsed = JSON.parse(savedStandups);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const mapped = parsed.map((s: any, idx: number) => ({
-            id: s.id || `ls-${idx}`,
-            user: s.user || s.name || 'Intern',
-            date: s.dateGroup || s.date || 'Today',
-            summary: s.today || s.yesterday || s.summary || s.doing || 'Submitted standup update',
-            type: 'Standup'
-          }));
-          const existingUsers = new Set(mapped.map(m => m.user.toLowerCase()));
-          DEFAULT_STANDUPS.forEach(ds => {
-            if (!existingUsers.has(ds.user.toLowerCase())) mapped.push(ds);
-          });
-          setStandupsList(mapped);
-        }
-      }
 
       const savedLogs = localStorage.getItem('hindustaan_worklogs');
       if (savedLogs) {
@@ -261,23 +233,6 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
       }
     }).catch(() => {});
 
-    api.get('/standups/manager/sync').then(r => {
-      const historyArr = r.data && Array.isArray(r.data.history) ? r.data.history : (Array.isArray(r.data) ? r.data : null);
-      if (historyArr && historyArr.length > 0) {
-        const mapped = historyArr.map((s: any, idx: number) => ({
-          id: s.id || `as-${idx}`,
-          user: s.user || s.name || 'Intern',
-          date: s.dateGroup || s.date || 'Today',
-          summary: s.today || s.yesterday || s.summary || s.doing || 'Submitted standup update',
-          type: 'Standup'
-        }));
-        const users = new Set(mapped.map((m: any) => m.user.toLowerCase()));
-        DEFAULT_STANDUPS.forEach(ds => {
-          if (!users.has(ds.user.toLowerCase())) mapped.push(ds);
-        });
-        setStandupsList(mapped);
-      }
-    }).catch(() => {});
   }, [open]);
 
   // Debounce logic
@@ -324,7 +279,6 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
     members: filterResults(membersList, 'Team'),
     milestones: filterResults(DEFAULT_MILESTONES, 'Milestones'),
     deadlines: filterResults(DEFAULT_DEADLINES, 'All'),
-    standups: filterResults(standupsList, 'Standups'),
     logs: filterResults(logsList, 'Work Logs'),
     notifications: filterResults(DEFAULT_NOTIFICATIONS, 'All'),
   };
@@ -488,21 +442,6 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean, onOpenChan
               </CommandGroup>
             )}
 
-            {results.standups.length > 0 && (
-              <CommandGroup heading="📝 Standups" className="px-2 font-semibold mt-2">
-                {results.standups.map(s => (
-                  <CommandItem key={s.id} className="flex items-center gap-3 p-3 cursor-pointer rounded-xl data-[selected=true]:bg-slate-50 dark:data-[selected=true]:bg-slate-900 transition-colors">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                      <FileText className="h-4 w-4" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold text-slate-900 dark:text-white">{s.user} • {s.date}</span>
-                      <span className="text-xs font-medium text-slate-500">{s.summary}</span>
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
             
             {results.logs.length > 0 && (
               <CommandGroup heading="⏱ Work Logs" className="px-2 font-semibold mt-2">

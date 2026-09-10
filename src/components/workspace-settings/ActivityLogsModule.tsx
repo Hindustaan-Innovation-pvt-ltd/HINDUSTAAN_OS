@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { 
   FileText, CheckCircle2, AlertCircle, Clock, Search, RefreshCw, Download, 
-  FileSpreadsheet, Filter, ChevronLeft, ChevronRight, Activity, Shield, Globe, Laptop, Server, AlertTriangle
+  FileSpreadsheet, Filter, ChevronLeft, ChevronRight, Activity, Shield, Globe, Laptop, Server, AlertTriangle, Wifi
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -55,12 +55,12 @@ export interface LogStats {
 
 const MODULE_OPTIONS = [
   "All",
+  "Attendance",
   "Authentication",
   "User Management",
   "Task Management",
   "Project Management",
   "Work Logs",
-  "Daily Standups",
   "Notifications",
   "Workspace Settings",
   "API Activity",
@@ -282,6 +282,7 @@ export const ActivityLogsModule: React.FC = () => {
 
   const getModuleColor = (module: string) => {
     switch (module) {
+      case 'Attendance': return 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/50';
       case 'Authentication': return 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/50';
       case 'Task Management': return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/50';
       case 'Project Management': return 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-800/50';
@@ -631,7 +632,8 @@ export const ActivityLogsModule: React.FC = () => {
                           {log.device === 'Mobile' ? <Laptop className="h-3 w-3 text-orange-500 shrink-0" /> : <Globe className="h-3 w-3 text-blue-500 shrink-0" />}
                           <span className="truncate">{log.browser || "Unknown"}</span>
                         </span>
-                        <span className="text-[10px] text-slate-400 font-mono truncate">
+                        <span className="text-[10px] text-slate-400 font-mono truncate flex items-center gap-1">
+                          {log.module === 'Attendance' && <Wifi className="h-2.5 w-2.5 text-emerald-500 shrink-0" />}
                           {log.ipAddress || "N/A"}
                         </span>
                       </div>
@@ -774,8 +776,10 @@ export const ActivityLogsModule: React.FC = () => {
               {/* Device & Network Fingerprint */}
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                 <div>
-                  <span className="font-bold text-slate-400 block">IP Address</span>
-                  <span className="font-mono text-slate-800 dark:text-slate-200">{selectedLog.ipAddress || "Unknown"}</span>
+                  <span className="font-bold text-slate-400 block flex items-center gap-1">
+                    <Wifi className="h-3 w-3 text-indigo-500" /> IP Address
+                  </span>
+                  <span className="font-mono text-xs font-bold text-slate-900 dark:text-white">{selectedLog.ipAddress || "Unknown"}</span>
                 </div>
                 <div>
                   <span className="font-bold text-slate-400 block">Browser</span>

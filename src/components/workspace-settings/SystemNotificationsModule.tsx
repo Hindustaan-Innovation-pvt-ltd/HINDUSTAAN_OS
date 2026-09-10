@@ -35,7 +35,7 @@ const INITIAL_SYSTEM_NOTIFICATIONS: SystemNotification[] = [
   {
     id: 'sys-notif-2',
     title: 'Scheduled System Maintenance',
-    description: 'Project OS services will undergo database server maintenance on Sunday, July 19, between 02:00 AM and 04:00 AM IST.',
+    description: 'Hindustaan Innovation services will undergo database server maintenance on Sunday, July 19, between 02:00 AM and 04:00 AM IST.',
     type: 'System Maintenance',
     priority: 'High',
     timestamp: '2026-07-13 18:00',
@@ -45,7 +45,7 @@ const INITIAL_SYSTEM_NOTIFICATIONS: SystemNotification[] = [
   {
     id: 'sys-notif-3',
     title: 'New Integration: Slack Sync',
-    description: 'You can now connect slack to sync task updates and employee standup reminders.',
+    description: 'You can now connect slack to sync task updates and team reminders.',
     type: 'Feature Updates',
     priority: 'Low',
     timestamp: '2026-07-12 11:30',

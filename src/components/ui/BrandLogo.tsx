@@ -1,40 +1,104 @@
 import React from 'react';
 import { cn } from "@/lib/utils";
 
-interface BrandLogoProps {
-  variant?: 'auth' | 'sidebar' | 'minimized';
+import brandLogoImg from '@/assets/Frame 134.png';
+import { useTheme } from '@/context/ThemeContext';
+
+export interface BrandLogoProps {
+  variant?: 'auth' | 'sidebar' | 'minimized' | 'auth-horizontal';
+  subtitle?: string;
   className?: string;
+  showContainerInLight?: boolean;
 }
 
-export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'sidebar', className }) => {
+export const BrandLogo: React.FC<BrandLogoProps> = ({ 
+  variant = 'sidebar', 
+  subtitle,
+  className,
+  showContainerInLight = true
+}) => {
   const isAuth = variant === 'auth';
+  const isAuthHorizontal = variant === 'auth-horizontal';
   const isMinimized = variant === 'minimized';
-  
+
+  let isLight = false;
+  try {
+    const themeContext = useTheme();
+    isLight = themeContext.theme === 'light';
+  } catch {
+    isLight = typeof document !== 'undefined' && !document.documentElement.classList.contains('dark');
+  }
+
+  // Horizontal layout: Logo on the left under container, workspace portal & brand on the right
+  if (isAuthHorizontal) {
+    return (
+      <div className={cn("flex items-center gap-3.5 select-none", className)}>
+        {/* Prominent container in light mode according to theme */}
+        <div className={cn(
+          "relative shrink-0 flex items-center justify-center p-2.5 sm:p-3 rounded-2xl transition-all duration-300",
+          // Light mode: deep obsidian slate with subtle orange accent ring & shadow for maximum prominence
+          "bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border border-slate-800/90 shadow-xl shadow-slate-950/25 ring-1 ring-orange-500/20",
+          // Dark mode: seamless integration with deep dark theme
+          "dark:bg-slate-950/90 dark:border-slate-800 dark:ring-white/10 dark:shadow-md"
+        )}>
+          <img 
+            src={brandLogoImg} 
+            alt="Hindustaan Innovations Logo" 
+            className="h-10 sm:h-11 w-auto max-w-[44px] object-contain"
+          />
+        </div>
+
+        {/* Brand & Portal Text beside the logo */}
+        <div className="flex flex-col text-left">
+          <span className="font-black text-xl sm:text-2xl tracking-tight font-sans bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-600 to-green-600 dark:from-orange-400 dark:via-orange-500 dark:to-green-500 leading-tight whitespace-nowrap">
+            Hindustaan Innovations
+          </span>
+          {subtitle && (
+            <p className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 mt-0.5 tracking-wide">
+              {subtitle}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn(
       "flex items-center bg-transparent border-none shadow-none select-none", 
       isAuth ? "flex-col items-center text-center" : "flex-row",
       className
     )}>
-      <div className="relative flex items-center justify-center drop-shadow-md dark:drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]">
+      <div className={cn(
+        "relative flex items-center justify-center transition-all duration-200",
+        isAuth && "p-3 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border border-slate-800/90 shadow-xl shadow-slate-950/25 ring-1 ring-orange-500/20 dark:bg-slate-950/90 dark:border-slate-800 dark:ring-white/10 dark:shadow-md",
+        !isAuth && isLight && showContainerInLight && "p-1.5 rounded-xl bg-slate-950 border border-slate-800 shadow-sm"
+      )}>
         <img 
-          src="/project-os-logo-new.png" 
-          alt="Project OS Logo" 
+          src={brandLogoImg} 
+          alt="Hindustaan Innovation Logo" 
           className={cn(
             "object-contain transition-all duration-200",
-            isAuth ? "h-24 w-auto max-w-[250px]" : "h-9 w-auto max-w-[150px]"
+            isAuth ? "h-14 w-auto max-w-[140px]" : "h-8.5 w-auto max-w-[120px]"
           )}
         />
       </div>
       {!isMinimized && (
-        <span className={cn(
-          "font-black tracking-tight font-sans transition-all duration-200 whitespace-nowrap",
-          isAuth 
-            ? "text-3xl mt-3 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-600 to-green-600 dark:from-orange-400 dark:via-orange-500 dark:to-green-500 drop-shadow-sm" 
-            : "text-xl ml-3 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-600 to-green-600 dark:from-orange-400 dark:via-orange-500 dark:to-green-500 drop-shadow-sm"
-        )}>
-          Project OS
-        </span>
+        <div className={cn("flex flex-col", isAuth ? "items-center text-center mt-3" : "text-left ml-3")}>
+          <span className={cn(
+            "font-black tracking-tight font-sans transition-all duration-200 whitespace-nowrap",
+            isAuth 
+              ? "text-3xl bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-600 to-green-600 dark:from-orange-400 dark:via-orange-500 dark:to-green-500 drop-shadow-sm" 
+              : "text-xl bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-600 to-green-600 dark:from-orange-400 dark:via-orange-500 dark:to-green-500 drop-shadow-sm"
+          )}>
+            Hindustaan Innovations
+          </span>
+          {subtitle && (
+            <p className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 mt-0.5 tracking-wide">
+              {subtitle}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

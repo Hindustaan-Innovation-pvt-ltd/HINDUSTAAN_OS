@@ -67,7 +67,7 @@ export default function Subscriptions() {
       features: [
         'Up to 150 active workspace seats',
         '500 GB high-speed SSD storage',
-        'Advanced contribution score logic',
+        'Advanced milestone & performance metrics',
         'SSO & Multi-factor enforcement',
         '24/7 dedicated response manager',
         'Custom export workflows (CSV/PDF)'

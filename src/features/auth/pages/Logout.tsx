@@ -71,7 +71,7 @@ export default function Logout() {
           </h1>
 
           <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed mb-6">
-            You have been successfully and securely logged out of your <span className="font-semibold text-slate-800 dark:text-slate-200">Hindustaan Project OS</span> workspace.
+            You have been successfully and securely logged out of your <span className="font-semibold text-slate-800 dark:text-slate-200">Hindustaan Innovation</span> workspace.
           </p>
 
           {/* Security Features Check Box */}
@@ -125,7 +125,7 @@ export default function Logout() {
 
         {/* Footer Note */}
         <p className="mt-8 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
-          &copy; {new Date().getFullYear()} Hindustaan Project OS. All rights reserved.
+          &copy; {new Date().getFullYear()} Hindustaan Innovation. All rights reserved.
         </p>
       </div>
 

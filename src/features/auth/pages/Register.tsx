@@ -113,7 +113,7 @@ export default function Register() {
         <div className="hidden lg:flex flex-col justify-center w-[45%] xl:w-[50%] p-12 xl:p-24 border-r border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-sm z-10">
           <div className="max-w-xl">
             <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 whitespace-nowrap">
-              Welcome to <span className="text-transparent bg-clip-text bg-linear-to-r from-orange-500 to-green-600">Project OS</span>
+              Welcome to <span className="text-transparent bg-clip-text bg-linear-to-r from-orange-500 to-green-600">Hindustaan Innovation</span>
             </h1>
 
             <p className="text-lg text-slate-600 dark:text-slate-400 mb-12 max-w-md font-medium leading-relaxed">
@@ -393,15 +393,15 @@ export default function Register() {
       <Dialog open={showTerms} onOpenChange={setShowTerms}>
         <DialogContent className="sm:max-w-125 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-800 shadow-2xl rounded-3xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Project OS Terms & Conditions</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Hindustaan Innovation Terms & Conditions</DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
             <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">1.</span> Employees must use valid company information while creating an account.</p>
             <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">2.</span> User credentials are confidential and must not be shared.</p>
-            <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">3.</span> The platform tracks tasks, work logs, attendance, standups, and project activity.</p>
+            <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">3.</span> The platform tracks tasks, work logs, attendance, and project activity.</p>
             <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">4.</span> Any misuse of company data may lead to account suspension.</p>
             <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">5.</span> Managers have access to team management features.</p>
-            <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">6.</span> Project OS stores profile information securely.</p>
+            <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">6.</span> Hindustaan Innovation stores profile information securely.</p>
             <p className="flex items-start"><span className="mr-2 font-bold text-orange-500">7.</span> Users agree to receive OTP emails and system notifications.</p>
           </div>
           <div className="flex justify-end space-x-3 mt-2">

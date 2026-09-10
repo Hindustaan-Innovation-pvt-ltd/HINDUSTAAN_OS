@@ -60,17 +60,14 @@ const INITIAL_NOTIFICATIONS = [
   },
   {
     id: 4,
-    category: 'Standups',
-    icon: '📝',
-    title: 'Standup Reminder',
-    message: "Don't forget to submit today's standup.",
+    category: 'Tasks',
+    icon: '🚀',
+    title: 'Milestone Progress',
+    message: 'Sprint 2 milestone is 80% complete.',
     time: '3 hours ago',
     unread: true,
     group: 'Today',
     priority: 'Important' as Priority,
-    actions: [
-      { label: 'Submit Now', primary: true }
-    ]
   },
   {
     id: 5,
@@ -87,8 +84,8 @@ const INITIAL_NOTIFICATIONS = [
     id: 6,
     category: 'All', // General
     icon: '🏆',
-    title: 'Contribution Update',
-    message: 'Your contribution score increased to 91%.',
+    title: 'Performance Update',
+    message: 'Weekly task completion rate increased to 91%.',
     time: 'Yesterday',
     unread: false,
     group: 'Yesterday',
@@ -124,7 +121,7 @@ const INITIAL_NOTIFICATIONS = [
     category: 'All', // General
     icon: '📅',
     title: 'Meeting Reminder',
-    message: 'Frontend Standup starts in 10 minutes.',
+    message: 'Frontend Team Sync starts in 10 minutes.',
     time: '2 days ago',
     unread: false,
     group: 'Earlier',
@@ -303,8 +300,8 @@ export function EmployeeNotificationCenter() {
           </div>
           
           <Tabs defaultValue="All" onValueChange={setActiveTab}>
-            <TabsList className="h-8 w-full bg-slate-200/50 dark:bg-slate-800 p-0.5 grid grid-cols-4 gap-1 rounded-lg">
-              {['All', 'Tasks', 'Work Logs', 'Standups'].map(tab => (
+            <TabsList className="h-8 w-full bg-slate-200/50 dark:bg-slate-800 p-0.5 grid grid-cols-3 gap-1 rounded-lg">
+              {['All', 'Tasks', 'Work Logs'].map(tab => (
                 <TabsTrigger 
                   key={tab} 
                   value={tab}

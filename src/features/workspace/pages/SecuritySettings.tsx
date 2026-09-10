@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Shield, Key, Fingerprint, Lock, Unlock, Smartphone, MapPin, Search, AlertTriangle, LogOut, CheckCircle2, MonitorSmartphone, Clock, Activity, Users, Settings2, Globe, Building2, Download, Settings } from 'lucide-react';
+import { Shield, Key, Fingerprint, Lock, Unlock, Smartphone, MapPin, Search, AlertTriangle, LogOut, CheckCircle2, MonitorSmartphone, Clock, Activity, Users, Settings2, Globe, Building2, Download, Settings, Wifi } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -67,6 +67,7 @@ export default function SecuritySettings({ session }: { session?: any }) {
 
   const [officeHoursStart, setOfficeHoursStart] = useState<string>('09:00 AM');
   const [officeHoursEnd, setOfficeHoursEnd] = useState<string>('07:00 PM');
+  const [officeWifiIps, setOfficeWifiIps] = useState<string>('127.0.0.1, ::1, 192.168.1.1');
 
   const fetchSecurityConfig = async () => {
     try {
@@ -81,6 +82,9 @@ export default function SecuritySettings({ session }: { session?: any }) {
         setPasswordLength(String(config.passwordLength || 8));
         if (config.officeHoursStart) setOfficeHoursStart(config.officeHoursStart);
         if (config.officeHoursEnd) setOfficeHoursEnd(config.officeHoursEnd);
+        if (Array.isArray(config.ipWhitelist) && config.ipWhitelist.length > 0) {
+          setOfficeWifiIps(config.ipWhitelist.join(', '));
+        }
         
         const mins = config.sessionTimeoutMins || 60;
         let timeoutStr = '1 Hour';
@@ -118,13 +122,18 @@ export default function SecuritySettings({ session }: { session?: any }) {
       else if (authSettings.sessionTimeout === '8 Hours') sessionTimeoutMins = 480;
 
       const mfaRequired = mfaSettings.admin || mfaSettings.manager || mfaSettings.employee;
+      const parsedIps = officeWifiIps
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
 
       await api.put('/settings/security', {
         mfaRequired,
         passwordLength: parseInt(passwordLength, 10),
         sessionTimeoutMins,
         officeHoursStart,
-        officeHoursEnd
+        officeHoursEnd,
+        ipWhitelist: parsedIps
       });
       toast.success("Security policies saved successfully.");
       fetchSecurityConfig();
@@ -597,6 +606,26 @@ export default function SecuritySettings({ session }: { session?: any }) {
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Allowed Domains</label>
                   <Input defaultValue="hindustaan.in" className="bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 rounded-xl" />
                 </div>
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <Wifi className="w-3.5 h-3.5 text-indigo-500" />
+                      Office Wi-Fi / Check-In IP Restrictions
+                    </label>
+                    <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold">
+                      Required for Check-In
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Comma-separated allowed Office Wi-Fi IPs, subnets (e.g. 192.168.1.0/24), or wildcards. Employees can only check in from these networks.
+                  </p>
+                  <Input 
+                    value={officeWifiIps} 
+                    onChange={(e) => setOfficeWifiIps(e.target.value)}
+                    placeholder="e.g. 192.168.1.1, 192.168.1.0/24, 127.0.0.1" 
+                    className="bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 rounded-xl font-mono text-xs" 
+                  />
+                </div>
                 <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800/80 space-y-3.5">
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -642,7 +671,7 @@ export default function SecuritySettings({ session }: { session?: any }) {
                     size="sm"
                     className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md shadow-indigo-500/10"
                   >
-                    {saving ? 'Saving...' : 'Save Office Hours'}
+                    {saving ? 'Saving...' : 'Save Security Rules'}
                   </Button>
                 </div>
               </div>

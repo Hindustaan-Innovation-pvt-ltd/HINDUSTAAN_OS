@@ -399,35 +399,34 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
       return;
     }
 
-    const allUsers = getRegisteredUsers();
-    if (allUsers.some(u => u.email.toLowerCase() === formEmail.toLowerCase())) {
-      toast.error('User with this email already exists.');
-      return;
-    }
+    const targetRole = showOnlyRole === 'manager' ? 'manager' : (formRole === 'manager' ? 'manager' : 'intern');
+    const defaultPassword = showOnlyRole === 'manager' ? 'Manager@123' : 'Employee@123';
+    const chosenPassword = formPassword.trim() || defaultPassword;
 
-    const newUser: User = {
-      id: formId.trim() || (showOnlyRole === 'manager' 
-        ? `MGR${Math.floor(100 + Math.random() * 900)}` 
-        : `EMP${Math.floor(100 + Math.random() * 900)}`),
-      name: formName.trim(),
-      email: formEmail.trim().toLowerCase(),
-      role: (showOnlyRole === 'manager' ? 'manager' : 'employee') as any,
-      department: formDept,
-      designation: formDesig.trim() || (showOnlyRole === 'manager' ? 'Product Manager' : 'Frontend Developer'),
-      phone: formPhone.trim() || undefined,
-      password: formPassword.trim() || (showOnlyRole === 'manager' ? 'Manager@123' : 'Employee@123'),
-      isActive: true,
-      reportingManager: showOnlyRole === 'manager' ? 'None' : formManager
-    };
+    try {
+      const res = await api.post('/admin/users', {
+        name: formName.trim(),
+        email: formEmail.trim().toLowerCase(),
+        password: chosenPassword,
+        role: targetRole,
+        department: formDept,
+        designation: formDesig.trim() || (targetRole === 'manager' ? 'Team Manager' : 'Intern Developer'),
+        phoneWa: formPhone.trim() || undefined,
+        empId: formId.trim() || undefined
+      });
 
-    const success = await registerUser(newUser);
-    if (success) {
-      toast.success(`User "${formName}" created successfully!`);
-      setIsCreateOpen(false);
-      resetForm();
-      refreshUsers();
-    } else {
-      toast.error('Failed to create user account.');
+      if (res.data?.success) {
+        toast.success(`User "${formName}" created successfully!`);
+        setIsCreateOpen(false);
+        resetForm();
+        refreshUsers();
+      } else {
+        toast.error(res.data?.message || 'Failed to create user account.');
+      }
+    } catch (err: any) {
+      console.error('Failed to create user:', err);
+      const msg = err.response?.data?.message || err.message || 'Failed to create user account.';
+      toast.error(msg);
     }
   };
 
@@ -579,7 +578,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   const pendingNotifications = notifications.filter((n: any) => n.unread).length;
 
 
-  const departments = ['Engineering', 'Product', 'HR', 'Marketing', 'Sales', 'IT'];
+  const departments = ['Engineering', 'Operations', 'HR', 'Marketing', 'Sales'];
 
   const filteredUsers = usersList.filter(u => {
     const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -1000,7 +999,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                                 <div className={cn("h-2.5 w-2.5 rounded-full", project.status === 'Completed' ? 'bg-emerald-500' : project.status === 'On Hold' ? 'bg-amber-500' : 'bg-blue-555')} />
                                     <span className="text-xs font-bold text-slate-800 dark:text-slate-202">{project.name}</span>
                               </div>
-                              <p className="text-[10px] text-slate-405 font-bold mt-1">Deadline: {project.deadline || 'Dec 15'}</p>
+                              <p className="text-[10px] text-slate-405 font-bold mt-1">Deadline: {project.deadline || 'TBD'}</p>
                             </div>
                             <Badge variant="outline" className="text-[9px] font-black uppercase rounded dark:border-slate-808 dark:text-slate-455">{project.status}</Badge>
                           </div>
@@ -1187,6 +1186,18 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
             </p>
           </div>
           
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => {
+                resetForm();
+                setIsCreateOpen(true);
+              }}
+              className="bg-orange-600 hover:bg-orange-700 text-white font-bold h-10 px-4 rounded-xl shadow-sm flex items-center gap-2"
+            >
+              <UserPlus className="w-4 h-4" />
+              {showOnlyRole === 'manager' ? 'Create Manager' : showOnlyRole === 'employee' ? 'Create Intern' : 'Add Account'}
+            </Button>
+          </div>
 
         </div>
 
@@ -1345,6 +1356,17 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     Showing {filteredUsers.length} of {usersList.filter(u => u.role === showOnlyRole).length} registered {showOnlyRole === 'manager' ? 'managers' : 'interns'}.
                   </p>
                 </div>
+                <Button
+                  onClick={() => {
+                    resetForm();
+                    setIsCreateOpen(true);
+                  }}
+                  size="sm"
+                  className="bg-orange-600 hover:bg-orange-700 text-white font-bold h-9 px-3.5 rounded-xl shadow-sm flex items-center gap-1.5"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  {showOnlyRole === 'manager' ? 'Add Manager' : 'Add Intern'}
+                </Button>
               </CardHeader>
               <CardContent className="p-0 overflow-x-auto">
                 <table className="w-full text-sm text-left">
@@ -1511,10 +1533,10 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
         <DialogContent className="sm:max-w-120 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
           <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/30">
             <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
-              {showOnlyRole === 'manager' ? 'Create Manager Account' : 'Create Intern Account'}
+              {showOnlyRole === 'manager' ? 'Create Manager Account' : 'Create User Account'}
             </DialogTitle>
             <DialogDescription className="text-xs font-semibold text-slate-450">
-              {showOnlyRole === 'manager' ? 'Initialize a new secure cohort manager profile.' : 'Initialize a new secure cohort intern profile.'}
+              Provision an active account with login credentials. The user will log in directly using this email & password.
             </DialogDescription>
           </DialogHeader>
           
@@ -1547,12 +1569,23 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">System Role</label>
-                  <input
-                    type="text"
-                    readOnly
-                    value={showOnlyRole === 'manager' ? 'Manager' : 'Intern'}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm font-semibold text-slate-500 dark:text-slate-400 cursor-not-allowed focus:outline-none"
-                  />
+                  {showOnlyRole ? (
+                    <input
+                      type="text"
+                      readOnly
+                      value={showOnlyRole === 'manager' ? 'Manager' : 'Intern'}
+                      className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm font-semibold text-slate-500 dark:text-slate-400 cursor-not-allowed focus:outline-none"
+                    />
+                  ) : (
+                    <select
+                      value={formRole}
+                      onChange={(e) => setFormRole(e.target.value as any)}
+                      className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer"
+                    >
+                      <option value="manager">Manager</option>
+                      <option value="intern">Intern / Employee</option>
+                    </select>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -1574,26 +1607,10 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     type="text"
                     value={formDesig}
                     onChange={(e) => setFormDesig(e.target.value)}
-                    placeholder="E.g. Frontend Lead"
+                    placeholder="E.g. Engineering Lead"
                     className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
                   />
                 </div>
-
-                {showOnlyRole !== 'manager' && (
-                  <div className="space-y-1.5 col-span-2">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Reporting Manager</label>
-                    <select
-                      value={formManager}
-                      onChange={(e) => setFormManager(e.target.value)}
-                      className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/55 cursor-pointer"
-                    >
-                      <option value="None">None</option>
-                      {activeManagersList.map(m => (
-                        <option key={m.name} value={m.name}>{m.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Phone</label>
@@ -1606,15 +1623,18 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Password</label>
+                <div className="space-y-1.5 col-span-2">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Account Password *</label>
                   <input
-                    type="password"
+                    type="text"
                     value={formPassword}
                     onChange={(e) => setFormPassword(e.target.value)}
-                    placeholder={showOnlyRole === 'manager' ? 'Default: Manager@123' : 'Default: Employee@123'}
+                    placeholder={showOnlyRole === 'manager' || formRole === 'manager' ? 'Default: Manager@123' : 'Default: Employee@123'}
                     className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
                   />
+                  <p className="text-[11px] text-slate-400">
+                    Set a password for this user (or leave empty to default to {showOnlyRole === 'manager' || formRole === 'manager' ? 'Manager@123' : 'Employee@123'}).
+                  </p>
                 </div>
             </div>
             </div>

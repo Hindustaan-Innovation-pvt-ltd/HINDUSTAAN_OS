@@ -15,6 +15,26 @@ type ProjectContextType = {
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
+export const formatToMMDDYYYY = (dateVal: any): string => {
+  if (!dateVal || dateVal === 'TBD') return 'TBD';
+  if (typeof dateVal === 'string') {
+    const trimmed = dateVal.trim();
+    if (/^\d{2}-\d{2}-\d{4}$/.test(trimmed)) return trimmed;
+    if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+      const parts = trimmed.split('T')[0].split('-');
+      if (parts.length === 3) {
+        return `${parts[1]}-${parts[2]}-${parts[0]}`;
+      }
+    }
+  }
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return typeof dateVal === 'string' ? dateVal : 'TBD';
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${mm}-${dd}-${yyyy}`;
+};
+
 export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +62,8 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     else if (p.status === 'on_hold') frontendStatus = 'On Hold';
     else if (p.status === 'not_started') frontendStatus = 'Not Started';
 
+    const rawDeadline = p.endDate || p.deadline;
+
     return {
       id: p.id,
       name: p.name,
@@ -50,31 +72,43 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       strokeColor: color.strokeColor,
       manager: p.manager?.name || (typeof p.manager === 'string' ? p.manager : 'Unassigned'),
       managerId: p.managerId || '',
-      deadline: p.deadline && p.deadline !== 'TBD' ? new Date(p.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) :
-                p.endDate ? new Date(p.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD',
+      deadline: rawDeadline ? formatToMMDDYYYY(rawDeadline) : 'TBD',
       endDate: p.endDate ? new Date(p.endDate).toISOString().split('T')[0] : 
                (p.deadline && p.deadline !== 'TBD' && !isNaN(Date.parse(p.deadline)) ? new Date(p.deadline).toISOString().split('T')[0] : ''),
-      budget: p.budget && p.budget !== 'TBD' ? (p.budget.startsWith('₹') ? p.budget : `₹${p.budget.replace('$', '')}`) : 'TBD',
       progress,
       milestones: (p.milestones || []).map((m: any) => ({
         id: m.id,
         title: m.name,
         status: m.status || 'pending',
-        date: m.dueDate ? new Date(m.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD'
+        date: m.dueDate ? formatToMMDDYYYY(m.dueDate) : 'TBD'
       })),
-      tasks: (p.tasks || []).map((t: any) => ({
-        id: t.id,
-        title: t.title,
-        description: t.desc || '',
-        status: t.status === 'done' || t.status === 'completed' ? 'Done' :
-                t.status === 'in-progress' ? 'In Progress' :
-                t.status === 'in-review' ? 'In Review' : 'To Do',
-        assignee_name: t.assignee?.name || 'Unassigned',
-        assignee_id: t.assigneeId || 'unassigned',
-        priority: t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Medium',
-        due_date: t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : '',
-        start_date: t.startDate ? new Date(t.startDate).toISOString().split('T')[0] : ''
-      }))
+      tasks: (p.tasks || []).map((t: any) => {
+        const assignees = t.assignees || [];
+        const firstAssignee = assignees[0]?.user || assignees[0] || t.assignee || {};
+        const assigneeName = firstAssignee.name || t.assignee_name || (typeof t.assignee === 'string' ? t.assignee : 'Unassigned');
+        const assigneeId = firstAssignee.id || firstAssignee.userId || t.assigneeId || 'unassigned';
+        
+        const rawStatus = (t.status || '').toLowerCase().replace(/[\s_-]+/g, '');
+        const normalizedStatus = 
+          rawStatus === 'done' || rawStatus === 'completed' ? 'Done' :
+          rawStatus === 'inprogress' ? 'In Progress' :
+          rawStatus === 'inreview' ? 'In Review' : 'To Do';
+
+        return {
+          id: t.id,
+          title: t.title,
+          description: t.desc || t.description || '',
+          status: normalizedStatus,
+          assignee: assigneeName,
+          assignee_name: assigneeName,
+          assignee_id: assigneeId,
+          priority: (t.priority || '').toLowerCase() === 'high' ? 'High' : 
+                    (t.priority || '').toLowerCase() === 'low' ? 'Low' : 'Medium',
+          due_date: t.dueDate ? formatToMMDDYYYY(t.dueDate) : '',
+          start_date: t.startDate ? formatToMMDDYYYY(t.startDate) : '',
+          executionDate: t.dueDate ? formatToMMDDYYYY(t.dueDate) : (t.startDate ? formatToMMDDYYYY(t.startDate) : '')
+        };
+      })
     };
   };
 
@@ -101,6 +135,20 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     } else {
       setLoading(false);
     }
+
+    const handleUpdate = () => {
+      refreshProjects();
+    };
+
+    window.addEventListener('task_created', handleUpdate);
+    window.addEventListener('task_updated', handleUpdate);
+    window.addEventListener('project_updated', handleUpdate);
+
+    return () => {
+      window.removeEventListener('task_created', handleUpdate);
+      window.removeEventListener('task_updated', handleUpdate);
+      window.removeEventListener('project_updated', handleUpdate);
+    };
   }, []);
 
   const addProject = async (projectData: any): Promise<boolean> => {
@@ -116,8 +164,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         ...(isUuid ? { managerId } : {}),
         startDate: new Date(),
         endDate: projectData.deadline && projectData.deadline !== 'TBD' ? new Date(projectData.deadline) : undefined,
-        status: 'active',
-        budget: projectData.budget
+        status: 'active'
       });
 
       if (projRes.data?.success) {
@@ -139,6 +186,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
             });
           }
         }
+        window.dispatchEvent(new CustomEvent('task_created'));
         await refreshProjects();
         return true;
       }
@@ -163,11 +211,38 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         // Optimistic UI update so status changes reflect immediately
         setProjects(prev => prev.map(p => p.id === id ? { ...p, status: updateData.status } : p));
       }
-      if (updateData.budget !== undefined) payload.budget = updateData.budget;
       if (updateData.managerId !== undefined) payload.managerId = updateData.managerId;
 
       const res = await api.patch(`/projects/${id}`, payload);
+
+      // Save any newly added or updated tasks attached to this project
+      if (Array.isArray(updateData.tasks) && updateData.tasks.length > 0) {
+        for (const task of updateData.tasks) {
+          const isExistingUuid = task.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(task.id);
+          if (isExistingUuid) {
+            await api.patch(`/tasks/${task.id}`, {
+              title: task.title,
+              desc: task.description || '',
+              assigneeId: task.assigneeId || undefined
+            }).catch(() => null);
+          } else if (task.title && task.title.trim()) {
+            await api.post('/tasks', {
+              title: task.title,
+              desc: task.description || '',
+              projectId: id,
+              status: task.status === 'Done' ? 'done' : 
+                      task.status === 'In Progress' ? 'in-progress' :
+                      task.status === 'In Review' ? 'in-review' : 'todo',
+              priority: task.priority ? task.priority.toLowerCase() : 'medium',
+              dueDate: updateData.deadline ? new Date(updateData.deadline) : undefined,
+              assigneeId: task.assigneeId || undefined
+            }).catch(() => null);
+          }
+        }
+      }
+
       if (res.data?.success) {
+        window.dispatchEvent(new CustomEvent('task_updated'));
         await refreshProjects();
         return true;
       }
