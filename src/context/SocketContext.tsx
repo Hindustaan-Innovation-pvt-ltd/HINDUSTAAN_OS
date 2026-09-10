@@ -28,7 +28,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (import.meta.env.DEV) {
         return import.meta.env.VITE_PROXY_TARGET || 'http://localhost:3000';
       }
-      return 'http://balrhhbt6nfprkuk4xh3whxs.187.127.177.2.sslip.io';
+      return 'https://panel.allindiahub.com';
     };
 
     const socketUrl = getSocketUrl();
