@@ -57,7 +57,20 @@ export function formatPlainText(raw: string): string {
     .replace(/Human Resources Team/gi, 'HR Team')
     .trim();
 
-  // Fix signature spacing in plain text: collapse empty lines between sign-off and company lines
+  // 1. Collapse blank lines in top header block (Company name -> Document Title -> Ref / Date)
+  // e.g. Hindustaan Innovations...\n\nFormal Offer...\n\nDate:... -> Hindustaan Innovations...\nFormal Offer...\nDate:...
+  formatted = formatted.replace(
+    /(Hindustaan Innovations[^\n]*)\s*\n+\s*([^\n]+)\s*\n+\s*((?:(?:Ref|Notice Ref|Certificate Ref):[^\n]*\|?\s*)?Date:[^\n]*|(?:Ref|Notice Ref|Certificate Ref):[^\n]*)/gi,
+    '$1\n$2\n$3'
+  );
+
+  // 2. Collapse blank lines between key-value table rows
+  formatted = formatted.replace(
+    /((?:Role \/ Title|Designation \/ Role|Date of Joining|Reporting Time|Reporting Authority|Work Mode \/ Location|Work Location|Compensation \/ CTC|Commencement Date|Probation \/ Tenure|Date|Time|Mode|Role|Location):\s+[^\n]+)\s*\n+\s*(?=(?:Role \/ Title|Designation \/ Role|Date of Joining|Reporting Time|Reporting Authority|Work Mode \/ Location|Work Location|Compensation \/ CTC|Commencement Date|Probation \/ Tenure|Date|Time|Mode|Role|Location):\s+[^\n]+)/gi,
+    '$1\n'
+  );
+
+  // 3. Fix signature spacing in plain text: collapse empty lines between sign-off and company lines
   formatted = formatted.replace(
     /(Best regards,|Sincerely,|Warm regards,|Regards,|Yours sincerely,)\s*\n+\s*([^\n]+)\s*\n+\s*(Hindustaan Innovations[^\n]*)\s*\n+\s*([^\n]+)/gi,
     '$1\n$2\n$3\n$4'
@@ -107,7 +120,19 @@ export function htmlToPlainText(html: string): string {
 
   let result = cleaned.join('\n').trim();
 
-  // Fix signature spacing in plain text: collapse empty lines between sign-off and company lines
+  // 1. Collapse blank lines in top header block (Company name -> Document Title -> Ref / Date)
+  result = result.replace(
+    /(Hindustaan Innovations[^\n]*)\s*\n+\s*([^\n]+)\s*\n+\s*((?:(?:Ref|Notice Ref|Certificate Ref):[^\n]*\|?\s*)?Date:[^\n]*|(?:Ref|Notice Ref|Certificate Ref):[^\n]*)/gi,
+    '$1\n$2\n$3'
+  );
+
+  // 2. Collapse blank lines between key-value table rows
+  result = result.replace(
+    /((?:Role \/ Title|Designation \/ Role|Date of Joining|Reporting Time|Reporting Authority|Work Mode \/ Location|Work Location|Compensation \/ CTC|Commencement Date|Probation \/ Tenure|Date|Time|Mode|Role|Location):\s+[^\n]+)\s*\n+\s*(?=(?:Role \/ Title|Designation \/ Role|Date of Joining|Reporting Time|Reporting Authority|Work Mode \/ Location|Work Location|Compensation \/ CTC|Commencement Date|Probation \/ Tenure|Date|Time|Mode|Role|Location):\s+[^\n]+)/gi,
+    '$1\n'
+  );
+
+  // 3. Fix signature spacing in plain text: collapse empty lines between sign-off and company lines
   result = result.replace(
     /(Best regards,|Sincerely,|Warm regards,|Regards,|Yours sincerely,)\s*\n+\s*([^\n]+)\s*\n+\s*(Hindustaan Innovations[^\n]*)\s*\n+\s*([^\n]+)/gi,
     '$1\n$2\n$3\n$4'
