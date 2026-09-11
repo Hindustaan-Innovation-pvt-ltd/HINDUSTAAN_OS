@@ -470,7 +470,7 @@ export default function AttendanceLogs() {
                         role: rec.userRole || 'employee',
                         department: rec.department
                       })}
-                      className="cursor-pointer transition-colors hover:bg-slate-100/70 dark:hover:bg-slate-800/80 group"
+                      className="cursor-pointer transition-colors hover:bg-slate-100/60 dark:hover:bg-white/[0.04] group"
                       title="Click to open attendance calendar & heatmap"
                     >
                       {/* User Info */}

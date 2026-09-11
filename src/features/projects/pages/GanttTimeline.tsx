@@ -198,7 +198,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
           <Button 
             onClick={jumpToToday} 
             variant="outline" 
-            className="h-9 rounded-lg border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50"
+            className="h-9 rounded-lg border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             <Clock className="h-4 w-4 mr-2 text-slate-400" /> Today
           </Button>
@@ -242,7 +242,7 @@ export default function GanttTimeline({ session }: { session?: any }) {
           {/* Filter Popover */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="h-9 rounded-lg border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold shadow-sm hover:bg-slate-50 relative">
+              <Button variant="outline" className="h-9 rounded-lg border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 relative">
                 <Filter className="h-4 w-4 mr-2 text-slate-400" /> Filter
                 {Object.values(filters).some(v => !v) && (
                   <span className="absolute -top-1 -right-1 flex h-3 w-3 rounded-full bg-orange-500 ring-2 ring-white dark:ring-slate-900" />

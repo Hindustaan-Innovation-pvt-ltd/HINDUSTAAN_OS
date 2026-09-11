@@ -322,7 +322,7 @@ export default function OverviewDashboard() {
               }
 
               return deadlines.map((item: any) => (
-                <div key={item.id} className="group flex flex-col p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-50 dark:bg-slate-900/40 transition-all cursor-pointer">
+                <div key={item.id} className="group flex flex-col p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-all cursor-pointer">
                   
                   {/* Top Row: Category Tag & Due Date */}
                   <div className="flex items-center justify-between mb-2">

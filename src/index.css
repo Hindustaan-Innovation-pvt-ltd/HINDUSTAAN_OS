@@ -159,7 +159,9 @@ html.compact-mode {
   --font-sans: "Inter", sans-serif;
   --color-slate-950: #050816;
   --color-slate-900: #0B1023;
+  --color-slate-850: #0E1428;
   --color-slate-800: #12182F;
+  --color-slate-750: #161D37;
   --color-slate-700: #1A223F;
 }
 
@@ -315,3 +317,18 @@ html.dark .light-mode-logo-shadow {
     max-width: none !important;
   }
 }
+
+/* ==========================================================================
+   GLOBAL DARK MODE HOVER HIGHLIGHT FIX ACROSS WHOLE PLATFORM
+   Prevents table rows, list items, and cards from turning light gray on hover in dark mode
+   ========================================================================== */
+html.dark table tbody tr:hover,
+body.dark table tbody tr:hover,
+.dark table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+html.dark table tbody tr:hover td {
+  color: inherit;
+}
+

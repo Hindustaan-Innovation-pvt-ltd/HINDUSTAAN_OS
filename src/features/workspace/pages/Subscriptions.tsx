@@ -301,7 +301,7 @@ export default function Subscriptions() {
                   <p className="text-[10px] text-slate-400 mt-0.5">Expires 12/28 • Primary Payment Method</p>
                 </div>
               </div>
-              <Button variant="outline" className="h-9 text-xs font-bold rounded-lg border-slate-200 dark:border-slate-850 hover:bg-slate-100">
+              <Button variant="outline" className="h-9 text-xs font-bold rounded-lg border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200">
                 Update card
               </Button>
             </div>
