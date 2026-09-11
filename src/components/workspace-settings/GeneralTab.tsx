@@ -5,8 +5,51 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useWorkspace } from '@/context/WorkspaceContext';
 import { toast } from 'sonner';
 
+const PRESET_HOURS = [8, 9, 10, 11, 12, 13, 14];
+
 export default function GeneralTab({ data, updateField }: { data: any, updateField: (key: string, value: any) => void }) {
   const { updateConfig } = useWorkspace();
+
+  const currentHours = data.maxWorkingHours !== undefined && data.maxWorkingHours !== null ? Number(data.maxWorkingHours) : 9;
+  const isPreset = PRESET_HOURS.includes(currentHours);
+
+  const [isCustomMode, setIsCustomMode] = React.useState<boolean>(!isPreset);
+  const [customVal, setCustomVal] = React.useState<string>(String(currentHours));
+
+  React.useEffect(() => {
+    if (data.maxWorkingHours !== undefined && data.maxWorkingHours !== null) {
+      const val = Number(data.maxWorkingHours);
+      if (!PRESET_HOURS.includes(val)) {
+        setIsCustomMode(true);
+      }
+      setCustomVal(String(val));
+    }
+  }, [data.maxWorkingHours]);
+
+  const handleSelectChange = (val: string) => {
+    if (val === 'custom') {
+      setIsCustomMode(true);
+      return;
+    }
+    setIsCustomMode(false);
+    const numVal = parseInt(val, 10);
+    setCustomVal(String(numVal));
+    updateField('maxWorkingHours', numVal);
+    updateConfig({ maxWorkingHours: numVal });
+    toast.success(`Attendance limit updated to ${numVal} Hours (Saved to DB)`);
+  };
+
+  const handleApplyCustomHours = () => {
+    const numVal = parseInt(customVal, 10);
+    if (isNaN(numVal) || numVal < 1 || numVal > 24) {
+      toast.error('Please enter a valid working hour limit between 1 and 24 hours');
+      return;
+    }
+    updateField('maxWorkingHours', numVal);
+    updateConfig({ maxWorkingHours: numVal });
+    toast.success(`Attendance limit updated to ${numVal} Hours (Saved to DB)`);
+  };
+
   return (
     <div className="animate-in fade-in duration-300">
       <div className="mb-8">
@@ -62,49 +105,40 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
           </div>
         </SettingsRow>
         
-        <SettingsRow 
-          title="Company Name" 
-          description="The official name of your organization."
-        >
+        <SettingsRow title="Organization Name" description="The official name of your company or organization.">
           <Input 
-            value={data.workspaceName || ''} 
-            onChange={(e) => updateField('workspaceName', e.target.value)} 
-            className="rounded-xl bg-slate-50 dark:bg-slate-900/50"
-            placeholder="e.g. Hindustaan Innovations"
+            value={data.companyName || ''} 
+            onChange={(e) => updateField('companyName', e.target.value)} 
+            placeholder="Acme Corp" 
+            className="rounded-xl bg-slate-50 dark:bg-slate-900/50 w-full sm:w-80"
           />
         </SettingsRow>
         
-        <SettingsRow 
-          title="Support Email" 
-          description="Where users should send internal support queries."
-        >
+        <SettingsRow title="Support Email" description="Used by employees and systems for support notifications.">
           <Input 
             type="email"
             value={data.supportEmail || ''} 
             onChange={(e) => updateField('supportEmail', e.target.value)} 
-            className="rounded-xl bg-slate-50 dark:bg-slate-900/50"
-            placeholder="support@company.com"
+            placeholder="support@acme.com" 
+            className="rounded-xl bg-slate-50 dark:bg-slate-900/50 w-full sm:w-80"
           />
         </SettingsRow>
 
-        <SettingsRow 
-          title="Headquarters Address" 
-          description="The primary physical location of your workspace."
-        >
+        <SettingsRow title="Office Address" description="Primary physical location or registered office address.">
           <Input 
             value={data.address || ''} 
             onChange={(e) => updateField('address', e.target.value)} 
-            className="rounded-xl bg-slate-50 dark:bg-slate-900/50"
-            placeholder="123 Innovation Drive, Tech City"
+            placeholder="123 Innovation Drive, Tech Park" 
+            className="rounded-xl bg-slate-50 dark:bg-slate-900/50 w-full sm:w-80"
           />
         </SettingsRow>
       </SettingsSection>
 
       <SettingsSection 
-        title="Localization" 
-        description="Set regional defaults for all users."
+        title="Regional & Localization" 
+        description="Configure default timezone, currency, and date formats."
       >
-        <SettingsRow title="Default Timezone" description="Affects all date and time displays for new users.">
+        <SettingsRow title="Default Timezone" description="Affects timestamps across all automated logs and check-ins.">
           <Select 
             value={data.defaultTimezone || 'Asia/Kolkata'} 
             onValueChange={(val) => updateField('defaultTimezone', val)}
@@ -113,10 +147,11 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
               <SelectValue placeholder="Select Timezone" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Asia/Kolkata">India Standard Time (IST)</SelectItem>
-              <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-              <SelectItem value="Europe/London">Greenwich Mean Time (GMT)</SelectItem>
-              <SelectItem value="UTC">Coordinated Universal Time (UTC)</SelectItem>
+              <SelectItem value="Asia/Kolkata">Asia/Kolkata (IST +5:30)</SelectItem>
+              <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
+              <SelectItem value="America/Los_Angeles">America/Los_Angeles (PST)</SelectItem>
+              <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
+              <SelectItem value="UTC">UTC (Universal)</SelectItem>
             </SelectContent>
           </Select>
         </SettingsRow>
@@ -147,28 +182,55 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
           title="Maximum Working Hours" 
           description="If an employee forgets to check out and this duration is exceeded, their attendance session becomes INVALID (MISSED_CHECKOUT) with 0 worked time. They must perform a fresh check-in."
         >
-          <Select 
-            value={String(data.maxWorkingHours || 9)} 
-            onValueChange={(val) => {
-              const numVal = parseInt(val, 10);
-              updateField('maxWorkingHours', numVal);
-              updateConfig({ maxWorkingHours: numVal });
-              toast.success(`Attendance limit updated to ${numVal} Hours (Saved to DB)`);
-            }}
-          >
-            <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/50 w-full sm:w-64 font-semibold text-violet-600 dark:text-violet-400">
-              <SelectValue placeholder="Select Limit" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="8">8 Hours</SelectItem>
-              <SelectItem value="9">9 Hours (Default)</SelectItem>
-              <SelectItem value="10">10 Hours</SelectItem>
-              <SelectItem value="11">11 Hours</SelectItem>
-              <SelectItem value="12">12 Hours</SelectItem>
-              <SelectItem value="13">13 Hours</SelectItem>
-              <SelectItem value="14">14 Hours</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+            <Select 
+              value={isCustomMode ? 'custom' : String(currentHours)} 
+              onValueChange={handleSelectChange}
+            >
+              <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/50 w-full sm:w-64 font-semibold text-violet-600 dark:text-violet-400 border border-slate-200 dark:border-slate-800">
+                <SelectValue placeholder="Select Limit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="8">8 Hours</SelectItem>
+                <SelectItem value="9">9 Hours (Default)</SelectItem>
+                <SelectItem value="10">10 Hours</SelectItem>
+                <SelectItem value="11">11 Hours</SelectItem>
+                <SelectItem value="12">12 Hours</SelectItem>
+                <SelectItem value="13">13 Hours</SelectItem>
+                <SelectItem value="14">14 Hours</SelectItem>
+                <SelectItem value="custom" className="font-bold text-violet-600 dark:text-violet-400">
+                  Custom Hours...
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            {isCustomMode && (
+              <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                <div className="relative flex items-center">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={24}
+                    value={customVal}
+                    onChange={(e) => setCustomVal(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleApplyCustomHours();
+                    }}
+                    placeholder="e.g. 6"
+                    className="w-24 rounded-xl bg-slate-50 dark:bg-slate-900/50 font-semibold pr-8 text-center text-violet-600 dark:text-violet-400 h-10 border-slate-200 dark:border-slate-800 focus-visible:ring-violet-500"
+                  />
+                  <span className="absolute right-2.5 text-xs font-bold text-slate-400 pointer-events-none">hrs</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleApplyCustomHours}
+                  className="h-10 px-3.5 rounded-xl bg-violet-600 hover:bg-violet-700 active:scale-95 text-white text-xs font-bold transition-all shadow-sm shadow-violet-600/30 cursor-pointer"
+                >
+                  Save
+                </button>
+              </div>
+            )}
+          </div>
         </SettingsRow>
       </SettingsSection>
     </div>
