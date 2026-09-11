@@ -30,6 +30,56 @@ const parseLocalDate = (dateStr: string) => {
   return new Date(year, month - 1, day);
 };
 
+const formatSelectedDatesPhrase = (
+  dateSelection: LeaveDateSelection | null,
+  fallbackStartDate?: string
+): string => {
+  if (dateSelection && dateSelection.totalDays > 0) {
+    if (dateSelection.totalDays === 1 && dateSelection.startDate) {
+      try {
+        const d = parseLocalDate(dateSelection.startDate);
+        return `on ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+      } catch {
+        return `on ${dateSelection.startDate}`;
+      }
+    } else if (dateSelection.mode === 'range' && dateSelection.startDate && dateSelection.endDate) {
+      try {
+        const s = parseLocalDate(dateSelection.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        const e = parseLocalDate(dateSelection.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        return `from ${s} to ${e} (${dateSelection.totalDays} days)`;
+      } catch {
+        return `from ${dateSelection.startDate} to ${dateSelection.endDate} (${dateSelection.totalDays} days)`;
+      }
+    } else if (dateSelection.dates && dateSelection.dates.length > 0) {
+      try {
+        const formattedList = dateSelection.dates.map(ds => {
+          const d = parseLocalDate(ds);
+          return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        });
+        if (formattedList.length === 1) {
+          return `on ${formattedList[0]}`;
+        }
+        if (formattedList.length <= 6) {
+          const last = formattedList.pop();
+          return `on ${formattedList.join(', ')} and ${last} (${dateSelection.totalDays} days)`;
+        } else {
+          return `on ${formattedList.slice(0, 4).join(', ')} and ${formattedList.length - 4} other dates (${dateSelection.totalDays} days)`;
+        }
+      } catch {
+        return `on ${dateSelection.dates.join(', ')} (${dateSelection.totalDays} days)`;
+      }
+    }
+  } else if (fallbackStartDate) {
+    try {
+      const d = parseLocalDate(fallbackStartDate);
+      return `on ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+    } catch {
+      return `on ${fallbackStartDate}`;
+    }
+  }
+  return 'the upcoming scheduled date';
+};
+
 export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplicationWithDraftsProps) {
   const { user } = useUser();
 
@@ -66,44 +116,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
       ? 'Work From Home'
       : (leaveType.charAt(0).toUpperCase() + leaveType.slice(1) + ' Leave');
 
-    let formattedDate = 'the upcoming scheduled date';
-    if (dateSelection && dateSelection.totalDays > 0) {
-      if (dateSelection.totalDays === 1 && dateSelection.startDate) {
-        try {
-          const d = parseLocalDate(dateSelection.startDate);
-          formattedDate = `on ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
-        } catch {
-          formattedDate = `on ${dateSelection.startDate}`;
-        }
-      } else if (dateSelection.mode === 'range' && dateSelection.startDate && dateSelection.endDate) {
-        try {
-          const s = parseLocalDate(dateSelection.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-          const e = parseLocalDate(dateSelection.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-          formattedDate = `from ${s} to ${e} (${dateSelection.totalDays} days)`;
-        } catch {
-          formattedDate = `from ${dateSelection.startDate} to ${dateSelection.endDate} (${dateSelection.totalDays} days)`;
-        }
-      } else if (dateSelection.dates && dateSelection.dates.length > 0) {
-        try {
-          const formattedList = dateSelection.dates.map(ds => parseLocalDate(ds).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }));
-          if (formattedList.length <= 3) {
-            const last = formattedList.pop();
-            formattedDate = `on ${formattedList.length ? formattedList.join(', ') + ' and ' : ''}${last} (${dateSelection.totalDays} days)`;
-          } else {
-            formattedDate = `on ${formattedList.slice(0, 2).join(', ')} and ${formattedList.length - 2} other dates (${dateSelection.totalDays} days)`;
-          }
-        } catch {
-          formattedDate = `on ${dateSelection.dates.join(', ')} (${dateSelection.totalDays} days)`;
-        }
-      }
-    } else if (startDate) {
-      try {
-        const d = parseLocalDate(startDate);
-        formattedDate = `on ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
-      } catch {
-        formattedDate = `on ${startDate}`;
-      }
-    }
+    const formattedDate = formatSelectedDatesPhrase(dateSelection, startDate);
 
     const rawNotes = (customInst !== undefined ? customInst : customInstruction).trim() || reason.trim();
 
@@ -134,6 +147,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
 
     const displayType = leaveType === 'other' ? (customType.trim() || 'Custom Leave') : leaveType;
     const activeInstruction = instructionOverride !== undefined ? instructionOverride : customInstruction.trim();
+    const formattedDate = formatSelectedDatesPhrase(dateSelection, startDate);
 
     // 1. Immediately populate textarea so the user never gets an empty box
     const immediateDraft = generateInstantDraft(tone, activeInstruction);
@@ -153,6 +167,11 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
         customType: leaveType === 'other' ? customType.trim() : undefined,
         applicantName: user?.name || undefined,
         date: startDate || undefined,
+        startDate: dateSelection?.startDate || startDate || undefined,
+        endDate: dateSelection?.endDate || undefined,
+        dates: dateSelection?.dates || undefined,
+        formattedDate,
+        totalDays: dateSelection?.totalDays || 1,
         reasonNotes: reason.trim() || undefined,
         currentText: reason.trim() || undefined,
         customInstruction: activeInstruction || undefined,
