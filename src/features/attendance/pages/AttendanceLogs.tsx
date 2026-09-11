@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import api from '@/lib/api';
 import { useUser } from '@/context/UserContext';
 import { cn } from '@/lib/utils';
+import UserAttendanceHeatmapModal from '@/components/attendance/UserAttendanceHeatmapModal';
 
 interface AttendanceRecord {
   id: string;
@@ -44,6 +45,13 @@ export default function AttendanceLogs() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isCheckInOutSubmitting, setIsCheckInOutSubmitting] = useState(false);
+  const [selectedUserForCalendar, setSelectedUserForCalendar] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    department?: string;
+  } | null>(null);
 
   // Fetch Attendance Records
   const fetchRecords = async () => {
@@ -94,8 +102,8 @@ export default function AttendanceLogs() {
     const total = records.length;
     const active = records.filter(r => r.attendanceStatus === 'ACTIVE').length;
     const completed = records.filter(r => r.attendanceStatus === 'COMPLETED').length;
-    const missed = records.filter(r => r.attendanceStatus === 'MISSED_CHECKOUT').length;
-    return { total, active, completed, missed };
+    const absent = records.filter(r => r.attendanceStatus === 'MISSED_CHECKOUT' || r.attendanceStatus === 'ABSENT').length;
+    return { total, active, completed, absent };
   }, [records]);
 
   // Date formatter helpers
@@ -311,8 +319,8 @@ export default function AttendanceLogs() {
 
         <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm">
           <CardContent className="p-4 sm:p-5 flex flex-col gap-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Missed Checkout</span>
-            <span className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400">{stats.missed}</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Absent</span>
+            <span className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400">{stats.absent}</span>
           </CardContent>
         </Card>
       </div>
@@ -350,7 +358,7 @@ export default function AttendanceLogs() {
               <option value="all">All Statuses</option>
               <option value="ACTIVE">Active</option>
               <option value="COMPLETED">Completed</option>
-              <option value="MISSED_CHECKOUT">Missed Checkout</option>
+              <option value="MISSED_CHECKOUT">Absent</option>
             </select>
 
             {/* Role Filter (Managers/Admins) */}
@@ -455,7 +463,15 @@ export default function AttendanceLogs() {
                   return (
                     <tr 
                       key={rec.id} 
-                      className="hover:bg-slate-50/70 dark:hover:bg-slate-850/40 transition-colors"
+                      onClick={() => setSelectedUserForCalendar({
+                        id: rec.userId,
+                        name: rec.userName || 'Employee',
+                        email: rec.userEmail || '',
+                        role: rec.userRole || 'employee',
+                        department: rec.department
+                      })}
+                      className="cursor-pointer transition-colors hover:bg-slate-100/70 dark:hover:bg-slate-800/80 group"
+                      title="Click to open attendance calendar & heatmap"
                     >
                       {/* User Info */}
                       <td className="px-5 py-3.5">
@@ -467,8 +483,9 @@ export default function AttendanceLogs() {
                           </Avatar>
                           <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-slate-900 dark:text-white truncate text-sm">
+                              <span className="font-bold text-slate-900 dark:text-white truncate text-sm group-hover:text-orange-500 transition-colors flex items-center gap-1.5">
                                 {rec.userName}
+                                <Calendar className="h-3 w-3 text-orange-400 opacity-60 group-hover:opacity-100 transition-opacity shrink-0" />
                               </span>
                               <Badge 
                                 variant="outline"
@@ -527,7 +544,7 @@ export default function AttendanceLogs() {
                         <Badge
                           variant="outline"
                           className={cn(
-                            "text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border",
+                            "text-[10px] uppercase font-black tracking-wider px-2 py-0.5 border",
                             isMissed
                               ? "bg-rose-500/10 text-rose-500 border-rose-500/30"
                               : isActive
@@ -536,11 +553,11 @@ export default function AttendanceLogs() {
                           )}
                         >
                           {isActive && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1 inline-block" />}
-                          {rec.statusDisplay || rec.attendanceStatus}
+                          {isMissed ? 'ABSENT' : (rec.statusDisplay || rec.attendanceStatus)}
                         </Badge>
-                        {isMissed && rec.invalidReason && (
-                          <p className="text-[10px] text-rose-400 mt-1 max-w-xs truncate" title={rec.invalidReason}>
-                            {rec.invalidReason}
+                        {isMissed && (
+                          <p className="text-[10px] text-rose-400 mt-1 max-w-xs truncate" title={rec.invalidReason || "Forgot to checkout after 30 minutes extra."}>
+                            {rec.invalidReason || "Absent - Forgot to checkout within working hours."}
                           </p>
                         )}
                       </td>
@@ -597,6 +614,14 @@ export default function AttendanceLogs() {
           </div>
         )}
       </Card>
+
+      {/* User Attendance Calendar & GitHub Heatmap Modal */}
+      <UserAttendanceHeatmapModal
+        isOpen={Boolean(selectedUserForCalendar)}
+        onClose={() => setSelectedUserForCalendar(null)}
+        user={selectedUserForCalendar}
+        initialRecords={records}
+      />
     </div>
   );
 }
