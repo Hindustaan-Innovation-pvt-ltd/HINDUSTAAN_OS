@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
-  Calendar as CalendarIcon, Clock, CheckCircle2, AlertTriangle, 
-  ChevronLeft, ChevronRight, Activity, Flame, ShieldAlert, Sparkles, X, Info
+  Calendar as CalendarIcon, Clock, CheckCircle2, 
+  ChevronLeft, ChevronRight, Activity, Flame, X, Check, XCircle
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import api from '@/lib/api';
@@ -54,19 +54,17 @@ export default function UserAttendanceHeatmapModal({
   const [loading, setLoading] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<'calendar' | 'heatmap'>('calendar');
 
-  // Month navigation for Month View (Defaults to current viewing month, e.g. Sep 2026)
-  const [currentMonthDate, setCurrentMonthDate] = useState<Date>(new Date(2026, 8, 1)); // Sep 2026 default
+  // Month navigation for Month View (Defaults to September 2026)
+  const [currentMonthDate, setCurrentMonthDate] = useState<Date>(new Date(2026, 8, 1));
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
 
   // Sync initial records and fetch latest history for the selected user
   useEffect(() => {
     if (!isOpen || !user) return;
 
-    // Prefill with existing records for this user
     const userInitial = initialRecords.filter(r => r.userId === user.id);
     setRecords(userInitial);
 
-    // Fetch full history from server
     const fetchUserHistory = async () => {
       setLoading(true);
       try {
@@ -128,7 +126,7 @@ export default function UserAttendanceHeatmapModal({
   }, [records]);
 
   // -------------------------------------------------------------
-  // 1. MONTH VIEW LOGIC (Calendar Grid with Days at Top - Image 2)
+  // 1. MONTH VIEW LOGIC (Compact, 100% visible at 100% zoom)
   // -------------------------------------------------------------
   const monthYearLabel = useMemo(() => {
     return currentMonthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -183,8 +181,9 @@ export default function UserAttendanceHeatmapModal({
       });
     }
 
-    // Pad next month days to complete 35 or 42 grid cells
-    const remaining = 35 - days.length > 0 ? 35 - days.length : (42 - days.length > 0 ? 42 - days.length : 0);
+    // Only pad to 35 if total days fit, else pad to 42
+    const targetLength = days.length <= 35 ? 35 : 42;
+    const remaining = targetLength - days.length;
     for (let i = 1; i <= remaining; i++) {
       const nextMonth = month === 11 ? 0 : month + 1;
       const nextYear = month === 11 ? year + 1 : year;
@@ -202,10 +201,9 @@ export default function UserAttendanceHeatmapModal({
   }, [currentMonthDate, recordsByDate]);
 
   // -------------------------------------------------------------
-  // 2. GITHUB-STYLE HEATMAP LOGIC (Continuous Timeline Heatmap)
+  // 2. GITHUB-STYLE HEATMAP LOGIC
   // -------------------------------------------------------------
   const heatmapData = useMemo(() => {
-    // Generate past 16 weeks of days (112 days)
     const weeks: Array<Array<{
       date: Date;
       dateKey: string;
@@ -213,11 +211,10 @@ export default function UserAttendanceHeatmapModal({
     }>> = [];
 
     const today = new Date();
-    // End on upcoming Saturday
     const endDate = new Date(today);
     endDate.setDate(today.getDate() + (6 - today.getDay()));
 
-    const totalWeeks = 16;
+    const totalWeeks = 15;
     const startDate = new Date(endDate);
     startDate.setDate(endDate.getDate() - (totalWeeks * 7) + 1);
 
@@ -246,7 +243,6 @@ export default function UserAttendanceHeatmapModal({
     return weeks;
   }, [recordsByDate]);
 
-  // Selected date record details
   const selectedDayRecords = useMemo(() => {
     if (!selectedDateStr) return null;
     return recordsByDate.get(selectedDateStr) || [];
@@ -263,101 +259,93 @@ export default function UserAttendanceHeatmapModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl w-[95vw] max-h-[90vh] flex flex-col bg-slate-950/95 border-slate-800/80 text-white rounded-3xl backdrop-blur-2xl shadow-2xl p-0 overflow-hidden">
-        {/* Modal Header */}
-        <div className="p-6 pb-4 border-b border-slate-800/80 bg-slate-900/40">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <Avatar className="h-12 w-12 rounded-2xl border-2 border-slate-700 bg-slate-800 shadow-md">
-                <AvatarFallback className="text-sm font-black bg-linear-to-br from-orange-500 to-amber-600 text-white">
+      <DialogContent className="max-w-[480px] sm:max-w-[510px] w-[95vw] bg-[#0c1222] border border-slate-800 text-white rounded-3xl shadow-2xl p-0 overflow-hidden focus:outline-none">
+        {/* Compact Header */}
+        <div className="p-4 pb-3 border-b border-slate-800/80 bg-slate-900/50">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Avatar className="h-10 w-10 rounded-xl border border-slate-700 bg-slate-800 shrink-0">
+                <AvatarFallback className="text-xs font-black bg-gradient-to-br from-orange-500 to-amber-600 text-white">
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-lg font-black text-white">{user.name}</h2>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h2 className="text-sm font-black text-white truncate">{user.name}</h2>
                   <Badge 
                     variant="outline"
-                    className={cn(
-                      "text-[10px] font-black px-2 py-0.5 uppercase border",
-                      user.role === 'manager'
-                        ? "bg-purple-950/50 text-purple-300 border-purple-800"
-                        : user.role === 'admin'
-                          ? "bg-rose-950/50 text-rose-300 border-rose-800"
-                          : "bg-blue-950/50 text-blue-300 border-blue-800"
-                    )}
+                    className="text-[9px] font-black px-1.5 py-0 uppercase border bg-purple-950/50 text-purple-300 border-purple-800 shrink-0"
                   >
                     {user.role}
                   </Badge>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {user.email} {user.department ? `• ${user.department}` : ''}
+                <p className="text-[11px] text-slate-400 truncate">
+                  {user.email}
                 </p>
               </div>
             </div>
 
-            {/* View Switcher: Calendar vs Heatmap */}
-            <div className="flex items-center gap-1.5 p-1 bg-slate-900 rounded-xl border border-slate-800 self-start sm:self-center">
+            {/* View Switcher Toggle */}
+            <div className="flex items-center gap-1 p-0.5 bg-slate-950 rounded-lg border border-slate-800 shrink-0">
               <button
                 type="button"
                 onClick={() => setViewMode('calendar')}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
+                  "px-2 py-1 rounded-md text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer",
                   viewMode === 'calendar'
-                    ? "bg-orange-600 text-white shadow-md shadow-orange-600/20"
+                    ? "bg-violet-600 text-white shadow-sm shadow-violet-600/30"
                     : "text-slate-400 hover:text-white"
                 )}
               >
-                <CalendarIcon className="h-3.5 w-3.5" />
+                <CalendarIcon className="h-3 w-3" />
                 Month Calendar
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('heatmap')}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
+                  "px-2 py-1 rounded-md text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer",
                   viewMode === 'heatmap'
-                    ? "bg-orange-600 text-white shadow-md shadow-orange-600/20"
+                    ? "bg-violet-600 text-white shadow-sm shadow-violet-600/30"
                     : "text-slate-400 hover:text-white"
                 )}
               >
-                <Flame className="h-3.5 w-3.5" />
+                <Flame className="h-3 w-3" />
                 GitHub Heatmap
               </button>
             </div>
           </div>
 
-          {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-4 gap-2.5 mt-5">
-            <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Present</span>
-              <span className="text-base sm:text-lg font-black text-emerald-400">{stats.presentCount} Days</span>
+          {/* Sleek Compact Inline Metrics Strip */}
+          <div className="flex items-center gap-1.5 flex-wrap mt-3 pt-2.5 border-t border-slate-800/60 text-[11px]">
+            <div className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3" />
+              <span>Present: <strong>{stats.presentCount}d</strong></span>
             </div>
-            <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Absent</span>
-              <span className="text-base sm:text-lg font-black text-rose-400">{stats.absentCount} Days</span>
+            <div className="px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold flex items-center gap-1">
+              <XCircle className="h-3 w-3" />
+              <span>Absent: <strong>{stats.absentCount}d</strong></span>
             </div>
-            <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Worked</span>
-              <span className="text-base sm:text-lg font-black text-blue-400">{stats.totalHours} hrs</span>
+            <div className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              <span>Worked: <strong>{stats.totalHours}h</strong></span>
             </div>
-            <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Compliance</span>
-              <span className="text-base sm:text-lg font-black text-amber-400">{stats.rate}%</span>
+            <div className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold flex items-center gap-1 ml-auto">
+              <Activity className="h-3 w-3" />
+              <span>{stats.rate}%</span>
             </div>
           </div>
         </div>
 
-        {/* Modal Scrollable Body */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
-          {/* VIEW 1: MONTH CALENDAR VIEW (Image 2 style with dates at top) */}
+        {/* Modal Main Body - Fixed Height, ZERO Vertical Scrolling for Calendar */}
+        <div className="p-4 pt-3">
           {viewMode === 'calendar' && (
-            <div className="space-y-4">
-              {/* Month Navigation Header */}
-              <div className="flex items-center justify-between">
+            <div className="space-y-2.5">
+              {/* Month Header Navigation */}
+              <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-orange-400" />
-                  <span className="text-sm font-bold text-white">{monthYearLabel}</span>
+                  <CalendarIcon className="h-3.5 w-3.5 text-orange-400" />
+                  <span className="text-xs font-black text-white tracking-wide">{monthYearLabel}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
@@ -368,9 +356,9 @@ export default function UserAttendanceHeatmapModal({
                       prev.setMonth(prev.getMonth() - 1);
                       setCurrentMonthDate(prev);
                     }}
-                    className="h-8 w-8 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                    className="h-7 w-7 rounded-md text-slate-400 hover:text-white hover:bg-slate-800"
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     size="icon"
@@ -380,24 +368,24 @@ export default function UserAttendanceHeatmapModal({
                       next.setMonth(next.getMonth() + 1);
                       setCurrentMonthDate(next);
                     }}
-                    className="h-8 w-8 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                    className="h-7 w-7 rounded-md text-slate-400 hover:text-white hover:bg-slate-800"
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
 
               {/* Day Headers Row (Su Mo Tu We Th Fr Sa) */}
-              <div className="grid grid-cols-7 text-center font-bold text-xs text-slate-400 pb-2 border-b border-slate-800/60">
+              <div className="grid grid-cols-7 text-center font-bold text-[11px] text-slate-400 pb-1">
                 {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d, i) => (
-                  <div key={i} className="py-1">
+                  <div key={i} className="py-0.5">
                     {d}
                   </div>
                 ))}
               </div>
 
-              {/* Calendar Grid (Days 1..30) */}
-              <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+              {/* Calendar Grid: Perfectly Compact (All 30/31 dates 100% visible) */}
+              <div className="grid grid-cols-7 gap-1">
                 {calendarDays.map((cell, idx) => {
                   const hasRecords = cell.records.length > 0;
                   const latest = hasRecords ? cell.records[0] : null;
@@ -412,44 +400,61 @@ export default function UserAttendanceHeatmapModal({
                       type="button"
                       onClick={() => setSelectedDateStr(cell.dateKey)}
                       className={cn(
-                        "relative flex flex-col items-center justify-center p-2 rounded-2xl min-h-[58px] sm:min-h-[64px] border transition-all cursor-pointer text-center",
-                        !cell.isCurrentMonth && "opacity-25 border-transparent text-slate-500",
-                        cell.isCurrentMonth && "border-slate-800/80 bg-slate-900/50 hover:bg-slate-850 hover:border-slate-700",
-                        isSelected && "ring-2 ring-orange-500 border-orange-500 bg-orange-500/10",
-                        // Absent highlights
+                        "relative flex flex-col items-center justify-center h-10 sm:h-11 rounded-xl transition-all cursor-pointer select-none",
+                        !cell.isCurrentMonth && "opacity-20 text-slate-500",
+                        cell.isCurrentMonth && "hover:bg-slate-800/80 bg-slate-900/40 border border-slate-800/60",
+                        isSelected && "ring-2 ring-violet-500 border-violet-500 bg-violet-500/10",
                         isAbsent && "bg-rose-950/20 border-rose-800/40",
-                        // Present highlights
                         isPresent && "bg-emerald-950/20 border-emerald-800/40"
                       )}
                     >
                       {/* Day Number Circle */}
                       <span
                         className={cn(
-                          "flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold transition-all",
-                          cell.isToday && "bg-sky-500 text-white shadow-md shadow-sky-500/30",
-                          !cell.isToday && isPresent && "text-emerald-300 font-black",
-                          !cell.isToday && isAbsent && "text-rose-300 font-black",
+                          "flex items-center justify-center h-6 w-6 rounded-full text-xs font-bold transition-all",
+                          cell.isToday && "bg-sky-500 text-white shadow-sm shadow-sky-500/40 font-black",
+                          !cell.isToday && isPresent && "text-emerald-400 font-bold",
+                          !cell.isToday && isAbsent && "text-rose-400 font-bold",
                           !cell.isToday && !isPresent && !isAbsent && "text-slate-300"
                         )}
                       >
                         {cell.dayNum}
                       </span>
 
-                      {/* Status Badges on Calendar Day */}
-                      <div className="flex items-center gap-1 mt-1">
+                      {/* Tiny Status Dot */}
+                      <div className="h-1 flex items-center justify-center">
                         {isPresent && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 ring-2 ring-emerald-900/60" title="Present" />
+                          <span className="h-1 w-1 rounded-full bg-emerald-400" />
                         )}
                         {isAbsent && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-rose-500 ring-2 ring-rose-900/60" title="Absent" />
+                          <span className="h-1 w-1 rounded-full bg-rose-500" />
                         )}
                         {isActive && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-ping" title="Active" />
+                          <span className="h-1 w-1 rounded-full bg-sky-400 animate-pulse" />
                         )}
                       </div>
                     </button>
                   );
                 })}
+              </div>
+
+              {/* Legend Strip */}
+              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-2 px-1 border-t border-slate-800/60">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    <span>Present</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                    <span>Absent</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-sky-500" />
+                    <span>Today</span>
+                  </span>
+                </div>
+                <span className="text-slate-500">Click date for shift log</span>
               </div>
             </div>
           )}
@@ -457,31 +462,26 @@ export default function UserAttendanceHeatmapModal({
           {/* VIEW 2: GITHUB-STYLE CONTRIBUTION HEATMAP */}
           {viewMode === 'heatmap' && (
             <TooltipProvider delayDuration={100}>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Flame className="h-4 w-4 text-orange-500" />
-                    <span className="text-sm font-bold text-white">Attendance Activity Heatmap (Past 16 Weeks)</span>
+                  <div className="flex items-center gap-1.5">
+                    <Flame className="h-3.5 w-3.5 text-orange-500" />
+                    <span className="text-xs font-black text-white">Attendance Activity Heatmap (Past 15 Weeks)</span>
                   </div>
-                  <div className="text-[11px] text-slate-400">
-                    Hover over squares to inspect day logs
-                  </div>
+                  <span className="text-[10px] text-slate-400">Hover for details</span>
                 </div>
 
-                {/* Heatmap Matrix */}
-                <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800/80 overflow-x-auto">
-                  <div className="inline-flex gap-1.5 min-w-[550px]">
-                    {/* Day labels column */}
-                    <div className="flex flex-col justify-between text-[9px] font-bold text-slate-500 pr-2 pt-1 pb-1">
-                      <span>Sun</span>
-                      <span>Tue</span>
-                      <span>Thu</span>
-                      <span>Sat</span>
+                <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 overflow-x-auto">
+                  <div className="inline-flex gap-1">
+                    <div className="flex flex-col justify-between text-[8px] font-bold text-slate-500 pr-1 py-0.5">
+                      <span>S</span>
+                      <span>T</span>
+                      <span>T</span>
+                      <span>S</span>
                     </div>
 
-                    {/* Week columns */}
                     {heatmapData.map((week, wIdx) => (
-                      <div key={wIdx} className="flex flex-col gap-1.5">
+                      <div key={wIdx} className="flex flex-col gap-1">
                         {week.map((dayItem, dIdx) => {
                           const latest = dayItem.records[0];
                           const isPresent = latest?.attendanceStatus === 'COMPLETED';
@@ -489,20 +489,15 @@ export default function UserAttendanceHeatmapModal({
                           const isActive = latest?.attendanceStatus === 'ACTIVE';
                           const workedMins = latest?.workedMinutes || 0;
 
-                          // Color classes based on status & duration
-                          let bgClass = "bg-slate-800/60 border border-slate-700/40 hover:border-slate-500";
+                          let bgClass = "bg-slate-800/60 border border-slate-700/40";
                           if (isActive) {
-                            bgClass = "bg-sky-500 border-sky-400 shadow-sm shadow-sky-500/40 animate-pulse";
+                            bgClass = "bg-sky-500 border-sky-400";
                           } else if (isAbsent) {
-                            bgClass = "bg-rose-500 border-rose-400 shadow-sm shadow-rose-500/30";
+                            bgClass = "bg-rose-500 border-rose-400";
                           } else if (isPresent) {
-                            if (workedMins >= 480) {
-                              bgClass = "bg-emerald-500 border-emerald-400 shadow-sm shadow-emerald-500/30";
-                            } else if (workedMins >= 240) {
-                              bgClass = "bg-emerald-600 border-emerald-500";
-                            } else {
-                              bgClass = "bg-emerald-700 border-emerald-600";
-                            }
+                            if (workedMins >= 480) bgClass = "bg-emerald-500 border-emerald-400";
+                            else if (workedMins >= 240) bgClass = "bg-emerald-600 border-emerald-500";
+                            else bgClass = "bg-emerald-700 border-emerald-600";
                           }
 
                           const formattedDate = dayItem.date.toLocaleDateString('en-US', {
@@ -517,33 +512,27 @@ export default function UserAttendanceHeatmapModal({
                               <TooltipTrigger asChild>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setSelectedDateStr(dayItem.dateKey);
-                                  }}
+                                  onClick={() => setSelectedDateStr(dayItem.dateKey)}
                                   className={cn(
-                                    "h-3.5 w-3.5 rounded-xs transition-all cursor-pointer",
+                                    "h-3 w-3 rounded-xs transition-all cursor-pointer",
                                     bgClass,
                                     selectedDateStr === dayItem.dateKey && "ring-2 ring-white ring-offset-1 ring-offset-slate-900"
                                   )}
                                 />
                               </TooltipTrigger>
-                              <TooltipContent className="bg-slate-900 border-slate-700 text-white p-2.5 rounded-xl shadow-xl text-xs max-w-xs">
+                              <TooltipContent className="bg-slate-900 border-slate-700 text-white p-2 rounded-lg shadow-xl text-[11px] max-w-xs">
                                 <p className="font-bold text-orange-400">{formattedDate}</p>
                                 {latest ? (
-                                  <div className="mt-1 space-y-0.5">
-                                    <p className="font-semibold flex items-center gap-1">
-                                      <span>Status:</span>
-                                      <span className={isAbsent ? "text-rose-400 font-bold" : isPresent ? "text-emerald-400 font-bold" : "text-sky-400 font-bold"}>
+                                  <div className="mt-0.5 space-y-0.5">
+                                    <p className="font-semibold">
+                                      Status: <span className={isAbsent ? "text-rose-400" : isPresent ? "text-emerald-400" : "text-sky-400"}>
                                         {isAbsent ? "ABSENT" : isPresent ? "PRESENT" : "ACTIVE"}
                                       </span>
                                     </p>
-                                    <p className="text-[11px] text-slate-300">Worked: {latest.workedHours || '0h 0m'}</p>
-                                    {isAbsent && latest.invalidReason && (
-                                      <p className="text-[10px] text-rose-300">{latest.invalidReason}</p>
-                                    )}
+                                    <p className="text-slate-300">Worked: {latest.workedHours || '0h 0m'}</p>
                                   </div>
                                 ) : (
-                                  <p className="text-[11px] text-slate-400 mt-1">No check-in record</p>
+                                  <p className="text-slate-400">No session logged</p>
                                 )}
                               </TooltipContent>
                             </Tooltip>
@@ -554,23 +543,17 @@ export default function UserAttendanceHeatmapModal({
                   </div>
 
                   {/* Heatmap Legend */}
-                  <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
+                  <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-800/80 text-[10px] text-slate-400">
                     <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-1">
-                        <span className="h-2.5 w-2.5 rounded-xs bg-rose-500" />
-                        <span>Absent</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="h-2.5 w-2.5 rounded-xs bg-sky-500" />
-                        <span>Active</span>
-                      </span>
+                      <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-xs bg-rose-500" /> Absent</span>
+                      <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-xs bg-sky-500" /> Active</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1">
                       <span>Less</span>
-                      <span className="h-2.5 w-2.5 rounded-xs bg-slate-800" />
-                      <span className="h-2.5 w-2.5 rounded-xs bg-emerald-700" />
-                      <span className="h-2.5 w-2.5 rounded-xs bg-emerald-600" />
-                      <span className="h-2.5 w-2.5 rounded-xs bg-emerald-500" />
+                      <span className="h-2 w-2 rounded-xs bg-slate-800" />
+                      <span className="h-2 w-2 rounded-xs bg-emerald-700" />
+                      <span className="h-2 w-2 rounded-xs bg-emerald-600" />
+                      <span className="h-2 w-2 rounded-xs bg-emerald-500" />
                       <span>More</span>
                     </div>
                   </div>
@@ -579,78 +562,49 @@ export default function UserAttendanceHeatmapModal({
             </TooltipProvider>
           )}
 
-          {/* Selected Date Detailed Log Card */}
+          {/* Selected Date Details Pill / Banner (Compact) */}
           {selectedDateStr && (
-            <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-orange-400" />
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">
-                    Log Details for {new Date(selectedDateStr).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedDateStr(null)}
-                  className="text-slate-400 hover:text-white text-xs p-1"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
+            <div className="mt-3 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs flex items-center justify-between gap-2 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                <span className="font-bold text-white">
+                  {new Date(selectedDateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}:
+                </span>
+                {selectedDayRecords && selectedDayRecords.length > 0 ? (
+                  <>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-[9px] font-black uppercase px-1.5 py-0 border",
+                        (selectedDayRecords[0].attendanceStatus === 'MISSED_CHECKOUT' || selectedDayRecords[0].attendanceStatus === 'ABSENT')
+                          ? "bg-rose-500/10 text-rose-400 border-rose-500/30"
+                          : selectedDayRecords[0].attendanceStatus === 'COMPLETED'
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                            : "bg-sky-500/10 text-sky-400 border-sky-500/30"
+                      )}
+                    >
+                      {(selectedDayRecords[0].attendanceStatus === 'MISSED_CHECKOUT' || selectedDayRecords[0].attendanceStatus === 'ABSENT')
+                        ? "ABSENT"
+                        : selectedDayRecords[0].attendanceStatus}
+                    </Badge>
+                    <span className="text-slate-300 text-[11px]">
+                      In: {selectedDayRecords[0].checkInTime ? new Date(selectedDayRecords[0].checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : '-'}
+                    </span>
+                    <span className="text-slate-400 text-[11px]">•</span>
+                    <span className="text-slate-300 text-[11px]">
+                      Worked: {selectedDayRecords[0].workedHours || '0h 0m'}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-slate-400 text-[11px]">No session recorded</span>
+                )}
               </div>
-
-              {selectedDayRecords && selectedDayRecords.length > 0 ? (
-                <div className="space-y-3">
-                  {selectedDayRecords.map((item, i) => {
-                    const isAbs = item.attendanceStatus === 'MISSED_CHECKOUT' || item.attendanceStatus === 'ABSENT';
-                    const isPres = item.attendanceStatus === 'COMPLETED';
-                    const isAct = item.attendanceStatus === 'ACTIVE';
-
-                    const inTime = item.checkInTime ? new Date(item.checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : '-';
-                    const outTime = item.checkOutTime && item.checkOutTime !== '-' ? new Date(item.checkOutTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : '-';
-
-                    return (
-                      <div key={i} className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] font-black uppercase tracking-wider px-2 py-0.5 border",
-                                isAbs && "bg-rose-500/10 text-rose-400 border-rose-500/30",
-                                isPres && "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-                                isAct && "bg-sky-500/10 text-sky-400 border-sky-500/30"
-                              )}
-                            >
-                              {isAbs ? "ABSENT" : isPres ? "PRESENT" : "ACTIVE"}
-                            </Badge>
-                            <span className="font-bold text-white">Worked: {item.workedHours || '0h 0m'}</span>
-                          </div>
-                          <div className="text-slate-400 text-[11px] flex items-center gap-2">
-                            <span>Check-in: <strong className="text-slate-200">{inTime}</strong></span>
-                            <span>•</span>
-                            <span>Check-out: <strong className="text-slate-200">{outTime}</strong></span>
-                          </div>
-                          {isAbs && item.invalidReason && (
-                            <p className="text-[11px] text-rose-400 font-medium">
-                              Reason: {item.invalidReason}
-                            </p>
-                          )}
-                        </div>
-
-                        {item.ipAddress && (
-                          <div className="text-[11px] font-mono text-slate-400 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800 self-start sm:self-center">
-                            IP: {item.ipAddress}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-xs text-slate-400 py-1">
-                  No attendance session was logged on this day.
-                </p>
-              )}
+              <button
+                type="button"
+                onClick={() => setSelectedDateStr(null)}
+                className="text-slate-400 hover:text-white p-0.5 shrink-0 cursor-pointer"
+              >
+                <X className="h-3 w-3" />
+              </button>
             </div>
           )}
         </div>
