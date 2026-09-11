@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { ProjectDatePicker } from '@/components/ui/project-date-picker';
+import { ProjectDatePicker, type LeaveDateSelection } from '@/components/ui/project-date-picker';
 import { useUser } from '@/context/UserContext';
 import api from '@/lib/api';
 
@@ -20,6 +20,7 @@ interface LeaveApplicationWithDraftsProps {
     emergencyContact: string;
     startDate: string;
     endDate?: string;
+    dates?: string[];
     reason: string;
   }) => boolean;
 }
@@ -36,6 +37,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
   const [leaveType, setLeaveType] = useState('casual');
   const [customType, setCustomType] = useState('');
   const [startDate, setStartDate] = useState('');
+  const [dateSelection, setDateSelection] = useState<LeaveDateSelection | null>(null);
   const [reason, setReason] = useState('');
 
   // AI & Custom Instruction State
@@ -65,12 +67,41 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
       : (leaveType.charAt(0).toUpperCase() + leaveType.slice(1) + ' Leave');
 
     let formattedDate = 'the upcoming scheduled date';
-    if (startDate) {
+    if (dateSelection && dateSelection.totalDays > 0) {
+      if (dateSelection.totalDays === 1 && dateSelection.startDate) {
+        try {
+          const d = parseLocalDate(dateSelection.startDate);
+          formattedDate = `on ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+        } catch {
+          formattedDate = `on ${dateSelection.startDate}`;
+        }
+      } else if (dateSelection.mode === 'range' && dateSelection.startDate && dateSelection.endDate) {
+        try {
+          const s = parseLocalDate(dateSelection.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+          const e = parseLocalDate(dateSelection.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+          formattedDate = `from ${s} to ${e} (${dateSelection.totalDays} days)`;
+        } catch {
+          formattedDate = `from ${dateSelection.startDate} to ${dateSelection.endDate} (${dateSelection.totalDays} days)`;
+        }
+      } else if (dateSelection.dates && dateSelection.dates.length > 0) {
+        try {
+          const formattedList = dateSelection.dates.map(ds => parseLocalDate(ds).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }));
+          if (formattedList.length <= 3) {
+            const last = formattedList.pop();
+            formattedDate = `on ${formattedList.length ? formattedList.join(', ') + ' and ' : ''}${last} (${dateSelection.totalDays} days)`;
+          } else {
+            formattedDate = `on ${formattedList.slice(0, 2).join(', ')} and ${formattedList.length - 2} other dates (${dateSelection.totalDays} days)`;
+          }
+        } catch {
+          formattedDate = `on ${dateSelection.dates.join(', ')} (${dateSelection.totalDays} days)`;
+        }
+      }
+    } else if (startDate) {
       try {
         const d = parseLocalDate(startDate);
-        formattedDate = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+        formattedDate = `on ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
       } catch {
-        formattedDate = startDate;
+        formattedDate = `on ${startDate}`;
       }
     }
 
@@ -78,18 +109,18 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
 
     if (toneType === 'crisp') {
       const reasonClause = rawNotes ? `due to ${rawNotes.replace(/^due to /i, '')}` : 'to attend to personal commitments';
-      return `Dear HR,\n\nI request ${typeLabel.toLowerCase()} on ${formattedDate} ${reasonClause}. I will ensure my pending responsibilities are covered before leaving.\n\nThank you for your consideration.\n\nBest regards,\n${applicant}`;
+      return `Dear HR,\n\nI request ${typeLabel.toLowerCase()} ${formattedDate} ${reasonClause}. I will ensure my pending responsibilities are covered before leaving.\n\nThank you for your consideration.\n\nBest regards,\n${applicant}`;
     }
 
     if (toneType === 'formal') {
       const reasonClause = rawNotes ? `to attend to the following matter: ${rawNotes}` : 'due to unavoidable personal commitments';
-      return `Dear HR,\n\nI am writing to formally request approval for ${typeLabel} on ${formattedDate}, ${reasonClause}.\n\nI have arranged for critical deliverables to be handled in my absence and will ensure a seamless handover before my leave. I will remain reachable on emergency communication if urgent assistance is required.\n\nThank you for your consideration.\n\nBest regards,\n${applicant}`;
+      return `Dear HR,\n\nI am writing to formally request approval for ${typeLabel} ${formattedDate}, ${reasonClause}.\n\nI have arranged for critical deliverables to be handled in my absence and will ensure a seamless handover before my leave. I will remain reachable on emergency communication if urgent assistance is required.\n\nThank you for your consideration.\n\nBest regards,\n${applicant}`;
     }
 
     // Standard tone
-    let bodySentence = `I would like to request ${typeLabel.toLowerCase()} on ${formattedDate}.`;
+    let bodySentence = `I would like to request ${typeLabel.toLowerCase()} ${formattedDate}.`;
     if (rawNotes) {
-      bodySentence = `I would like to request ${typeLabel.toLowerCase()} on ${formattedDate} to attend to a personal commitment, specifically: ${rawNotes}.`;
+      bodySentence = `I would like to request ${typeLabel.toLowerCase()} ${formattedDate} to attend to a personal commitment, specifically: ${rawNotes}.`;
     }
     return `Dear HR,\n\n${bodySentence} I will ensure my pending tasks are updated and hand over any urgent work before leaving.\n\nThank you for your consideration.\n\nBest regards,\n${applicant}`;
   };
@@ -218,6 +249,8 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
       customType: leaveType === 'other' ? customType.trim() : undefined,
       emergencyContact: 'N/A',
       startDate,
+      endDate: dateSelection?.endDate || startDate,
+      dates: dateSelection?.mode === 'multiple' ? dateSelection.dates : undefined,
       reason: reason.trim(),
     });
 
@@ -226,6 +259,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
       setLeaveType('casual');
       setCustomType('');
       setStartDate('');
+      setDateSelection(null);
       setReason('');
       setCustomInstruction('');
       setShowInstructionBox(false);
@@ -279,21 +313,22 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
                 </Select>
               </div>
 
-              {/* Single Leave Date Picker */}
+              {/* Leave Date Picker (Single, Range & Custom Specific Dates) */}
               <div className="space-y-2 flex flex-col">
-                <Label className="font-bold text-slate-700 dark:text-slate-300">Leave Date</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="font-bold text-slate-700 dark:text-slate-300">Leave Date</Label>
+                  {dateSelection && dateSelection.totalDays > 0 && (
+                    <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 px-2 py-0.5 rounded-full shadow-2xs">
+                      {dateSelection.totalDays} {dateSelection.totalDays === 1 ? 'day' : 'days'} selected
+                    </span>
+                  )}
+                </div>
                 <ProjectDatePicker
-                  value={
-                    startDate
-                      ? (() => {
-                          const d = new Date(startDate);
-                          return isNaN(d.getTime()) ? undefined : d;
-                        })()
-                      : undefined
-                  }
+                  placeholder="Pick date, range or specific dates"
                   disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                  onChange={(date) => {
-                    if (date) setStartDate(format(date, 'yyyy-MM-dd'));
+                  onDateSelectionChange={(sel) => {
+                    setDateSelection(sel);
+                    setStartDate(sel.startDate || '');
                   }}
                 />
               </div>

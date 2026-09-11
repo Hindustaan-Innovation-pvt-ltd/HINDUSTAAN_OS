@@ -376,6 +376,7 @@ export default function LeaveManagement() {
     emergencyContact: string;
     startDate: string;
     endDate?: string;
+    dates?: string[];
     reason: string;
   }) => {
     const typeMapping: Record<string, string> = {
@@ -389,13 +390,20 @@ export default function LeaveManagement() {
 
     const type = typeMapping[leave.type] || "Casual";
 
-    api.post('/leaves', {
+    const payload: Record<string, any> = {
       type,
       customType: leave.customType,
-      startDate: new Date(leave.startDate).toISOString(),
-      endDate: leave.endDate ? new Date(leave.endDate).toISOString() : new Date(leave.startDate).toISOString(),
       reason: leave.reason
-    }).then((res: any) => {
+    };
+
+    if (leave.dates && leave.dates.length > 0) {
+      payload.dates = leave.dates.map(d => new Date(d).toISOString());
+    } else {
+      payload.startDate = new Date(leave.startDate).toISOString();
+      payload.endDate = leave.endDate ? new Date(leave.endDate).toISOString() : new Date(leave.startDate).toISOString();
+    }
+
+    api.post('/leaves', payload).then((res: any) => {
       if (res.data?.success) {
         toast.success("Leave Applied Successfully", {
           description: isManager ? 'Awaiting admin approval.' : 'Awaiting manager approval.'
