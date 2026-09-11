@@ -31,8 +31,6 @@ export default function Login({
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Authentication Modes
-  const [isOTPMode, setIsOTPMode] = useState(false);
 
   // OTP State
   const [showOTPDialog, setShowOTPDialog] = useState(false);
@@ -271,7 +269,7 @@ export default function Login({
                 />
               </div>
 
-              <form className="space-y-4 lg:space-y-3" onSubmit={isOTPMode ? handleOTPRequest : handlePasswordLogin}>
+              <form className="space-y-4 lg:space-y-3" onSubmit={handlePasswordLogin}>
                 <div className="space-y-3 lg:space-y-2">
 
                   <div>
@@ -296,61 +294,47 @@ export default function Login({
                     </div>
                   </div>
 
-                  {!isOTPMode && (
-                    <div className="transition-all duration-300 ease-in-out animate-in fade-in zoom-in-95">
-                      <label htmlFor="password" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-0.5">
-                        Password
-                      </label>
-                      <div className="relative z-10">
-                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                          <KeyRound className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                        </div>
-                        <input
-                          id="password"
-                          name="password"
-                          type={showPassword ? 'text' : 'password'}
-                          autoComplete="current-password"
-                          required={!isOTPMode}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="pointer-events-auto block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 lg:py-1.5 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
-                          placeholder="••••••••"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 cursor-pointer z-20"
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </button>
+                  <div className="transition-all duration-300 ease-in-out animate-in fade-in zoom-in-95">
+                    <label htmlFor="password" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-0.5">
+                      Password
+                    </label>
+                    <div className="relative z-10">
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                        <KeyRound className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                       </div>
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="current-password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pointer-events-auto block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 lg:py-1.5 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 cursor-pointer z-20"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </div>
 
-
-                <div className="flex items-center justify-between pt-0.5 pb-1">
-                  {!isOTPMode ? (
-                    <button
-                      type="button"
-                      onClick={() => toast.success('Password reset link sent to your email.')}
-                      className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors uppercase tracking-wider"
-                    >
-                      Forgot Password?
-                    </button>
-                  ) : (
-                    <div />
-                  )}
+                <div className="flex items-center justify-end pt-0.5 pb-1">
                   <button
                     type="button"
-                    onClick={() => setIsOTPMode(!isOTPMode)}
+                    onClick={() => toast.success('Password reset link sent to your email.')}
                     className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors uppercase tracking-wider"
                   >
-                    {isOTPMode ? 'Use Password' : 'Magic Link'}
+                    Forgot Password?
                   </button>
                 </div>
 
@@ -364,7 +348,7 @@ export default function Login({
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
                       <>
-                        <span>{isOTPMode ? 'Send Verification Code' : 'Secure Log In'}</span>
+                        <span>Secure Log In</span>
                         <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                       </>
                     )}
