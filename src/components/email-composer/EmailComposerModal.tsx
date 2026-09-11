@@ -48,12 +48,22 @@ interface EmailComposerModalProps {
 // Clean up plain text by converting any literal escaped \n strings and formatting cleanly
 export function formatPlainText(raw: string): string {
   if (!raw) return '';
-  return raw
+  let formatted = raw
     .replace(/\\n/g, '\n')
     .replace(/\\r/g, '')
     .replace(/\r\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
+    .replace(/HR & Talent Acquisition/gi, 'HR Team')
+    .replace(/Human Resources Team/gi, 'HR Team')
     .trim();
+
+  // Fix signature spacing in plain text: collapse empty lines between sign-off and company lines
+  formatted = formatted.replace(
+    /(Best regards,|Sincerely,|Warm regards,|Regards,|Yours sincerely,)\s*\n+\s*([^\n]+)\s*\n+\s*(Hindustaan Innovations[^\n]*)\s*\n+\s*([^\n]+)/gi,
+    '$1\n$2\n$3\n$4'
+  );
+
+  return formatted;
 }
 
 // Convert HTML letterhead into structured, readable plain text
@@ -63,10 +73,10 @@ export function htmlToPlainText(html: string): string {
   text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
   text = text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
   text = text.replace(/<br\s*[\/]?>[ \t]*\r?\n?/gi, '\n');
-  text = text.replace(/<\/tr>/gi, '\n');
-  text = text.replace(/<\/p>/gi, '\n');
-  text = text.replace(/<\/div>/gi, '\n');
-  text = text.replace(/<\/h[1-6]>/gi, '\n');
+  text = text.replace(/<\/tr>[ \t]*\r?\n?/gi, '\n');
+  text = text.replace(/<\/p>[ \t]*\r?\n?/gi, '\n\n');
+  text = text.replace(/<\/div>[ \t]*\r?\n?/gi, '\n');
+  text = text.replace(/<\/h[1-6]>[ \t]*\r?\n?/gi, '\n\n');
   text = text.replace(/<td[^>]*>/gi, '  ');
   text = text.replace(/<[^>]+>/g, '');
   text = text
@@ -76,6 +86,11 @@ export function htmlToPlainText(html: string): string {
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'");
+
+  // Standardize HR Team branding
+  text = text
+    .replace(/HR & Talent Acquisition/gi, 'HR Team')
+    .replace(/Human Resources Team/gi, 'HR Team');
 
   const lines = text.split('\n').map(l => l.trim());
   const cleaned: string[] = [];
@@ -89,7 +104,16 @@ export function htmlToPlainText(html: string): string {
       cleaned.push(line);
     }
   }
-  return cleaned.join('\n').trim();
+
+  let result = cleaned.join('\n').trim();
+
+  // Fix signature spacing in plain text: collapse empty lines between sign-off and company lines
+  result = result.replace(
+    /(Best regards,|Sincerely,|Warm regards,|Regards,|Yours sincerely,)\s*\n+\s*([^\n]+)\s*\n+\s*(Hindustaan Innovations[^\n]*)\s*\n+\s*([^\n]+)/gi,
+    '$1\n$2\n$3\n$4'
+  );
+
+  return result;
 }
 
 // Convert plain text into styled HTML wrapper for raw HTML syncing
