@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Zap, FileText, RotateCcw, Loader2, Keyboard, Wand2, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { Send, Sparkles, RotateCcw, Loader2, Wand2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -94,15 +94,11 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   const [customInstruction, setCustomInstruction] = useState('');
-  const [showInstructionBox, setShowInstructionBox] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const instructionInputRef = useRef<HTMLInputElement | null>(null);
 
   // High-reliability instant draft generator for smooth UX
-  const generateInstantDraft = (
-    toneType: 'standard' | 'crisp' | 'formal',
-    customInst?: string
-  ) => {
+  const generateInstantDraft = (customInst?: string) => {
     const applicant = user?.name || 'Bhupesh';
     const typeLabel = leaveType === 'other'
       ? (customType.trim() || 'Leave')
@@ -117,20 +113,8 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
       : (leaveType.charAt(0).toUpperCase() + leaveType.slice(1) + ' Leave');
 
     const formattedDate = formatSelectedDatesPhrase(dateSelection, startDate);
-
     const rawNotes = (customInst !== undefined ? customInst : customInstruction).trim() || reason.trim();
 
-    if (toneType === 'crisp') {
-      const reasonClause = rawNotes ? `due to ${rawNotes.replace(/^due to /i, '')}` : 'to attend to personal commitments';
-      return `Dear HR,\n\nI request ${typeLabel.toLowerCase()} ${formattedDate} ${reasonClause}. I will ensure my pending responsibilities are covered before leaving.\n\nThank you for your consideration.\n\nBest regards,\n${applicant}`;
-    }
-
-    if (toneType === 'formal') {
-      const reasonClause = rawNotes ? `to attend to the following matter: ${rawNotes}` : 'due to unavoidable personal commitments';
-      return `Dear HR,\n\nI am writing to formally request approval for ${typeLabel} ${formattedDate}, ${reasonClause}.\n\nI have arranged for critical deliverables to be handled in my absence and will ensure a seamless handover before my leave. I will remain reachable on emergency communication if urgent assistance is required.\n\nThank you for your consideration.\n\nBest regards,\n${applicant}`;
-    }
-
-    // Standard tone
     let bodySentence = `I would like to request ${typeLabel.toLowerCase()} ${formattedDate}.`;
     if (rawNotes) {
       bodySentence = `I would like to request ${typeLabel.toLowerCase()} ${formattedDate} to attend to a personal commitment, specifically: ${rawNotes}.`;
@@ -139,10 +123,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
   };
 
   // AI Generation & Refinement Handler
-  const handleAiDraft = async (
-    tone: 'standard' | 'crisp' | 'formal' = 'standard',
-    instructionOverride?: string
-  ) => {
+  const handleAiDraft = async (instructionOverride?: string) => {
     if (isAiLoading) return;
 
     const displayType = leaveType === 'other' ? (customType.trim() || 'Custom Leave') : leaveType;
@@ -150,7 +131,7 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
     const formattedDate = formatSelectedDatesPhrase(dateSelection, startDate);
 
     // 1. Immediately populate textarea so the user never gets an empty box
-    const immediateDraft = generateInstantDraft(tone, activeInstruction);
+    const immediateDraft = generateInstantDraft(activeInstruction);
     setHistory((prev) => (reason.trim() && reason.trim() !== immediateDraft.trim() ? [...prev, reason] : prev));
     setReason(immediateDraft);
 
@@ -175,31 +156,25 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
         reasonNotes: reason.trim() || undefined,
         currentText: reason.trim() || undefined,
         customInstruction: activeInstruction || undefined,
-        tone,
       });
 
       const generatedDraft = res.data?.data?.draft || res.data?.draft;
       if (generatedDraft && typeof generatedDraft === 'string' && generatedDraft.trim()) {
         setReason(generatedDraft.trim());
 
-        const toneMessage = activeInstruction
-          ? `Drafted following custom instruction: "${activeInstruction.slice(0, 45)}${activeInstruction.length > 45 ? '...' : ''}"`
-          : tone === 'crisp'
-          ? 'Refined into crisp 2-line minimalist note'
-          : tone === 'formal'
-          ? 'Refined into formal leave letter'
-          : 'AI draft generated successfully';
+        const noteMessage = activeInstruction
+          ? `Letter drafted with instruction: "${activeInstruction.slice(0, 35)}${activeInstruction.length > 35 ? '...' : ''}"`
+          : 'Letter drafted with selected dates';
 
-        toast.success('AI Draft Updated', {
-          description: toneMessage,
+        toast.success('Letter Ready', {
+          description: noteMessage,
         });
       } else {
-        toast.success('AI Draft Ready', {
+        toast.success('Letter Ready', {
           description: 'Formatted leave letter prepared below.',
         });
       }
     } catch (err: any) {
-      // Even if network or backend fails, instant draft is ALREADY in the textarea!
       toast.success('Draft Ready', {
         description: 'Formatted leave letter prepared and inserted below.',
       });
@@ -217,22 +192,19 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
     toast.info('Reverted to previous draft');
   };
 
-  // Keyboard shortcut listener: Ctrl + L (or Cmd + L)
+  // Keyboard shortcut listener: Ctrl + L (or Cmd + L) focuses instruction input
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
         e.preventDefault();
-        setShowInstructionBox(true);
-        setTimeout(() => {
-          instructionInputRef.current?.focus();
-        }, 100);
-        handleAiDraft('standard');
+        instructionInputRef.current?.focus();
+        instructionInputRef.current?.select();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [leaveType, customType, startDate, reason, customInstruction, isAiLoading]);
+  }, []);
 
   // Form Submit Handler
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -281,7 +253,6 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
       setDateSelection(null);
       setReason('');
       setCustomInstruction('');
-      setShowInstructionBox(false);
       setHistory([]);
 
       toast.success('Leave application submitted.', {
@@ -369,121 +340,33 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
                 </div>
               )}
 
-              {/* Reason for Leave + AI Toolbar */}
-              <div className="space-y-2 md:col-span-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <Label className="font-bold text-slate-700 dark:text-slate-300">Reason for Leave</Label>
-
-                  {/* AI & Refinement Actions Bar */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAiDraft('standard')}
-                      disabled={isAiLoading}
-                      className="rounded-lg h-7 px-2.5 text-xs font-semibold bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/60 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 gap-1.5 transition-all shadow-xs"
-                      title="Generate or enhance with AI (Shortcut: Ctrl + L)"
-                    >
-                      {isAiLoading ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-                      )}
-                      <span>Draft with AI</span>
-                      <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[10px] font-mono opacity-70 bg-purple-200/50 dark:bg-purple-800/50 px-1 py-0.2 rounded">
-                        <Keyboard className="h-2.5 w-2.5 inline mr-0.5" />
-                        Ctrl+L
-                      </kbd>
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setShowInstructionBox((prev) => {
-                          const next = !prev;
-                          if (next) {
-                            setTimeout(() => instructionInputRef.current?.focus(), 100);
-                          }
-                          return next;
-                        });
-                      }}
-                      className={`rounded-lg h-7 px-2 text-xs font-medium border gap-1 transition-all ${
-                        showInstructionBox
-                          ? 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/60 dark:text-purple-200 dark:border-purple-700'
-                          : 'text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60 hover:bg-purple-50 dark:hover:bg-purple-950/40'
-                      }`}
-                      title="Add specific custom instruction for AI to follow"
-                    >
-                      <Wand2 className="h-3 w-3" />
-                      <span>Custom Prompt</span>
-                      {showInstructionBox ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                    </Button>
-
+              {/* Reason for Leave + Integrated AI Assistant */}
+              <div className="space-y-3 md:col-span-2">
+                <div className="flex items-center justify-between">
+                  <Label className="font-bold text-slate-700 dark:text-slate-300">
+                    Reason / Leave Letter
+                  </Label>
+                  {history.length > 0 && (
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleAiDraft('crisp')}
+                      onClick={handleUndo}
                       disabled={isAiLoading}
-                      className="rounded-lg h-7 px-2 text-xs text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 gap-1"
-                      title="Condense into 2 crisp minimalist lines"
+                      className="rounded-lg h-7 px-2.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 gap-1 transition-all"
+                      title="Undo last change"
                     >
-                      <Zap className="h-3 w-3" />
-                      <span>2-Line Minimalist</span>
+                      <RotateCcw className="h-3 w-3" />
+                      <span>Undo</span>
                     </Button>
-
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleAiDraft('formal')}
-                      disabled={isAiLoading}
-                      className="rounded-lg h-7 px-2 text-xs text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 gap-1"
-                      title="Make detailed and formal"
-                    >
-                      <FileText className="h-3 w-3" />
-                      <span>Formal</span>
-                    </Button>
-
-                    {history.length > 0 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleUndo}
-                        disabled={isAiLoading}
-                        className="rounded-lg h-7 px-2 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 gap-1"
-                        title="Undo AI changes"
-                      >
-                        <RotateCcw className="h-3 w-3" />
-                        <span>Undo</span>
-                      </Button>
-                    )}
-                  </div>
+                  )}
                 </div>
 
-                {/* Collapsible Custom AI Instruction Box */}
-                {showInstructionBox && (
-                  <div className="p-3 rounded-2xl bg-linear-to-r from-purple-50/80 via-indigo-50/60 to-purple-50/80 dark:from-purple-950/40 dark:via-indigo-950/30 dark:to-purple-950/40 border border-purple-200/80 dark:border-purple-800/60 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-900 dark:text-purple-200">
-                        <Wand2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-                        <span>Custom AI Instruction</span>
-                        <span className="font-normal text-[11px] text-purple-600/70 dark:text-purple-400/70">(AI will strictly shape the letter based on this)</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowInstructionBox(false)}
-                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-md"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-2">
+                {/* Unified AI Instruction Bar */}
+                <div className="p-3 rounded-2xl bg-gradient-to-r from-purple-50/90 via-indigo-50/70 to-purple-50/90 dark:from-purple-950/40 dark:via-indigo-950/30 dark:to-purple-950/40 border border-purple-200/80 dark:border-purple-800/60 space-y-2.5 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Wand2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
                       <Input
                         ref={instructionInputRef}
                         value={customInstruction}
@@ -491,59 +374,57 @@ export function LeaveApplicationWithDrafts({ onSubmitLeave, role }: LeaveApplica
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
-                            handleAiDraft('standard');
+                            handleAiDraft();
                           }
                         }}
-                        placeholder='e.g., "Mention that I will be available on phone after 4 PM", "Sound urgent due to family emergency"...'
-                        className="h-9 text-xs bg-white dark:bg-slate-900 border-purple-200 dark:border-purple-800/80 focus-visible:ring-purple-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                        placeholder='Type your reason or instruction (e.g. "ganesh chaturthi", "doctor appointment")...'
+                        className="h-10 pl-9 pr-3 text-xs bg-white dark:bg-slate-900 border-purple-200 dark:border-purple-800/80 focus-visible:ring-purple-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 rounded-xl"
                       />
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => handleAiDraft('standard')}
-                        disabled={isAiLoading}
-                        className="h-9 px-3.5 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-xl shrink-0 gap-1.5 shadow-md shadow-purple-600/20"
-                      >
-                        {isAiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                        <span>Write with Instruction</span>
-                      </Button>
                     </div>
-
-                    {/* Quick suggestion pills */}
-                    <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Quick suggestions:</span>
-                      {quickInstructions.map((q, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => {
-                            setCustomInstruction(q.value);
-                            handleAiDraft('standard', q.value);
-                          }}
-                          className="text-[11px] px-2 py-0.5 rounded-full bg-white/90 dark:bg-slate-900/90 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-colors cursor-pointer"
-                        >
-                          {q.label}
-                        </button>
-                      ))}
-                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => handleAiDraft()}
+                      disabled={isAiLoading}
+                      className="h-10 px-4 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-xl shrink-0 gap-1.5 shadow-md shadow-purple-600/20 transition-all cursor-pointer active:scale-95"
+                    >
+                      {isAiLoading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                      <span>Write with Instruction</span>
+                    </Button>
                   </div>
-                )}
 
+                  {/* Quick suggestion pills */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Quick suggestions:</span>
+                    {quickInstructions.map((q, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setCustomInstruction(q.value);
+                          handleAiDraft(q.value);
+                        }}
+                        className="text-[11px] px-2.5 py-1 rounded-full bg-white/90 dark:bg-slate-900/90 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-colors cursor-pointer font-medium"
+                      >
+                        {q.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Editable Final Letter Textarea */}
                 <Textarea
                   ref={textareaRef}
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   required
-                  placeholder="Enter reason or rough notes, or press Ctrl+L to draft with AI..."
-                  className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 min-h-[130px] shadow-sm font-medium resize-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-purple-500/40 dark:hover:border-purple-400/40 hover:shadow-md hover:shadow-purple-500/5 dark:hover:shadow-purple-500/10 transition-all duration-300 focus-visible:ring-purple-500"
+                  placeholder="Your leave letter will appear here automatically, or you can type directly..."
+                  className="rounded-xl bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 min-h-[140px] shadow-sm font-medium resize-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-purple-500/40 dark:hover:border-purple-400/40 hover:shadow-md hover:shadow-purple-500/5 dark:hover:shadow-purple-500/10 transition-all duration-300 focus-visible:ring-purple-500 leading-relaxed"
                 />
-
-                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1 pt-1">
-                  <span>
-                    Tip: Click <strong>Custom Prompt</strong> or press <strong>Ctrl+L</strong> to give special instructions (e.g. handover, emergency, reachable hours).
-                  </span>
-                  {history.length > 0 && <span>Draft version: {history.length + 1}</span>}
-                </div>
               </div>
             </div>
           </form>
