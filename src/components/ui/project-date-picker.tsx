@@ -21,6 +21,56 @@ export interface LeaveDateSelection {
   displayText: string;
 }
 
+function LeaveDayButton({
+  className,
+  day,
+  modifiers,
+  children,
+  ...props
+}: any) {
+  const ref = React.useRef<HTMLButtonElement>(null)
+  React.useEffect(() => {
+    if (modifiers?.focused) ref.current?.focus()
+  }, [modifiers?.focused])
+
+  const isSelected = Boolean(modifiers?.selected)
+  const isRangeStart = Boolean(modifiers?.range_start)
+  const isRangeEnd = Boolean(modifiers?.range_end)
+  const isRangeMiddle = Boolean(modifiers?.range_middle)
+  const isToday = Boolean(modifiers?.today)
+  const isDisabled = Boolean(modifiers?.disabled)
+  const isOutside = Boolean(modifiers?.outside)
+
+  // Single date or discrete multi-dates (e.g. 17, 19, 23)
+  const isPill = (isSelected && !isRangeMiddle && !isRangeStart && !isRangeEnd) || (isRangeStart && isRangeEnd)
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      tabIndex={modifiers?.focused ? 0 : -1}
+      className={cn(
+        "h-9 w-9 p-0 flex items-center justify-center text-xs font-semibold transition-all relative cursor-pointer outline-none select-none",
+        isOutside && "opacity-25",
+        isDisabled && "text-slate-600 opacity-25 cursor-not-allowed pointer-events-none",
+        !isSelected && !isDisabled && "text-slate-700 dark:text-slate-200 hover:bg-purple-500/15 hover:text-purple-400 hover:scale-105 rounded-xl",
+        isToday && !isSelected && "border border-purple-400/60 text-purple-400 font-bold shadow-xs rounded-xl",
+        // Multi-select / Single selected date solid pill:
+        isPill && "bg-purple-600 text-white font-bold rounded-xl shadow-md shadow-purple-600/40 hover:bg-purple-700 hover:text-white scale-105 z-10",
+        // Range start pill:
+        isRangeStart && !isRangeEnd && "bg-purple-600 text-white font-bold rounded-l-xl rounded-r-none shadow-md shadow-purple-600/30 hover:bg-purple-700 hover:text-white z-10",
+        // Range end pill:
+        isRangeEnd && !isRangeStart && "bg-purple-600 text-white font-bold rounded-r-xl rounded-l-none shadow-md shadow-purple-600/30 hover:bg-purple-700 hover:text-white z-10",
+        // Range middle connected strip:
+        isRangeMiddle && "bg-purple-500/25 dark:bg-purple-500/30 text-purple-700 dark:text-purple-200 rounded-none font-semibold hover:bg-purple-500/35"
+      )}
+      {...props}
+    >
+      <span>{children || day?.date?.getDate()}</span>
+    </button>
+  )
+}
+
 export function ProjectDatePicker({ 
   value, 
   onChange,
@@ -272,13 +322,10 @@ export function ProjectDatePicker({
               disabled={disabled}
               month={month}
               onMonthChange={setMonth}
+              components={{ DayButton: LeaveDayButton }}
               classNames={{
-                day: "h-9 w-9 p-0 font-medium aria-selected:opacity-100 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-300 transition-all relative cursor-pointer outline-none",
-                today: "text-purple-600 dark:text-purple-400 font-bold border border-purple-300 dark:border-purple-600/50 shadow-xs",
-                range_start: "bg-purple-600 text-white font-bold rounded-l-xl rounded-r-none hover:bg-purple-700 shadow-md shadow-purple-600/30",
-                range_end: "bg-purple-600 text-white font-bold rounded-r-xl rounded-l-none hover:bg-purple-700 shadow-md shadow-purple-600/30",
-                range_middle: "bg-purple-500/20 dark:bg-purple-500/25 text-purple-700 dark:text-purple-200 rounded-none font-semibold",
-                weekday: "text-slate-400 dark:text-slate-500 rounded-md w-9 font-bold text-[0.75rem] uppercase tracking-wider",
+                day: "h-9 w-9 p-0 font-medium text-center relative select-none",
+                weekday: "text-slate-400 dark:text-slate-500 rounded-md w-9 font-bold text-[0.75rem] uppercase tracking-wider text-center",
                 month_caption: "flex justify-center pt-1 relative items-center text-slate-900 dark:text-white font-bold text-sm",
               }}
             />
@@ -290,10 +337,10 @@ export function ProjectDatePicker({
               disabled={disabled}
               month={month}
               onMonthChange={setMonth}
+              components={{ DayButton: LeaveDayButton }}
               classNames={{
-                day: "h-9 w-9 p-0 font-medium aria-selected:opacity-100 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-300 transition-all relative cursor-pointer outline-none data-[selected-single=true]:bg-purple-600 data-[selected-single=true]:text-white data-[selected-single=true]:font-bold data-[selected-single=true]:shadow-md data-[selected-single=true]:shadow-purple-600/30",
-                today: "text-purple-600 dark:text-purple-400 font-bold border border-purple-300 dark:border-purple-600/50 shadow-xs",
-                weekday: "text-slate-400 dark:text-slate-500 rounded-md w-9 font-bold text-[0.75rem] uppercase tracking-wider",
+                day: "h-9 w-9 p-0 font-medium text-center relative select-none",
+                weekday: "text-slate-400 dark:text-slate-500 rounded-md w-9 font-bold text-[0.75rem] uppercase tracking-wider text-center",
                 month_caption: "flex justify-center pt-1 relative items-center text-slate-900 dark:text-white font-bold text-sm",
               }}
             />
