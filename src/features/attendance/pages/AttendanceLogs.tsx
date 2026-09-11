@@ -556,8 +556,8 @@ export default function AttendanceLogs() {
                           {isMissed ? 'ABSENT' : (rec.statusDisplay || rec.attendanceStatus)}
                         </Badge>
                         {isMissed && (
-                          <p className="text-[10px] text-rose-400 mt-1 max-w-xs truncate" title={rec.invalidReason || "Forgot to checkout after 30 minutes extra."}>
-                            {rec.invalidReason || "Absent - Forgot to checkout within working hours."}
+                          <p className="text-[10px] text-rose-400 mt-1 max-w-xs truncate" title={rec.invalidReason || "Forgot to checkout within maximum working hours + 1 extra hour."}>
+                            {rec.invalidReason || "Absent - Forgot to checkout within working hours (+1 hour extra window)."}
                           </p>
                         )}
                       </td>

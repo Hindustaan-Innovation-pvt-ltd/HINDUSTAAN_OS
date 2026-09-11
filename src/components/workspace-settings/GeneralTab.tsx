@@ -181,7 +181,7 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
       >
         <SettingsRow 
           title="Maximum Working Hours" 
-          description="If an employee forgets to check out and this duration is exceeded, their attendance session becomes INVALID (MISSED_CHECKOUT) with 0 worked time. They must perform a fresh check-in."
+          description="Employees receive a 1-hour grace window beyond this limit to check out. If they still do not check out within (Maximum Working Hours + 1 Extra Hour), their attendance session is marked as ABSENT (MISSED_CHECKOUT) with 0 worked time."
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
             <Select 
