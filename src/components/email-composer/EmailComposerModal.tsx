@@ -101,7 +101,7 @@ export function plainTextToHtml(text: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-  return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; white-space: pre-wrap; padding: 24px;">${escaped}</div>`;
+  return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; text-align: justify; text-justify: inter-word; white-space: pre-wrap; padding: 24px;">${escaped}</div>`;
 }
 
 // Formats any date into strict DD-MMM-YYYY (e.g. 08-Sep-2026)
@@ -160,11 +160,11 @@ export const BLANK_LETTERHEAD_HTML = `<div style="font-family: Arial, Helvetica,
       </tr>
     </table>
   </div>
-  <div style="padding: 28px 28px; min-height: 220px;">
-    <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">
+  <div style="padding: 28px 28px; min-height: 220px; text-align: justify; text-justify: inter-word;">
+    <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0; text-align: justify; text-justify: inter-word;">
       Start typing your message here, or enter instructions in the left panel and click <strong>"Generate / Rewrite with Groq AI"</strong>.
     </p>
-    <p style="margin-top: 32px; font-size: 13px; color: #1e293b;">
+    <p style="margin-top: 32px; font-size: 13px; color: #1e293b; text-align: left;">
       Sincerely,<br/>
       <strong>Management Team</strong><br/>
       <span style="color: #64748b; font-size: 12px;">Hindustan Innovation Pvt Ltd</span>
@@ -2103,7 +2103,7 @@ export default function EmailComposerModal({
 
       if (emailFormat === 'text') {
         payload.text = outgoingText;
-        payload.html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; white-space: pre-wrap; padding: 16px;">${outgoingText}</div>`;
+        payload.html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; text-align: justify; text-justify: inter-word; white-space: pre-wrap; padding: 16px;">${outgoingText}</div>`;
       } else {
         payload.html = outgoingHtml;
       }
@@ -3791,7 +3791,7 @@ export default function EmailComposerModal({
                     dangerouslySetInnerHTML={{ 
                       __html: htmlBody || '<p style="padding: 40px; color: #94a3b8; text-align: center;">No template selected or generated yet.</p>' 
                     }}
-                    className={`min-h-[520px] focus:outline-none transition-all ${
+                    className={`min-h-[520px] focus:outline-none transition-all [&_p]:text-justify [&_p]:[text-justify:inter-word] ${
                       isEditablePreview ? 'outline-2 outline-orange-400 outline-dashed m-2 rounded-lg' : ''
                     }`}
                   />
@@ -3830,7 +3830,7 @@ export default function EmailComposerModal({
                           setPlainText(formatPlainText(e.currentTarget.innerText));
                         }
                       }}
-                      className={`text-sm text-slate-900 dark:text-slate-100 font-sans leading-relaxed whitespace-pre-wrap min-h-[380px] focus:outline-none select-text ${
+                      className={`text-sm text-slate-900 dark:text-slate-100 font-sans leading-relaxed whitespace-pre-wrap min-h-[380px] focus:outline-none select-text text-justify [text-justify:inter-word] ${
                         isEditablePreview ? 'outline-2 outline-orange-400 outline-dashed p-3 rounded-lg bg-orange-50/10 dark:bg-orange-950/20' : ''
                       }`}
                     >
