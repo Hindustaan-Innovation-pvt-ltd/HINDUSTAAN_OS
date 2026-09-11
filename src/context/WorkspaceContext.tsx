@@ -30,6 +30,10 @@ export interface WorkspaceConfig {
   smtpPass?: string;
   whatsappWebhook?: string;
   maxWorkingHours: number;
+  officeLatitude?: number;
+  officeLongitude?: number;
+  geofenceRadiusMeters?: number;
+  geofenceEnabled?: boolean;
 }
 
 interface WorkspaceContextType {
@@ -61,6 +65,10 @@ const DEFAULT_CONFIG: WorkspaceConfig = {
   themeMode: 'dark',
   accentColor: 'blue',
   maxWorkingHours: 9,
+  officeLatitude: 21.2514,
+  officeLongitude: 81.6296,
+  geofenceRadiusMeters: 200,
+  geofenceEnabled: false,
 };
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -105,6 +113,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           smtpPass: d.smtpPass || '',
           whatsappWebhook: d.whatsappWebhook || '',
           maxWorkingHours: d.maxWorkingHours !== undefined && d.maxWorkingHours !== null ? d.maxWorkingHours : prev.maxWorkingHours,
+          officeLatitude: d.officeLatitude !== undefined && d.officeLatitude !== null ? d.officeLatitude : prev.officeLatitude,
+          officeLongitude: d.officeLongitude !== undefined && d.officeLongitude !== null ? d.officeLongitude : prev.officeLongitude,
+          geofenceRadiusMeters: d.geofenceRadiusMeters !== undefined && d.geofenceRadiusMeters !== null ? d.geofenceRadiusMeters : prev.geofenceRadiusMeters,
+          geofenceEnabled: d.geofenceEnabled !== undefined && d.geofenceEnabled !== null ? d.geofenceEnabled : prev.geofenceEnabled,
         }));
       }
     } catch (e) {
@@ -125,7 +137,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('workspace_config_v2', JSON.stringify(mergedConfig));
 
     try {
-      if ('workspaceName' in newConfig || 'supportEmail' in newConfig || 'themeMode' in newConfig || 'workspaceLogo' in newConfig || 'address' in newConfig || 'defaultTimezone' in newConfig || 'currency' in newConfig || 'maxWorkingHours' in newConfig) {
+      if ('workspaceName' in newConfig || 'supportEmail' in newConfig || 'themeMode' in newConfig || 'workspaceLogo' in newConfig || 'address' in newConfig || 'defaultTimezone' in newConfig || 'currency' in newConfig || 'maxWorkingHours' in newConfig || 'officeLatitude' in newConfig || 'officeLongitude' in newConfig || 'geofenceRadiusMeters' in newConfig || 'geofenceEnabled' in newConfig) {
         await api.put('/settings/workspace', {
           companyName: mergedConfig.workspaceName,
           supportEmail: mergedConfig.supportEmail,
@@ -135,6 +147,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           defaultTimezone: mergedConfig.defaultTimezone || "Asia/Kolkata",
           currency: mergedConfig.currency || "INR",
           maxWorkingHours: mergedConfig.maxWorkingHours || 9,
+          officeLatitude: mergedConfig.officeLatitude !== undefined && mergedConfig.officeLatitude !== null ? Number(mergedConfig.officeLatitude) : null,
+          officeLongitude: mergedConfig.officeLongitude !== undefined && mergedConfig.officeLongitude !== null ? Number(mergedConfig.officeLongitude) : null,
+          geofenceRadiusMeters: mergedConfig.geofenceRadiusMeters !== undefined && mergedConfig.geofenceRadiusMeters !== null ? Number(mergedConfig.geofenceRadiusMeters) : null,
+          geofenceEnabled: Boolean(mergedConfig.geofenceEnabled),
         });
       }
       const hasChannels = 'smtpHost' in newConfig || 'smtpPort' in newConfig || 'smtpUser' in newConfig || 'smtpPass' in newConfig || 'whatsappWebhook' in newConfig;

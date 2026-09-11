@@ -4,7 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useWorkspace } from '@/context/WorkspaceContext';
 import { toast } from 'sonner';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, LocateFixed, MapPin } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
+import { getBrowserCoordinates } from '@/lib/geo';
 
 const PRESET_HOURS = [8, 9, 10, 11, 12, 13, 14];
 
@@ -259,6 +262,136 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
                 </button>
               </div>
             )}
+          </div>
+        </SettingsRow>
+      </SettingsSection>
+
+      <SettingsSection 
+        title="Office Location & GPS Geofencing" 
+        description="Enforce geographic boundaries for attendance check-in. Employees must be physically within this radius to mark attendance."
+      >
+        <SettingsRow 
+          title="Enable Geofence Validation" 
+          description="Require employee GPS coordinates to be inside the office perimeter during check-in."
+        >
+          <Switch 
+            checked={data.geofenceEnabled ?? false} 
+            onCheckedChange={(val) => {
+              updateField('geofenceEnabled', val);
+              updateConfig({ geofenceEnabled: val });
+              toast.success(`Geofencing ${val ? 'enabled' : 'disabled'}`);
+            }} 
+          />
+        </SettingsRow>
+
+        <SettingsRow 
+          title="Office Coordinates" 
+          description="GPS Latitude and Longitude of your workspace/office building."
+        >
+          <div className="flex flex-col gap-3 w-full max-w-md">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 block mb-1">Latitude</label>
+                <Input 
+                  type="number" 
+                  step="any"
+                  placeholder="21.2514"
+                  value={data.officeLatitude ?? ''} 
+                  onChange={(e) => {
+                    const val = e.target.value === '' ? null : parseFloat(e.target.value);
+                    updateField('officeLatitude', val);
+                  }}
+                  onBlur={() => {
+                    updateConfig({ officeLatitude: data.officeLatitude });
+                  }}
+                  className="rounded-xl font-mono text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 block mb-1">Longitude</label>
+                <Input 
+                  type="number" 
+                  step="any"
+                  placeholder="81.6296"
+                  value={data.officeLongitude ?? ''} 
+                  onChange={(e) => {
+                    const val = e.target.value === '' ? null : parseFloat(e.target.value);
+                    updateField('officeLongitude', val);
+                  }}
+                  onBlur={() => {
+                    updateConfig({ officeLongitude: data.officeLongitude });
+                  }}
+                  className="rounded-xl font-mono text-xs"
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const coords = await getBrowserCoordinates();
+                  updateField('officeLatitude', coords.latitude);
+                  updateField('officeLongitude', coords.longitude);
+                  updateConfig({ officeLatitude: coords.latitude, officeLongitude: coords.longitude });
+                  toast.success(`Office location set to current GPS coordinates (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`);
+                } catch (err: any) {
+                  toast.error(err.message || 'Failed to detect current location');
+                }
+              }}
+              className="inline-flex items-center justify-center gap-2 h-9 px-3 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+            >
+              <LocateFixed className="h-3.5 w-3.5 text-blue-500" />
+              Use Current Device Location
+            </button>
+          </div>
+        </SettingsRow>
+
+        <SettingsRow 
+          title="Allowed Geofence Radius" 
+          description="Maximum distance in meters from office coordinates allowed for check-in."
+        >
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center gap-2">
+              <Input 
+                type="number"
+                min={10}
+                max={50000}
+                value={data.geofenceRadiusMeters ?? 200}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  updateField('geofenceRadiusMeters', isNaN(val) ? 200 : val);
+                }}
+                onBlur={() => {
+                  updateConfig({ geofenceRadiusMeters: data.geofenceRadiusMeters || 200 });
+                }}
+                className="w-28 rounded-xl font-bold font-mono text-xs"
+              />
+              <span className="text-xs font-bold text-slate-400">meters</span>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[50, 100, 200, 500, 1000].map((radius) => (
+                <button
+                  key={radius}
+                  type="button"
+                  onClick={() => {
+                    updateField('geofenceRadiusMeters', radius);
+                    updateConfig({ geofenceRadiusMeters: radius });
+                    toast.success(`Geofence radius set to ${radius}m`);
+                  }}
+                  className={cn(
+                    "text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer",
+                    (data.geofenceRadiusMeters ?? 200) === radius
+                      ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  )}
+                >
+                  {radius >= 1000 ? `${radius / 1000} km` : `${radius} m`}
+                </button>
+              ))}
+            </div>
           </div>
         </SettingsRow>
       </SettingsSection>

@@ -2,8 +2,9 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { 
   Clock, Calendar, Search, X, Download, RefreshCw, 
   CheckCircle2, PlayCircle, ShieldAlert, Wifi, Globe, 
-  Filter, User, ChevronLeft, ChevronRight, Activity, ArrowUpDown
+  Filter, User, ChevronLeft, ChevronRight, Activity, ArrowUpDown, MapPin
 } from 'lucide-react';
+import { getBrowserCoordinates } from '@/lib/geo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,8 @@ interface AttendanceRecord {
   statusDisplay: string;
   invalidReason?: string | null;
   ipAddress?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   createdAt?: string;
 }
 
@@ -79,7 +82,18 @@ export default function AttendanceLogs() {
   const handleQuickCheckInOut = async (type: 'checkin' | 'checkout') => {
     setIsCheckInOutSubmitting(true);
     try {
-      const res = await api.post(`/auth/${type}`);
+      let payload: Record<string, any> = {};
+      if (type === 'checkin') {
+        try {
+          const coords = await getBrowserCoordinates();
+          payload = { latitude: coords.latitude, longitude: coords.longitude };
+        } catch (geoErr: any) {
+          toast.error(geoErr.message || 'Location access is required for attendance check-in.');
+          setIsCheckInOutSubmitting(false);
+          return;
+        }
+      }
+      const res = await api.post(`/auth/${type}`, payload);
       if (res.data?.success) {
         toast.success(res.data.message || `Successfully ${type === 'checkin' ? 'checked in' : 'checked out'}`);
         window.dispatchEvent(new Event('auth_status_changed'));
@@ -562,11 +576,19 @@ export default function AttendanceLogs() {
                         )}
                       </td>
 
-                      {/* Exact IP Address */}
+                      {/* Exact IP Address & GPS Location */}
                       <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-xs">
-                          <Globe className="h-3.5 w-3.5 text-orange-500 shrink-0" />
-                          <span>{rec.ipAddress || '192.168.1.39'}</span>
+                        <div className="flex flex-col items-end gap-1">
+                          <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold bg-slate-100 dark:bg-slate-850 text-slate-800 dark:text-slate-200 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-xs">
+                            <Globe className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                            <span>{rec.ipAddress || '192.168.1.39'}</span>
+                          </div>
+                          {rec.latitude && rec.longitude ? (
+                            <div className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400" title={`GPS: ${rec.latitude}, ${rec.longitude}`}>
+                              <MapPin className="h-3 w-3 text-emerald-500 shrink-0" />
+                              <span>{rec.latitude.toFixed(4)}, {rec.longitude.toFixed(4)}</span>
+                            </div>
+                          ) : null}
                         </div>
                       </td>
                     </tr>

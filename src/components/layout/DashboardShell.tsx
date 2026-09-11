@@ -52,6 +52,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getBrowserCoordinates } from '@/lib/geo';
 
 const employeeNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
@@ -160,7 +161,17 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
   };
   const handleCheckInOut = async (type: 'checkin' | 'checkout') => {
     try {
-      const res = await api.post(`/auth/${type}`);
+      let payload: Record<string, any> = {};
+      if (type === 'checkin') {
+        try {
+          const coords = await getBrowserCoordinates();
+          payload = { latitude: coords.latitude, longitude: coords.longitude };
+        } catch (geoErr: any) {
+          toast.error(geoErr.message || 'Location access is required for attendance check-in.');
+          return;
+        }
+      }
+      const res = await api.post(`/auth/${type}`, payload);
       if (res.data?.success) {
         toast.success(res.data.message);
         window.dispatchEvent(new Event('auth_status_changed'));
