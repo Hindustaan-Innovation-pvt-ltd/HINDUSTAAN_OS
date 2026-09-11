@@ -54,9 +54,9 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
             Hindustaan Innovations
           </span>
           <span className="font-bold text-xs sm:text-sm tracking-wide text-slate-900 dark:text-white mt-0.5 whitespace-nowrap">
-            Pvt. Ltd.
+            Private Limited
           </span>
-          {subtitle && subtitle !== 'Pvt. Ltd.' && (
+          {subtitle && subtitle !== 'Private Limited' && subtitle !== 'Pvt. Ltd.' && (
             <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 tracking-wide">
               {subtitle}
             </p>
@@ -100,9 +100,9 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
             "text-slate-900 dark:text-white",
             isAuth ? "text-sm sm:text-base mt-1" : "text-xs mt-0.5"
           )}>
-            Pvt. Ltd.
+            Private Limited
           </span>
-          {subtitle && subtitle !== 'Pvt. Ltd.' && (
+          {subtitle && subtitle !== 'Private Limited' && subtitle !== 'Pvt. Ltd.' && (
             <p className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 mt-0.5 tracking-wide">
               {subtitle}
             </p>
