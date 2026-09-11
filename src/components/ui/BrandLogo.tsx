@@ -49,12 +49,15 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         </div>
 
         {/* Brand & Portal Text beside the logo */}
-        <div className="flex flex-col text-left">
-          <span className="font-black text-xl sm:text-2xl tracking-tight font-sans bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-600 to-green-600 dark:from-orange-400 dark:via-orange-500 dark:to-green-500 leading-tight whitespace-nowrap">
+        <div className="flex flex-col text-left justify-center">
+          <span className="font-black text-xl sm:text-2xl tracking-tight font-sans text-slate-900 dark:text-white leading-tight whitespace-nowrap">
             Hindustaan Innovations
           </span>
-          {subtitle && (
-            <p className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 mt-0.5 tracking-wide">
+          <span className="font-bold text-xs sm:text-sm tracking-wide text-slate-900 dark:text-white mt-0.5 whitespace-nowrap">
+            Pvt. Ltd.
+          </span>
+          {subtitle && subtitle !== 'Pvt. Ltd.' && (
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 tracking-wide">
               {subtitle}
             </p>
           )}
@@ -84,16 +87,22 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         />
       </div>
       {!isMinimized && (
-        <div className={cn("flex flex-col", isAuth ? "items-center text-center mt-3" : "text-left ml-3")}>
+        <div className={cn("flex flex-col justify-center", isAuth ? "items-center text-center mt-3" : "text-left ml-3")}>
           <span className={cn(
-            "font-black tracking-tight font-sans transition-all duration-200 whitespace-nowrap",
-            isAuth 
-              ? "text-3xl bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-600 to-green-600 dark:from-orange-400 dark:via-orange-500 dark:to-green-500 drop-shadow-sm" 
-              : "text-xl bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-600 to-green-600 dark:from-orange-400 dark:via-orange-500 dark:to-green-500 drop-shadow-sm"
+            "font-black tracking-tight font-sans transition-all duration-200 whitespace-nowrap leading-tight",
+            "text-slate-900 dark:text-white",
+            isAuth ? "text-2xl sm:text-3xl" : "text-base sm:text-lg"
           )}>
             Hindustaan Innovations
           </span>
-          {subtitle && (
+          <span className={cn(
+            "font-bold tracking-wide transition-all duration-200 whitespace-nowrap leading-none",
+            "text-slate-900 dark:text-white",
+            isAuth ? "text-sm sm:text-base mt-1" : "text-xs mt-0.5"
+          )}>
+            Pvt. Ltd.
+          </span>
+          {subtitle && subtitle !== 'Pvt. Ltd.' && (
             <p className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 mt-0.5 tracking-wide">
               {subtitle}
             </p>
