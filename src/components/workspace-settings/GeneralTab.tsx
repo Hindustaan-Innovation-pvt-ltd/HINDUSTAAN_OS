@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useWorkspace } from '@/context/WorkspaceContext';
 import { toast } from 'sonner';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 
 const PRESET_HOURS = [8, 9, 10, 11, 12, 13, 14];
 
@@ -187,7 +188,7 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
               value={isCustomMode ? 'custom' : String(currentHours)} 
               onValueChange={handleSelectChange}
             >
-              <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/50 w-full sm:w-64 font-semibold text-violet-600 dark:text-violet-400 border border-slate-200 dark:border-slate-800">
+              <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/80 w-full sm:w-64 font-semibold text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 shadow-xs">
                 <SelectValue placeholder="Select Limit" />
               </SelectTrigger>
               <SelectContent>
@@ -198,7 +199,7 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
                 <SelectItem value="12">12 Hours</SelectItem>
                 <SelectItem value="13">13 Hours</SelectItem>
                 <SelectItem value="14">14 Hours</SelectItem>
-                <SelectItem value="custom" className="font-bold text-violet-600 dark:text-violet-400">
+                <SelectItem value="custom" className="font-semibold text-slate-900 dark:text-white">
                   Custom Hours...
                 </SelectItem>
               </SelectContent>
@@ -206,8 +207,8 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
 
             {isCustomMode && (
               <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
-                <div className="relative flex items-center">
-                  <Input
+                <div className="relative flex items-center bg-slate-50 dark:bg-slate-900/90 rounded-xl border border-slate-200 dark:border-slate-800 h-10 px-2.5 gap-1 focus-within:ring-2 focus-within:ring-violet-500/50 focus-within:border-violet-500 transition-all shadow-xs">
+                  <input
                     type="number"
                     min={1}
                     max={24}
@@ -216,15 +217,43 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleApplyCustomHours();
                     }}
-                    placeholder="e.g. 6"
-                    className="w-24 rounded-xl bg-slate-50 dark:bg-slate-900/50 font-semibold pr-8 text-center text-violet-600 dark:text-violet-400 h-10 border-slate-200 dark:border-slate-800 focus-visible:ring-violet-500"
+                    placeholder="8"
+                    className="w-8 bg-transparent font-bold text-center text-slate-900 dark:text-white text-sm focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
-                  <span className="absolute right-2.5 text-xs font-bold text-slate-400 pointer-events-none">hrs</span>
+                  
+                  {/* Sleek Custom Increasing & Decreasing Stepper Buttons */}
+                  <div className="flex flex-col border-l border-slate-200 dark:border-slate-800 pl-1.5 py-0.5 justify-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = parseInt(customVal, 10) || 1;
+                        setCustomVal(String(Math.min(24, current + 1)));
+                      }}
+                      className="h-3.5 w-4 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-all cursor-pointer"
+                      title="Increase hours"
+                    >
+                      <ChevronUp className="h-3.5 w-3.5 stroke-[2.5]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = parseInt(customVal, 10) || 1;
+                        setCustomVal(String(Math.max(1, current - 1)));
+                      }}
+                      className="h-3.5 w-4 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-all cursor-pointer"
+                      title="Decrease hours"
+                    >
+                      <ChevronDown className="h-3.5 w-3.5 stroke-[2.5]" />
+                    </button>
+                  </div>
+
+                  <span className="text-xs font-bold text-slate-400 pointer-events-none select-none pl-1 pr-0.5">hrs</span>
                 </div>
+
                 <button
                   type="button"
                   onClick={handleApplyCustomHours}
-                  className="h-10 px-3.5 rounded-xl bg-violet-600 hover:bg-violet-700 active:scale-95 text-white text-xs font-bold transition-all shadow-sm shadow-violet-600/30 cursor-pointer"
+                  className="h-10 px-4 rounded-xl bg-violet-600 hover:bg-violet-700 active:scale-95 text-white text-xs font-bold transition-all shadow-sm shadow-violet-600/30 cursor-pointer"
                 >
                   Save
                 </button>
