@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   CheckCircle2, Clock, Calendar as CalendarIcon, Flag, Activity,
-  ArrowRight, MoreVertical, PlayCircle, Trophy, Target, AlertCircle, Sparkles, LayoutDashboard, History, Bell, X, AlertTriangle
+  ArrowRight, MoreVertical, PlayCircle, Trophy, Target, AlertCircle, Sparkles, LayoutDashboard, History, Bell, X, AlertTriangle, Loader2
 } from 'lucide-react';
+import { getBrowserCoordinates } from '@/lib/geo';
 import { cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -295,10 +296,13 @@ export default function InternDashboard({ }: InternDashboardProps) {
     }
   };
 
-  // Live backend dashboard data
+  const [isAttendanceSubmitting, setIsAttendanceSubmitting] = useState(false);
+
+  // Live backend dashboard data scoped to current user
   const [dashboardData, setDashboardData] = useState<any>(() => {
     try {
-      const cached = localStorage.getItem('intern_dashboard_data');
+      const uId = getCurrentUser()?.id || 'default';
+      const cached = localStorage.getItem(`intern_dashboard_data_${uId}`) || localStorage.getItem('intern_dashboard_data');
       return cached ? JSON.parse(cached) : null;
     } catch {
       return null;
@@ -313,17 +317,21 @@ export default function InternDashboard({ }: InternDashboardProps) {
   const milestonesTotal = dashboardData?.totalMilestones ?? 0;
   const completionRate = dashboardData?.performance?.completionRate ?? (tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0);
 
-  const fetchDashboard = async () => {
+  const fetchDashboard = async (force = false) => {
     try {
       const res = await api.get('/dashboard');
       if (res.data?.success) {
         const dataString = JSON.stringify(res.data.data);
-        if (lastDataRef.current === dataString) return;
+        if (!force && lastDataRef.current === dataString) return;
         lastDataRef.current = dataString;
 
         React.startTransition(() => {
           setDashboardData(res.data.data);
-          localStorage.setItem('intern_dashboard_data', JSON.stringify(res.data.data));
+          try {
+            const uId = getCurrentUser()?.id || 'default';
+            localStorage.setItem(`intern_dashboard_data_${uId}`, JSON.stringify(res.data.data));
+            localStorage.setItem('intern_dashboard_data', JSON.stringify(res.data.data));
+          } catch (e) {}
           // Hydrate logged hours
           if (typeof res.data.data.loggedHours === 'number') {
             setLoggedHours(res.data.data.loggedHours);
@@ -339,28 +347,69 @@ export default function InternDashboard({ }: InternDashboardProps) {
     }
   };
 
+  // Quick Check In / Check Out action directly from the card
+  const handleQuickAttendance = async (type: 'checkin' | 'checkout') => {
+    setIsAttendanceSubmitting(true);
+    try {
+      let payload: Record<string, any> = {};
+      if (type === 'checkin') {
+        try {
+          const coords = await getBrowserCoordinates();
+          payload = { latitude: coords.latitude, longitude: coords.longitude };
+        } catch (geoErr: any) {
+          toast.error(geoErr.message || 'Location access is required for attendance check-in.');
+          setIsAttendanceSubmitting(false);
+          return;
+        }
+      }
+      const res = await api.post(`/auth/${type}`, payload);
+      if (res.data?.success) {
+        toast.success(res.data.message || `Successfully ${type === 'checkin' ? 'checked in' : 'checked out'}`);
+        try {
+          const uId = getCurrentUser()?.id || 'default';
+          localStorage.removeItem(`intern_dashboard_data_${uId}`);
+          localStorage.removeItem('intern_dashboard_data');
+        } catch (e) {}
+        window.dispatchEvent(new Event('auth_status_changed'));
+        await fetchDashboard(true);
+        await fetchWorkLogs();
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || `Failed to ${type}`);
+    } finally {
+      setIsAttendanceSubmitting(false);
+    }
+  };
+
   useEffect(() => {
-    fetchDashboard();
+    fetchDashboard(true);
     fetchLeaves();
     fetchWorkLogs();
     fetchInternTasks();
 
     const handleAuthStatus = () => {
-      fetchDashboard();
+      fetchDashboard(true);
       fetchWorkLogs();
     };
     window.addEventListener('auth_status_changed', handleAuthStatus);
 
-    // Poll every 5 seconds for real-time updates
+    const handleFocus = () => {
+      fetchDashboard(true);
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Poll every 10 seconds for real-time updates
     const intervalId = setInterval(() => {
-      fetchDashboard();
+      fetchDashboard(false);
       fetchLeaves();
       fetchWorkLogs();
       fetchInternTasks();
-    }, 5000);
+    }, 10000);
+
     return () => {
       clearInterval(intervalId);
       window.removeEventListener('auth_status_changed', handleAuthStatus);
+      window.removeEventListener('focus', handleFocus);
     };
   }, []);
 
@@ -787,15 +836,39 @@ export default function InternDashboard({ }: InternDashboardProps) {
                   )}
                 </p>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setIsHistoryModalOpen(true)}
-                className="h-8 px-3 rounded-xl border-violet-500/30 text-violet-600 dark:text-violet-300 hover:bg-violet-500/10 font-bold text-xs flex items-center gap-1.5 shadow-xs"
-              >
-                <History className="h-3.5 w-3.5" />
-                <span>Logs</span>
-              </Button>
+              <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+                {(!dashboardData?.isOnline && !dashboardData?.currentSessionStart) ? (
+                  <Button
+                    size="sm"
+                    disabled={isAttendanceSubmitting}
+                    onClick={() => handleQuickAttendance('checkin')}
+                    className="h-8 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  >
+                    {isAttendanceSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Activity className="h-3.5 w-3.5" />}
+                    <span>Check In</span>
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    disabled={isAttendanceSubmitting}
+                    onClick={() => handleQuickAttendance('checkout')}
+                    variant="outline"
+                    className="h-8 px-3 rounded-xl border-orange-500/40 text-orange-600 dark:text-orange-400 hover:bg-orange-500/10 font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                  >
+                    {isAttendanceSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Activity className="h-3.5 w-3.5" />}
+                    <span>Check Out</span>
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsHistoryModalOpen(true)}
+                  className="h-8 px-3 rounded-xl border-violet-500/30 text-violet-600 dark:text-violet-300 hover:bg-violet-500/10 font-bold text-xs flex items-center gap-1.5 shadow-xs"
+                >
+                  <History className="h-3.5 w-3.5" />
+                  <span>Logs</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>

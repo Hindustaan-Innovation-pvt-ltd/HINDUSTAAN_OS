@@ -183,6 +183,13 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
       const res = await api.post(`/auth/${type}`, payload);
       if (res.data?.success) {
         toast.success(res.data.message);
+        try {
+          const uId = user?.id || 'default';
+          localStorage.removeItem(`manager_dashboard_data_${uId}`);
+          localStorage.removeItem(`intern_dashboard_data_${uId}`);
+          localStorage.removeItem('manager_dashboard_data');
+          localStorage.removeItem('intern_dashboard_data');
+        } catch (e) {}
         window.dispatchEvent(new Event('auth_status_changed'));
       }
     } catch (err: any) {

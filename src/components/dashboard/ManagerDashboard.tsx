@@ -44,19 +44,15 @@ import { AssignTaskDialog } from '../../features/tasks/components/AssignTaskDial
 import { useProjects, formatToMMDDYYYY } from '@/context/ProjectContext';
 import { useNotifications } from '@/context/NotificationContext';
 import { useSocket } from '@/context/SocketContext';
+import { toast } from 'sonner';
+import { getBrowserCoordinates } from '@/lib/geo';
 
-// --- Mock Data Removed ---
+// --- Duration formatter ---
 const formatTime = (totalSeconds: number) => {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
-  if (h > 0) {
-    return `${h}h ${m}m`;
-  }
   const s = totalSeconds % 60;
-  if (m > 0) {
-    return `${m}m ${s}s`;
-  }
-  return `${s}s`;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
 const formatCheckTime = (timeStr?: string | Date | null) => {
@@ -130,10 +126,18 @@ function ManagerDashboardInner() {
 
   const [tasks, setTasks] = useState<any[]>([]);
 
-  // Live dashboard stats from backend
+  const { user: contextUser } = useUser();
+  const currentUser = getCurrentUser();
+  const currentUserId = contextUser?.id || currentUser?.id || 'default';
+  const userName = contextUser?.name || currentUser?.name || 'Manager';
+
+  const [isAttendanceSubmitting, setIsAttendanceSubmitting] = useState(false);
+
+  // Live dashboard stats from backend scoped to the specific logged-in user
   const [dashboardStats, setDashboardStats] = useState<any>(() => {
     try {
-      const cached = localStorage.getItem('manager_dashboard_data');
+      const uId = getCurrentUser()?.id || 'default';
+      const cached = localStorage.getItem(`manager_dashboard_data_${uId}`) || localStorage.getItem('manager_dashboard_data');
       return cached ? JSON.parse(cached) : null;
     } catch {
       return null;
@@ -142,17 +146,21 @@ function ManagerDashboardInner() {
   const [liveTeamMembers, setLiveTeamMembers] = useState<any[]>([]);
   const lastDataRef = React.useRef<string | null>(null);
 
-  const fetchDashboard = React.useCallback(async () => {
+  const fetchDashboard = React.useCallback(async (force = false) => {
     try {
       const res = await api.get('/dashboard');
       if (res.data?.success) {
         const data = res.data.data;
         const dataString = JSON.stringify(data);
-        if (lastDataRef.current !== dataString) {
+        if (force || lastDataRef.current !== dataString) {
           lastDataRef.current = dataString;
           React.startTransition(() => {
             setDashboardStats(data);
-            localStorage.setItem('manager_dashboard_data', JSON.stringify(data));
+            try {
+              const uId = getCurrentUser()?.id || 'default';
+              localStorage.setItem(`manager_dashboard_data_${uId}`, JSON.stringify(data));
+              localStorage.setItem('manager_dashboard_data', JSON.stringify(data));
+            } catch (e) {}
             setLiveTeamMembers(data.liveTeamMembers || []);
             setActivityFeed(data.activityFeed || []);
             setAlerts(data.recentAlerts || []);
@@ -208,33 +216,81 @@ function ManagerDashboardInner() {
     }
   }, []);
 
+  // Quick Check In / Check Out directly from the dashboard card
+  const handleQuickAttendance = async (type: 'checkin' | 'checkout') => {
+    setIsAttendanceSubmitting(true);
+    try {
+      let payload: Record<string, any> = {};
+      if (type === 'checkin') {
+        try {
+          const coords = await getBrowserCoordinates();
+          payload = { latitude: coords.latitude, longitude: coords.longitude };
+        } catch (geoErr: any) {
+          toast.error(geoErr.message || 'Location access is required for attendance check-in.');
+          setIsAttendanceSubmitting(false);
+          return;
+        }
+      }
+      const res = await api.post(`/auth/${type}`, payload);
+      if (res.data?.success) {
+        toast.success(res.data.message || `Successfully ${type === 'checkin' ? 'checked in' : 'checked out'}`);
+        try {
+          const uId = getCurrentUser()?.id || 'default';
+          localStorage.removeItem(`manager_dashboard_data_${uId}`);
+          localStorage.removeItem('manager_dashboard_data');
+        } catch (e) {}
+        window.dispatchEvent(new Event('auth_status_changed'));
+        await fetchDashboard(true);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || `Failed to ${type}`);
+    } finally {
+      setIsAttendanceSubmitting(false);
+    }
+  };
+
   useEffect(() => {
-    fetchDashboard();
+    fetchDashboard(true);
 
     const handleAuthStatus = () => {
-      fetchDashboard();
+      fetchDashboard(true);
     };
     window.addEventListener('auth_status_changed', handleAuthStatus);
-    window.addEventListener('task_created', handleAuthStatus);
-    window.addEventListener('task_updated', handleAuthStatus);
+    window.addEventListener('task_created', () => fetchDashboard(true));
+    window.addEventListener('task_updated', () => fetchDashboard(true));
+
+    const handleFocus = () => {
+      fetchDashboard(true);
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Continuous 15-second background polling
+    const pollInterval = setInterval(() => {
+      fetchDashboard(false);
+    }, 15000);
 
     if (socket) {
-      socket.on('dashboard_update', () => {
-        fetchDashboard();
-      });
+      const handleSocketUpdate = () => {
+        fetchDashboard(true);
+      };
+      socket.on('dashboard_update', handleSocketUpdate);
+      socket.on('attendance_update', handleSocketUpdate);
 
       return () => {
-        socket.off('dashboard_update');
+        clearInterval(pollInterval);
+        socket.off('dashboard_update', handleSocketUpdate);
+        socket.off('attendance_update', handleSocketUpdate);
         window.removeEventListener('auth_status_changed', handleAuthStatus);
-        window.removeEventListener('task_created', handleAuthStatus);
-        window.removeEventListener('task_updated', handleAuthStatus);
+        window.removeEventListener('task_created', () => fetchDashboard(true));
+        window.removeEventListener('task_updated', () => fetchDashboard(true));
+        window.removeEventListener('focus', handleFocus);
       };
     }
 
     return () => {
+      clearInterval(pollInterval);
       window.removeEventListener('auth_status_changed', handleAuthStatus);
-      window.removeEventListener('task_created', handleAuthStatus);
-      window.removeEventListener('task_updated', handleAuthStatus);
+      window.removeEventListener('focus', handleFocus);
     };
   }, [fetchDashboard, socket]);
 
@@ -330,21 +386,10 @@ function ManagerDashboardInner() {
       }));
   }, [tasks]);
 
-  const formatTime = (totalSeconds: number) => {
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = totalSeconds % 60;
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
   const hour = new Date().getHours();
   let greeting = 'Good evening';
   if (hour < 12) greeting = 'Good morning';
   else if (hour < 18) greeting = 'Good afternoon';
-
-  const { user: contextUser } = useUser();
-  const currentUser = getCurrentUser();
-  const userName = contextUser?.name || currentUser?.name || 'Manager';
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -444,15 +489,39 @@ function ManagerDashboardInner() {
                   )}
                 </p>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setIsHistoryModalOpen(true)}
-                className="h-8 px-3 rounded-xl border-violet-500/30 text-violet-600 dark:text-violet-300 hover:bg-violet-500/10 font-bold text-xs flex items-center gap-1.5 shadow-xs"
-              >
-                <History className="h-3.5 w-3.5" />
-                <span>Logs</span>
-              </Button>
+              <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+                {(!dashboardStats?.isOnline && !dashboardStats?.currentSessionStart) ? (
+                  <Button
+                    size="sm"
+                    disabled={isAttendanceSubmitting}
+                    onClick={() => handleQuickAttendance('checkin')}
+                    className="h-8 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  >
+                    {isAttendanceSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Activity className="h-3.5 w-3.5" />}
+                    <span>Check In</span>
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    disabled={isAttendanceSubmitting}
+                    onClick={() => handleQuickAttendance('checkout')}
+                    variant="outline"
+                    className="h-8 px-3 rounded-xl border-orange-500/40 text-orange-600 dark:text-orange-400 hover:bg-orange-500/10 font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                  >
+                    {isAttendanceSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Activity className="h-3.5 w-3.5" />}
+                    <span>Check Out</span>
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsHistoryModalOpen(true)}
+                  className="h-8 px-3 rounded-xl border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <History className="h-3.5 w-3.5" />
+                  <span>Logs</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
