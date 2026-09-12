@@ -523,32 +523,38 @@ export default function AttendanceLogs() {
                       </td>
 
                       {/* Date */}
-                      <td className="px-4 py-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors whitespace-nowrap">
-                        {formatDate(rec.checkInTime)}
+                      <td className="px-4 py-3.5 text-xs font-semibold whitespace-nowrap">
+                        <span className="text-slate-700 dark:text-slate-200 dark:group-hover:text-white transition-colors">
+                          {formatDate(rec.checkInTime)}
+                        </span>
                       </td>
 
                       {/* Check-In */}
-                      <td className="px-4 py-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors whitespace-nowrap">
+                      <td className="px-4 py-3.5 text-xs font-semibold whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <PlayCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                          <span>{formatTime(rec.checkInTime)}</span>
+                          <PlayCircle className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
+                          <span className="text-slate-700 dark:text-slate-200 dark:group-hover:text-white transition-colors">
+                            {formatTime(rec.checkInTime)}
+                          </span>
                         </div>
                       </td>
 
                       {/* Check-Out */}
-                      <td className="px-4 py-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors whitespace-nowrap">
+                      <td className="px-4 py-3.5 text-xs font-semibold whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-300 shrink-0" />
-                          <span>{formatTime(rec.checkOutTime)}</span>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-slate-400 dark:text-slate-400 dark:group-hover:text-slate-300 shrink-0" />
+                          <span className="text-slate-700 dark:text-slate-200 dark:group-hover:text-white transition-colors">
+                            {formatTime(rec.checkOutTime)}
+                          </span>
                         </div>
                       </td>
 
                       {/* Worked Duration */}
                       <td className="px-4 py-3.5 text-xs font-bold whitespace-nowrap">
-                        <span className={isMissed ? "text-rose-600 dark:text-rose-400" : isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-900 dark:text-white group-hover:text-slate-900 dark:group-hover:text-white"}>
+                        <span className={isMissed ? "text-rose-600 dark:text-rose-400" : isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-800 dark:text-white dark:group-hover:text-white"}>
                           {rec.workedHours || '0h 0m'}
                         </span>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-400 ml-1 font-normal group-hover:text-slate-600 dark:group-hover:text-slate-300">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-400 ml-1 font-normal dark:group-hover:text-slate-300">
                           (Max: {rec.configuredWorkingHours || 9}h)
                         </span>
                       </td>
