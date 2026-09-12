@@ -113,14 +113,14 @@ export function getCityFromCoordinates(
   longitude?: number | null
 ): string {
   if (latitude === null || latitude === undefined || longitude === null || longitude === undefined) {
-    return 'Raipur (Office HQ)';
+    return 'Location Denied';
   }
 
   const lat = Number(latitude);
   const lng = Number(longitude);
 
   if (isNaN(lat) || isNaN(lng)) {
-    return 'Raipur (Office HQ)';
+    return 'Location Denied';
   }
 
   let closestCity: KnownCity = KNOWN_CITIES[0];

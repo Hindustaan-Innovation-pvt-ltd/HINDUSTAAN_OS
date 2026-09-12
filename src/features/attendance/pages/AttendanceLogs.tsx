@@ -579,13 +579,23 @@ export default function AttendanceLogs() {
                             <Wifi className="h-3.5 w-3.5 text-sky-500 shrink-0" />
                             <span>{rec.ipAddress || '192.168.1.54'}</span>
                           </div>
-                          <div 
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300"
-                            title={rec.latitude && rec.longitude ? `GPS: ${Number(rec.latitude).toFixed(4)}, ${Number(rec.longitude).toFixed(4)}` : 'Office Network'}
-                          >
-                            <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0" />
-                            <span>{getCityFromCoordinates(rec.latitude, rec.longitude)}</span>
-                          </div>
+                          {rec.latitude && rec.longitude ? (
+                            <div 
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300"
+                              title={`GPS: ${Number(rec.latitude).toFixed(4)}, ${Number(rec.longitude).toFixed(4)}`}
+                            >
+                              <MapPin className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                              <span>{getCityFromCoordinates(rec.latitude, rec.longitude)}</span>
+                            </div>
+                          ) : (
+                            <div 
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400"
+                              title="Location access was denied or unavailable"
+                            >
+                              <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                              <span>Location Denied</span>
+                            </div>
+                          )}
                         </div>
                       </td>
 
