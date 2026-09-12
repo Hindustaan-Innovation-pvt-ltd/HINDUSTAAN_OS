@@ -454,11 +454,12 @@ export default function AttendanceLogs() {
               <thead className="text-[11px] text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/60 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800 tracking-wider">
                 <tr>
                   <th className="px-5 py-3.5 font-black">Employee / User</th>
-                  <th className="px-4 py-3.5 font-black">Session Date</th>
-                  <th className="px-4 py-3.5 font-black">Check In</th>
-                  <th className="px-4 py-3.5 font-black">Check Out</th>
-                  <th className="px-4 py-3.5 font-black">Worked Duration</th>
-                  <th className="px-4 py-3.5 font-black text-left">Status & Location</th>
+                  <th className="px-3.5 py-3.5 font-black">Session Date</th>
+                  <th className="px-3.5 py-3.5 font-black">Check In</th>
+                  <th className="px-3.5 py-3.5 font-black">Check Out</th>
+                  <th className="px-3.5 py-3.5 font-black">Worked Duration</th>
+                  <th className="px-3.5 py-3.5 font-black">Status</th>
+                  <th className="px-4 py-3.5 font-black text-left">IP & Location</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -569,61 +570,55 @@ export default function AttendanceLogs() {
                           (Max: {rec.configuredWorkingHours || 9}h)
                         </span>
                       </td>
-                      {/* Status & Location */}
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <div className="flex flex-col items-start gap-1.5">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {/* Status Badge */}
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] uppercase font-black tracking-wider px-2 py-0.5 border",
-                                isMissed
-                                  ? "bg-rose-500/10 text-rose-500 border-rose-500/30"
-                                  : isActive
-                                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30 animate-pulse"
-                                    : isTargetReached
-                                      ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
-                                      : "bg-blue-500/10 text-blue-400 border-blue-500/30"
-                              )}
+                      {/* Status */}
+                      <td className="px-3.5 py-3.5 whitespace-nowrap">
+                        <div className="flex flex-col items-start gap-1">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px] uppercase font-black tracking-wider px-2 py-0.5 border",
+                              isMissed
+                                ? "bg-rose-500/10 text-rose-500 border-rose-500/30"
+                                : isActive
+                                  ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30 animate-pulse"
+                                  : isTargetReached
+                                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
+                                    : "bg-blue-500/10 text-blue-400 border-blue-500/30"
+                            )}
+                          >
+                            {isActive && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1 inline-block" />}
+                            {badgeText}
+                          </Badge>
+
+                          {isMissed && (
+                            <p className="text-[10px] text-rose-400 max-w-xs truncate" title={rec.invalidReason || "Forgot to checkout within maximum working hours + 1 extra hour."}>
+                              {rec.invalidReason || "Absent - Forgot to checkout within working hours"}
+                            </p>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* IP & Location */}
+                      <td className="px-4 py-3.5 whitespace-nowrap text-left">
+                        <div className="flex flex-col items-start gap-1">
+                          <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-xs">
+                            <Wifi className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                            <span>{rec.ipAddress || '192.168.1.54'}</span>
+                          </div>
+                          {rec.latitude && rec.longitude ? (
+                            <div 
+                              className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400" 
+                              title={`GPS Coordinates: ${rec.latitude}, ${rec.longitude}`}
                             >
-                              {isActive && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1 inline-block" />}
-                              {badgeText}
-                            </Badge>
-
-                            {/* Connected IP Badge */}
-                            <div className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 shadow-2xs">
-                              <Wifi className="h-3 w-3 text-emerald-500 shrink-0" />
-                              <span>{rec.ipAddress || '192.168.1.54'}</span>
+                              <MapPin className="h-3 w-3 text-emerald-500 shrink-0" />
+                              <span>{Number(rec.latitude).toFixed(4)}, {Number(rec.longitude).toFixed(4)}</span>
                             </div>
-                          </div>
-
-                          {/* Location & Absent Reason */}
-                          <div className="flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-400">
-                            {rec.latitude && rec.longitude ? (
-                              <div 
-                                className="inline-flex items-center gap-1 font-mono text-emerald-600 dark:text-emerald-400" 
-                                title={`GPS Coordinates: ${rec.latitude}, ${rec.longitude}`}
-                              >
-                                <MapPin className="h-2.5 w-2.5 text-emerald-500 shrink-0" />
-                                <span>{Number(rec.latitude).toFixed(4)}, {Number(rec.longitude).toFixed(4)}</span>
-                              </div>
-                            ) : (
-                              <div className="inline-flex items-center gap-1">
-                                <MapPin className="h-2.5 w-2.5 text-slate-400 opacity-60 shrink-0" />
-                                <span>Office Network</span>
-                              </div>
-                            )}
-
-                            {isMissed && (
-                              <>
-                                <span className="text-slate-400 dark:text-slate-600">•</span>
-                                <span className="text-rose-400 truncate max-w-xs" title={rec.invalidReason || "Forgot to checkout within maximum working hours + 1 extra hour."}>
-                                  {rec.invalidReason || "Absent - Forgot to checkout within working hours"}
-                                </span>
-                              </>
-                            )}
-                          </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500">
+                              <MapPin className="h-3 w-3 text-slate-400 opacity-60 shrink-0" />
+                              <span>Office Network</span>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
