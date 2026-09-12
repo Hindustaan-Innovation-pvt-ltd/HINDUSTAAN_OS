@@ -76,6 +76,15 @@ const managerNavigation = [
   { name: 'Leave Management', icon: CalendarRange },
   { name: 'Team Members', icon: Users },
   { name: 'Email Logs', icon: Mail },
+  {
+    name: 'Workspace Settings',
+    icon: Building,
+    items: [
+      { name: 'General', id: 'Workspace Settings - General', icon: Settings },
+      { name: 'Security & Access', id: 'Workspace Settings - Security & Access', icon: ShieldCheck },
+      { name: 'Appearance', id: 'Workspace Settings - Appearance', icon: Settings }
+    ]
+  },
   { name: 'Settings', icon: Settings },
 ];
 

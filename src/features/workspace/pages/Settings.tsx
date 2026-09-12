@@ -7,10 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useNavigate } from 'react-router-dom';
 import {
   User, Shield, Bell, Palette, Link as LinkIcon, Database, Globe, HelpCircle,
   Download, MonitorSmartphone, CheckCircle2, Moon, Sun, Monitor, ChevronLeft, Clock,
-  Eye, EyeOff, QrCode, Smartphone, Laptop, AlertTriangle, X, Save, Loader2
+  Eye, EyeOff, QrCode, Smartphone, Laptop, AlertTriangle, X, Save, Loader2, Building
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -33,9 +34,20 @@ const SETTINGS_SECTIONS = [
 ];
 
 export default function Settings() {
+  const navigate = useNavigate();
   const { theme, toggleTheme, accentColor, setAccentColor } = useTheme();
   const { user } = useUser();
   const role = user?.role || 'employee';
+
+  const availableSections = [
+    ...(['admin', 'manager'].includes(role) ? [{
+      id: 'workspace',
+      label: 'Workspace & Geofencing',
+      description: 'Configure organization details, working hours, and office GPS coordinates.',
+      icon: Building,
+    }] : []),
+    ...SETTINGS_SECTIONS,
+  ];
 
   const [activeTab, setActiveTab] = useState<string | null>(null);
 
@@ -695,12 +707,18 @@ export default function Settings() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
-            {SETTINGS_SECTIONS.map((section) => {
+            {availableSections.map((section) => {
               const Icon = section.icon;
               return (
                 <Card
                   key={section.id}
-                  onClick={() => setActiveTab(section.id)}
+                  onClick={() => {
+                    if (section.id === 'workspace') {
+                      navigate('/admin/workspace/general');
+                      return;
+                    }
+                    setActiveTab(section.id);
+                  }}
                   className="cursor-pointer border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-orange-500 dark:hover:border-orange-500/50 hover:shadow-md transition-all group"
                 >
                   <CardContent className="p-6 flex flex-col gap-4">
