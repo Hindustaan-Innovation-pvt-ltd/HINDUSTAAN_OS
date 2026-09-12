@@ -555,20 +555,38 @@ export default function AttendanceLogs() {
 
                       {/* Status */}
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[10px] uppercase font-black tracking-wider px-2 py-0.5 border",
-                            isMissed
-                              ? "bg-rose-500/10 text-rose-500 border-rose-500/30"
-                              : isActive
-                                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30 animate-pulse"
-                                : "bg-blue-500/10 text-blue-500 border-blue-500/30"
-                          )}
-                        >
-                          {isActive && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1 inline-block" />}
-                          {isMissed ? 'ABSENT' : (rec.statusDisplay || rec.attendanceStatus)}
-                        </Badge>
+                        {(() => {
+                          const targetMinutes = (rec.configuredWorkingHours || 9) * 60;
+                          const isTargetReached = (rec.workedMinutes || 0) >= targetMinutes;
+                          
+                          let badgeText = rec.statusDisplay || rec.attendanceStatus;
+                          if (isMissed) {
+                            badgeText = 'ABSENT';
+                          } else if (isActive) {
+                            badgeText = 'ACTIVE';
+                          } else if (isCompleted) {
+                            badgeText = isTargetReached ? 'COMPLETED' : (rec.workedHours || `${Math.floor((rec.workedMinutes || 0) / 60)}h ${(rec.workedMinutes || 0) % 60}m`);
+                          }
+
+                          return (
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-[10px] uppercase font-black tracking-wider px-2 py-0.5 border",
+                                isMissed
+                                  ? "bg-rose-500/10 text-rose-500 border-rose-500/30"
+                                  : isActive
+                                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30 animate-pulse"
+                                    : isTargetReached
+                                      ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
+                                      : "bg-blue-500/10 text-blue-400 border-blue-500/30"
+                              )}
+                            >
+                              {isActive && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1 inline-block" />}
+                              {badgeText}
+                            </Badge>
+                          );
+                        })()}
                         {isMissed && (
                           <p className="text-[10px] text-rose-400 mt-1 max-w-xs truncate" title={rec.invalidReason || "Forgot to checkout within maximum working hours + 1 extra hour."}>
                             {rec.invalidReason || "Absent - Forgot to checkout within working hours (+1 hour extra window)."}

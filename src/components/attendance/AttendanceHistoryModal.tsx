@@ -5,6 +5,7 @@ import { Clock, AlertTriangle, CheckCircle2, PlayCircle, Calendar, ShieldAlert, 
 import { Button } from '@/components/ui/button';
 import api from '@/lib/api';
 import { useUser } from '@/context/UserContext';
+import { cn } from '@/lib/utils';
 
 interface AttendanceRecord {
   id: string;
@@ -254,18 +255,37 @@ export default function AttendanceHistoryModal({ isOpen, onClose, userId, userNa
                                 {rec.userName} {rec.userRole ? `(${rec.userRole})` : ''}
                               </span>
                             )}
-                            <Badge
-                              variant="outline"
-                              className={`text-[10px] uppercase font-bold tracking-wider ${
-                                isMissed
-                                  ? "border-red-500/40 text-red-400 bg-red-500/10"
-                                  : isActive
-                                  ? "border-violet-500/40 text-violet-300 bg-violet-500/10"
-                                  : "border-emerald-500/40 text-emerald-400 bg-emerald-500/10"
-                              }`}
-                            >
-                              {rec.statusDisplay}
-                            </Badge>
+                            {(() => {
+                              const targetMinutes = (rec.configuredWorkingHours || 9) * 60;
+                              const isTargetReached = (rec.workedMinutes || 0) >= targetMinutes;
+                              
+                              let badgeText = rec.statusDisplay || rec.attendanceStatus;
+                              if (isMissed) {
+                                badgeText = 'ABSENT';
+                              } else if (isActive) {
+                                badgeText = 'ACTIVE';
+                              } else if (isCompleted) {
+                                badgeText = isTargetReached ? 'COMPLETED' : (rec.workedHours || `${Math.floor((rec.workedMinutes || 0) / 60)}h ${(rec.workedMinutes || 0) % 60}m`);
+                              }
+
+                              return (
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "text-[10px] uppercase font-bold tracking-wider",
+                                    isMissed
+                                      ? "border-red-500/40 text-red-400 bg-red-500/10"
+                                      : isActive
+                                      ? "border-violet-500/40 text-violet-300 bg-violet-500/10"
+                                      : isTargetReached
+                                      ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/10"
+                                      : "border-blue-500/40 text-blue-300 bg-blue-500/10"
+                                  )}
+                                >
+                                  {badgeText}
+                                </Badge>
+                              );
+                            })()}
                           </div>
                           <div className="flex items-center gap-4 text-xs text-slate-400 mt-1.5 flex-wrap">
                             <div>
