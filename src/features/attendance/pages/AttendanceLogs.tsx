@@ -484,7 +484,7 @@ export default function AttendanceLogs() {
                         role: rec.userRole || 'employee',
                         department: rec.department
                       })}
-                      className="cursor-pointer transition-colors hover:bg-slate-100/60 dark:hover:bg-white/[0.04] group"
+                      className="cursor-pointer transition-colors hover:bg-slate-100/70 dark:hover:bg-slate-800/40 group"
                       title="Click to open attendance calendar & heatmap"
                     >
                       {/* User Info */}
@@ -497,9 +497,9 @@ export default function AttendanceLogs() {
                           </Avatar>
                           <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-slate-900 dark:text-white truncate text-sm group-hover:text-orange-500 transition-colors flex items-center gap-1.5">
+                              <span className="font-bold text-slate-900 dark:text-white truncate text-sm group-hover:text-blue-600 dark:group-hover:text-sky-300 transition-colors flex items-center gap-1.5">
                                 {rec.userName}
-                                <Calendar className="h-3 w-3 text-orange-400 opacity-60 group-hover:opacity-100 transition-opacity shrink-0" />
+                                <Calendar className="h-3 w-3 text-sky-500 dark:text-sky-400 opacity-70 group-hover:opacity-100 transition-opacity shrink-0" />
                               </span>
                               <Badge 
                                 variant="outline"
@@ -515,7 +515,7 @@ export default function AttendanceLogs() {
                                 {rec.userRole === 'manager' ? 'MGR' : rec.userRole === 'admin' ? 'ADM' : 'EMP'}
                               </Badge>
                             </div>
-                            <span className="text-[11px] text-slate-400 truncate">
+                            <span className="text-[11px] text-slate-400 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 truncate transition-colors">
                               {rec.userEmail} {rec.department ? `• ${rec.department}` : ''}
                             </span>
                           </div>
@@ -523,12 +523,12 @@ export default function AttendanceLogs() {
                       </td>
 
                       {/* Date */}
-                      <td className="px-4 py-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                      <td className="px-4 py-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors whitespace-nowrap">
                         {formatDate(rec.checkInTime)}
                       </td>
 
                       {/* Check-In */}
-                      <td className="px-4 py-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                      <td className="px-4 py-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <PlayCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                           <span>{formatTime(rec.checkInTime)}</span>
@@ -536,19 +536,19 @@ export default function AttendanceLogs() {
                       </td>
 
                       {/* Check-Out */}
-                      <td className="px-4 py-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                      <td className="px-4 py-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <CheckCircle2 className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-300 shrink-0" />
                           <span>{formatTime(rec.checkOutTime)}</span>
                         </div>
                       </td>
 
                       {/* Worked Duration */}
                       <td className="px-4 py-3.5 text-xs font-bold whitespace-nowrap">
-                        <span className={isMissed ? "text-rose-600 dark:text-rose-400" : isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-900 dark:text-white"}>
+                        <span className={isMissed ? "text-rose-600 dark:text-rose-400" : isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-900 dark:text-white group-hover:text-slate-900 dark:group-hover:text-white"}>
                           {rec.workedHours || '0h 0m'}
                         </span>
-                        <span className="text-[10px] text-slate-400 ml-1 font-normal">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-400 ml-1 font-normal group-hover:text-slate-600 dark:group-hover:text-slate-300">
                           (Max: {rec.configuredWorkingHours || 9}h)
                         </span>
                       </td>
