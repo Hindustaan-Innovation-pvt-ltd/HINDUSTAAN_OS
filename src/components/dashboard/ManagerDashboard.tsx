@@ -67,36 +67,33 @@ const formatCheckTime = (timeStr?: string | Date | null) => {
 };
 
 const LiveTimer = ({ initialSeconds, sessionStart, isOnline }: { initialSeconds: number; sessionStart?: string | Date | null; isOnline?: boolean }) => {
-  const computedInitial = React.useMemo(() => {
+  const getSeconds = React.useCallback(() => {
     if (isOnline && sessionStart) {
       try {
         const startMs = new Date(sessionStart).getTime();
         const nowMs = Date.now();
-        if (startMs <= nowMs && !isNaN(startMs)) {
-          const elapsed = Math.floor((nowMs - startMs) / 1000);
-          return Math.max(initialSeconds, elapsed);
+        if (!isNaN(startMs) && startMs <= nowMs) {
+          const currentSessionSeconds = Math.floor((nowMs - startMs) / 1000);
+          return (initialSeconds || 0) + currentSessionSeconds;
         }
-      } catch (e) { }
+      } catch (e) {}
     }
-    return initialSeconds;
+    return initialSeconds || 0;
   }, [initialSeconds, sessionStart, isOnline]);
 
-  const [startClock, setStartClock] = React.useState(Date.now() - computedInitial * 1000);
-  const [seconds, setSeconds] = React.useState(computedInitial);
+  const [seconds, setSeconds] = React.useState(getSeconds);
 
   React.useEffect(() => {
-    if (Math.abs(computedInitial - seconds) > 15) {
-      setStartClock(Date.now() - computedInitial * 1000);
-      setSeconds(computedInitial);
-    }
-  }, [computedInitial, seconds]);
+    setSeconds(getSeconds());
 
-  React.useEffect(() => {
-    const int = setInterval(() => {
-      setSeconds(Math.floor((Date.now() - startClock) / 1000));
+    if (!isOnline || !sessionStart) return;
+
+    const interval = setInterval(() => {
+      setSeconds(getSeconds());
     }, 1000);
-    return () => clearInterval(int);
-  }, [startClock]);
+
+    return () => clearInterval(interval);
+  }, [getSeconds, isOnline, sessionStart]);
 
   return <>{formatTime(seconds)}</>;
 };
