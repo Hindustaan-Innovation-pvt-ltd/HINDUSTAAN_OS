@@ -16,7 +16,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { 
   Users, Search, Filter, Plus, Download, MoreVertical, MapPin, 
   Mail, Phone, GraduationCap, Briefcase, Calendar, CheckCircle2, 
-  MessageSquare, Clock, Trophy, ExternalLink, Activity, ArrowRightLeft, MessageCircle, Loader2, Check, Shield
+  MessageSquare, Clock, Trophy, ExternalLink, Activity, ArrowRightLeft, MessageCircle, Loader2, Check, Shield, Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -123,6 +123,8 @@ export default function TeamMembers() {
   const [isDeactivatingSubmit, setIsDeactivatingSubmit] = useState(false);
   const [activatingIntern, setActivatingIntern] = useState<any | null>(null);
   const [isActivatingSubmit, setIsActivatingSubmit] = useState(false);
+  const [deletingIntern, setDeletingIntern] = useState<any | null>(null);
+  const [isDeletingSubmit, setIsDeletingSubmit] = useState(false);
   const [assigningIntern, setAssigningIntern] = useState<any | null>(null);
   const [activeProjects, setActiveProjects] = useState<any[]>([]);
 
@@ -397,6 +399,31 @@ export default function TeamMembers() {
       });
     } finally {
       setIsActivatingSubmit(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingIntern) return;
+    setIsDeletingSubmit(true);
+    try {
+      const response = await api.delete(`/team/${deletingIntern.id}`);
+      if (response.data?.success || response.status === 200) {
+        toast.success('Intern Deleted Successfully', {
+          description: response.data?.message || `${deletingIntern.name} has been permanently deleted.`
+        });
+        if (selectedIntern?.id === deletingIntern.id) {
+          setSelectedIntern(null);
+        }
+        setDeletingIntern(null);
+        await fetchData();
+      }
+    } catch (err: any) {
+      console.error('Error deleting intern:', err);
+      toast.error('Deletion Failed', {
+        description: err.response?.data?.message || err.message || 'An error occurred while deleting the intern.'
+      });
+    } finally {
+      setIsDeletingSubmit(false);
     }
   };
 
@@ -706,6 +733,18 @@ export default function TeamMembers() {
                                 e.stopPropagation();
                                 setAssigningIntern(intern);
                               }}><CheckCircle2 className="mr-2 h-4 w-4 text-emerald-500" /> Assign Task</DropdownMenuItem>
+
+                              {(currentUser?.role === 'manager' || currentUser?.role === 'admin') && intern.userRole !== 'admin' && (
+                                <DropdownMenuItem 
+                                  className="font-medium cursor-pointer text-rose-600 dark:text-rose-400 focus:text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-950/40" 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeletingIntern(intern);
+                                  }}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4 text-rose-500" /> Delete Intern
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -873,16 +912,27 @@ export default function TeamMembers() {
                       {selectedIntern.empId || selectedIntern.id}
                     </Badge>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="icon" variant="outline" className="rounded-full shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <Button size="icon" variant="outline" className="rounded-full shadow-sm" title="Email Intern">
                       <Mail className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                     </Button>
                     <Button size="icon" className="rounded-full shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => {
                       setWhatsappIntern(selectedIntern);
                       setWhatsappMessage(`Hi ${selectedIntern.name.split(' ')[0]}, `);
-                    }}>
+                    }} title="WhatsApp Intern">
                       <MessageCircle className="h-4 w-4" />
                     </Button>
+                    {(currentUser?.role === 'manager' || currentUser?.role === 'admin') && selectedIntern.userRole !== 'admin' && (
+                      <Button 
+                        size="icon" 
+                        variant="outline" 
+                        className="rounded-full shadow-sm border-rose-200 dark:border-rose-900/60 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700" 
+                        onClick={() => setDeletingIntern(selectedIntern)}
+                        title="Delete Intern"
+                      >
+                        <Trash2 className="h-4 w-4 text-rose-500" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1197,6 +1247,57 @@ export default function TeamMembers() {
                 </>
               ) : (
                 "Confirm & Activate"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Intern Confirmation Dialog */}
+      <Dialog open={!!deletingIntern} onOpenChange={(open) => !open && setDeletingIntern(null)}>
+        <DialogContent className="sm:max-w-[440px] rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+              <div className="h-9 w-9 rounded-full bg-rose-100 dark:bg-rose-950/50 flex items-center justify-center mr-2.5 shrink-0 text-rose-600 dark:text-rose-400">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              Delete Intern Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-3 space-y-3">
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              Are you sure you want to permanently delete <span className="font-bold text-slate-900 dark:text-white">{deletingIntern?.name}</span> ({deletingIntern?.email})?
+            </p>
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 rounded-xl text-xs text-rose-700 dark:text-rose-400 font-medium leading-relaxed">
+              ⚠️ <strong>Warning:</strong> This will permanently delete this intern's profile, attendance logs, work logs, and task allocations from the workspace. This action cannot be undone.
+            </div>
+          </div>
+          <DialogFooter className="flex justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800 mt-2">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => setDeletingIntern(null)} 
+              className="rounded-xl font-bold"
+              disabled={isDeletingSubmit}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleConfirmDelete}
+              className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold gap-1.5"
+              disabled={isDeletingSubmit}
+            >
+              {isDeletingSubmit ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Delete Permanently
+                </>
               )}
             </Button>
           </DialogFooter>

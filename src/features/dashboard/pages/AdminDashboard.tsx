@@ -40,7 +40,9 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [deactivatingUser, setDeactivatingUser] = useState<User | null>(null);
   const [activatingUser, setActivatingUser] = useState<User | null>(null);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [isToggleSubmit, setIsToggleSubmit] = useState(false);
+  const [isDeleteSubmit, setIsDeleteSubmit] = useState(false);
 
   // Form Fields for Create/Edit
   const [formName, setFormName] = useState('');
@@ -508,6 +510,23 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
       toast.error(`Failed to activate account`, { description: e.response?.data?.message || e.message });
     } finally {
       setIsToggleSubmit(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingUser?.id) return;
+    setIsDeleteSubmit(true);
+    try {
+      const res = await api.delete(`/team/${deletingUser.id}`);
+      if (res.data?.success || res.status === 200) {
+        toast.success(`Intern "${deletingUser.name}" has been permanently deleted!`);
+        refreshUsers();
+        setDeletingUser(null);
+      }
+    } catch (e: any) {
+      toast.error(`Failed to delete account`, { description: e.response?.data?.message || e.message });
+    } finally {
+      setIsDeleteSubmit(false);
     }
   };
 
@@ -1476,6 +1495,18 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                               >
                                 <Power className="h-3.5 w-3.5" />
                               </Button>
+
+                              {u.role !== 'admin' && (
+                                <Button
+                                  onClick={() => setDeletingUser(u)}
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-lg border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200 dark:text-red-400 dark:border-red-950/60 dark:hover:bg-red-500/10 dark:hover:text-red-300"
+                                  title="Delete intern permanently"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -1881,6 +1912,57 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </>
               ) : (
                 "Confirm & Activate"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Dialog */}
+      <Dialog open={!!deletingUser} onOpenChange={(open) => !open && setDeletingUser(null)}>
+        <DialogContent className="sm:max-w-[440px] rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border-slate-200 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+              <div className="h-9 w-9 rounded-full bg-rose-100 dark:bg-rose-950/50 flex items-center justify-center mr-2.5 shrink-0 text-rose-600 dark:text-rose-400">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              Delete Intern Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-3 space-y-3">
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              Are you sure you want to permanently delete <span className="font-bold text-slate-900 dark:text-white">{deletingUser?.name}</span> ({deletingUser?.email})?
+            </p>
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 rounded-xl text-xs text-rose-700 dark:text-rose-400 font-medium leading-relaxed">
+              ⚠️ <strong>Warning:</strong> This will permanently delete this intern's profile, attendance records, work logs, and task assignments. This action cannot be undone.
+            </div>
+          </div>
+          <DialogFooter className="flex justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800 mt-2">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => setDeletingUser(null)} 
+              className="rounded-xl font-bold"
+              disabled={isDeleteSubmit}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleConfirmDelete}
+              className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold gap-1.5"
+              disabled={isDeleteSubmit}
+            >
+              {isDeleteSubmit ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Permanently
+                </>
               )}
             </Button>
           </DialogFooter>
