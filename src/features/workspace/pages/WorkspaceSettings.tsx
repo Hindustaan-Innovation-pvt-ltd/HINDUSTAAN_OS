@@ -5,6 +5,7 @@ import { Settings, ArrowLeft, Sliders, FolderKanban, Palette } from 'lucide-reac
 import { cn } from '@/lib/utils';
 import { useWorkspace } from '@/context/WorkspaceContext';
 import { useTheme } from '@/context/ThemeContext';
+import api from '@/lib/api';
 import GeneralTab from '@/components/workspace-settings/GeneralTab';
 import ProjectsTab from '@/components/workspace-settings/ProjectsTab';
 import AppearanceTab from '@/components/workspace-settings/AppearanceTab';
@@ -56,10 +57,23 @@ export default function WorkspaceSettings({ onNavigate, currentView }: { onNavig
     setFormData((prev: any) => ({ ...prev, [key]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      await api.put('/settings/workspace', {
+        companyName: formData.workspaceName,
+        supportEmail: formData.supportEmail,
+        primaryTheme: formData.themeMode,
+        workspaceLogo: formData.workspaceLogo || "",
+        address: formData.address || "",
+        defaultTimezone: formData.defaultTimezone || "Asia/Kolkata",
+        currency: formData.currency || "INR",
+        maxWorkingHours: formData.maxWorkingHours || 9,
+        officeLatitude: formData.officeLatitude !== undefined && formData.officeLatitude !== null ? Number(formData.officeLatitude) : null,
+        officeLongitude: formData.officeLongitude !== undefined && formData.officeLongitude !== null ? Number(formData.officeLongitude) : null,
+        geofenceRadiusMeters: formData.geofenceRadiusMeters !== undefined && formData.geofenceRadiusMeters !== null ? Number(formData.geofenceRadiusMeters) : null,
+        geofenceEnabled: Boolean(formData.geofenceEnabled),
+      });
       updateConfig(formData);
       
       // Apply theme changes globally if they were modified
@@ -71,7 +85,11 @@ export default function WorkspaceSettings({ onNavigate, currentView }: { onNavig
       }
       
       toast.success('Workspace settings saved successfully');
-    }, 1000);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to save workspace settings');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Render active tab content
