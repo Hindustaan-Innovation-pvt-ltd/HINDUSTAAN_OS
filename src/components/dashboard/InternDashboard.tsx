@@ -836,39 +836,15 @@ export default function InternDashboard({ }: InternDashboardProps) {
                   )}
                 </p>
               </div>
-              <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
-                {(!dashboardData?.isOnline && !dashboardData?.currentSessionStart) ? (
-                  <Button
-                    size="sm"
-                    disabled={isAttendanceSubmitting}
-                    onClick={() => handleQuickAttendance('checkin')}
-                    className="h-8 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                  >
-                    {isAttendanceSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Activity className="h-3.5 w-3.5" />}
-                    <span>Check In</span>
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    disabled={isAttendanceSubmitting}
-                    onClick={() => handleQuickAttendance('checkout')}
-                    variant="outline"
-                    className="h-8 px-3 rounded-xl border-orange-500/40 text-orange-600 dark:text-orange-400 hover:bg-orange-500/10 font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-                  >
-                    {isAttendanceSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Activity className="h-3.5 w-3.5" />}
-                    <span>Check Out</span>
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsHistoryModalOpen(true)}
-                  className="h-8 px-3 rounded-xl border-violet-500/30 text-violet-600 dark:text-violet-300 hover:bg-violet-500/10 font-bold text-xs flex items-center gap-1.5 shadow-xs"
-                >
-                  <History className="h-3.5 w-3.5" />
-                  <span>Logs</span>
-                </Button>
-              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsHistoryModalOpen(true)}
+                className="h-8 px-3 rounded-xl border-violet-500/30 text-violet-600 dark:text-violet-300 hover:bg-violet-500/10 font-bold text-xs flex items-center gap-1.5 shadow-xs"
+              >
+                <History className="h-3.5 w-3.5" />
+                <span>Logs</span>
+              </Button>
             </div>
           </div>
         </div>
