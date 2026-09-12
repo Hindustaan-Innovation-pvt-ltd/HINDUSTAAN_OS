@@ -35,7 +35,7 @@ const SETTINGS_SECTIONS = [
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { theme, toggleTheme, accentColor, setAccentColor } = useTheme();
+  const { theme, themeMode, setThemeMode, accentColor, setAccentColor } = useTheme();
   const { user } = useUser();
   const role = user?.role || 'employee';
 
@@ -489,34 +489,36 @@ export default function Settings() {
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Theme Preferences</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <button
-                      onClick={() => theme !== 'light' && toggleTheme()}
+                      onClick={() => setThemeMode('light')}
                       className={cn(
-                        "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all",
-                        theme === 'light' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
+                        "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer",
+                        themeMode === 'light' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
                       )}
                     >
-                      <Sun className={cn("h-8 w-8", theme === 'light' ? "text-orange-600" : "text-slate-400")} />
-                      <span className={cn("text-sm font-bold", theme === 'light' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Light Theme</span>
+                      <Sun className={cn("h-8 w-8", themeMode === 'light' ? "text-orange-600" : "text-slate-400")} />
+                      <span className={cn("text-sm font-bold", themeMode === 'light' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Light Theme</span>
                     </button>
 
                     <button
-                      onClick={() => theme !== 'dark' && toggleTheme()}
+                      onClick={() => setThemeMode('dark')}
                       className={cn(
-                        "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all",
-                        theme === 'dark' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
+                        "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer",
+                        themeMode === 'dark' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
                       )}
                     >
-                      <Moon className={cn("h-8 w-8", theme === 'dark' ? "text-orange-600" : "text-slate-400")} />
-                      <span className={cn("text-sm font-bold", theme === 'dark' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Dark Theme</span>
+                      <Moon className={cn("h-8 w-8", themeMode === 'dark' ? "text-orange-600" : "text-slate-400")} />
+                      <span className={cn("text-sm font-bold", themeMode === 'dark' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>Dark Theme</span>
                     </button>
 
                     <button
+                      onClick={() => setThemeMode('system')}
                       className={cn(
-                        "flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 opacity-50 cursor-not-allowed"
+                        "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer",
+                        themeMode === 'system' ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-orange-200"
                       )}
                     >
-                      <Monitor className="h-8 w-8 text-slate-400" />
-                      <span className="text-sm font-bold text-slate-600 dark:text-slate-400">System Theme</span>
+                      <Monitor className={cn("h-8 w-8", themeMode === 'system' ? "text-orange-600" : "text-slate-400")} />
+                      <span className={cn("text-sm font-bold", themeMode === 'system' ? "text-orange-700 dark:text-orange-400" : "text-slate-600 dark:text-slate-400")}>System Theme</span>
                     </button>
                   </div>
                 </div>

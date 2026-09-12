@@ -102,6 +102,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
           assignee: assigneeName,
           assignee_name: assigneeName,
           assignee_id: assigneeId,
+          assigneeId: assigneeId,
           priority: (t.priority || '').toLowerCase() === 'high' ? 'High' : 
                     (t.priority || '').toLowerCase() === 'low' ? 'Low' : 'Medium',
           due_date: t.dueDate ? formatToMMDDYYYY(t.dueDate) : '',
@@ -215,16 +216,39 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
       const res = await api.patch(`/projects/${id}`, payload);
 
-      // Save any newly added or updated tasks attached to this project
-      if (Array.isArray(updateData.tasks) && updateData.tasks.length > 0) {
+      // 1. Handle deleted tasks: tasks in existing project that are missing from updateData.tasks
+      if (Array.isArray(updateData.tasks)) {
+        const existingProject = projects.find(p => p.id === id);
+        const incomingTaskIds = new Set(updateData.tasks.map((t: any) => t.id).filter(Boolean));
+
+        if (existingProject && Array.isArray(existingProject.tasks)) {
+          const tasksToDelete = existingProject.tasks.filter((t: any) => t.id && !incomingTaskIds.has(t.id));
+          for (const delTask of tasksToDelete) {
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(delTask.id);
+            if (isUuid) {
+              try {
+                await api.delete(`/tasks/${delTask.id}`);
+              } catch (delErr) {
+                console.error(`Failed to delete task ${delTask.id}:`, delErr);
+              }
+            }
+          }
+        }
+
+        // 2. Save any newly added or updated tasks attached to this project
         for (const task of updateData.tasks) {
           const isExistingUuid = task.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(task.id);
+          const rawAssignee = task.assigneeId || task.assignee_id;
+          const resolvedAssigneeId = (!rawAssignee || rawAssignee === 'unassigned' || rawAssignee === 'null') ? null : rawAssignee;
+
           if (isExistingUuid) {
             await api.patch(`/tasks/${task.id}`, {
               title: task.title,
               desc: task.description || '',
-              assigneeId: task.assigneeId || undefined
-            }).catch(() => null);
+              assigneeId: resolvedAssigneeId
+            }).catch((err) => {
+              console.error(`Failed to update task ${task.id}:`, err);
+            });
           } else if (task.title && task.title.trim()) {
             await api.post('/tasks', {
               title: task.title,
@@ -235,8 +259,10 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
                       task.status === 'In Review' ? 'in-review' : 'todo',
               priority: task.priority ? task.priority.toLowerCase() : 'medium',
               dueDate: updateData.deadline ? new Date(updateData.deadline) : undefined,
-              assigneeId: task.assigneeId || undefined
-            }).catch(() => null);
+              assigneeId: resolvedAssigneeId
+            }).catch((err) => {
+              console.error('Failed to create new task:', err);
+            });
           }
         }
       }

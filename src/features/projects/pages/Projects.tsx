@@ -97,11 +97,11 @@ export default function Projects({ session }: { session?: any }) {
 
   const baseProjects = (role === 'manager' || role === 'admin' ? projects : projects).filter(Boolean);
 
-  const handleSaveProject = () => {
+  const handleSaveProject = async () => {
     if (!newProject.name) return;
 
     if (editingProjectId) {
-      updateProject(editingProjectId, {
+      await updateProject(editingProjectId, {
         name: newProject.name,
         manager: newProject.manager,
         managerId: newProject.managerId,
@@ -133,7 +133,7 @@ export default function Projects({ session }: { session?: any }) {
         deadline: newProject.deadline ? formatToMMDDYYYY(newProject.deadline) : 'TBD'
       };
 
-      addProject(project);
+      await addProject(project);
       toast.success("Project Created Successfully!", {
         description: `"${newProject.name}" has been added to active projects.`
       });
@@ -799,23 +799,33 @@ export default function Projects({ session }: { session?: any }) {
                         </PopoverTrigger>
                         <PopoverContent className="w-48 p-2 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl" align="start">
                           <div className="space-y-1 max-h-48 overflow-y-auto">
+                            <label className="flex items-center px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`task-assignee-${task.id}`}
+                                checked={!task.assigneeId || task.assigneeId === 'unassigned' || task.assignee === 'Unassigned'}
+                                onChange={() => {
+                                  const updated = [...newProject.tasks];
+                                  updated[index].assignee = 'Unassigned';
+                                  updated[index].assigneeId = null;
+                                  setNewProject({ ...newProject, tasks: updated });
+                                }}
+                                className="mr-3 h-4 w-4 rounded-full border-slate-300 text-orange-600 focus:ring-orange-600 cursor-pointer accent-orange-600"
+                              />
+                              <span className="text-sm font-semibold text-slate-500 italic">Unassigned</span>
+                            </label>
                             {leads.map(member => {
-                              const assignees = (!task.assignee || task.assignee === 'Unassigned') ? [] : task.assignee.split(', ').filter(Boolean);
-                              const isSelected = assignees.includes(member.name);
+                              const isSelected = task.assigneeId ? task.assigneeId === member.id : task.assignee === member.name;
                               return (
                                 <label key={member.id} className="flex items-center px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer">
                                   <input
                                     type="radio"
+                                    name={`task-assignee-${task.id}`}
                                     checked={isSelected}
                                     onChange={() => {
                                       const updated = [...newProject.tasks];
-                                      if (isSelected) {
-                                        updated[index].assignee = 'Unassigned';
-                                        updated[index].assigneeId = null;
-                                      } else {
-                                        updated[index].assignee = member.name;
-                                        updated[index].assigneeId = member.id;
-                                      }
+                                      updated[index].assignee = member.name;
+                                      updated[index].assigneeId = member.id;
                                       setNewProject({ ...newProject, tasks: updated });
                                     }}
                                     className="mr-3 h-4 w-4 rounded-full border-slate-300 text-orange-600 focus:ring-orange-600 cursor-pointer accent-orange-600"
