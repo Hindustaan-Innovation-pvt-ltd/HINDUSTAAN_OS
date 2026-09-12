@@ -5,10 +5,7 @@ const getBaseURL = () => {
   if (envUrl && envUrl.startsWith('http')) {
     return envUrl;
   }
-  if (import.meta.env.DEV) {
-    return envUrl || '/api';
-  }
-  return 'https://panel.allindiahub.com/api';
+  return '/api';
 };
 
 const api = axios.create({
