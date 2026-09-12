@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { 
   Clock, Calendar, Search, X, Download, RefreshCw, 
-  CheckCircle2, PlayCircle, ShieldAlert, Wifi, Globe, 
+  CheckCircle2, XCircle, PlayCircle, ShieldAlert, Wifi, Globe, 
   Filter, User, ChevronLeft, ChevronRight, Activity, ArrowUpDown, MapPin
 } from 'lucide-react';
-import { getBrowserCoordinates } from '@/lib/geo';
+import { getBrowserCoordinates, getCityFromCoordinates } from '@/lib/geo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -459,6 +459,7 @@ export default function AttendanceLogs() {
                   <th className="px-3.5 py-3.5 font-black">Check Out</th>
                   <th className="px-3.5 py-3.5 font-black">Worked Duration</th>
                   <th className="px-4 py-3.5 font-black text-left">IP & Location</th>
+                  <th className="px-3.5 py-3.5 font-black text-center">Location Access</th>
                   <th className="px-3.5 py-3.5 font-black">Status</th>
                 </tr>
               </thead>
@@ -570,28 +571,37 @@ export default function AttendanceLogs() {
                           (Max: {rec.configuredWorkingHours || 9}h)
                         </span>
                       </td>
+
                       {/* IP & Location */}
                       <td className="px-4 py-3.5 whitespace-nowrap text-left">
                         <div className="flex flex-col items-start gap-1">
                           <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-xs">
-                            <Wifi className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                            <Wifi className="h-3.5 w-3.5 text-sky-500 shrink-0" />
                             <span>{rec.ipAddress || '192.168.1.54'}</span>
                           </div>
-                          {rec.latitude && rec.longitude ? (
-                            <div 
-                              className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400" 
-                              title={`GPS Coordinates: ${rec.latitude}, ${rec.longitude}`}
-                            >
-                              <MapPin className="h-3 w-3 text-emerald-500 shrink-0" />
-                              <span>{Number(rec.latitude).toFixed(4)}, {Number(rec.longitude).toFixed(4)}</span>
-                            </div>
-                          ) : (
-                            <div className="inline-flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500">
-                              <MapPin className="h-3 w-3 text-slate-400 opacity-60 shrink-0" />
-                              <span>Office Network</span>
-                            </div>
-                          )}
+                          <div 
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300"
+                            title={rec.latitude && rec.longitude ? `GPS: ${Number(rec.latitude).toFixed(4)}, ${Number(rec.longitude).toFixed(4)}` : 'Office Network'}
+                          >
+                            <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                            <span>{getCityFromCoordinates(rec.latitude, rec.longitude)}</span>
+                          </div>
                         </div>
+                      </td>
+
+                      {/* Location Access */}
+                      <td className="px-3.5 py-3.5 whitespace-nowrap text-center">
+                        {rec.latitude !== null && rec.latitude !== undefined && rec.longitude !== null && rec.longitude !== undefined ? (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                            <span>Granted</span>
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                            <XCircle className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                            <span>Denied</span>
+                          </div>
+                        )}
                       </td>
 
                       {/* Status */}
