@@ -212,7 +212,10 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         // Optimistic UI update so status changes reflect immediately
         setProjects(prev => prev.map(p => p.id === id ? { ...p, status: updateData.status } : p));
       }
-      if (updateData.managerId !== undefined) payload.managerId = updateData.managerId;
+      if (updateData.managerId !== undefined) {
+        const isValidUuid = updateData.managerId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(updateData.managerId);
+        if (isValidUuid) payload.managerId = updateData.managerId;
+      }
 
       const res = await api.patch(`/projects/${id}`, payload);
 
@@ -267,7 +270,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      if (res.data?.success) {
+      if (res.status >= 200 && res.status < 300) {
         window.dispatchEvent(new CustomEvent('task_updated'));
         await refreshProjects();
         return true;
