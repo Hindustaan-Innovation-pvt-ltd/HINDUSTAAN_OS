@@ -163,6 +163,17 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
+  useEffect(() => {
+    if (activeNavigation) {
+      const parentGroup = activeNavigation.find((item: any) => 
+        item.items && item.items.some((sub: any) => currentView === (sub.id || sub.name))
+      );
+      if (parentGroup) {
+        setOpenGroups(prev => ({ ...prev, [parentGroup.name]: true }));
+      }
+    }
+  }, [currentView, activeNavigation]);
+
   const toggleGroup = (groupName: string) => {
     if (collapsed && !isMobile) {
       toggleSidebar();
@@ -511,6 +522,8 @@ export default function DashboardShell({
     if (path === '/work-logs') return 'Work Logs';
     if (path === '/attendance-logs' || path === '/attendance') return 'Attendance Logs';
     if (path === '/roles') return 'Roles & Permissions';
+    if (path === '/admin/users/interns') return 'Interns';
+    if (path === '/admin/users/managers') return 'Managers';
     if (path === '/admin/workspace/general') return 'Workspace Settings - General';
     if (path === '/security') return 'Workspace Settings - Security & Access';
     if (path === '/admin/workspace/notifications') return 'System Notifications';

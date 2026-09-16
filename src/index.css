@@ -5,7 +5,7 @@
 @import "@fontsource-variable/noto-sans";
 @import "@fontsource-variable/eb-garamond";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark, .dark *));
 
 @layer base {
   body {
@@ -56,8 +56,6 @@
     font-weight: 600;
   }
 }
-
-@variant dark (&:where(.dark, .dark *));
 
 /* Beautiful Slim Scrollbars Globally */
 ::-webkit-scrollbar {

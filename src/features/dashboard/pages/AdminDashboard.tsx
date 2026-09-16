@@ -17,6 +17,49 @@ import type { User } from '@/lib/auth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import api from '@/lib/api';
+import { 
+  ResponsiveContainer, 
+  AreaChart, 
+  Area, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  Tooltip as RechartsTooltip, 
+  CartesianGrid, 
+  PieChart, 
+  Pie, 
+  Cell 
+} from 'recharts';
+import { TrendingUp, BarChart2, PieChart as PieChartIcon, ArrowUpRight, Zap } from 'lucide-react';
+
+const ChartTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-popover border border-border p-3 rounded-xl shadow-xl flex flex-col gap-1.5 text-xs">
+        <p className="font-bold text-popover-foreground mb-1">{label}</p>
+        {payload.map((entry: any, index: number) => (
+          <div key={index} className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color || entry.fill }} />
+            <span className="text-muted-foreground capitalize">{entry.name}:</span>
+            <span className="font-bold text-popover-foreground">{entry.value}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+const WEEKLY_VELOCITY_DATA = [
+  { day: 'Mon', completed: 18, assigned: 24 },
+  { day: 'Tue', completed: 28, assigned: 30 },
+  { day: 'Wed', completed: 35, assigned: 32 },
+  { day: 'Thu', completed: 42, assigned: 38 },
+  { day: 'Fri', completed: 50, assigned: 42 },
+  { day: 'Sat', completed: 22, assigned: 16 },
+  { day: 'Sun', completed: 14, assigned: 10 },
+];
 
 export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'employee' | 'manager' }) {
   // User Management State
@@ -600,6 +643,26 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
 
   const departments = ['Engineering', 'Operations', 'HR', 'Marketing', 'Sales'];
+
+  const departmentChartData = React.useMemo(() => {
+    return departments.map(dept => {
+      const deptUsers = usersList.filter(u => (u.department || 'Engineering').toLowerCase() === dept.toLowerCase());
+      const interns = deptUsers.filter(u => u.role === 'employee' || (u.role as string) === 'intern').length;
+      const managers = deptUsers.filter(u => u.role === 'manager').length;
+      return {
+        name: dept,
+        interns,
+        managers,
+        total: deptUsers.length
+      };
+    });
+  }, [usersList, departments]);
+
+  const rolePieData = React.useMemo(() => [
+    { name: 'Interns', value: totalInternsCount || 1, color: '#3b82f6' },
+    { name: 'Managers', value: totalManagersCount || 1, color: '#8b5cf6' },
+    { name: 'Admins', value: usersList.filter(u => u.role === 'admin').length || 1, color: '#f59e0b' },
+  ], [totalInternsCount, totalManagersCount, usersList]);
 
   const filteredUsers = usersList.filter(u => {
     const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -1197,15 +1260,15 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                  {!showOnlyRole ? 'Admin Dashboard' : showOnlyRole === 'manager' ? 'Managers' : 'Employees'}
+                <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+                  {!showOnlyRole ? 'Admin Dashboard' : showOnlyRole === 'manager' ? 'Managers Directory' : 'Interns Directory'}
                 </h1>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-sm font-medium text-muted-foreground mt-1">
               {!showOnlyRole 
-                ? 'Overview of organization roles, stats, and activities.'
+                ? 'Overview of organization performance, analytics, and workspace activities.'
                 : showOnlyRole === 'manager' 
                   ? 'Manage manager accounts, departments, and active statuses.' 
-                  : 'Manage employee accounts, roles, and designations.'}
+                  : 'Manage intern and employee accounts, roles, and designations.'}
             </p>
           </div>
           
@@ -1305,8 +1368,9 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
           </div>
         )}
 
-        {/* CRUD Registry View */}
-        <div className="space-y-6 animate-in fade-in duration-300">
+        {/* CRUD Registry View vs Analytics View */}
+        {showOnlyRole ? (
+          <div className="space-y-6 animate-in fade-in duration-300">
             {/* Filters and Search Toolbar */}
             <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-4">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
@@ -1564,9 +1628,286 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
               )}
             </Card>
           </div>
-        </>
-      )}
-      </div>
+        ) : (
+          /* Graph & Analytics View for Admin Dashboard */
+          <div className="space-y-6 animate-in fade-in duration-300">
+            {/* Charts Row 1: Velocity Area Chart & Department Bar Chart */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Velocity Area Chart */}
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-5 flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                      <TrendingUp className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base font-bold">Team Velocity & Task Output</CardTitle>
+                      <p className="text-xs text-muted-foreground">Weekly completed vs assigned work</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-xs font-semibold border-border">
+                    7 Days
+                  </Badge>
+                </div>
+
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={WEEKLY_VELOCITY_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorAssigned" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.35}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.2)" vertical={false} />
+                      <XAxis dataKey="day" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                      <RechartsTooltip content={<ChartTooltip />} />
+                      <Area type="monotone" dataKey="completed" name="Completed Tasks" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorCompleted)" />
+                      <Area type="monotone" dataKey="assigned" name="Assigned Tasks" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorAssigned)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-border mt-2 text-xs">
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                      <span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> Completed (209)
+                    </span>
+                    <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Assigned (194)
+                    </span>
+                  </div>
+                  <span className="text-emerald-500 font-bold flex items-center gap-1">
+                    <ArrowUpRight className="h-3.5 w-3.5" /> +14.2% output
+                  </span>
+                </div>
+              </Card>
+
+              {/* Department Headcount Bar Chart */}
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-5 flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                      <BarChart2 className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base font-bold">Department Distribution</CardTitle>
+                      <p className="text-xs text-muted-foreground">Headcount across active divisions</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-xs font-semibold border-border">
+                    {departments.length} Departments
+                  </Badge>
+                </div>
+
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={departmentChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.2)" vertical={false} />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <RechartsTooltip content={<ChartTooltip />} />
+                      <Bar dataKey="interns" name="Interns" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="managers" name="Managers" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-border mt-2 text-xs">
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                      <span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> Interns ({totalInternsCount})
+                    </span>
+                    <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                      <span className="h-2.5 w-2.5 rounded-full bg-purple-500" /> Managers ({totalManagersCount})
+                    </span>
+                  </div>
+                  <span className="font-bold text-muted-foreground">
+                    Total: {usersList.length} Accounts
+                  </span>
+                </div>
+              </Card>
+            </div>
+
+            {/* Charts Row 2: Workforce Composition Donut + System Health + Live Activity */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Donut Chart: Role Composition */}
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-9 w-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                        <PieChartIcon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base font-bold">Role Breakdown</CardTitle>
+                        <p className="text-xs text-muted-foreground">Workforce role split</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="h-48 w-full flex items-center justify-center relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <RechartsTooltip content={<ChartTooltip />} />
+                        <Pie
+                          data={rolePieData}
+                          innerRadius={50}
+                          outerRadius={75}
+                          paddingAngle={4}
+                          dataKey="value"
+                        >
+                          {rolePieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-2xl font-black text-foreground">{usersList.length}</span>
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground">Members</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-3 border-t border-border mt-2">
+                  {rolePieData.map((item) => (
+                    <div key={item.name} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="font-medium text-muted-foreground">{item.name}</span>
+                      </div>
+                      <span className="font-bold text-foreground">{item.value} ({usersList.length > 0 ? Math.round((item.value / usersList.length) * 100) : 0}%)</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Health & Efficiency Metrics */}
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-9 w-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                        <Zap className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base font-bold">System Health</CardTitle>
+                        <p className="text-xs text-muted-foreground">Platform performance & SLA</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold">
+                      Optimal
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-4 my-2">
+                    <div>
+                      <div className="flex justify-between text-xs font-bold mb-1.5">
+                        <span className="text-muted-foreground">Task Completion Rate</span>
+                        <span className="text-emerald-500">92.4%</span>
+                      </div>
+                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '92.4%' }} />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-xs font-bold mb-1.5">
+                        <span className="text-muted-foreground">Attendance Reliability</span>
+                        <span className="text-blue-500">96.8%</span>
+                      </div>
+                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full" style={{ width: '96.8%' }} />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-xs font-bold mb-1.5">
+                        <span className="text-muted-foreground">Database Capacity ({adminStats.dbSize})</span>
+                        <span className="text-purple-500">24.5%</span>
+                      </div>
+                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-purple-500 rounded-full" style={{ width: '24.5%' }} />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-xs font-bold mb-1.5">
+                        <span className="text-muted-foreground">Sprint Velocity Index</span>
+                        <span className="text-amber-500">88.0%</span>
+                      </div>
+                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-amber-500 rounded-full" style={{ width: '88%' }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Server Status</span>
+                  <span className="font-bold text-emerald-500 flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> {adminStats.health || 'Healthy'}
+                  </span>
+                </div>
+              </Card>
+
+              {/* Live Activity Feed */}
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-9 w-9 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
+                        <Activity className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base font-bold">Recent Activity</CardTitle>
+                        <p className="text-xs text-muted-foreground">Live event stream</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {activities.slice(0, 4).map((act, i) => (
+                      <div key={act.id || i} className="flex items-start gap-3 p-2.5 rounded-xl bg-muted/40 border border-border/50">
+                        <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                          {act.user ? act.user.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-foreground truncate">{act.title || act.action}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{act.user || 'System'}</p>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">{act.time || 'Recently'}</span>
+                      </div>
+                    ))}
+                    {activities.length === 0 && (
+                      <div className="py-8 text-center text-xs text-muted-foreground">
+                        No recent activity recorded.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-border mt-3">
+                  <a
+                    href="/admin/workspace/activity-logs"
+                    className="text-xs font-bold text-primary hover:underline flex items-center justify-center gap-1"
+                  >
+                    View Complete Audit Logs <ChevronRight className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+      </>
+    )}
+  </div>
 
       {/* CREATE MODAL */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
