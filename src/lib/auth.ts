@@ -414,3 +414,32 @@ export const uploadAvatarToBackend = async (file: File): Promise<string> => {
     throw new Error(`Upload failed: ${errorDetails}`);
   }
 };
+
+/**
+ * Centralized Role Helper Functions
+ */
+export const getUserRole = (overrideRole?: string): 'admin' | 'manager' | 'employee' | 'intern' => {
+  if (overrideRole) {
+    const r = overrideRole.toLowerCase();
+    if (r === 'admin') return 'admin';
+    if (r === 'manager') return 'manager';
+    if (r === 'intern') return 'intern';
+    return 'employee';
+  }
+  const user = getCurrentUser();
+  const r = (user?.role || localStorage.getItem('role') || 'employee').toLowerCase();
+  if (r === 'admin') return 'admin';
+  if (r === 'manager') return 'manager';
+  if (r === 'intern') return 'intern';
+  return 'employee';
+};
+
+export const isManagerOrAdmin = (role?: string): boolean => {
+  const currentRole = getUserRole(role);
+  return currentRole === 'admin' || currentRole === 'manager';
+};
+
+export const isEmployeeOrIntern = (role?: string): boolean => {
+  const currentRole = getUserRole(role);
+  return currentRole === 'employee' || currentRole === 'intern';
+};

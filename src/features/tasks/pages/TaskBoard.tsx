@@ -7,7 +7,7 @@ import TaskDetailsModal from '../components/TaskDetailsModal';
 import CreateTaskModal from '../components/CreateTaskModal';
 import api from '@/lib/api';
 import { toast } from 'sonner';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, isManagerOrAdmin } from '@/lib/auth';
 import { formatToMMDDYYYY } from '@/context/ProjectContext';
 
 // --- Types & Mock Data ---
@@ -116,10 +116,35 @@ const safeDateString = (val: any): string => {
   }
 };
 
+const CACHE_KEY_KANBAN = 'cached_kanban_tasks';
+const CACHE_KEY_TEAM = 'cached_team_members';
+
+const getInitialCachedTasks = (): Task[] => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY_KANBAN);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return [];
+};
+
+const getInitialCachedTeam = (): any[] => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY_TEAM);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return [];
+};
+
 export default function TaskBoard({ session, isSidebarMinimized = false }: { session?: any; isSidebarMinimized?: boolean }) {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(getInitialCachedTasks);
+  const [loading, setLoading] = useState(() => getInitialCachedTasks().length === 0);
+  const [teamMembers, setTeamMembers] = useState<any[]>(getInitialCachedTeam);
   const [dbProjects, setDbProjects] = useState<any[]>([]);
 
   const mapBackendTask = (t: any): Task => {
@@ -152,42 +177,55 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
     };
   };
 
-  const fetchTasksData = async () => {
+  const fetchTasksData = async (silent = false) => {
     try {
-      setLoading(true);
-      const res = await api.get('/tasks?limit=1000');
-      if (res.data?.success) {
-        const backendTasks = res.data.data || [];
-        setTasks(backendTasks.map(mapBackendTask));
+      if (!silent && tasks.length === 0) {
+        setLoading(true);
       }
 
       const loggedUser = getCurrentUser();
-      const isManagerOrAdmin = loggedUser?.role === 'manager' || loggedUser?.role === 'admin';
+      const isUserManagerOrAdmin = isManagerOrAdmin(loggedUser?.role);
 
-      if (isManagerOrAdmin) {
-        const projRes = await api.get('/projects');
-        if (projRes.data?.success) {
-          setDbProjects(projRes.data.data || []);
-        }
+      const requests: Promise<any>[] = [api.get('/tasks?limit=1000')];
+      if (isUserManagerOrAdmin) {
+        requests.push(api.get('/projects'));
+        requests.push(api.get('/team'));
+      }
 
-        const teamRes = await api.get('/team');
-        if (teamRes.data?.success) {
-          setTeamMembers(teamRes.data.data.members || []);
-        }
+      const [res, projRes, teamRes] = await Promise.all(requests);
+
+      if (res?.data?.success) {
+        const backendTasks = res.data.data || [];
+        const mapped = backendTasks.map(mapBackendTask);
+        setTasks(mapped);
+        try {
+          localStorage.setItem(CACHE_KEY_KANBAN, JSON.stringify(mapped));
+        } catch (e) {}
+      }
+
+      if (projRes?.data?.success) {
+        setDbProjects(projRes.data.data || []);
+      }
+
+      if (teamRes?.data?.success) {
+        const members = teamRes.data.data.members || [];
+        setTeamMembers(members);
+        try {
+          localStorage.setItem(CACHE_KEY_TEAM, JSON.stringify(members));
+        } catch (e) {}
       }
     } catch (e: any) {
       console.warn('Backend unavailable or failed to load Kanban tasks.', e.message);
-      setTasks([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTasksData();
+    fetchTasksData(true);
 
     const handleUpdate = () => {
-      fetchTasksData();
+      fetchTasksData(true);
     };
 
     window.addEventListener('task_created', handleUpdate);
@@ -204,7 +242,8 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
 
   // Resolve current user dynamically from active database session
   const loggedInUser = getCurrentUser();
-  const role = loggedInUser?.role === 'employee' ? 'intern' : (loggedInUser?.role || 'manager');
+  const canManage = isManagerOrAdmin(loggedInUser?.role);
+  const role = canManage ? 'manager' : 'intern';
   const currentUserId = loggedInUser?.id || 'manager-1';
   const currentUserName = loggedInUser?.name || 'Admin User';
 

@@ -224,7 +224,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
   return (
     <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden bg-white dark:bg-slate-950 p-0 gap-0 border-slate-200 dark:border-slate-700/60 rounded-xl shadow-2xl flex flex-col">
+      <DialogContent className="w-[95vw] sm:max-w-4xl md:max-w-5xl lg:max-w-5xl xl:max-w-6xl max-h-[90vh] overflow-hidden bg-white dark:bg-slate-950 p-0 gap-0 border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col">
         {isAborted && (
           <div className="bg-red-500/10 text-red-600 dark:text-red-400 p-3 text-sm text-center font-medium border-b border-red-500/20">
             This project has been aborted. Tasks cannot be modified until restored.
@@ -271,11 +271,10 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
         </DialogHeader>
 
         {/* Scrollable Content Body */}
-        <div className="p-6 space-y-8 overflow-y-auto custom-scrollbar">
-
+        <div className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar">
 
           {/* Metadata Grid Layer */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 rounded-2xl p-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 rounded-2xl p-5">
 
             {/* Priority */}
             <div className="space-y-1.5">

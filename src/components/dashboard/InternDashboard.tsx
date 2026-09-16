@@ -249,12 +249,6 @@ export default function InternDashboard({ }: InternDashboardProps) {
   };
 
   useEffect(() => {
-    fetchInternTasks();
-    fetchLeaves();
-    fetchWorkLogs();
-  }, [currentUserId, currentUserName]);
-
-  useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'work_logs_list' || e.key === 'hindustaan_tasks_list') {
         fetchWorkLogs();
@@ -379,14 +373,15 @@ export default function InternDashboard({ }: InternDashboardProps) {
   };
 
   useEffect(() => {
-    fetchDashboard(true);
-    fetchLeaves();
-    fetchWorkLogs();
-    fetchInternTasks();
+    Promise.all([
+      fetchDashboard(true),
+      fetchLeaves(),
+      fetchWorkLogs(),
+      fetchInternTasks()
+    ]);
 
     const handleAuthStatus = () => {
-      fetchDashboard(true);
-      fetchWorkLogs();
+      Promise.all([fetchDashboard(true), fetchWorkLogs()]);
     };
     window.addEventListener('auth_status_changed', handleAuthStatus);
 
@@ -395,13 +390,15 @@ export default function InternDashboard({ }: InternDashboardProps) {
     };
     window.addEventListener('focus', handleFocus);
 
-    // Poll every 10 seconds for real-time updates
+    // Poll every 15 seconds for real-time updates
     const intervalId = setInterval(() => {
-      fetchDashboard(false);
-      fetchLeaves();
-      fetchWorkLogs();
-      fetchInternTasks();
-    }, 10000);
+      Promise.all([
+        fetchDashboard(false),
+        fetchLeaves(),
+        fetchWorkLogs(),
+        fetchInternTasks()
+      ]);
+    }, 15000);
 
     return () => {
       clearInterval(intervalId);

@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
+import type { Project, CreateProjectInput, UpdateProjectInput, ProjectStatus } from '@/types/project';
 
 type ProjectContextType = {
-  projects: any[];
+  projects: Project[];
   loading: boolean;
-  addProject: (projectData: any) => Promise<boolean>;
-  updateProject: (id: string, updateData: any) => Promise<boolean>;
+  addProject: (projectData: CreateProjectInput | any) => Promise<boolean>;
+  updateProject: (id: string, updateData: UpdateProjectInput | any) => Promise<boolean>;
   deleteProject: (id: string, reason?: string) => Promise<boolean>;
   refreshProjects: () => Promise<void>;
   addMilestone: (projectId: string, name: string, dueDate?: string) => Promise<boolean>;
@@ -35,13 +36,37 @@ export const formatToMMDDYYYY = (dateVal: any): string => {
   return `${mm}-${dd}-${yyyy}`;
 };
 
-export function ProjectProvider({ children }: { children: React.ReactNode }) {
-  const [projects, setProjects] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+const CACHE_KEY = 'cached_projects_list';
 
-  const mapBackendProject = (p: any) => {
+const getInitialCachedProjects = (): Project[] => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    // ignore parse error
+  }
+  return [];
+};
+
+export function ProjectProvider({ children }: { children: React.ReactNode }) {
+  const [projects, setProjects] = useState<Project[]>(getInitialCachedProjects);
+  const [loading, setLoading] = useState<boolean>(() => {
+    // If we have cached projects, do NOT block the UI with a full spinner
+    const initial = getInitialCachedProjects();
+    return initial.length === 0;
+  });
+
+  const mapBackendProject = (p: any): Project => {
     const totalTasks = p.tasks?.length || 0;
-    const completedTasks = p.tasks?.filter((t: any) => t.status === 'completed' || t.status === 'done').length || 0;
+    const completedTasks = p.tasks?.filter((t: any) => {
+      const s = (t.status || '').toLowerCase().replace(/[\s_-]+/g, '');
+      return s === 'done' || s === 'completed';
+    }).length || 0;
     const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     
     const colors = [
@@ -56,7 +81,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     }
     const color = colors[sum % colors.length];
 
-    let frontendStatus = 'In Progress';
+    let frontendStatus: ProjectStatus = 'In Progress';
     if (p.status === 'completed' || p.status === 'Done') frontendStatus = 'Completed';
     else if (p.status === 'aborted') frontendStatus = 'Aborted';
     else if (p.status === 'on_hold') frontendStatus = 'On Hold';
@@ -113,14 +138,19 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
-  const refreshProjects = async () => {
+  const refreshProjects = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent && projects.length === 0) {
+        setLoading(true);
+      }
       const res = await api.get('/projects');
       if (res.data?.success) {
         const backendProjects = res.data.data || [];
         const mapped = backendProjects.map(mapBackendProject);
         setProjects(mapped);
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify(mapped));
+        } catch (e) {}
       }
     } catch (e) {
       console.error('Failed to fetch projects:', e);
@@ -132,13 +162,13 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const user = getCurrentUser();
     if (user) {
-      refreshProjects();
+      refreshProjects(true);
     } else {
       setLoading(false);
     }
 
     const handleUpdate = () => {
-      refreshProjects();
+      refreshProjects(true);
     };
 
     window.addEventListener('task_created', handleUpdate);
@@ -283,6 +313,8 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await api.delete(`/projects/${id}`, { data: { reason } });
       if (res.data?.success) {
+        window.dispatchEvent(new CustomEvent('project_updated'));
+        window.dispatchEvent(new CustomEvent('task_updated'));
         await refreshProjects();
         return true;
       }

@@ -18,6 +18,7 @@ const GANTT_TASKS: any[] = [];
 import { useProjects, formatToMMDDYYYY } from '@/context/ProjectContext';
 import { useNotifications } from '@/context/NotificationContext';
 import { useUser } from '@/context/UserContext';
+import { isManagerOrAdmin } from '@/lib/auth';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -175,7 +176,7 @@ export default function Projects({ session }: { session?: any }) {
       { bg: 'bg-cyan-50 dark:bg-cyan-500/15', text: 'text-cyan-600 dark:text-cyan-400', stroke: '#06b6d4', border: 'border-cyan-200 dark:border-cyan-500/30' },
     ];
 
-    return displayedProjects.filter(p => p.status !== 'Aborted' && p.status !== 'aborted').map((p, pIndex) => {
+    return displayedProjects.filter(p => p.status !== 'Aborted').map((p, pIndex) => {
       const palette = PROJECT_PALETTE[pIndex % PROJECT_PALETTE.length];
       const pTasks: any[] = [];
       p.tasks?.forEach((t: any, tIndex: number) => {
@@ -230,7 +231,7 @@ export default function Projects({ session }: { session?: any }) {
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Project Timeline</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">High-level Gantt chart outlining task execution over the current week.</p>
         </div>
-        {role === 'manager' && (
+        {isManagerOrAdmin(role) && (
           <button onClick={() => {
             setEditingProjectId(null);
             setNewProject({ name: '', manager: currentUserName, managerId: currentUserId, deadline: '', priority: 'Medium', tasks: [] });
@@ -268,7 +269,7 @@ export default function Projects({ session }: { session?: any }) {
           {displayedProjects.map((project, idx) => {
             const completedTasks = project.tasks.filter((t: any) => t.status === 'Done').length;
             const totalTasks = project.tasks.length;
-            const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+            const progress = typeof project.progress === 'number' ? project.progress : (totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100));
             const isPastDue = project.deadline && project.deadline !== 'TBD' && new Date(project.deadline).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
 
 
@@ -326,7 +327,7 @@ export default function Projects({ session }: { session?: any }) {
                         {project.status}
                       </Badge>
 
-                      {(role === 'manager' || role === 'admin') && (
+                      {isManagerOrAdmin(role) && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button className="h-6 w-6 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors outline-none focus:ring-2 focus:ring-orange-500/50 backdrop-blur-sm">
@@ -771,89 +772,104 @@ export default function Projects({ session }: { session?: any }) {
               {/* Tasks & Assignees Section */}
               <div className="space-y-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Tasks & Assignees</label>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Sprint Tasks & Deliverables</label>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400">
+                        {newProject.tasks.length} {newProject.tasks.length === 1 ? 'task' : 'tasks'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Tasks created here will automatically sync to your Kanban board upon saving.</p>
+                  </div>
                   <button
-                    className="text-xs font-bold text-orange-600 hover:text-orange-700 dark:text-orange-500 flex items-center"
+                    type="button"
+                    className="text-xs font-bold text-orange-600 hover:text-orange-700 dark:text-orange-500 flex items-center bg-orange-50 dark:bg-orange-950/40 px-3 py-1.5 rounded-lg border border-orange-200 dark:border-orange-800/60 transition-colors"
                     onClick={() => setNewProject({ ...newProject, tasks: [...newProject.tasks, { id: Date.now().toString(), title: '', assignee: 'Unassigned', status: 'To Do' }] })}
                   >
-                    <Plus className="h-3 w-3 mr-1" /> Add Task
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Add Task
                   </button>
                 </div>
-                {newProject.tasks.map((task, index) => (
-                  <div key={task.id} className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="e.g. Design Dashboard"
-                      value={task.title}
-                      onChange={e => {
-                        const updated = [...newProject.tasks];
-                        updated[index].title = e.target.value;
-                        setNewProject({ ...newProject, tasks: updated });
-                      }}
-                      className="flex-1 h-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                    />
-                    <div className="relative w-40 shrink-0">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button className="w-full h-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all text-left flex items-center justify-between">
-                            <span className="truncate">{task.assignee || 'Unassigned'}</span>
-                            <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 ml-2" />
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-48 p-2 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl" align="start">
-                          <div className="space-y-1 max-h-48 overflow-y-auto">
-                            <label className="flex items-center px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer">
-                              <input
-                                type="radio"
-                                name={`task-assignee-${task.id}`}
-                                checked={!task.assigneeId || task.assigneeId === 'unassigned' || task.assignee === 'Unassigned'}
-                                onChange={() => {
-                                  const updated = [...newProject.tasks];
-                                  updated[index].assignee = 'Unassigned';
-                                  updated[index].assigneeId = null;
-                                  setNewProject({ ...newProject, tasks: updated });
-                                }}
-                                className="mr-3 h-4 w-4 rounded-full border-slate-300 text-orange-600 focus:ring-orange-600 cursor-pointer accent-orange-600"
-                              />
-                              <span className="text-sm font-semibold text-slate-500 italic">Unassigned</span>
-                            </label>
-                            {leads.map(member => {
-                              const isSelected = task.assigneeId ? task.assigneeId === member.id : task.assignee === member.name;
-                              return (
-                                <label key={member.id} className="flex items-center px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer">
-                                  <input
-                                    type="radio"
-                                    name={`task-assignee-${task.id}`}
-                                    checked={isSelected}
-                                    onChange={() => {
-                                      const updated = [...newProject.tasks];
-                                      updated[index].assignee = member.name;
-                                      updated[index].assigneeId = member.id;
-                                      setNewProject({ ...newProject, tasks: updated });
-                                    }}
-                                    className="mr-3 h-4 w-4 rounded-full border-slate-300 text-orange-600 focus:ring-orange-600 cursor-pointer accent-orange-600"
-                                  />
-                                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{member.name}</span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <button
-                      onClick={() => {
-                        const updated = newProject.tasks.filter((_, i) => i !== index);
-                        setNewProject({ ...newProject, tasks: updated });
-                      }}
-                      className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+
+                {newProject.tasks.length === 0 ? (
+                  <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400 font-medium bg-slate-50/50 dark:bg-slate-900/30">
+                    No initial tasks added yet. Click <span className="font-bold text-orange-600 dark:text-orange-400">+ Add Task</span> to schedule deliverables now, or manage them later on the Kanban board.
                   </div>
-                ))}
-                {newProject.tasks.length === 0 && (
-                  <p className="text-xs text-slate-500 italic">No tasks added yet. Click "+ Add Task" to start assigning work.</p>
+                ) : (
+                  newProject.tasks.map((task, index) => (
+                    <div key={task.id} className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="e.g. Design Dashboard"
+                        value={task.title}
+                        onChange={e => {
+                          const updated = [...newProject.tasks];
+                          updated[index].title = e.target.value;
+                          setNewProject({ ...newProject, tasks: updated });
+                        }}
+                        className="flex-1 h-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                      />
+                      <div className="relative w-40 shrink-0">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button className="w-full h-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all text-left flex items-center justify-between">
+                              <span className="truncate">{task.assignee || 'Unassigned'}</span>
+                              <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 ml-2" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-48 p-2 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-xl" align="start">
+                            <div className="space-y-1 max-h-48 overflow-y-auto">
+                              <label className="flex items-center px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`task-assignee-${task.id}`}
+                                  checked={!task.assigneeId || task.assigneeId === 'unassigned' || task.assignee === 'Unassigned'}
+                                  onChange={() => {
+                                    const updated = [...newProject.tasks];
+                                    updated[index].assignee = 'Unassigned';
+                                    updated[index].assigneeId = null;
+                                    setNewProject({ ...newProject, tasks: updated });
+                                  }}
+                                  className="mr-3 h-4 w-4 rounded-full border-slate-300 text-orange-600 focus:ring-orange-600 cursor-pointer accent-orange-600"
+                                />
+                                <span className="text-sm font-semibold text-slate-500 italic">Unassigned</span>
+                              </label>
+                              {leads.map(member => {
+                                const isSelected = task.assigneeId ? task.assigneeId === member.id : task.assignee === member.name;
+                                return (
+                                  <label key={member.id} className="flex items-center px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer">
+                                    <input
+                                      type="radio"
+                                      name={`task-assignee-${task.id}`}
+                                      checked={isSelected}
+                                      onChange={() => {
+                                        const updated = [...newProject.tasks];
+                                        updated[index].assignee = member.name;
+                                        updated[index].assigneeId = member.id;
+                                        setNewProject({ ...newProject, tasks: updated });
+                                      }}
+                                      className="mr-3 h-4 w-4 rounded-full border-slate-300 text-orange-600 focus:ring-orange-600 cursor-pointer accent-orange-600"
+                                    />
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{member.name}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = newProject.tasks.filter((_, i) => i !== index);
+                          setNewProject({ ...newProject, tasks: updated });
+                        }}
+                        className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                        title="Remove Task"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))
                 )}
               </div>
             </div>
