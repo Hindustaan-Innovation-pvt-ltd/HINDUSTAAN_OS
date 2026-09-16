@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, isToday, isSameMonth, addDays, subMonths, addMonths, differenceInDays, isWeekend, setMonth, setYear } from 'date-fns';
@@ -256,59 +257,54 @@ export default function GanttTimeline({ session }: { session?: any }) {
               </div>
               <div className="space-y-3">
                 <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="relative flex items-center justify-center">
-                    <input type="checkbox" className="peer sr-only" checked={filters.showCompleted} onChange={(e) => setFilters(prev => ({...prev, showCompleted: e.target.checked}))} />
-                    <div className="h-5 w-5 rounded border-2 border-slate-200 dark:border-slate-700 peer-checked:border-emerald-500 peer-checked:bg-emerald-500 transition-all"></div>
-                    <CheckCircle2 className="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
-                  </div>
+                  <Checkbox 
+                    checked={filters.showCompleted} 
+                    onCheckedChange={(checked) => setFilters(prev => ({...prev, showCompleted: !!checked}))} 
+                  />
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm" />
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Completed</span>
+                    <span className="text-sm font-bold text-foreground transition-colors">Completed</span>
                   </div>
                 </label>
                 <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="relative flex items-center justify-center">
-                    <input type="checkbox" className="peer sr-only" checked={filters.showOnTrack} onChange={(e) => setFilters(prev => ({...prev, showOnTrack: e.target.checked}))} />
-                    <div className="h-5 w-5 rounded border-2 border-slate-200 dark:border-slate-700 peer-checked:border-blue-500 peer-checked:bg-blue-500 transition-all"></div>
-                    <CheckCircle2 className="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
-                  </div>
+                  <Checkbox 
+                    checked={filters.showOnTrack} 
+                    onCheckedChange={(checked) => setFilters(prev => ({...prev, showOnTrack: !!checked}))} 
+                  />
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm" />
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">On Track</span>
+                    <span className="text-sm font-bold text-foreground transition-colors">On Track</span>
                   </div>
                 </label>
                 <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="relative flex items-center justify-center">
-                    <input type="checkbox" className="peer sr-only" checked={filters.showAtRisk} onChange={(e) => setFilters(prev => ({...prev, showAtRisk: e.target.checked}))} />
-                    <div className="h-5 w-5 rounded border-2 border-slate-200 dark:border-slate-700 peer-checked:border-rose-500 peer-checked:bg-rose-500 transition-all"></div>
-                    <CheckCircle2 className="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
-                  </div>
+                  <Checkbox 
+                    checked={filters.showAtRisk} 
+                    onCheckedChange={(checked) => setFilters(prev => ({...prev, showAtRisk: !!checked}))} 
+                  />
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" />
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">At Risk</span>
+                    <span className="text-sm font-bold text-foreground transition-colors">At Risk</span>
                   </div>
                 </label>
                 <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="relative flex items-center justify-center">
-                    <input type="checkbox" className="peer sr-only" checked={filters.showPending} onChange={(e) => setFilters(prev => ({...prev, showPending: e.target.checked}))} />
-                    <div className="h-5 w-5 rounded border-2 border-slate-200 dark:border-slate-700 peer-checked:border-slate-500 peer-checked:bg-slate-500 transition-all"></div>
-                    <CheckCircle2 className="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
-                  </div>
+                  <Checkbox 
+                    checked={filters.showPending} 
+                    onCheckedChange={(checked) => setFilters(prev => ({...prev, showPending: !!checked}))} 
+                  />
                   <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-slate-400 shadow-sm" />
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Pending</span>
+                    <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/60 shadow-sm" />
+                    <span className="text-sm font-bold text-foreground transition-colors">Pending</span>
                   </div>
                 </label>
-                <div className="h-px bg-slate-100 dark:bg-slate-800/60 my-3" />
+                <div className="h-px bg-border my-3" />
                 <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="relative flex items-center justify-center">
-                    <input type="checkbox" className="peer sr-only" checked={filters.showMilestones} onChange={(e) => setFilters(prev => ({...prev, showMilestones: e.target.checked}))} />
-                    <div className="h-5 w-5 rounded border-2 border-slate-200 dark:border-slate-700 peer-checked:border-amber-500 peer-checked:bg-amber-500 transition-all"></div>
-                    <CheckCircle2 className="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
-                  </div>
+                  <Checkbox 
+                    checked={filters.showMilestones} 
+                    onCheckedChange={(checked) => setFilters(prev => ({...prev, showMilestones: !!checked}))} 
+                  />
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 transform rotate-45 bg-amber-500 border border-amber-600 shadow-sm" />
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Milestones</span>
+                    <span className="text-sm font-bold text-foreground transition-colors">Milestones</span>
                   </div>
                 </label>
               </div>

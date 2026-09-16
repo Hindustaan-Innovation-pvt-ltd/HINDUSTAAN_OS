@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, CheckSquare, MoreHorizontal, Filter, Search, Plus, Eye, PlayCircle, CheckCircle2, ChevronLeft, ChevronRight, FolderKanban, AlertTriangle, Loader2, Tag } from 'lucide-react';
 import { cn, logActivity } from '@/lib/utils';
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TaskDetailsModal from '../components/TaskDetailsModal';
 import CreateTaskModal from '../components/CreateTaskModal';
 import api from '@/lib/api';
@@ -401,19 +402,22 @@ export default function TaskBoard({ session, isSidebarMinimized = false }: { ses
           </div>
 
           {/* Filters */}
-          <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-slate-900 p-2 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700/60">
-            <div className="flex items-center px-3 border-r border-slate-200 dark:border-slate-700/60">
-              <Filter className="h-4 w-4 text-slate-400 dark:text-slate-500 mr-2" />
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Filters</span>
+          <div className="flex flex-wrap items-center gap-2 bg-card p-1 rounded-xl shadow-sm border border-border">
+            <div className="flex items-center px-2 text-muted-foreground">
+              <Filter className="h-4 w-4 mr-1.5" />
+              <span className="text-xs font-semibold uppercase tracking-wider">Filters</span>
             </div>
 
-            <select
-              className="text-sm font-medium text-slate-700 dark:text-slate-200 bg-transparent border-none focus:ring-0 cursor-pointer outline-none px-2"
-              value={projectFilter}
-              onChange={(e) => setProjectFilter(e.target.value)}
-            >
-              {projects.map(p => <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={p} value={p}>{p === 'All' ? 'All Projects' : p}</option>)}
-            </select>
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="h-8 text-xs font-medium border-none bg-transparent shadow-none w-[150px]">
+                <SelectValue placeholder="All Projects" />
+              </SelectTrigger>
+              <SelectContent>
+                {projects.map(p => (
+                  <SelectItem key={p} value={p}>{p === 'All' ? 'All Projects' : p}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Create Task Button (Managers Only) */}

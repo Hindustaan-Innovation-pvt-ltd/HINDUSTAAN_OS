@@ -73,8 +73,8 @@ export default function AppearanceTab({ data, updateField }: { data: any, update
                   }}
                   className="sr-only peer" 
                 />
-                <div className="rounded-xl border-2 border-slate-200 dark:border-slate-800 peer-checked:border-orange-500 peer-checked:ring-4 peer-checked:ring-orange-500/10 overflow-hidden transition-all bg-[#0c1222]">
-                  <div className="h-32 bg-[#0c1222] flex flex-col p-3 space-y-3 group-hover:bg-slate-900 transition-colors">
+                <div className="rounded-xl border-2 border-border peer-checked:border-primary peer-checked:ring-4 peer-checked:ring-primary/10 overflow-hidden transition-all bg-slate-950">
+                  <div className="h-32 bg-slate-950 flex flex-col p-3 space-y-3 group-hover:bg-slate-900 transition-colors">
                     <div className="h-4 bg-slate-800 rounded shadow-sm border border-slate-800/50 w-1/3" />
                     <div className="flex-1 bg-slate-900 rounded shadow-sm border border-slate-800/50 p-3 space-y-2">
                       <div className="h-2 bg-slate-800 rounded w-full" />

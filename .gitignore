@@ -26,3 +26,10 @@ dist-ssr
 # Environment and Config Files
 .env
 
+# Skills & Agents
+.agents/
+skills/
+.skills/
+skills-lock.json
+
+

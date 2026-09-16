@@ -460,7 +460,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
       </datalist>
 
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DialogContent className="sm:max-w-106.25 rounded-2xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800 shadow-2xl">
+        <DialogContent className="sm:max-w-106.25 rounded-2xl bg-card border-border text-card-foreground shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">Timeline Settings</DialogTitle>
             <DialogDescription className="text-slate-500 font-medium">
@@ -874,7 +874,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
         </Sheet>
 
         <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
-          <DialogContent className="sm:max-w-106.25 rounded-2xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800">
+          <DialogContent className="sm:max-w-106.25 rounded-2xl bg-card border-border text-card-foreground">
             <DialogHeader>
               <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
                 {scheduleType === 'event' ? <CalendarIcon className="mr-2 h-5 w-5 text-orange-500" /> : <Video className="mr-2 h-5 w-5 text-orange-500" />}
@@ -927,7 +927,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
 
         {/* Event History Modal */}
         <Dialog open={isAllEventsOpen} onOpenChange={setIsAllEventsOpen}>
-          <DialogContent className="sm:max-w-106.25 md:max-w-150 rounded-3xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800 p-0 overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+          <DialogContent className="sm:max-w-106.25 md:max-w-150 rounded-3xl bg-card border-border text-card-foreground p-0 overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
             <div className="bg-slate-50/50 dark:bg-slate-900/20 p-6 pb-4 border-b border-slate-100 dark:border-slate-800/60 shrink-0">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white flex items-center">
@@ -999,7 +999,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
         </Dialog>
 
         <Dialog open={!!eventToDelete} onOpenChange={(open) => !open && setEventToDelete(null)}>
-          <DialogContent className="sm:max-w-106.25 rounded-2xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800">
+          <DialogContent className="sm:max-w-106.25 rounded-2xl bg-card border-border text-card-foreground">
             <DialogHeader>
               <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
                 Delete Event
@@ -1039,7 +1039,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
         </Dialog>
 
         <Dialog open={!!eventToEdit} onOpenChange={(open) => !open && setEventToEdit(null)}>
-          <DialogContent className="sm:max-w-106.25 rounded-2xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800">
+          <DialogContent className="sm:max-w-106.25 rounded-2xl bg-card border-border text-card-foreground">
             <DialogHeader>
               <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center">
                 Edit Event
@@ -1112,7 +1112,7 @@ export const ProjectCalendarWidget = React.memo(function ProjectCalendarWidget()
           </DialogContent>
         </Dialog>
         <Dialog open={!!eventToView} onOpenChange={(open) => !open && setEventToView(null)}>
-          <DialogContent className="sm:max-w-125 rounded-3xl bg-white dark:bg-[#020617] border-slate-200 dark:border-slate-800 p-0 overflow-hidden shadow-2xl">
+          <DialogContent className="sm:max-w-125 rounded-3xl bg-card border-border text-card-foreground p-0 overflow-hidden shadow-2xl">
             {eventToView && (
               <>
                 <div className="p-8 border-b border-slate-100 dark:border-slate-800/60 bg-linear-to-br from-slate-50 to-white dark:from-slate-900/50 dark:to-slate-950">

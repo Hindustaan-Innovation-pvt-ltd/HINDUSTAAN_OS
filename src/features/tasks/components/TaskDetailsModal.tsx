@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // --- Types ---
 export type Role = 'manager' | 'intern' | 'admin';
@@ -278,27 +279,25 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
             {/* Priority */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center">
                 <Clock className="h-3.5 w-3.5 mr-1.5" /> Priority Level
               </label>
               {canEditMainFields ? (
-                <div className="relative">
-                  <select
-                    value={editedTask.priority}
-                    onChange={(e) => handleUpdateField('priority', e.target.value as Priority)}
-                    className={cn(
-                      "appearance-none w-full pl-3 pr-8 py-2 rounded-lg text-sm font-semibold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all dark:[color-scheme:dark]",
-                      getPriorityStyles(editedTask.priority)
-                    )}
-                  >
-                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Critical">Critical</option>
-                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="High">High</option>
-                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Medium">Medium</option>
-                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Normal">Normal</option>
-                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Low">Low</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-700 dark:text-slate-400" />
-                </div>
+                <Select
+                  value={editedTask.priority}
+                  onValueChange={(val: Priority) => handleUpdateField('priority', val)}
+                >
+                  <SelectTrigger className={cn("w-full h-9 text-sm font-semibold", getPriorityStyles(editedTask.priority))}>
+                    <SelectValue placeholder="Select Priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Critical">Critical</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Normal">Normal</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
               ) : (
                 <div className="mt-1">
                   <span className={cn("px-3 py-1 rounded-md text-sm font-semibold border inline-block", getPriorityStyles(editedTask.priority))}>
@@ -310,35 +309,43 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
             {/* Assignee */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center">
                 <User className="h-3.5 w-3.5 mr-1.5" /> Assigned Owner
               </label>
               <div className="flex items-center space-x-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-500/20 text-xs font-bold text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary border border-primary/20">
                   {getInitials(editedTask.assignee_name)}
                 </div>
                 {canEditMainFields ? (
-                  <select
-                    value={editedTask.assignee_id}
-                    onChange={(e) => {
-                      const selected = teamMembers.find(u => u.id === e.target.value);
-                      if (selected) {
-                        const updated = { ...editedTask, assignee_id: selected.id, assignee_name: selected.name } as Task;
-                        setEditedTask(updated);
+                  <Select
+                    value={editedTask.assignee_id || 'unassigned'}
+                    onValueChange={(val) => {
+                      if (val === 'unassigned') {
+                        setEditedTask({ ...editedTask, assignee_id: '', assignee_name: 'Unassigned' });
                         setHasChanges(true);
+                      } else {
+                        const selected = teamMembers.find(u => u.id === val);
+                        if (selected) {
+                          setEditedTask({ ...editedTask, assignee_id: selected.id, assignee_name: selected.name });
+                          setHasChanges(true);
+                        }
                       }
                     }}
-                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]"
                   >
-                    <option value="">Unassigned</option>
-                    {teamMembers
-                      .filter(member => member.role !== 'manager' && member.role !== 'admin')
-                      .map(member => (
-                        <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={member.id} value={member.id}>{member.name}</option>
-                      ))}
-                  </select>
+                    <SelectTrigger className="w-full h-9 text-sm font-semibold">
+                      <SelectValue placeholder="Select Assignee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {teamMembers
+                        .filter(member => member.role !== 'manager' && member.role !== 'admin')
+                        .map(member => (
+                          <SelectItem key={member.id} value={member.id}>{member.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
                 ) : (
-                  <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{editedTask.assignee_name}</span>
+                  <span className="text-sm font-semibold text-foreground">{editedTask.assignee_name}</span>
                 )}
               </div>
             </div>
@@ -372,40 +379,37 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
             {/* Status */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center">
                 <Activity className="h-3.5 w-3.5 mr-1.5" /> Current Status
               </label>
               {canEditStatus ? (
-                <div className="relative">
-                  <select
-                    value={editedTask.status}
-                    onChange={(e) => handleStatusChange(e.target.value as Status)}
-                    disabled={task?.status === 'Done'}
-                    className={cn(
-                      "appearance-none w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]",
-                      task?.status === 'Done' && "opacity-75 cursor-not-allowed bg-slate-100 dark:bg-slate-800/60"
-                    )}
-                  >
+                <Select
+                  value={editedTask.status}
+                  onValueChange={(val: Status) => handleStatusChange(val)}
+                  disabled={task?.status === 'Done'}
+                >
+                  <SelectTrigger className={cn("w-full h-9 text-sm font-semibold", task?.status === 'Done' && "opacity-75 cursor-not-allowed")}>
+                    <SelectValue placeholder="Select Status" />
+                  </SelectTrigger>
+                  <SelectContent>
                     {STATUSES.map(s => {
                       const isLocked = task?.status === 'Done' && s !== 'Done';
                       const isManagerOnly = !isManager && !isAdmin && s === 'Done';
                       return (
-                        <option 
-                          className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" 
+                        <SelectItem 
                           key={s} 
                           value={s}
                           disabled={isLocked || isManagerOnly}
                         >
                           {s}{isLocked ? ' (Locked)' : isManagerOnly ? ' (Manager Only)' : ''}
-                        </option>
+                        </SelectItem>
                       );
                     })}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-700 dark:text-slate-400" />
-                </div>
+                  </SelectContent>
+                </Select>
               ) : (
                 <div className="mt-1">
-                  <span className="px-3 py-1 rounded-md text-sm font-semibold border inline-block bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700">
+                  <span className="px-3 py-1 rounded-md text-sm font-semibold border inline-block bg-muted text-muted-foreground border-border">
                     {editedTask.status}
                   </span>
                 </div>

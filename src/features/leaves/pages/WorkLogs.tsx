@@ -306,7 +306,7 @@ export default function WorkLogs({ session }: { session?: any }) {
   }, [logs, currentUser.name]);
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden p-4 sm:p-6 lg:p-8 space-y-6 relative animate-in fade-in duration-500 bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-900 dark:text-white">
+    <div className="w-full max-w-full space-y-6 relative animate-in fade-in duration-300 text-foreground">
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-2">
         <div>

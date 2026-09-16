@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle2, Clock, Flag, LayoutGrid, Target, Users, CheckS
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProjects, formatToMMDDYYYY } from '@/context/ProjectContext';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/lib/auth';
@@ -169,24 +170,27 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-bold text-slate-500">{milestone?.date}</span>
                         {isManager ? (
-                          <select
-                            value={milestone.status}
-                            onChange={async (e) => {
-                              try {
-                                await updateMilestoneStatus(milestone.id, e.target.value);
-                              } catch (err: any) {
-                                alert(err.message || 'Failed to update milestone status.');
-                              }
-                            }}
-                            className={cn("text-[9px] uppercase tracking-wider font-extrabold bg-white dark:bg-slate-900 border rounded-lg px-2 py-0.5 outline-none cursor-pointer focus:ring-2 focus:ring-orange-500/20 transition-all", 
-                              milestone?.status === 'completed' ? "text-emerald-600 border-emerald-200 dark:text-emerald-400 dark:border-emerald-900/50" : 
-                              milestone?.status === 'in-progress' ? "text-orange-600 border-orange-200 dark:text-orange-400 dark:border-orange-900/50" : "text-slate-500 border-slate-200 dark:border-slate-800"
-                            )}
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="in-progress">In Progress</option>
-                            <option value="completed">Completed</option>
-                          </select>
+                          <div className="w-[120px]">
+                            <Select
+                              value={milestone.status}
+                              onValueChange={async (val) => {
+                                try {
+                                  await updateMilestoneStatus(milestone.id, val);
+                                } catch (err: any) {
+                                  alert(err.message || 'Failed to update milestone status.');
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-6 text-[10px] font-extrabold uppercase px-2 py-0">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="in-progress">In Progress</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         ) : (
                           <Badge variant="outline" className={cn("text-[10px] uppercase tracking-wider", 
                             milestone?.status === 'completed' ? "text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-500/10 dark:border-emerald-500/20" : 
@@ -326,35 +330,37 @@ export default function ProjectDetails({ project, onBack }: { project: any, onBa
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Assignee</label>
-                <div className="relative">
-                  <select
-                    value={editingTask.assignee}
-                    onChange={(e) => setEditingTask({ ...editingTask, assignee: e.target.value })}
-                    className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
-                  >
-                    <option value="Unassigned">Unassigned</option>
+                <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Assignee</label>
+                <Select
+                  value={editingTask.assignee || 'Unassigned'}
+                  onValueChange={(val) => setEditingTask({ ...editingTask, assignee: val })}
+                >
+                  <SelectTrigger className="w-full h-11 text-sm font-bold">
+                    <SelectValue placeholder="Unassigned" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Unassigned">Unassigned</SelectItem>
                     {[].map((member: any) => (
-                      <option key={member.id} value={member.name}>{member.name}</option>
+                      <SelectItem key={member.id} value={member.name}>{member.name}</SelectItem>
                     ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
-                </div>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</label>
-                <div className="relative">
-                  <select
-                    value={editingTask.status}
-                    onChange={(e) => setEditingTask({ ...editingTask, status: e.target.value })}
-                    className="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer"
-                  >
-                    <option value="To Do">To Do</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Done">Done</option>
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
-                </div>
+                <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Status</label>
+                <Select
+                  value={editingTask.status || 'To Do'}
+                  onValueChange={(val) => setEditingTask({ ...editingTask, status: val })}
+                >
+                  <SelectTrigger className="w-full h-11 text-sm font-bold">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="To Do">To Do</SelectItem>
+                    <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="Done">Done</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="p-6 pt-0 flex gap-3 mt-2">

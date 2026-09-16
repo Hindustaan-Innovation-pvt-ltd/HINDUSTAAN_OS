@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { DateRange } from "react-day-picker";
@@ -308,32 +309,32 @@ export function TotalHoursModal({ isOpen, onOpenChange, logs, role, currentUser 
               </div>
 
               {/* ROW 3: Table */}
-              <div className="rounded-[28px] border border-white/[0.07] bg-white/[0.03] overflow-hidden">
-                <div className="px-8 py-6 border-b border-white/[0.07]">
-                  <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-slate-400">Employee Productivity Table</h3>
+              <div className="rounded-2xl border border-border bg-card overflow-hidden">
+                <div className="px-6 py-4 border-b border-border">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Employee Productivity Table</h3>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[650px] text-left">
-                    <thead className="border-b border-white/[0.05]">
-                      <tr>{['Employee','Projects','Tasks','Total Logged','Pending'].map(h=><th key={h} className="px-8 py-5 text-xs font-bold uppercase tracking-wider text-slate-500">{h}</th>)}</tr>
-                    </thead>
-                    <tbody>
+                  <Table className="w-full min-w-[650px] text-left">
+                    <TableHeader className="border-b border-border bg-muted/50">
+                      <TableRow>{['Employee','Projects','Tasks','Total Logged','Pending'].map(h=><TableHead key={h} className="px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">{h}</TableHead>)}</TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {employees.map(([name,data],i)=>(
-                        <tr key={i} className={`hover:bg-white/[0.03] transition-colors border-b border-white/[0.04] last:border-0 ${i%2===0?'bg-white/[0.01]':''}`}>
-                          <td className="px-8 py-6">
+                        <TableRow key={i} className="hover:bg-muted/50 transition-colors border-b border-border/60 last:border-0">
+                          <TableCell className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500/30 to-indigo-500/30 flex items-center justify-center text-white font-bold text-sm shrink-0">{name.split(' ').map((n:string)=>n[0]).join('')}</div>
-                              <span className="text-lg font-bold text-white">{name}</span>
+                              <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">{name.split(' ').map((n:string)=>n[0]).join('')}</div>
+                              <span className="text-sm font-semibold text-foreground">{name}</span>
                             </div>
-                          </td>
-                          <td className="px-8 py-6 text-base text-slate-400">{data.projects.size}</td>
-                          <td className="px-8 py-6 text-base text-slate-400">{data.tasks}</td>
-                          <td className="px-8 py-6 text-lg font-bold text-violet-400">{data.hours.toFixed(1)}h</td>
-                          <td className="px-8 py-6">{data.pending>0?<Badge className="bg-amber-500/15 text-amber-400 border-amber-500/25 font-bold text-sm px-3 py-1">{data.pending.toFixed(1)}h</Badge>:<span className="text-slate-600 text-lg">—</span>}</td>
-                        </tr>
+                          </TableCell>
+                          <TableCell className="px-6 py-4 text-sm text-muted-foreground">{data.projects.size}</TableCell>
+                          <TableCell className="px-6 py-4 text-sm text-muted-foreground">{data.tasks}</TableCell>
+                          <TableCell className="px-6 py-4 text-sm font-bold text-primary">{data.hours.toFixed(1)}h</TableCell>
+                          <TableCell className="px-6 py-4">{data.pending>0?<Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-bold text-xs px-2.5 py-0.5">{data.pending.toFixed(1)}h</Badge>:<span className="text-muted-foreground text-sm">—</span>}</TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             </>
