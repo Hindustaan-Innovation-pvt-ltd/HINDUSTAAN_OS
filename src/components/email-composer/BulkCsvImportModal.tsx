@@ -5,8 +5,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { 
   Users, Upload, FileSpreadsheet, Download, Send, 
-  Trash2, AlertCircle, CheckCircle2, RefreshCw, X, Table
+  Trash2, AlertCircle, CheckCircle2, RefreshCw, X, Table as TableIcon 
 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { formatDateToCustom } from './EmailComposerModal';
@@ -224,10 +225,10 @@ Ananya Patel,ananya@example.com,Data Science Intern,₹15,000 / month,01-Oct-202
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-[850px] w-[92vw] max-h-[88vh] p-0 overflow-hidden bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col shadow-2xl z-50">
+      <DialogContent className="!max-w-[850px] w-[92vw] max-h-[88vh] p-0 overflow-hidden bg-card border-border rounded-2xl flex flex-col shadow-2xl z-50">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-border bg-muted/40 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
               <Users className="h-5 w-5" />
@@ -272,7 +273,7 @@ Ananya Patel,ananya@example.com,Data Science Intern,₹15,000 / month,01-Oct-202
                     : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <Table className="h-3.5 w-3.5 inline mr-1.5" />
+                <TableIcon className="h-3.5 w-3.5 inline mr-1.5" />
                 Paste Rows (Excel / Sheets)
               </button>
               <button
@@ -358,48 +359,48 @@ Ananya Patel,ananya@example.com,Data Science Intern,₹15,000 / month,01-Oct-202
                 </button>
               </div>
 
-              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden max-h-[220px] overflow-y-auto overflow-x-auto">
-                <table className="w-full min-w-[650px] text-xs text-left">
-                  <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-bold sticky top-0">
-                    <tr>
-                      <th className="p-2.5">#</th>
-                      <th className="p-2.5">Name</th>
-                      <th className="p-2.5">Email</th>
-                      <th className="p-2.5">Role</th>
-                      <th className="p-2.5">Stipend</th>
-                      <th className="p-2.5">Start Date</th>
-                      <th className="p-2.5">Duration</th>
-                      <th className="p-2.5 text-center">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
+              <div className="border border-border rounded-xl overflow-hidden max-h-[220px] overflow-y-auto overflow-x-auto">
+                <Table className="w-full min-w-[650px] text-xs">
+                  <TableHeader className="bg-muted/80 sticky top-0">
+                    <TableRow>
+                      <TableHead className="p-2.5">#</TableHead>
+                      <TableHead className="p-2.5">Name</TableHead>
+                      <TableHead className="p-2.5">Email</TableHead>
+                      <TableHead className="p-2.5">Role</TableHead>
+                      <TableHead className="p-2.5">Stipend</TableHead>
+                      <TableHead className="p-2.5">Start Date</TableHead>
+                      <TableHead className="p-2.5">Duration</TableHead>
+                      <TableHead className="p-2.5 text-center">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-border/60">
                     {parsedRows.map((row, idx) => (
-                      <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                        <td className="p-2.5 text-slate-400 font-medium">{idx + 1}</td>
-                        <td className="p-2.5 font-bold text-slate-900 dark:text-white">{row.name}</td>
-                        <td className="p-2.5 text-indigo-600 dark:text-indigo-400 font-medium">{row.email}</td>
-                        <td className="p-2.5">{row.role}</td>
-                        <td className="p-2.5 font-semibold text-emerald-600 dark:text-emerald-400">{row.stipend}</td>
-                        <td className="p-2.5 font-medium text-slate-600 dark:text-slate-300">
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200">
+                      <TableRow key={row.id} className="hover:bg-muted/40">
+                        <TableCell className="p-2.5 text-muted-foreground font-medium">{idx + 1}</TableCell>
+                        <TableCell className="p-2.5 font-bold text-foreground">{row.name}</TableCell>
+                        <TableCell className="p-2.5 text-primary font-medium">{row.email}</TableCell>
+                        <TableCell className="p-2.5">{row.role}</TableCell>
+                        <TableCell className="p-2.5 font-semibold text-emerald-600 dark:text-emerald-400">{row.stipend}</TableCell>
+                        <TableCell className="p-2.5 font-medium text-muted-foreground">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-muted border border-border text-foreground">
                             {row.startDate}
                           </span>
-                        </td>
-                        <td className="p-2.5">{row.duration}</td>
-                        <td className="p-2.5 text-center">
+                        </TableCell>
+                        <TableCell className="p-2.5">{row.duration}</TableCell>
+                        <TableCell className="p-2.5 text-center">
                           <button
                             type="button"
                             onClick={() => handleRemoveRow(row.id)}
-                            className="text-slate-400 hover:text-rose-500 p-1 cursor-pointer"
+                            className="text-muted-foreground hover:text-destructive p-1 cursor-pointer"
                             title="Remove row"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}

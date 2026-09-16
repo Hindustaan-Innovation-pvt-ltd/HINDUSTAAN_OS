@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   FileText, CheckCircle2, AlertCircle, Clock, Search, RefreshCw, Download, 
   FileSpreadsheet, Filter, ChevronLeft, ChevronRight, Activity, Shield, Globe, Laptop, Server, AlertTriangle, Wifi
@@ -511,138 +512,138 @@ export const ActivityLogsModule: React.FC = () => {
       </Card>
 
       {/* Audit Logs Table */}
-      <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <Card className="rounded-2xl border-border shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[850px] text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-900/50 text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                <th className="py-3 px-3">Timestamp</th>
-                <th className="py-3 px-3">User & Role</th>
-                <th className="py-3 px-3">Module</th>
-                <th className="py-3 px-3">Action / Description</th>
-                <th className="py-3 px-3">Method & Endpoint</th>
-                <th className="py-3 px-3">Status & Time</th>
-                <th className="py-3 px-3">Browser & Device</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm font-medium">
+          <Table className="w-full min-w-[850px] text-left border-collapse">
+            <TableHeader className="bg-muted/50 border-b border-border">
+              <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <TableHead className="py-3 px-3">Timestamp</TableHead>
+                <TableHead className="py-3 px-3">User & Role</TableHead>
+                <TableHead className="py-3 px-3">Module</TableHead>
+                <TableHead className="py-3 px-3">Action / Description</TableHead>
+                <TableHead className="py-3 px-3">Method & Endpoint</TableHead>
+                <TableHead className="py-3 px-3">Status & Time</TableHead>
+                <TableHead className="py-3 px-3">Browser & Device</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-border/60 text-sm font-medium">
               {loading && logs.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-500 dark:text-slate-400">
+                <TableRow>
+                  <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <RefreshCw className="h-6 w-6 animate-spin text-orange-500" />
-                      <span className="font-bold text-sm">Loading audit trail records...</span>
+                      <RefreshCw className="h-6 w-6 animate-spin text-primary" />
+                      <span className="font-semibold text-sm">Loading audit trail records...</span>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : logs.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-500 dark:text-slate-400">
-                    <AlertCircle className="h-8 w-8 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-                    <span className="font-bold text-base block">No audit logs matching filters</span>
-                    <span className="text-xs text-slate-400">Try broadening your search or resetting the selected filters.</span>
-                  </td>
-                </tr>
+                <TableRow>
+                  <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
+                    <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                    <span className="font-semibold text-base block">No audit logs matching filters</span>
+                    <span className="text-xs text-muted-foreground/70">Try broadening your search or resetting the selected filters.</span>
+                  </TableCell>
+                </TableRow>
               ) : (
                 logs.map((log) => (
-                  <tr 
+                  <TableRow 
                     key={log.id} 
-                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
+                    className="hover:bg-muted/50 transition-colors group cursor-pointer border-b border-border/60"
                     onClick={() => {
                       setSelectedLog(log);
                       setIsModalOpen(true);
                     }}
                   >
                     {/* Timestamp */}
-                    <td className="py-3 px-3 whitespace-nowrap text-xs text-slate-600 dark:text-slate-300 font-semibold">
+                    <TableCell className="py-3 px-3 whitespace-nowrap text-xs text-muted-foreground font-medium">
                       {log.createdAt ? new Date(log.createdAt).toLocaleString([], {
                         month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit'
                       }) : 'N/A'}
-                    </td>
+                    </TableCell>
 
                     {/* User & Role */}
-                    <td className="py-3 px-3 max-w-[140px] truncate">
+                    <TableCell className="py-3 px-3 max-w-[140px] truncate">
                       <div className="flex flex-col truncate">
-                        <span className="font-bold text-slate-900 dark:text-white text-xs truncate">
+                        <span className="font-semibold text-foreground text-xs truncate">
                           {log.userName || "System"}
                         </span>
-                        <span className="text-[11px] text-slate-400 capitalize truncate">
+                        <span className="text-[11px] text-muted-foreground capitalize truncate">
                           {log.role || "guest"}
                         </span>
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Module */}
-                    <td className="py-3 px-3 whitespace-nowrap">
+                    <TableCell className="py-3 px-3 whitespace-nowrap">
                       <Badge variant="outline" className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border ${getModuleColor(log.module)}`}>
                         {log.module}
                       </Badge>
-                    </td>
+                    </TableCell>
 
                     {/* Action & Description */}
-                    <td className="py-3 px-3 max-w-[200px] truncate">
+                    <TableCell className="py-3 px-3 max-w-[200px] truncate">
                       <div className="flex flex-col truncate">
-                        <span className="font-bold text-slate-800 dark:text-slate-200 text-xs truncate">
+                        <span className="font-semibold text-foreground text-xs truncate">
                           {log.action}
                         </span>
                         {log.description && (
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                          <span className="text-[11px] text-muted-foreground truncate">
                             {log.description}
                           </span>
                         )}
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Method & Endpoint */}
-                    <td className="py-3 px-3 max-w-[150px] truncate">
+                    <TableCell className="py-3 px-3 max-w-[150px] truncate">
                       <div className="flex items-center gap-1.5 truncate">
                         {log.httpMethod && (
-                          <Badge variant="outline" className={`text-[10px] font-black uppercase px-1 py-0.5 rounded shrink-0 ${getMethodBadgeStyle(log.httpMethod)}`}>
+                          <Badge variant="outline" className={`text-[10px] font-bold uppercase px-1 py-0.5 rounded shrink-0 ${getMethodBadgeStyle(log.httpMethod)}`}>
                             {log.httpMethod}
                           </Badge>
                         )}
-                        <span className="text-xs font-mono text-slate-600 dark:text-slate-300 truncate">
+                        <span className="text-xs font-mono text-muted-foreground truncate">
                           {log.endpoint || "-"}
                         </span>
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Status Code & Execution Time */}
-                    <td className="py-3 px-3 whitespace-nowrap">
+                    <TableCell className="py-3 px-3 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
                         <Badge variant="outline" className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
                           log.success 
-                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' 
-                            : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' 
+                            : 'bg-destructive/10 text-destructive border-destructive/20'
                         }`}>
                           {log.responseStatus || (log.success ? 'OK' : 'ERR')}
                         </Badge>
                         {log.executionTimeMs !== undefined && log.executionTimeMs !== null && (
-                          <span className="text-[10px] font-bold text-slate-400">
+                          <span className="text-[10px] font-bold text-muted-foreground">
                             {log.executionTimeMs}ms
                           </span>
                         )}
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Browser / Device / IP */}
-                    <td className="py-3 px-3 max-w-[140px] truncate text-xs text-slate-500 dark:text-slate-400">
+                    <TableCell className="py-3 px-3 max-w-[140px] truncate text-xs text-muted-foreground">
                       <div className="flex flex-col truncate">
-                        <span className="font-medium flex items-center gap-1 truncate text-xs">
-                          {log.device === 'Mobile' ? <Laptop className="h-3 w-3 text-orange-500 shrink-0" /> : <Globe className="h-3 w-3 text-blue-500 shrink-0" />}
+                        <span className="font-medium flex items-center gap-1 truncate text-xs text-foreground">
+                          {log.device === 'Mobile' ? <Laptop className="h-3 w-3 text-primary shrink-0" /> : <Globe className="h-3 w-3 text-primary shrink-0" />}
                           <span className="truncate">{log.browser || "Unknown"}</span>
                         </span>
-                        <span className="text-[10px] text-slate-400 font-mono truncate flex items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground font-mono truncate flex items-center gap-1">
                           {log.module === 'Attendance' && <Wifi className="h-2.5 w-2.5 text-emerald-500 shrink-0" />}
                           {log.ipAddress || "N/A"}
                         </span>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         {/* Pagination Bar */}

@@ -424,7 +424,7 @@ function ManagerDashboardInner() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="w-full space-y-8 animate-in fade-in duration-300">
 
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">

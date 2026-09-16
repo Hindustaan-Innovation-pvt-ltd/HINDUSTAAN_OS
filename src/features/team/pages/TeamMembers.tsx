@@ -1426,20 +1426,21 @@ export default function TeamMembers() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
                     Department
                   </label>
-                  <select
-                    value={newEmpDept}
-                    onChange={(e) => setNewEmpDept(e.target.value)}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer"
-                  >
-                    <option value="Engineering">Engineering</option>
-                    <option value="Operations">Operations</option>
-                    <option value="HR">HR</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Sales">Sales</option>
-                  </select>
+                  <Select value={newEmpDept} onValueChange={setNewEmpDept}>
+                    <SelectTrigger className="w-full h-10 text-sm font-semibold">
+                      <SelectValue placeholder="Select Department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Engineering">Engineering</SelectItem>
+                      <SelectItem value="Operations">Operations</SelectItem>
+                      <SelectItem value="HR">HR</SelectItem>
+                      <SelectItem value="Marketing">Marketing</SelectItem>
+                      <SelectItem value="Sales">Sales</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1.5">

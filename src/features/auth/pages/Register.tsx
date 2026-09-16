@@ -11,6 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const registerSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(50),
@@ -343,17 +344,23 @@ export default function Register() {
                 {/* Terms and Conditions */}
                 <div className="flex flex-col space-y-1">
                   <div className="flex items-center space-x-2 pt-0.5 lg:pt-0">
-                    <input
-                      type="checkbox"
-                      id="terms"
-                      {...register("termsAccepted")}
-                      className="w-3.5 h-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-900"
+                    <Controller
+                      name="termsAccepted"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="terms"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="h-4 w-4 rounded-md"
+                        />
+                      )}
                     />
-                    <label htmlFor="terms" className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                      I accept the <span onClick={() => setShowTerms(true)} className="text-orange-600 hover:underline cursor-pointer">Terms & Conditions</span>
+                    <label htmlFor="terms" className="text-xs font-medium text-muted-foreground cursor-pointer">
+                      I accept the <span onClick={() => setShowTerms(true)} className="text-primary hover:underline cursor-pointer font-semibold">Terms & Conditions</span>
                     </label>
                   </div>
-                  {errors.termsAccepted && <p className="text-[10px] text-red-500 font-medium flex items-center mt-1"><AlertCircle className="w-3 h-3 mr-1" />{errors.termsAccepted.message}</p>}
+                  {errors.termsAccepted && <p className="text-[10px] text-destructive font-medium flex items-center mt-1"><AlertCircle className="w-3 h-3 mr-1" />{errors.termsAccepted.message}</p>}
                 </div>
 
                 <div>

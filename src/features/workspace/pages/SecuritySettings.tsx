@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Shield, Key, Fingerprint, Lock, Unlock, Smartphone, MapPin, Search, AlertTriangle, LogOut, CheckCircle2, MonitorSmartphone, Clock, Activity, Users, Settings2, Globe, Building2, Download, Settings, Wifi } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -361,47 +362,47 @@ export default function SecuritySettings({ session }: { session?: any }) {
               </div>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
-              <table className="w-full min-w-[650px] text-sm text-left">
-                <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 font-bold">
-                  <tr>
-                    <th className="px-5 py-3">User</th>
-                    <th className="px-5 py-3">Device / Browser</th>
-                    <th className="px-5 py-3">IP Address</th>
-                    <th className="px-5 py-3">Last Active</th>
-                    <th className="px-5 py-3 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <Table className="w-full min-w-[650px]">
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead className="px-5 py-3 font-bold uppercase tracking-wider text-xs">User</TableHead>
+                    <TableHead className="px-5 py-3 font-bold uppercase tracking-wider text-xs">Device / Browser</TableHead>
+                    <TableHead className="px-5 py-3 font-bold uppercase tracking-wider text-xs">IP Address</TableHead>
+                    <TableHead className="px-5 py-3 font-bold uppercase tracking-wider text-xs">Last Active</TableHead>
+                    <TableHead className="px-5 py-3 text-right font-bold uppercase tracking-wider text-xs">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {activeSessions.map((s) => (
-                    <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/40">
-                      <td className="px-5 py-3">
+                    <TableRow key={s.id} className="hover:bg-muted/40">
+                      <TableCell className="px-5 py-3">
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            <AvatarFallback className="text-[10px] font-bold bg-muted text-foreground">
                               {s.user.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-bold text-slate-900 dark:text-white">{s.user}</span>
-                          {s.current && <Badge className="bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400 border-0 text-[10px] h-4 px-1.5 ml-1">Current</Badge>}
+                          <span className="font-bold text-foreground">{s.user}</span>
+                          {s.current && <Badge className="bg-primary/10 text-primary border-0 text-[10px] h-4 px-1.5 ml-1">Current</Badge>}
                         </div>
-                      </td>
-                      <td className="px-5 py-3">
-                        <p className="font-semibold text-slate-800 dark:text-slate-200">{s.device}</p>
-                        <p className="text-xs text-slate-500">{s.browser}</p>
-                      </td>
-                      <td className="px-5 py-3 text-slate-600 dark:text-slate-400 font-mono text-xs">{s.ip}</td>
-                      <td className="px-5 py-3 font-medium text-slate-600 dark:text-slate-400">{s.lastActive}</td>
-                      <td className="px-5 py-3 text-right">
+                      </TableCell>
+                      <TableCell className="px-5 py-3">
+                        <p className="font-semibold text-foreground">{s.device}</p>
+                        <p className="text-xs text-muted-foreground">{s.browser}</p>
+                      </TableCell>
+                      <TableCell className="px-5 py-3 text-muted-foreground font-mono text-xs">{s.ip}</TableCell>
+                      <TableCell className="px-5 py-3 font-medium text-muted-foreground">{s.lastActive}</TableCell>
+                      <TableCell className="px-5 py-3 text-right">
                         {!s.current && (
-                          <Button variant="ghost" size="sm" className="h-8 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20 font-bold" onClick={() => toast.success('Session terminated')}>
+                          <Button variant="ghost" size="sm" className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10 font-bold" onClick={() => toast.success('Session terminated')}>
                             Logout
                           </Button>
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
 

@@ -214,9 +214,9 @@ export default function UserAttendanceHeatmapModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[480px] sm:max-w-[500px] w-[95vw] bg-[#0c1222] border border-slate-800 text-white rounded-3xl shadow-2xl p-0 overflow-hidden focus:outline-none">
+      <DialogContent className="max-w-[480px] sm:max-w-[500px] w-[95vw] bg-card border-border text-card-foreground rounded-3xl shadow-2xl p-0 overflow-hidden focus:outline-none">
         {/* Compact Header with dedicated right padding (pr-14) so the Close (X) button never overlaps */}
-        <div className="p-4 pr-14 pb-3 border-b border-slate-800/80 bg-slate-900/50">
+        <div className="p-4 pr-14 pb-3 border-b border-border bg-muted/40">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 rounded-xl border border-slate-700 bg-slate-800 shrink-0">
               <AvatarFallback className="text-xs font-black bg-gradient-to-br from-orange-500 to-amber-600 text-white">

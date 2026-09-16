@@ -3,6 +3,7 @@ import { Briefcase, LayoutTemplate, Plus, ChevronRight, MoreVertical, Search, Fi
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import ProjectDetails from '@/components/projects/ProjectDetails';
@@ -241,29 +242,29 @@ export default function Projects({ session }: { session?: any }) {
       </div>
 
       {/* Project Overview List */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+      <div className="bg-card text-card-foreground border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-muted/30">
           <div className="flex items-center space-x-2">
-            <Briefcase className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-            <h3 className="font-bold text-slate-900 dark:text-white">Active Projects</h3>
+            <Briefcase className="h-5 w-5 text-primary" />
+            <h3 className="font-bold text-foreground">Active Projects</h3>
           </div>
           <div className="flex space-x-4 text-sm font-bold">
             <button
               onClick={() => setActiveTab('All')}
-              className={cn("pb-1", activeTab === 'All' ? "text-slate-900 dark:text-white border-b-2 border-orange-600 dark:border-orange-400" : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300")}
+              className={cn("pb-1", activeTab === 'All' ? "text-foreground border-b-2 border-primary" : "text-muted-foreground hover:text-foreground")}
             >All</button>
             <button
               onClick={() => setActiveTab('Active')}
-              className={cn("pb-1", activeTab === 'Active' ? "text-slate-900 dark:text-white border-b-2 border-orange-600 dark:border-orange-400" : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300")}
+              className={cn("pb-1", activeTab === 'Active' ? "text-foreground border-b-2 border-primary" : "text-muted-foreground hover:text-foreground")}
             >Active</button>
             <button
               onClick={() => setActiveTab('Completed')}
-              className={cn("pb-1", activeTab === 'Completed' ? "text-slate-900 dark:text-white border-b-2 border-orange-600 dark:border-orange-400" : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300")}
+              className={cn("pb-1", activeTab === 'Completed' ? "text-foreground border-b-2 border-primary" : "text-muted-foreground hover:text-foreground")}
             >Completed</button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 p-5 bg-slate-50/30 dark:bg-slate-900/10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 p-5 bg-transparent">
           {displayedProjects.map((project, idx) => {
             const completedTasks = project.tasks.filter((t: any) => t.status === 'Done').length;
             const totalTasks = project.tasks.length;
@@ -277,10 +278,10 @@ export default function Projects({ session }: { session?: any }) {
               <div
                 key={project.id}
                 className={cn(
-                  "group relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border rounded-[1.5rem] transition-all duration-500 hover:-translate-y-1.5 cursor-pointer overflow-hidden flex flex-col",
+                  "group relative bg-card/90 text-card-foreground backdrop-blur-xl border rounded-[1.5rem] transition-all duration-500 hover:-translate-y-1.5 cursor-pointer overflow-hidden flex flex-col",
                   isSelectedForTimeline
-                    ? "ring-2 ring-orange-500 border-orange-500 shadow-xl dark:shadow-orange-950/40 bg-white/95 dark:bg-slate-900/95"
-                    : "border-white/80 dark:border-slate-800/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_20px_40px_rgb(0,0,0,0.5)] hover:bg-white/90 dark:hover:bg-slate-900/90"
+                    ? "ring-2 ring-primary border-primary shadow-xl bg-card"
+                    : "border-border shadow-sm hover:shadow-md hover:border-border/80"
                 )}
                 onClick={() => handleSelectProjectForTimeline(project)}
               >
@@ -469,10 +470,10 @@ export default function Projects({ session }: { session?: any }) {
 
       {/* Execution Timeline - Visible only when clicked on a specific project */}
       {selectedTimelineProject ? (
-        <div ref={timelineRef} className="bg-white dark:bg-slate-900 border-2 border-orange-500/40 dark:border-orange-500/30 rounded-2xl shadow-lg overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-3 duration-300 scroll-mt-6">
+        <div ref={timelineRef} className="bg-card text-card-foreground border-2 border-primary/40 rounded-2xl shadow-lg overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-3 duration-300 scroll-mt-6">
 
           {/* Panel Toolbar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 border-b border-border bg-muted/30 gap-4">
             <div className="flex items-center gap-3 flex-wrap">
               <div className="h-9 w-9 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 shadow-xs">
                 <LayoutTemplate className="h-5 w-5" />
@@ -664,7 +665,7 @@ export default function Projects({ session }: { session?: any }) {
 
         </div>
       ) : (
-        <div className="p-8 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/20 text-center flex flex-col items-center justify-center space-y-3">
+        <div className="p-8 rounded-2xl border-2 border-dashed border-border bg-muted/20 text-center flex flex-col items-center justify-center space-y-3">
           <div className="h-12 w-12 rounded-2xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center shadow-inner">
             <LayoutTemplate className="h-6 w-6" />
           </div>
@@ -705,43 +706,45 @@ export default function Projects({ session }: { session?: any }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Project Lead</label>
-                  <div className="relative">
-                    <select
-                      value={newProject.managerId || ''}
-                      onChange={(e) => {
-                        const selectedId = e.target.value;
-                        const selectedLead = leads.find(l => l.id === selectedId);
-                        setNewProject({
-                          ...newProject,
-                          managerId: selectedId,
-                          manager: selectedLead ? selectedLead.name : 'Unassigned'
-                        });
-                      }}
-                      className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="">Unassigned</option>
+                  <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Project Lead</label>
+                  <Select
+                    value={newProject.managerId || 'unassigned'}
+                    onValueChange={(selectedId) => {
+                      const id = selectedId === 'unassigned' ? '' : selectedId;
+                      const selectedLead = leads.find(l => l.id === id);
+                      setNewProject({
+                        ...newProject,
+                        managerId: id,
+                        manager: selectedLead ? selectedLead.name : 'Unassigned'
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="w-full h-12 text-sm font-bold">
+                      <SelectValue placeholder="Unassigned" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
                       {leads.map(lead => (
-                        <option key={lead.id} value={lead.id}>{lead.name}</option>
+                        <SelectItem key={lead.id} value={lead.id}>{lead.name}</SelectItem>
                       ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
-                  </div>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Priority</label>
-                  <div className="relative">
-                    <select
-                      value={newProject.priority}
-                      onChange={(e) => setNewProject({ ...newProject, priority: e.target.value })}
-                      className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
-                  </div>
+                  <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Priority</label>
+                  <Select
+                    value={newProject.priority || 'Medium'}
+                    onValueChange={(val) => setNewProject({ ...newProject, priority: val })}
+                  >
+                    <SelectTrigger className="w-full h-12 text-sm font-bold">
+                      <SelectValue placeholder="Priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="High">High</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="Low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

@@ -28,6 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar } from '@/components/ui/calendar';
 import { LeaveCalendar } from '@/components/dashboard/LeaveCalendar';
 import { LeaveApplicationWithDrafts } from '@/components/dashboard/LeaveApplicationWithDrafts';
@@ -621,39 +622,41 @@ export default function LeaveManagement() {
                 <CardDescription>Track the status of your past and upcoming leaves.</CardDescription>
               </CardHeader>
               <div className="overflow-x-auto p-4 md:p-6">
-                <table className="w-full min-w-[650px] text-sm text-left border-collapse">
-                  <thead className="text-xs text-slate-500 font-black uppercase tracking-wider bg-slate-50 dark:bg-slate-900 rounded-xl">
-                    <tr>
-                      <th className="px-6 py-4 rounded-l-xl">Applied On</th>
-                      <th className="px-6 py-4">Leave Type</th>
-                      <th className="px-6 py-4">Dates</th>
-                      <th className="px-6 py-4">Days</th>
-                      <th className="px-6 py-4 text-right rounded-r-xl">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <Table className="w-full min-w-[650px]">
+                  <TableHeader>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="px-6 py-4 font-black uppercase tracking-wider text-xs">Applied On</TableHead>
+                      <TableHead className="px-6 py-4 font-black uppercase tracking-wider text-xs">Leave Type</TableHead>
+                      <TableHead className="px-6 py-4 font-black uppercase tracking-wider text-xs">Dates</TableHead>
+                      <TableHead className="px-6 py-4 font-black uppercase tracking-wider text-xs">Days</TableHead>
+                      <TableHead className="px-6 py-4 text-right font-black uppercase tracking-wider text-xs">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {leaveData
                       .filter((leave: any) => String(leave.userId) === String(user?.id) || leave.employee === user?.name)
                       .map((leave: any) => (
-                      <tr key={leave.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors group">
-                        <td className="px-6 py-5 font-semibold text-slate-600 dark:text-slate-400">{leave.appliedOn}</td>
-                        <td className="px-6 py-5 font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                          {leave.type}
-                        </td>
-                        <td className="px-6 py-5 font-semibold text-slate-600 dark:text-slate-400">
-                          {leave.start} <span className="text-slate-400 mx-1">→</span> {leave.end}
-                        </td>
-                        <td className="px-6 py-5 font-bold text-slate-900 dark:text-white">{leave.days}</td>
-                        <td className="px-6 py-5 text-right">
+                      <TableRow key={leave.id} className="hover:bg-muted/50 transition-colors group">
+                        <TableCell className="px-6 py-5 font-semibold text-muted-foreground">{leave.appliedOn}</TableCell>
+                        <TableCell className="px-6 py-5 font-bold text-foreground">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-primary" />
+                            {leave.type}
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-6 py-5 font-semibold text-muted-foreground">
+                          {leave.start} <span className="text-muted-foreground/60 mx-1">→</span> {leave.end}
+                        </TableCell>
+                        <TableCell className="px-6 py-5 font-bold text-foreground">{leave.days}</TableCell>
+                        <TableCell className="px-6 py-5 text-right">
                           {leave.status === 'Pending' && <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/50 px-3 py-1 text-xs font-bold shadow-sm">Pending</Badge>}
                           {leave.status === 'Approved' && <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50 px-3 py-1 text-xs font-bold shadow-sm">Approved</Badge>}
                           {leave.status === 'Rejected' && <Badge variant="outline" className="bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800/50 px-3 py-1 text-xs font-bold shadow-sm">Rejected</Badge>}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </Card>
           </TabsContent>
@@ -1153,41 +1156,41 @@ export default function LeaveManagement() {
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-[750px] text-left border-collapse">
-                        <thead>
-                          <tr className="border-b border-white/10 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
-                            <th className="pb-3 pr-4">Member</th>
-                            <th className="pb-3 px-4 text-center">Requests</th>
-                            <th className="pb-3 px-4 text-center">Approved</th>
-                            <th className="pb-3 px-4 text-center">Pending</th>
-                            <th className="pb-3 px-4 text-center">Rejected</th>
-                            <th className="pb-3 px-4 text-right">Leave Days Taken</th>
-                            <th className="pb-3 pl-4 text-right">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5 text-sm">
+                      <Table className="w-full min-w-[750px]">
+                        <TableHeader>
+                          <TableRow className="border-b border-border/40 hover:bg-transparent">
+                            <TableHead className="pb-3 pr-4 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Member</TableHead>
+                            <TableHead className="pb-3 px-4 text-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Requests</TableHead>
+                            <TableHead className="pb-3 px-4 text-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Approved</TableHead>
+                            <TableHead className="pb-3 px-4 text-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Pending</TableHead>
+                            <TableHead className="pb-3 px-4 text-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Rejected</TableHead>
+                            <TableHead className="pb-3 px-4 text-right text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Leave Days Taken</TableHead>
+                            <TableHead className="pb-3 pl-4 text-right text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Action</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody className="divide-y divide-border/20 text-sm">
                           {employeeWiseOverview.map((emp) => {
                             const isSelected = selectedOverviewEmployee === emp.employee;
                             return (
-                              <tr
+                              <TableRow
                                 key={emp.employee}
                                 className={cn(
-                                  "hover:bg-white/5 transition-colors cursor-pointer",
-                                  isSelected && "bg-white/10 border-l-2 border-cyan-400"
+                                  "hover:bg-muted/40 transition-colors cursor-pointer",
+                                  isSelected && "bg-muted/60 border-l-2 border-primary"
                                 )}
                                 onClick={() => setSelectedOverviewEmployee(isSelected ? 'ALL' : emp.employee)}
                               >
-                                <td className="py-3 pr-4">
+                                <TableCell className="py-3 pr-4">
                                   <div className="flex items-center gap-3">
-                                    <Avatar className="h-9 w-9 border border-white/20">
+                                    <Avatar className="h-9 w-9 border border-border">
                                       <AvatarImage src={emp.avatar} alt={emp.employee} />
-                                      <AvatarFallback className="bg-cyan-500/20 text-cyan-400 text-xs font-bold">
+                                      <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
                                         {emp.employee.split(' ').map((n) => n[0]).join('')}
                                       </AvatarFallback>
                                     </Avatar>
                                     <div>
                                       <div className="flex items-center gap-2">
-                                        <span className="font-extrabold text-white">{emp.employee}</span>
+                                        <span className="font-extrabold text-foreground">{emp.employee}</span>
                                         {emp.role === 'manager' ? (
                                           <Badge className="bg-purple-500/20 text-purple-300 font-extrabold text-[10px] px-1.5 py-0 border border-purple-500/30">
                                             MANAGER
@@ -1198,34 +1201,34 @@ export default function LeaveManagement() {
                                           </Badge>
                                         ) : null}
                                       </div>
-                                      <div className="text-xs text-zinc-400">{emp.department}</div>
+                                      <div className="text-xs text-muted-foreground">{emp.department}</div>
                                     </div>
                                   </div>
-                                </td>
-                                <td className="py-3 px-4 text-center">
-                                  <Badge variant="outline" className="border-white/20 text-white font-extrabold">
+                                </TableCell>
+                                <TableCell className="py-3 px-4 text-center">
+                                  <Badge variant="outline" className="border-border text-foreground font-extrabold">
                                     {emp.total}
                                   </Badge>
-                                </td>
-                                <td className="py-3 px-4 text-center">
+                                </TableCell>
+                                <TableCell className="py-3 px-4 text-center">
                                   <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                                     {emp.approved}
                                   </span>
-                                </td>
-                                <td className="py-3 px-4 text-center">
+                                </TableCell>
+                                <TableCell className="py-3 px-4 text-center">
                                   <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
                                     {emp.pending}
                                   </span>
-                                </td>
-                                <td className="py-3 px-4 text-center">
+                                </TableCell>
+                                <TableCell className="py-3 px-4 text-center">
                                   <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
                                     {emp.rejected}
                                   </span>
-                                </td>
-                                <td className="py-3 px-4 text-right font-black text-purple-400">
+                                </TableCell>
+                                <TableCell className="py-3 px-4 text-right font-black text-purple-400">
                                   {emp.days.toFixed(1)} Days
-                                </td>
-                                <td className="py-3 pl-4 text-right">
+                                </TableCell>
+                                <TableCell className="py-3 pl-4 text-right">
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -1236,18 +1239,18 @@ export default function LeaveManagement() {
                                     className={cn(
                                       "text-xs font-bold",
                                       isSelected
-                                        ? "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
-                                        : "text-zinc-400 hover:text-white hover:bg-white/10"
+                                        ? "bg-primary/20 text-primary hover:bg-primary/30"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
                                     )}
                                   >
                                     {isSelected ? 'Selected' : 'Filter'}
                                   </Button>
-                                </td>
-                              </tr>
+                                </TableCell>
+                              </TableRow>
                             );
                           })}
-                        </tbody>
-                      </table>
+                        </TableBody>
+                      </Table>
                     </div>
                   )}
                 </div>
@@ -1373,7 +1376,7 @@ export default function LeaveManagement() {
                               <span className="w-full border-t border-slate-200 dark:border-slate-800" />
                             </div>
                             <div className="relative flex justify-center text-xs uppercase">
-                              <span className="bg-slate-50 dark:bg-[#0B1120] px-2 text-slate-500 font-bold">Or</span>
+                              <span className="bg-card px-2 text-muted-foreground font-bold">Or</span>
                             </div>
                           </div>
                           <Button

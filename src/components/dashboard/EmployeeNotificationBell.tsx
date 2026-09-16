@@ -210,7 +210,7 @@ export function EmployeeNotificationBell({ onNavigate }: NotificationBellProps =
           <span className="sr-only">View notifications</span>
           <Bell className="h-6 w-6" aria-hidden="true" />
           {unreadCount > 0 && (
-            <span className="absolute top-2 right-2 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#050816]">
+            <span className="absolute top-2 right-2 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-rose-500 ring-2 ring-background">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
             </span>
           )}
@@ -220,7 +220,7 @@ export function EmployeeNotificationBell({ onNavigate }: NotificationBellProps =
       <PopoverContent 
         align="end" 
         sideOffset={8}
-        className="w-80 p-2 bg-white/95 dark:bg-slate-900/95 border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl text-slate-900 dark:text-white backdrop-blur-md z-[1000] border origin-top-right animate-in fade-in-50 zoom-in-95 duration-200"
+        className="w-80 p-2 bg-popover border-border rounded-xl shadow-2xl text-popover-foreground backdrop-blur-md z-[1000] border origin-top-right animate-in fade-in-50 zoom-in-95 duration-200"
       >
         <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
