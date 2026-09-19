@@ -35,6 +35,7 @@ export interface Project {
   deadline: string;
   endDate?: string;
   startDate?: string;
+  priority?: string;
   progress: number;
   milestones: Milestone[];
   tasks: ProjectTaskItem[];
@@ -64,6 +65,7 @@ export interface UpdateProjectInput {
   manager?: string;
   managerId?: string;
   deadline?: string;
+  priority?: string;
   status?: ProjectStatus;
   tasks?: Array<{
     id?: string;

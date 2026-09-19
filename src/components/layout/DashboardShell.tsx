@@ -61,8 +61,6 @@ const employeeNavigation = [
   { name: 'Work Logs', icon: Clock },
   { name: 'Attendance Logs', icon: History },
   { name: 'Leave Management', icon: CalendarRange },
-  { name: 'Projects', icon: FolderKanban },
-  // { name: 'Milestones', icon: Flag },
   { name: 'Settings', icon: Settings },
 ];
 
@@ -71,7 +69,6 @@ const managerNavigation = [
   { name: 'Projects', icon: FolderKanban },
   { name: 'Tasks', icon: CheckSquare },
   { name: 'Gantt Timeline', icon: CalendarDays },
-  { name: 'Progress Tracker', icon: BarChart2 },
   { name: 'Work Logs', icon: Clock },
   { name: 'Attendance Logs', icon: History },
   { name: 'Leave Management', icon: CalendarRange },
@@ -162,6 +159,30 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
   const collapsed = !isMobile && sidebarWidth < 150;
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isCheckedIn, setIsCheckedIn] = useState<boolean | null>(null);
+
+  // Fetch current session status to know if user is already checked in
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const cached = localStorage.getItem(`intern_dashboard_data_${user?.id}`) || localStorage.getItem('intern_dashboard_data') || localStorage.getItem(`manager_dashboard_data_${user?.id}`) || localStorage.getItem('manager_dashboard_data');
+        if (cached) {
+          try {
+            const d = JSON.parse(cached);
+            setIsCheckedIn(!!(d?.isOnline || d?.currentSessionStart) && !d?.isSessionExpired);
+          } catch {}
+        }
+        const res = await api.get('/dashboard');
+        if (res.data?.success) {
+          const d = res.data.data;
+          setIsCheckedIn(!!(d?.isOnline || d?.currentSessionStart) && !d?.isSessionExpired);
+        }
+      } catch {}
+    };
+    checkStatus();
+    window.addEventListener('auth_status_changed', checkStatus);
+    return () => window.removeEventListener('auth_status_changed', checkStatus);
+  }, [user?.id]);
 
   useEffect(() => {
     if (activeNavigation) {
@@ -195,6 +216,8 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
       const res = await api.post(`/auth/${type}`, payload);
       if (res.data?.success) {
         toast.success(res.data.message);
+        // Update local status immediately
+        setIsCheckedIn(type === 'checkin');
         try {
           const uId = user?.id || 'default';
           localStorage.removeItem(`manager_dashboard_data_${uId}`);
@@ -409,20 +432,38 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                 <User className="h-4 w-4 ml-2 text-muted-foreground" />
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem
-              onClick={() => handleCheckInOut('checkin')}
-              className="cursor-pointer text-emerald-600 dark:text-emerald-400 focus:bg-emerald-500/10 text-sm font-medium rounded-lg flex items-center justify-between py-2.5 transition-colors mb-1"
-            >
-              Check In
-              <Activity className="h-4 w-4 ml-2" />
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleCheckInOut('checkout')}
-              className="cursor-pointer text-amber-600 dark:text-amber-400 focus:bg-amber-500/10 text-sm font-medium rounded-lg flex items-center justify-between py-2.5 transition-colors mb-1"
-            >
-              Check Out
-              <Activity className="h-4 w-4 ml-2" />
-            </DropdownMenuItem>
+            {/* Check In — only shown when NOT checked in */}
+            {isCheckedIn === false && (
+              <DropdownMenuItem
+                onClick={() => handleCheckInOut('checkin')}
+                className="cursor-pointer text-emerald-600 dark:text-emerald-400 focus:bg-emerald-500/10 text-sm font-medium rounded-lg flex items-center justify-between py-2.5 transition-colors mb-1"
+              >
+                Check In
+                <Activity className="h-4 w-4 ml-2" />
+              </DropdownMenuItem>
+            )}
+            {/* Check Out — only shown when checked in */}
+            {isCheckedIn === true && (
+              <DropdownMenuItem
+                onClick={() => handleCheckInOut('checkout')}
+                className="cursor-pointer text-amber-600 dark:text-amber-400 focus:bg-amber-500/10 text-sm font-medium rounded-lg flex items-center justify-between py-2.5 transition-colors mb-1"
+              >
+                Check Out
+                <Activity className="h-4 w-4 ml-2" />
+              </DropdownMenuItem>
+            )}
+            {/* Loading state — show both as disabled if status not yet known */}
+            {isCheckedIn === null && (
+              <>
+                <DropdownMenuItem
+                  onClick={() => handleCheckInOut('checkin')}
+                  className="cursor-pointer text-emerald-600 dark:text-emerald-400 focus:bg-emerald-500/10 text-sm font-medium rounded-lg flex items-center justify-between py-2.5 transition-colors mb-1 opacity-60"
+                >
+                  Check In
+                  <Activity className="h-4 w-4 ml-2" />
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuItem
               onClick={() => {
                 onNavigate('Attendance Logs');
@@ -482,8 +523,6 @@ export default function DashboardShell({
       case 'Projects': navigate('/projects'); break;
       case 'Gantt Timeline':
       case 'Timeline': navigate('/timeline'); break;
-      case 'Progress Tracker':
-      case 'Performance': navigate('/performance'); break;
       case 'Milestones': navigate('/milestones'); break;
       case 'Settings':
       case 'Workspace Settings - Appearance': navigate('/settings'); break;
@@ -515,7 +554,6 @@ export default function DashboardShell({
     if (path === '/tasks') return role === 'employee' ? 'My Tasks' : 'Tasks';
     if (path === '/projects') return 'Projects';
     if (path === '/timeline') return 'Gantt Timeline';
-    if (path === '/performance') return 'Progress Tracker';
     if (path === '/milestones') return 'Milestones';
     if (path === '/settings') return 'Settings';
     if (path === '/team') return 'Team Members';
