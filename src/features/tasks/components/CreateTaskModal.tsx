@@ -25,7 +25,7 @@ export default function CreateTaskModal({
   const [projectId, setProjectId] = useState('');
   const [priority, setPriority] = useState<'High' | 'Medium' | 'Normal' | 'Low' | ''>('');
   
-  const [assigneeId, setAssigneeId] = useState(currentUser?.role === 'intern' ? currentUser.id : '');
+  const [assigneeId, setAssigneeId] = useState('');
   
   const [startDate, setStartDate] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -36,9 +36,7 @@ export default function CreateTaskModal({
   const isPastDue = dueDate && new Date(dueDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
   const todayStr = new Date().toISOString().split('T')[0];
   
-  const availableMembers = currentUser?.role === 'intern' 
-    ? teamMembers.filter(m => m.id === currentUser.id)
-    : teamMembers;
+  const availableMembers = teamMembers;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +57,7 @@ export default function CreateTaskModal({
     setDescription('');
     setProjectId('');
     setPriority('');
-    setAssigneeId(currentUser?.role === 'intern' ? currentUser.id : '');
+    setAssigneeId('');
     setStartDate('');
     setDueDate('');
     setMilestoneId('');

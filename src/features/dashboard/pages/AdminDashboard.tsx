@@ -51,6 +51,42 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+const CACHE_ADMIN_STATS = 'cached_admin_stats';
+const CACHE_ADMIN_USERS = 'cached_admin_users';
+const CACHE_PROJECTS_COUNT = 'cached_projects_count';
+
+const getInitialAdminStats = () => {
+  try {
+    const cached = localStorage.getItem(CACHE_ADMIN_STATS);
+    if (cached) return JSON.parse(cached);
+  } catch (e) {}
+  return {
+    totalEmployees: 0,
+    activeTasks: 0,
+    dbSize: '0 B',
+    health: 'Healthy'
+  };
+};
+
+const getInitialAdminUsers = (): User[] => {
+  try {
+    const cached = localStorage.getItem(CACHE_ADMIN_USERS);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return [];
+};
+
+const getInitialProjectsCount = (): number => {
+  try {
+    const cached = localStorage.getItem(CACHE_PROJECTS_COUNT);
+    if (cached) return Number(cached) || 0;
+  } catch (e) {}
+  return 0;
+};
+
 const WEEKLY_VELOCITY_DATA = [
   { day: 'Mon', completed: 18, assigned: 24 },
   { day: 'Tue', completed: 28, assigned: 30 },
@@ -63,14 +99,9 @@ const WEEKLY_VELOCITY_DATA = [
 
 export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'employee' | 'manager' }) {
   // User Management State
-  const [usersList, setUsersList] = useState<User[]>([]);
-  const [totalProjectsCount, setTotalProjectsCount] = useState<number>(0);
-  const [adminStats, setAdminStats] = useState({
-    totalEmployees: 0,
-    activeTasks: 0,
-    dbSize: '0 B',
-    health: 'Healthy'
-  });
+  const [usersList, setUsersList] = useState<User[]>(getInitialAdminUsers);
+  const [totalProjectsCount, setTotalProjectsCount] = useState<number>(getInitialProjectsCount);
+  const [adminStats, setAdminStats] = useState(getInitialAdminStats);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [deptFilter, setDeptFilter] = useState<string>('All');
@@ -344,43 +375,43 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     }
   }, [showOnlyRole]);
 
-  const fetchAdminStats = async () => {
+  const fetchDashboardData = async () => {
     try {
-      const res = await api.get('/admin/stats');
-      if (res.data?.success) {
-        setAdminStats(res.data.data);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
+      const [statsRes, usersRes, projRes] = await Promise.all([
+        api.get('/admin/stats').catch(() => null),
+        api.get('/admin/users?page=1&limit=100').catch(() => null),
+        api.get('/projects').catch(() => null)
+      ]);
 
-  const fetchAdminUsers = async () => {
-    try {
-      const res = await api.get('/admin/users?page=1&limit=100');
-      if (res.data?.success) {
-        setUsersList(res.data.data.users || []);
+      if (statsRes?.data?.success) {
+        setAdminStats(statsRes.data.data);
+        try {
+          localStorage.setItem(CACHE_ADMIN_STATS, JSON.stringify(statsRes.data.data));
+        } catch (e) {}
       }
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
-  const fetchRealProjects = async () => {
-    try {
-      const res = await api.get('/projects');
-      if (res.data?.success) {
-        setTotalProjectsCount(res.data.data?.length || 0);
+      if (usersRes?.data?.success) {
+        const users = usersRes.data.data.users || [];
+        setUsersList(users);
+        try {
+          localStorage.setItem(CACHE_ADMIN_USERS, JSON.stringify(users));
+        } catch (e) {}
+      }
+
+      if (projRes?.data?.success) {
+        const count = projRes.data.data?.length || 0;
+        setTotalProjectsCount(count);
+        try {
+          localStorage.setItem(CACHE_PROJECTS_COUNT, String(count));
+        } catch (e) {}
       }
     } catch (e) {
-      console.error('Failed to fetch real project count:', e);
+      console.error('Failed to fetch admin dashboard data:', e);
     }
   };
 
   useEffect(() => {
-    fetchAdminStats();
-    fetchAdminUsers();
-    fetchRealProjects();
+    fetchDashboardData();
   }, []);
 
   const navigateToView = (view: string) => {
@@ -435,8 +466,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   ];
 
   const refreshUsers = () => {
-    fetchAdminUsers();
-    fetchAdminStats();
+    fetchDashboardData();
   };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {

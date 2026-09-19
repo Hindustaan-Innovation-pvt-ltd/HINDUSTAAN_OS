@@ -249,12 +249,6 @@ export default function InternDashboard({ }: InternDashboardProps) {
   };
 
   useEffect(() => {
-    fetchInternTasks();
-    fetchLeaves();
-    fetchWorkLogs();
-  }, [currentUserId, currentUserName]);
-
-  useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'work_logs_list' || e.key === 'hindustaan_tasks_list') {
         fetchWorkLogs();
@@ -379,14 +373,15 @@ export default function InternDashboard({ }: InternDashboardProps) {
   };
 
   useEffect(() => {
-    fetchDashboard(true);
-    fetchLeaves();
-    fetchWorkLogs();
-    fetchInternTasks();
+    Promise.all([
+      fetchDashboard(true),
+      fetchLeaves(),
+      fetchWorkLogs(),
+      fetchInternTasks()
+    ]);
 
     const handleAuthStatus = () => {
-      fetchDashboard(true);
-      fetchWorkLogs();
+      Promise.all([fetchDashboard(true), fetchWorkLogs()]);
     };
     window.addEventListener('auth_status_changed', handleAuthStatus);
 
@@ -395,13 +390,15 @@ export default function InternDashboard({ }: InternDashboardProps) {
     };
     window.addEventListener('focus', handleFocus);
 
-    // Poll every 10 seconds for real-time updates
+    // Poll every 15 seconds for real-time updates
     const intervalId = setInterval(() => {
-      fetchDashboard(false);
-      fetchLeaves();
-      fetchWorkLogs();
-      fetchInternTasks();
-    }, 10000);
+      Promise.all([
+        fetchDashboard(false),
+        fetchLeaves(),
+        fetchWorkLogs(),
+        fetchInternTasks()
+      ]);
+    }, 15000);
 
     return () => {
       clearInterval(intervalId);
@@ -842,6 +839,31 @@ export default function InternDashboard({ }: InternDashboardProps) {
                 <History className="h-3.5 w-3.5" />
                 <span>Logs</span>
               </Button>
+
+              {/* Quick Attendance Action: Check In or Check Out */}
+              {dashboardData?.isOnline ? (
+                <Button
+                  size="sm"
+                  onClick={() => handleQuickAttendance('checkout')}
+                  disabled={isAttendanceSubmitting}
+                  className="h-8 px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black text-xs flex items-center gap-1.5 shadow-sm shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
+                  title="Complete work session and check out"
+                >
+                  {isAttendanceSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Activity className="h-3.5 w-3.5 animate-pulse" />}
+                  <span>Check Out</span>
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => handleQuickAttendance('checkin')}
+                  disabled={isAttendanceSubmitting}
+                  className="h-8 px-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer"
+                  title="Verify office location & check in"
+                >
+                  {isAttendanceSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PlayCircle className="h-3.5 w-3.5" />}
+                  <span>Check In</span>
+                </Button>
+              )}
             </div>
           </div>
         </div>

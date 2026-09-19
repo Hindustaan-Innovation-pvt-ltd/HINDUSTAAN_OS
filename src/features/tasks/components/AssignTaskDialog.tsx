@@ -51,20 +51,6 @@ import { Badge } from '@/components/ui/badge';
 import api from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
 
-// Mock Data
-const PROJECTS = [
-  { id: 'p1', name: 'Authentication Flow Pipeline' },
-  { id: 'p2', name: 'Dashboard UI Revamp' },
-  { id: 'p3', name: 'Supabase Data Migration' },
-  { id: 'p4', name: 'Role-Based Access Control' },
-  { id: 'p5', name: 'Email Notifications System' },
-];
-
-const MILESTONES = [
-  { id: 'm1', name: 'Alpha Release' },
-  { id: 'm2', name: 'Beta Testing' },
-  { id: 'm3', name: 'Production Launch' },
-];
 
 const assignTaskSchema = z.object({
   title: z.string().min(1, 'Task Title is required'),
@@ -200,6 +186,8 @@ export function AssignTaskDialog({ open, onOpenChange, defaultAssigneeId, defaul
       }
 
       toast.success('Task assigned successfully to ' + (assignee?.name || defaultAssigneeName || 'team member') + '!');
+      window.dispatchEvent(new CustomEvent('task_created'));
+      window.dispatchEvent(new CustomEvent('task_updated'));
       if (onSuccess) onSuccess();
     } catch (err: any) {
       console.error(err);
