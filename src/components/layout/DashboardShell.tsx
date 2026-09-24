@@ -27,7 +27,8 @@ import {
   CalendarRange,
   PanelLeftClose,
   PanelLeftOpen,
-  UserCircle, Shield, Sliders, Building, Lock, Link, BellRing, Megaphone, Mail, ShieldCheck, Activity, FileText, History
+  UserCircle, Shield, Sliders, Building, Lock, Link, BellRing, Megaphone, Mail, ShieldCheck, Activity, FileText, History,
+  Sparkles, PhoneCall
 } from 'lucide-react';
 import AttendanceHistoryModal from '../attendance/AttendanceHistoryModal';
 import { cn } from '@/lib/utils';
@@ -58,6 +59,7 @@ import { getBrowserCoordinates } from '@/lib/geo';
 const employeeNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
   { name: 'My Tasks', icon: CheckSquare },
+  { name: 'My Leads', icon: PhoneCall },
   { name: 'Work Logs', icon: Clock },
   { name: 'Attendance Logs', icon: History },
   { name: 'Leave Management', icon: CalendarRange },
@@ -66,6 +68,7 @@ const employeeNavigation = [
 
 const managerNavigation = [
   { name: 'Dashboard', icon: LayoutDashboard },
+  { name: 'AI Client Analysis', icon: Sparkles },
   { name: 'Projects', icon: FolderKanban },
   { name: 'Tasks', icon: CheckSquare },
   { name: 'Gantt Timeline', icon: CalendarDays },
@@ -92,6 +95,7 @@ const adminNavigationGroups = [
     name: 'Organization Overview',
     icon: Building,
     items: [
+      { name: 'AI Client Analysis', icon: Sparkles },
       { name: 'Projects', icon: FolderKanban },
       { name: 'Tasks', icon: CheckSquare },
       { name: 'Team Members', icon: Users },
@@ -518,6 +522,9 @@ export default function DashboardShell({
       case 'Leave Management': navigate(role === 'admin' ? '/admin/leave-management' : role === 'manager' ? '/manager/leave-management' : '/employee/leave'); break;
       case 'Subscription Management': navigate('/admin/subscriptions'); break;
       case 'Dashboard': navigate(`/${role}/dashboard`); break;
+      case 'AI Client Analysis':
+      case 'Leads': navigate('/leads'); break;
+      case 'My Leads': navigate('/my-leads'); break;
       case 'Tasks':
       case 'My Tasks': navigate('/tasks'); break;
       case 'Projects': navigate('/projects'); break;
@@ -551,6 +558,8 @@ export default function DashboardShell({
     if (path === '/profile/edit') return 'Edit Profile';
     if (path === '/admin/leave-management' || path === '/admin/leaves' || path === '/manager/leave-management' || path === '/employee/leave') return 'Leave Management';
     if (path === '/admin/subscriptions') return 'Subscription Management';
+    if (path === '/leads') return 'AI Client Analysis';
+    if (path === '/my-leads') return 'My Leads';
     if (path === '/tasks') return role === 'employee' ? 'My Tasks' : 'Tasks';
     if (path === '/projects') return 'Projects';
     if (path === '/timeline') return 'Gantt Timeline';
