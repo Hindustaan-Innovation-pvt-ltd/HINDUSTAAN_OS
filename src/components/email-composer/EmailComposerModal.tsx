@@ -582,7 +582,7 @@ function CategoryDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 z-[150] bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl p-1 max-h-60 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 z-[150] bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl p-1 max-h-60 overflow-y-auto">
           {TEMPLATE_CATEGORIES.map((cat) => {
             const isCurrent = cat.value === value;
             return (
@@ -2194,7 +2194,7 @@ export default function EmailComposerModal({
       <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         showCloseButton={true}
-        className="!max-w-[96vw] sm:!max-w-[96vw] w-[96vw] h-[94vh] max-h-[96vh] p-0 gap-0 overflow-hidden bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col shadow-2xl z-50"
+        className="!max-w-[96vw] sm:!max-w-[96vw] w-[96vw] h-[94vh] max-h-[96vh] p-0 gap-0 overflow-hidden bg-card text-card-foreground border-border rounded-2xl flex flex-col shadow-2xl z-50"
       >
         
         {/* Top Header Bar */}
@@ -2251,7 +2251,7 @@ export default function EmailComposerModal({
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           
           {/* Left Column: Form & AI Controls (Comfortable 460px width) */}
-          <div className="w-full lg:w-[480px] xl:w-[520px] border-r border-slate-200 dark:border-slate-800 flex flex-col h-full bg-white dark:bg-[#0B1120] overflow-y-auto shrink-0 custom-scrollbar">
+          <div className="w-full lg:w-[480px] xl:w-[520px] border-r border-border flex flex-col h-full bg-card overflow-y-auto shrink-0 custom-scrollbar">
             
             {/* 1. Sender Info Bar */}
             <div className="px-4 py-2 bg-slate-50/90 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs shrink-0">
@@ -2706,7 +2706,7 @@ export default function EmailComposerModal({
                                         onChange={(e) => handleFieldChange('interviewDate', e.target.value)}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                       />
-                                      <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
+                                      <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-muted/40 hover:bg-muted text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
                                         <span className="text-[10px] font-bold tracking-wide text-white truncate">
                                           {formatDateToCustom(interviewDate) || '08-Sep-2026'}
                                         </span>
@@ -2852,7 +2852,7 @@ export default function EmailComposerModal({
                                         onChange={(e) => handleFieldChange('startDate', e.target.value)}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                       />
-                                      <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
+                                      <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-muted/40 hover:bg-muted text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
                                         <span className="text-[10px] font-bold tracking-wide text-white truncate">
                                           {formatDateToCustom(startDate) || '08-Sep-2026'}
                                         </span>
@@ -2923,7 +2923,7 @@ export default function EmailComposerModal({
                                         onChange={(e) => handleFieldChange('startDate', e.target.value)}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                       />
-                                      <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
+                                      <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-muted/40 hover:bg-muted text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
                                         <span className="text-[10px] font-bold tracking-wide text-white truncate">
                                           {formatDateToCustom(startDate) || '08-Sep-2026'}
                                         </span>
@@ -3007,7 +3007,7 @@ export default function EmailComposerModal({
                                         onChange={(e) => handleFieldChange('startDate', e.target.value)}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                       />
-                                      <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-[#0B1120] hover:bg-slate-900 text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
+                                      <div className="w-full h-8 px-2.5 rounded-lg border border-slate-700/80 bg-muted/40 hover:bg-muted text-white flex items-center justify-between gap-1 shadow-inner transition-colors cursor-pointer group">
                                         <span className="text-[10px] font-bold tracking-wide text-white truncate">
                                           {formatDateToCustom(startDate) || '08-Sep-2026'}
                                         </span>
@@ -3742,7 +3742,7 @@ export default function EmailComposerModal({
           </div>
 
           {/* Right Column: Expansive Realtime Live Preview (Spacious Canvas) */}
-          <div className="flex-1 flex flex-col h-full bg-slate-100 dark:bg-[#030712] overflow-hidden">
+          <div className="flex-1 flex flex-col h-full bg-muted/20 overflow-hidden">
             
             {/* Preview Control Bar */}
             <div className="px-6 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
@@ -3932,7 +3932,7 @@ export default function EmailComposerModal({
 
     {/* Create / Save Preset Template Modal */}
     <Dialog open={isCreateTemplateOpen} onOpenChange={setIsCreateTemplateOpen}>
-      <DialogContent className="max-w-md p-6 bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[110]">
+      <DialogContent className="max-w-md p-6 bg-card border-border text-card-foreground rounded-2xl shadow-2xl z-[110]">
         <DialogHeader>
           <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <FileText className="h-4 w-4 text-orange-500" /> Save as Preset Template
@@ -4191,7 +4191,7 @@ export default function EmailComposerModal({
         }
       }}
     >
-      <DialogContent className="max-w-md p-6 bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[140]">
+      <DialogContent className="max-w-md p-6 bg-card border-border text-card-foreground rounded-2xl shadow-2xl z-[140]">
         <DialogHeader>
           <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Edit3 className="h-4 w-4 text-orange-500" /> Rename Template
@@ -4269,7 +4269,7 @@ export default function EmailComposerModal({
         }
       }}
     >
-      <DialogContent className="max-w-md p-6 bg-white dark:bg-[#0B1120] border-rose-200 dark:border-rose-950/60 rounded-2xl shadow-2xl z-[150]">
+      <DialogContent className="max-w-md p-6 bg-card border-border text-card-foreground rounded-2xl shadow-2xl z-[150]">
         <DialogHeader>
           <DialogTitle className="text-base font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2">
             <Trash2 className="h-5 w-5 text-rose-500" /> Delete Template Preset?
@@ -4319,7 +4319,7 @@ export default function EmailComposerModal({
 
     {/* Manage Workspace Templates Modal */}
     <Dialog open={isManageTemplatesOpen} onOpenChange={setIsManageTemplatesOpen}>
-      <DialogContent className="sm:max-w-[700px] p-6 rounded-2xl max-h-[85vh] flex flex-col overflow-hidden bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 z-[115]">
+      <DialogContent className="sm:max-w-[700px] p-6 rounded-2xl max-h-[85vh] flex flex-col overflow-hidden bg-card border-border text-card-foreground z-[115]">
         <DialogHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center justify-between">
             <div>
@@ -4448,7 +4448,7 @@ export default function EmailComposerModal({
 
     {/* Dynamic AES-256-GCM Encrypted SMTP Configuration Modal */}
     <Dialog open={isSmtpConfigOpen} onOpenChange={setIsSmtpConfigOpen}>
-      <DialogContent className="max-w-md p-6 bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[110]">
+      <DialogContent className="max-w-md p-6 bg-card border-border text-card-foreground rounded-2xl shadow-2xl z-[110]">
         <DialogHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

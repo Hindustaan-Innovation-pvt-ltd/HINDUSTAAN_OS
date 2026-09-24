@@ -217,34 +217,34 @@ export default function SystemNotificationsModule() {
       </div>
 
       {/* Settings Panel */}
-      <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
-        <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-          <CardTitle className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-            <ToggleLeft className="h-4 w-4 text-orange-500" /> System Notification Routing
+      <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm">
+        <CardHeader className="pb-3 border-b border-border bg-muted/20">
+          <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+            <ToggleLeft className="h-4 w-4 text-primary" /> System Notification Routing
           </CardTitle>
           <CardDescription className="text-xs font-semibold">Configure routing preferences for system events.</CardDescription>
         </CardHeader>
         <CardContent className="p-5 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-850">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border">
             <div>
-              <p className="text-xs font-extrabold text-slate-700 dark:text-slate-200">Browser Alerts</p>
-              <p className="text-[10px] text-slate-500 mt-0.5">Show notifications inside the app drawer.</p>
+              <p className="text-xs font-extrabold text-foreground">Browser Alerts</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Show notifications inside the app drawer.</p>
             </div>
             <Switch checked={settings.browser} onCheckedChange={() => handleToggleSetting('browser')} />
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-850">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border">
             <div>
-              <p className="text-xs font-extrabold text-slate-700 dark:text-slate-200">Email Routing</p>
-              <p className="text-[10px] text-slate-500 mt-0.5">Forward critical security events to admin email.</p>
+              <p className="text-xs font-extrabold text-foreground">Email Routing</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Forward critical security events to admin email.</p>
             </div>
             <Switch checked={settings.email} onCheckedChange={() => handleToggleSetting('email')} />
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-850">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border">
             <div>
-              <p className="text-xs font-extrabold text-slate-700 dark:text-slate-200">Push Notifications</p>
-              <p className="text-[10px] text-slate-500 mt-0.5">Deliver native OS desktop push alerts.</p>
+              <p className="text-xs font-extrabold text-foreground">Push Notifications</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Deliver native OS desktop push alerts.</p>
             </div>
             <Switch checked={settings.push} onCheckedChange={() => handleToggleSetting('push')} />
           </div>
@@ -252,7 +252,7 @@ export default function SystemNotificationsModule() {
       </Card>
 
       {/* Toolbar / Filters */}
-      <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm p-4">
+      <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-900/50 p-1 w-full sm:w-auto justify-center sm:justify-start">
             {(['all', 'unread', 'security', 'critical'] as const).map((filter) => (
@@ -294,9 +294,9 @@ export default function SystemNotificationsModule() {
           sortedNotifications.map((notif) => (
             <Card 
               key={notif.id} 
-              className={`rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm transition-all relative overflow-hidden ${
-                !notif.isRead ? 'border-l-4 border-l-[#5B7CFF]' : ''
-              } ${notif.isPinned ? 'ring-1 ring-orange-500/30' : ''}`}
+              className={`rounded-2xl border-border bg-card text-card-foreground shadow-sm transition-all relative overflow-hidden ${
+                !notif.isRead ? 'border-l-4 border-l-primary' : ''
+              } ${notif.isPinned ? 'ring-1 ring-primary/30' : ''}`}
             >
               {notif.isPinned && (
                 <div className="absolute top-2 right-2 h-6 w-6 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500" title="Pinned Alert">

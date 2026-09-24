@@ -316,11 +316,11 @@ export default function AnnouncementCenterModule() {
 
       {/* Analytics header cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+        <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Announcements</p>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalAnnouncements}</h3>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Announcements</p>
+              <h3 className="text-2xl font-black text-foreground mt-1">{totalAnnouncements}</h3>
             </div>
             <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
               <Megaphone className="h-5 w-5" />
@@ -328,10 +328,10 @@ export default function AnnouncementCenterModule() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+        <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Published</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Active Published</p>
               <h3 className="text-2xl font-black text-emerald-500 mt-1">{publishedCount}</h3>
             </div>
             <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
@@ -340,10 +340,10 @@ export default function AnnouncementCenterModule() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+        <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Announcement Views</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Announcement Views</p>
               <h3 className="text-2xl font-black text-blue-500 mt-1">{totalViews}</h3>
             </div>
             <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
@@ -352,10 +352,10 @@ export default function AnnouncementCenterModule() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+        <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Avg Read Rate</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Avg Read Rate</p>
               <h3 className="text-2xl font-black text-purple-500 mt-1">{avgReadRate}%</h3>
             </div>
             <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500">
@@ -366,7 +366,7 @@ export default function AnnouncementCenterModule() {
       </div>
 
       {/* Action Toolbar */}
-      <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm p-4">
+      <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -444,12 +444,12 @@ export default function AnnouncementCenterModule() {
             }
 
             return (
-              <Card key={ann.id} className={`rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm flex flex-col justify-between overflow-hidden relative ${
-                ann.isPinned ? 'ring-2 ring-orange-500/50' : ''
+              <Card key={ann.id} className={`rounded-2xl border-border bg-card text-card-foreground shadow-sm flex flex-col justify-between overflow-hidden relative ${
+                ann.isPinned ? 'ring-2 ring-primary/50' : ''
               }`}>
                 {ann.isPinned && (
-                  <div className="absolute top-3 right-3 h-7 w-7 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500" title="Pinned Announcement">
-                    <Pin className="h-4 w-4 fill-orange-500" />
+                  <div className="absolute top-3 right-3 h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary" title="Pinned Announcement">
+                    <Pin className="h-4 w-4 fill-primary" />
                   </div>
                 )}
 
@@ -457,24 +457,24 @@ export default function AnnouncementCenterModule() {
                   <div className="flex items-center gap-2 flex-wrap mb-2">
                     {priorityBadge}
                     {statusBadge}
-                    <Badge variant="outline" className="border-slate-200 dark:border-slate-800 text-[10px] text-slate-600 dark:text-slate-400">{ann.targetAudience}</Badge>
+                    <Badge variant="outline" className="border-border text-[10px] text-muted-foreground">{ann.targetAudience}</Badge>
                   </div>
-                  <CardTitle className="text-base font-bold text-slate-900 dark:text-white leading-snug">{ann.title}</CardTitle>
-                  <CardDescription className="flex items-center gap-2 text-xs font-semibold text-slate-400 mt-1">
+                  <CardTitle className="text-base font-bold text-foreground leading-snug">{ann.title}</CardTitle>
+                  <CardDescription className="flex items-center gap-2 text-xs font-semibold text-muted-foreground mt-1">
                     <User className="h-3 w-3" /> By {ann.createdBy} • <Calendar className="h-3 w-3" /> {ann.date}
                   </CardDescription>
                 </CardHeader>
 
                 <CardContent className="pb-4 flex-1">
                   <div 
-                    className="text-sm text-slate-600 dark:text-slate-300 font-medium prose dark:prose-invert max-w-none line-clamp-3 leading-relaxed"
+                    className="text-sm text-muted-foreground font-medium prose dark:prose-invert max-w-none line-clamp-3 leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: ann.description }}
                   />
                 </CardContent>
 
-                <CardFooter className="pt-3 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/20 dark:bg-slate-900/10 flex items-center justify-between text-xs">
+                <CardFooter className="pt-3 border-t border-border bg-muted/20 flex items-center justify-between text-xs">
                   {/* Views & Read Rate */}
-                  <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 font-bold">
+                  <div className="flex items-center gap-3 text-muted-foreground font-bold">
                     <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {ann.views}</span>
                     {ann.status === 'Published' && (
                       <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" /> {ann.readPercentage}% read</span>
@@ -487,7 +487,7 @@ export default function AnnouncementCenterModule() {
                       onClick={() => handlePinToggle(ann.id)} 
                       variant="ghost" 
                       size="icon" 
-                      className={`h-7 w-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 ${ann.isPinned ? 'text-orange-500' : 'text-slate-400'}`}
+                      className={`h-7 w-7 rounded-lg hover:bg-muted ${ann.isPinned ? 'text-primary' : 'text-muted-foreground'}`}
                       title={ann.isPinned ? "Unpin" : "Pin to top"}
                     >
                       <Pin className="h-3.5 w-3.5" />
@@ -496,7 +496,7 @@ export default function AnnouncementCenterModule() {
                       onClick={() => handleOpenEdit(ann)} 
                       variant="ghost" 
                       size="icon" 
-                      className="h-7 w-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-850 dark:hover:text-white"
+                      className="h-7 w-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
                       title="Edit"
                     >
                       <Edit2 className="h-3.5 w-3.5" />
@@ -505,7 +505,7 @@ export default function AnnouncementCenterModule() {
                       onClick={() => handleDelete(ann.id)} 
                       variant="ghost" 
                       size="icon" 
-                      className="h-7 w-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-rose-500 hover:text-rose-600"
+                      className="h-7 w-7 rounded-lg hover:bg-muted text-rose-500 hover:text-rose-600"
                       title="Delete"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -520,7 +520,7 @@ export default function AnnouncementCenterModule() {
 
       {/* Editor & Configuration Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]">
+        <DialogContent className="sm:max-w-[600px] rounded-2xl border-border bg-card text-card-foreground">
           <DialogHeader className="border-b border-slate-100 dark:border-slate-800/60 pb-3">
             <DialogTitle className="text-slate-900 dark:text-white flex items-center gap-2">
               <Megaphone className="h-5 w-5 text-orange-500" /> {isEditing ? 'Edit Announcement' : 'Create Announcement'}

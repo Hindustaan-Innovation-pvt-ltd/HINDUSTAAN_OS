@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, User, MessageSquare, Send, Tag, Clock, CheckCircle2, ChevronDown, PlayCircle, Eye, Activity } from 'lucide-react';
+import { 
+  Calendar, User, MessageSquare, Send, Tag, Clock, CheckCircle2, 
+  ChevronDown, PlayCircle, Eye, Activity, CheckSquare, Plus, Trash2, Lock, Zap 
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // --- Types ---
 export type Role = 'manager' | 'intern' | 'admin';
@@ -14,6 +18,12 @@ export interface UserProfile {
   id: string;
   role: Role;
   name: string;
+}
+
+export interface Subtask {
+  id: string;
+  title: string;
+  completed: boolean;
 }
 
 export interface Task {
@@ -30,6 +40,7 @@ export interface Task {
   created_at?: string;
   status: Status;
   project_status?: string;
+  subtasks?: Subtask[];
 }
 
 export interface Comment {
@@ -45,6 +56,7 @@ interface TaskDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdateTask?: (updatedTask: Task) => void;
+  onClaimTask?: (task: Task) => void;
 }
 
 const STATUSES: Status[] = ['To Do', 'In Progress', 'In Review', 'Done'];
@@ -81,10 +93,11 @@ const safeToInputDate = (val: any): string => {
   }
 };
 
-export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, onUpdateTask }: TaskDetailsModalProps) {
+export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, onUpdateTask, onClaimTask }: TaskDetailsModalProps) {
   const [editedTask, setEditedTask] = useState<Task | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
@@ -139,8 +152,12 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
   // Sync internal state when a new task is opened
   useEffect(() => {
     if (isOpen && task) {
-      setEditedTask({ ...task });
+      setEditedTask({ 
+        ...task,
+        subtasks: Array.isArray(task.subtasks) ? task.subtasks : []
+      });
       setNewComment('');
+      setNewSubtaskTitle('');
       setHasChanges(false);
       fetchComments(task.id);
     }
@@ -151,8 +168,52 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
   const isAborted = task?.project_status === 'aborted';
   const isManager = currentUser.role === 'manager';
   const isAdmin = currentUser.role === 'admin';
-  const canEditMainFields = !isAborted && (isManager || isAdmin);
-  const canEditStatus = !isAborted && (isManager || (currentUser.role === 'intern' && currentUser.id === task?.assignee_id));
+  const isMyTask = task?.assignee_id && String(task.assignee_id) === String(currentUser.id);
+  const isUnassigned = !task?.assignee_id || task?.assignee_id === 'unassigned' || task?.assignee_name === 'Unassigned';
+  const isAssignedToOther = !isUnassigned && !isMyTask;
+
+  // Employees can edit their own task. Managers/Admins can edit any task.
+  const canEditMainFields = !isAborted && (isManager || isAdmin || isMyTask);
+  const canEditStatus = !isAborted && (isManager || isMyTask);
+  const canManageSubtasks = !isAborted && (isManager || isAdmin || isMyTask);
+
+  const handleAddSubtask = () => {
+    if (!newSubtaskTitle.trim() || !canManageSubtasks) return;
+    const newSubtask: Subtask = {
+      id: `st-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      title: newSubtaskTitle.trim(),
+      completed: false
+    };
+    setEditedTask(prev => {
+      if (!prev) return null;
+      const updatedList = [...(prev.subtasks || []), newSubtask];
+      return { ...prev, subtasks: updatedList };
+    });
+    setNewSubtaskTitle('');
+    setHasChanges(true);
+  };
+
+  const handleToggleSubtask = (subtaskId: string) => {
+    if (!canManageSubtasks) return;
+    setEditedTask(prev => {
+      if (!prev) return null;
+      const updatedList = (prev.subtasks || []).map(st =>
+        st.id === subtaskId ? { ...st, completed: !st.completed } : st
+      );
+      return { ...prev, subtasks: updatedList };
+    });
+    setHasChanges(true);
+  };
+
+  const handleDeleteSubtask = (subtaskId: string) => {
+    if (!canManageSubtasks) return;
+    setEditedTask(prev => {
+      if (!prev) return null;
+      const updatedList = (prev.subtasks || []).filter(st => st.id !== subtaskId);
+      return { ...prev, subtasks: updatedList };
+    });
+    setHasChanges(true);
+  };
 
   const handleUpdateField = (field: keyof Task, value: any) => {
     if (!canEditMainFields) return;
@@ -223,10 +284,58 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
   return (
     <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden bg-white dark:bg-slate-950 p-0 gap-0 border-slate-200 dark:border-slate-700/60 rounded-xl shadow-2xl flex flex-col">
+      <DialogContent className="w-[95vw] sm:max-w-4xl md:max-w-5xl lg:max-w-5xl xl:max-w-6xl max-h-[90vh] overflow-hidden bg-white dark:bg-slate-950 p-0 gap-0 border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col">
         {isAborted && (
           <div className="bg-red-500/10 text-red-600 dark:text-red-400 p-3 text-sm text-center font-medium border-b border-red-500/20">
             This project has been aborted. Tasks cannot be modified until restored.
+          </div>
+        )}
+
+        {/* Locked View Banner for tasks assigned to colleagues */}
+        {isAssignedToOther && !isManager && !isAdmin && (
+          <div className="bg-amber-500/10 text-amber-800 dark:text-amber-300 px-6 py-2.5 text-xs font-bold border-b border-amber-500/20 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>Locked View: Assigned to <strong>{editedTask.assignee_name}</strong>. You have read-only visibility.</span>
+            </div>
+            <Badge variant="outline" className="border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300 text-[10px]">
+              🔒 Locked
+            </Badge>
+          </div>
+        )}
+
+        {/* Unassigned Pool Claim Deliverable Banner */}
+        {isUnassigned && !isAborted && (
+          <div className="bg-orange-500/10 text-orange-800 dark:text-orange-200 px-6 py-3 border-b border-orange-500/20 flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-orange-600 dark:text-orange-400 shrink-0 fill-current" />
+              <span className="text-xs font-semibold">
+                <strong>Unassigned Task Pool:</strong> Claim this deliverable with your committed timeline to begin working.
+              </span>
+            </div>
+            {onClaimTask && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  onClose();
+                  onClaimTask(editedTask);
+                }}
+                className="bg-orange-600 hover:bg-orange-700 text-white font-bold h-8 text-xs shadow-xs cursor-pointer"
+              >
+                <Zap className="h-3.5 w-3.5 fill-current mr-1.5" /> Claim Deliverable
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Owner Banner for current user's task */}
+        {isMyTask && !isAborted && (
+          <div className="bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 px-6 py-2 text-xs font-bold border-b border-emerald-500/20 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              Assigned to You (Owner) — You can edit deliverables, create subtasks, and update velocity.
+            </span>
+            <Badge className="bg-emerald-600 text-white text-[10px] py-0 px-2">Your Task</Badge>
           </div>
         )}
 
@@ -270,35 +379,32 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
         </DialogHeader>
 
         {/* Scrollable Content Body */}
-        <div className="p-6 space-y-8 overflow-y-auto custom-scrollbar">
-
+        <div className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar">
 
           {/* Metadata Grid Layer */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 rounded-2xl p-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 rounded-2xl p-5">
 
             {/* Priority */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center">
                 <Clock className="h-3.5 w-3.5 mr-1.5" /> Priority Level
               </label>
               {canEditMainFields ? (
-                <div className="relative">
-                  <select
-                    value={editedTask.priority}
-                    onChange={(e) => handleUpdateField('priority', e.target.value as Priority)}
-                    className={cn(
-                      "appearance-none w-full pl-3 pr-8 py-2 rounded-lg text-sm font-semibold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all dark:[color-scheme:dark]",
-                      getPriorityStyles(editedTask.priority)
-                    )}
-                  >
-                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Critical">Critical</option>
-                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="High">High</option>
-                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Medium">Medium</option>
-                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Normal">Normal</option>
-                    <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Low">Low</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-700 dark:text-slate-400" />
-                </div>
+                <Select
+                  value={editedTask.priority}
+                  onValueChange={(val: Priority) => handleUpdateField('priority', val)}
+                >
+                  <SelectTrigger className={cn("w-full h-9 text-sm font-semibold", getPriorityStyles(editedTask.priority))}>
+                    <SelectValue placeholder="Select Priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Critical">Critical</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Normal">Normal</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
               ) : (
                 <div className="mt-1">
                   <span className={cn("px-3 py-1 rounded-md text-sm font-semibold border inline-block", getPriorityStyles(editedTask.priority))}>
@@ -310,35 +416,43 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
             {/* Assignee */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center">
                 <User className="h-3.5 w-3.5 mr-1.5" /> Assigned Owner
               </label>
               <div className="flex items-center space-x-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-500/20 text-xs font-bold text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary border border-primary/20">
                   {getInitials(editedTask.assignee_name)}
                 </div>
                 {canEditMainFields ? (
-                  <select
-                    value={editedTask.assignee_id}
-                    onChange={(e) => {
-                      const selected = teamMembers.find(u => u.id === e.target.value);
-                      if (selected) {
-                        const updated = { ...editedTask, assignee_id: selected.id, assignee_name: selected.name } as Task;
-                        setEditedTask(updated);
+                  <Select
+                    value={editedTask.assignee_id || 'unassigned'}
+                    onValueChange={(val) => {
+                      if (val === 'unassigned') {
+                        setEditedTask({ ...editedTask, assignee_id: '', assignee_name: 'Unassigned' });
                         setHasChanges(true);
+                      } else {
+                        const selected = teamMembers.find(u => u.id === val);
+                        if (selected) {
+                          setEditedTask({ ...editedTask, assignee_id: selected.id, assignee_name: selected.name });
+                          setHasChanges(true);
+                        }
                       }
                     }}
-                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]"
                   >
-                    <option value="">Unassigned</option>
-                    {teamMembers
-                      .filter(member => member.role !== 'manager' && member.role !== 'admin')
-                      .map(member => (
-                        <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={member.id} value={member.id}>{member.name}</option>
-                      ))}
-                  </select>
+                    <SelectTrigger className="w-full h-9 text-sm font-semibold">
+                      <SelectValue placeholder="Select Assignee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {teamMembers
+                        .filter(member => member.role !== 'manager' && member.role !== 'admin')
+                        .map(member => (
+                          <SelectItem key={member.id} value={member.id}>{member.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
                 ) : (
-                  <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{editedTask.assignee_name}</span>
+                  <span className="text-sm font-semibold text-foreground">{editedTask.assignee_name}</span>
                 )}
               </div>
             </div>
@@ -372,40 +486,37 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
 
             {/* Status */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center">
                 <Activity className="h-3.5 w-3.5 mr-1.5" /> Current Status
               </label>
               {canEditStatus ? (
-                <div className="relative">
-                  <select
-                    value={editedTask.status}
-                    onChange={(e) => handleStatusChange(e.target.value as Status)}
-                    disabled={task?.status === 'Done'}
-                    className={cn(
-                      "appearance-none w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer dark:[color-scheme:dark]",
-                      task?.status === 'Done' && "opacity-75 cursor-not-allowed bg-slate-100 dark:bg-slate-800/60"
-                    )}
-                  >
+                <Select
+                  value={editedTask.status}
+                  onValueChange={(val: Status) => handleStatusChange(val)}
+                  disabled={task?.status === 'Done'}
+                >
+                  <SelectTrigger className={cn("w-full h-9 text-sm font-semibold", task?.status === 'Done' && "opacity-75 cursor-not-allowed")}>
+                    <SelectValue placeholder="Select Status" />
+                  </SelectTrigger>
+                  <SelectContent>
                     {STATUSES.map(s => {
                       const isLocked = task?.status === 'Done' && s !== 'Done';
                       const isManagerOnly = !isManager && !isAdmin && s === 'Done';
                       return (
-                        <option 
-                          className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" 
+                        <SelectItem 
                           key={s} 
                           value={s}
                           disabled={isLocked || isManagerOnly}
                         >
                           {s}{isLocked ? ' (Locked)' : isManagerOnly ? ' (Manager Only)' : ''}
-                        </option>
+                        </SelectItem>
                       );
                     })}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-700 dark:text-slate-400" />
-                </div>
+                  </SelectContent>
+                </Select>
               ) : (
                 <div className="mt-1">
-                  <span className="px-3 py-1 rounded-md text-sm font-semibold border inline-block bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700">
+                  <span className="px-3 py-1 rounded-md text-sm font-semibold border inline-block bg-muted text-muted-foreground border-border">
                     {editedTask.status}
                   </span>
                 </div>
@@ -429,6 +540,121 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
                 {editedTask.description || 'No description provided.'}
               </div>
             )}
+          </div>
+
+          {/* Subtasks / Checklist Section */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <CheckSquare className="h-3.5 w-3.5" /> Subtasks Checklist
+                {editedTask.subtasks && editedTask.subtasks.length > 0 && (
+                  <span className="text-slate-600 dark:text-slate-300 font-bold lowercase">
+                    ({editedTask.subtasks.filter(s => s.completed).length} of {editedTask.subtasks.length} done)
+                  </span>
+                )}
+              </label>
+            </div>
+
+            {/* Progress Bar */}
+            {editedTask.subtasks && editedTask.subtasks.length > 0 && (() => {
+              const completed = editedTask.subtasks.filter(s => s.completed).length;
+              const total = editedTask.subtasks.length;
+              const pct = Math.round((completed / total) * 100);
+              return (
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div
+                    className={cn("h-full transition-all duration-300", pct === 100 ? "bg-emerald-500" : "bg-orange-500")}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              );
+            })()}
+
+            {/* New Subtask Input */}
+            {canManageSubtasks && (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newSubtaskTitle}
+                  onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddSubtask();
+                    }
+                  }}
+                  placeholder="Add a subtask / checklist item (press Enter)..."
+                  className="flex-1 bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700/60 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-slate-400"
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddSubtask}
+                  disabled={!newSubtaskTitle.trim()}
+                  className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shrink-0 cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add
+                </Button>
+              </div>
+            )}
+
+            {/* Subtasks List */}
+            <div className="space-y-1.5">
+              {(editedTask.subtasks && editedTask.subtasks.length > 0) ? (
+                editedTask.subtasks.map((st) => (
+                  <div
+                    key={st.id}
+                    className={cn(
+                      "flex items-center justify-between p-2.5 rounded-xl border transition-all",
+                      st.completed
+                        ? "bg-slate-50/50 dark:bg-slate-900/20 border-slate-200/60 dark:border-slate-800/60 opacity-80"
+                        : "bg-white dark:bg-slate-900/60 border-slate-200/90 dark:border-slate-800 shadow-xs"
+                    )}
+                  >
+                    <button
+                      type="button"
+                      disabled={!canManageSubtasks}
+                      onClick={() => handleToggleSubtask(st.id)}
+                      className={cn(
+                        "flex items-center gap-2.5 text-left flex-1 min-w-0 transition-opacity",
+                        canManageSubtasks ? "cursor-pointer" : "cursor-default"
+                      )}
+                    >
+                      <div className={cn(
+                        "h-4.5 w-4.5 rounded-md border flex items-center justify-center shrink-0 transition-colors",
+                        st.completed
+                          ? "bg-emerald-500 border-emerald-500 text-white"
+                          : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                      )}>
+                        {st.completed && <CheckCircle2 className="h-3.5 w-3.5 stroke-[3]" />}
+                      </div>
+                      <span className={cn(
+                        "text-xs font-semibold leading-relaxed truncate",
+                        st.completed
+                          ? "line-through text-slate-400 dark:text-slate-500"
+                          : "text-slate-800 dark:text-slate-200"
+                      )}>
+                        {st.title}
+                      </span>
+                    </button>
+
+                    {canManageSubtasks && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSubtask(st.id)}
+                        className="h-6 w-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors shrink-0 ml-2 cursor-pointer"
+                        title="Delete subtask"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-[11px] text-slate-400 dark:text-slate-500 italic p-2 bg-slate-50/40 dark:bg-slate-900/20 rounded-xl border border-dashed border-slate-200/70 dark:border-slate-800">
+                  No subtasks created yet. Break this task into actionable milestones.
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Status Automated Transitions for Interns */}
@@ -577,7 +803,7 @@ export default function TaskDetailsModal({ task, currentUser, isOpen, onClose, o
         </div>
 
         {/* Save Changes Footer */}
-        {(isManager || canEditStatus) && hasChanges && !isAborted && (
+        {(canEditMainFields || canEditStatus || isManager) && hasChanges && !isAborted && (
           <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50 flex justify-between shrink-0">
             <div className="text-sm text-slate-500 dark:text-slate-400 self-center">
               Last updated just now

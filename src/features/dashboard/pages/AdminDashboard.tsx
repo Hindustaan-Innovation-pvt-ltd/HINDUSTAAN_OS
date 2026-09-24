@@ -10,22 +10,98 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getRegisteredUsers, registerUser, getCurrentUser } from '@/lib/auth';
 import type { User } from '@/lib/auth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import api from '@/lib/api';
+import { 
+  ResponsiveContainer, 
+  AreaChart, 
+  Area, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  Tooltip as RechartsTooltip, 
+  CartesianGrid, 
+  PieChart, 
+  Pie, 
+  Cell 
+} from 'recharts';
+import { TrendingUp, BarChart2, PieChart as PieChartIcon, ArrowUpRight, Zap } from 'lucide-react';
 
-export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'employee' | 'manager' }) {
-  // User Management State
-  const [usersList, setUsersList] = useState<User[]>([]);
-  const [totalProjectsCount, setTotalProjectsCount] = useState<number>(0);
-  const [adminStats, setAdminStats] = useState({
+const ChartTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-popover border border-border p-3 rounded-xl shadow-xl flex flex-col gap-1.5 text-xs">
+        <p className="font-bold text-popover-foreground mb-1">{label}</p>
+        {payload.map((entry: any, index: number) => (
+          <div key={index} className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color || entry.fill }} />
+            <span className="text-muted-foreground capitalize">{entry.name}:</span>
+            <span className="font-bold text-popover-foreground">{entry.value}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+const CACHE_ADMIN_STATS = 'cached_admin_stats';
+const CACHE_ADMIN_USERS = 'cached_admin_users';
+const CACHE_PROJECTS_COUNT = 'cached_projects_count';
+
+const getInitialAdminStats = () => {
+  try {
+    const cached = localStorage.getItem(CACHE_ADMIN_STATS);
+    if (cached) return JSON.parse(cached);
+  } catch (e) {}
+  return {
     totalEmployees: 0,
     activeTasks: 0,
     dbSize: '0 B',
     health: 'Healthy'
-  });
+  };
+};
+
+const getInitialAdminUsers = (): User[] => {
+  try {
+    const cached = localStorage.getItem(CACHE_ADMIN_USERS);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return [];
+};
+
+const getInitialProjectsCount = (): number => {
+  try {
+    const cached = localStorage.getItem(CACHE_PROJECTS_COUNT);
+    if (cached) return Number(cached) || 0;
+  } catch (e) {}
+  return 0;
+};
+
+const WEEKLY_VELOCITY_DATA = [
+  { day: 'Mon', completed: 18, assigned: 24 },
+  { day: 'Tue', completed: 28, assigned: 30 },
+  { day: 'Wed', completed: 35, assigned: 32 },
+  { day: 'Thu', completed: 42, assigned: 38 },
+  { day: 'Fri', completed: 50, assigned: 42 },
+  { day: 'Sat', completed: 22, assigned: 16 },
+  { day: 'Sun', completed: 14, assigned: 10 },
+];
+
+export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'employee' | 'manager' }) {
+  // User Management State
+  const [usersList, setUsersList] = useState<User[]>(getInitialAdminUsers);
+  const [totalProjectsCount, setTotalProjectsCount] = useState<number>(getInitialProjectsCount);
+  const [adminStats, setAdminStats] = useState(getInitialAdminStats);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [deptFilter, setDeptFilter] = useState<string>('All');
@@ -299,43 +375,43 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
     }
   }, [showOnlyRole]);
 
-  const fetchAdminStats = async () => {
+  const fetchDashboardData = async () => {
     try {
-      const res = await api.get('/admin/stats');
-      if (res.data?.success) {
-        setAdminStats(res.data.data);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
+      const [statsRes, usersRes, projRes] = await Promise.all([
+        api.get('/admin/stats').catch(() => null),
+        api.get('/admin/users?page=1&limit=100').catch(() => null),
+        api.get('/projects').catch(() => null)
+      ]);
 
-  const fetchAdminUsers = async () => {
-    try {
-      const res = await api.get('/admin/users?page=1&limit=100');
-      if (res.data?.success) {
-        setUsersList(res.data.data.users || []);
+      if (statsRes?.data?.success) {
+        setAdminStats(statsRes.data.data);
+        try {
+          localStorage.setItem(CACHE_ADMIN_STATS, JSON.stringify(statsRes.data.data));
+        } catch (e) {}
       }
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
-  const fetchRealProjects = async () => {
-    try {
-      const res = await api.get('/projects');
-      if (res.data?.success) {
-        setTotalProjectsCount(res.data.data?.length || 0);
+      if (usersRes?.data?.success) {
+        const users = usersRes.data.data.users || [];
+        setUsersList(users);
+        try {
+          localStorage.setItem(CACHE_ADMIN_USERS, JSON.stringify(users));
+        } catch (e) {}
+      }
+
+      if (projRes?.data?.success) {
+        const count = projRes.data.data?.length || 0;
+        setTotalProjectsCount(count);
+        try {
+          localStorage.setItem(CACHE_PROJECTS_COUNT, String(count));
+        } catch (e) {}
       }
     } catch (e) {
-      console.error('Failed to fetch real project count:', e);
+      console.error('Failed to fetch admin dashboard data:', e);
     }
   };
 
   useEffect(() => {
-    fetchAdminStats();
-    fetchAdminUsers();
-    fetchRealProjects();
+    fetchDashboardData();
   }, []);
 
   const navigateToView = (view: string) => {
@@ -390,8 +466,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   ];
 
   const refreshUsers = () => {
-    fetchAdminUsers();
-    fetchAdminStats();
+    fetchDashboardData();
   };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
@@ -599,6 +674,26 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
   const departments = ['Engineering', 'Operations', 'HR', 'Marketing', 'Sales'];
 
+  const departmentChartData = React.useMemo(() => {
+    return departments.map(dept => {
+      const deptUsers = usersList.filter(u => (u.department || 'Engineering').toLowerCase() === dept.toLowerCase());
+      const interns = deptUsers.filter(u => u.role === 'employee' || (u.role as string) === 'intern').length;
+      const managers = deptUsers.filter(u => u.role === 'manager').length;
+      return {
+        name: dept,
+        interns,
+        managers,
+        total: deptUsers.length
+      };
+    });
+  }, [usersList, departments]);
+
+  const rolePieData = React.useMemo(() => [
+    { name: 'Interns', value: totalInternsCount || 1, color: '#3b82f6' },
+    { name: 'Managers', value: totalManagersCount || 1, color: '#8b5cf6' },
+    { name: 'Admins', value: usersList.filter(u => u.role === 'admin').length || 1, color: '#f59e0b' },
+  ], [totalInternsCount, totalManagersCount, usersList]);
+
   const filteredUsers = usersList.filter(u => {
     const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -619,8 +714,8 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
   const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
-    <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 transition-colors duration-300">
-      <div className="max-w-[1600px] mx-auto space-y-6">
+    <div className="w-full space-y-6 animate-in fade-in duration-300">
+      <div className="w-full space-y-6">
         
         {selectedDetailUser ? (
           // USER DETAIL FULL PAGE VIEW
@@ -657,9 +752,9 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
             </div>
 
             {/* Main Tabs Card */}
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden flex flex-col min-h-150">
+            <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm overflow-hidden flex flex-col min-h-150">
               {/* Tab Navigation header */}
-              <div className="flex border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 overflow-x-auto px-4 custom-scrollbar">
+              <div className="flex border-b border-border bg-muted/20 overflow-x-auto px-4 custom-scrollbar">
                 {[
                   { id: 'profile', label: 'Full Profile', icon: UserIcon },
                   { id: 'logins', label: 'Session History', icon: Laptop },
@@ -681,8 +776,8 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                       className={cn(
                         "flex items-center gap-2 px-6 py-4.5 text-xs font-bold transition-all border-b-2 outline-none whitespace-nowrap",
                         active
-                          ? "border-orange-600 text-orange-600 dark:border-orange-500 dark:text-orange-400"
-                          : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-200 dark:hover:border-slate-800"
+                          ? "border-primary text-primary"
+                          : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -699,25 +794,25 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 {detailActiveTab === 'profile' && (
                   <div className="space-y-6 animate-in fade-in duration-200">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]">
+                      <Card className="rounded-xl border-border bg-card text-card-foreground">
                         <CardContent className="p-4 flex items-center gap-3">
                           <div className="h-9 w-9 rounded-lg bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center shrink-0">
                             <Shield className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Account Role</p>
-                            <p className="text-sm font-black text-slate-800 dark:text-white capitalize">{selectedDetailUser.role}</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Account Role</p>
+                            <p className="text-sm font-black text-foreground capitalize">{selectedDetailUser.role}</p>
                           </div>
                         </CardContent>
                       </Card>
-                      <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]">
+                      <Card className="rounded-xl border-border bg-card text-card-foreground">
                         <CardContent className="p-4 flex items-center gap-3">
                           <div className="h-9 w-9 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
                             <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Account Status</p>
-                            <p className="text-sm font-black text-slate-800 dark:text-white">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Account Status</p>
+                            <p className="text-sm font-black text-foreground">
                               {selectedDetailUser.isActive !== false ? 'Active' : 'Deactivated'}
                             </p>
                           </div>
@@ -725,9 +820,9 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                       </Card>
                     </div>
 
-                    <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/60 overflow-hidden">
-                      <div className="p-5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30">
-                        <h3 className="text-sm font-bold text-slate-800 dark:text-white">Personal & Employment Information</h3>
+                    <Card className="rounded-xl border-border bg-card text-card-foreground overflow-hidden">
+                      <div className="p-5 border-b border-border bg-muted/20">
+                        <h3 className="text-sm font-bold text-foreground">Personal & Employment Information</h3>
                       </div>
                       <CardContent className="p-5 space-y-4">
                         {[
@@ -765,54 +860,54 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Manage open web and mobile sessions for this user.</p>
                     </div>
 
-                    <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/60 overflow-hidden">
+                    <Card className="rounded-xl border-border bg-card overflow-hidden">
                       <div className="overflow-x-auto">
-                        <table className="w-full min-w-[500px] text-sm text-left">
-                          <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/60 dark:text-slate-400 border-b border-slate-105 dark:border-slate-800">
-                            <tr>
-                              <th className="px-4 py-3 font-bold">Device & Location</th>
-                              <th className="px-4 py-3 font-bold">IP Address</th>
-                              <th className="px-4 py-3 font-bold">Timestamp</th>
-                              <th className="px-4 py-3 font-bold text-right">Session State</th>
-                            </tr>
-                          </thead>
-                          <tbody>
+                        <Table className="w-full min-w-[500px]">
+                          <TableHeader className="bg-muted/50 border-b border-border">
+                            <TableRow>
+                              <TableHead className="px-4 py-3 font-bold text-xs uppercase text-muted-foreground">Device & Location</TableHead>
+                              <TableHead className="px-4 py-3 font-bold text-xs uppercase text-muted-foreground">IP Address</TableHead>
+                              <TableHead className="px-4 py-3 font-bold text-xs uppercase text-muted-foreground">Timestamp</TableHead>
+                              <TableHead className="px-4 py-3 font-bold text-xs uppercase text-muted-foreground text-right">Session State</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
                             {loginHistory.map((s) => (
-                              <tr key={s.id} className="border-b border-slate-100 dark:border-slate-800/60 last:border-0 hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
-                                <td className="px-4 py-3.5">
+                              <TableRow key={s.id} className="border-b border-border/60 last:border-0 hover:bg-muted/50">
+                                <TableCell className="px-4 py-3.5">
                                   <div className="flex items-start gap-2.5">
-                                    <Laptop className="h-4.5 w-4.5 text-slate-400 mt-0.5 shrink-0" />
+                                    <Laptop className="h-4.5 w-4.5 text-muted-foreground mt-0.5 shrink-0" />
                                     <div>
-                                      <div className="font-bold text-slate-800 dark:text-slate-200 text-xs">{s.device}</div>
-                                      <div className="text-[10px] text-slate-450 dark:text-slate-400 font-semibold mt-0.5 flex items-center gap-1">
+                                      <div className="font-semibold text-foreground text-xs">{s.device}</div>
+                                      <div className="text-[10px] text-muted-foreground font-medium mt-0.5 flex items-center gap-1">
                                         <Globe className="h-3 w-3" /> {s.location}
                                       </div>
                                     </div>
                                   </div>
-                                </td>
-                                <td className="px-4 py-3.5 font-mono text-xs font-bold text-slate-700 dark:text-slate-300">{s.ipAddress}</td>
-                                <td className="px-4 py-3.5 text-xs font-semibold text-slate-500 dark:text-slate-400">{s.timestamp}</td>
-                                <td className="px-4 py-3.5 text-right">
+                                </TableCell>
+                                <TableCell className="px-4 py-3.5 font-mono text-xs font-semibold text-foreground">{s.ipAddress}</TableCell>
+                                <TableCell className="px-4 py-3.5 text-xs font-medium text-muted-foreground">{s.timestamp}</TableCell>
+                                <TableCell className="px-4 py-3.5 text-right">
                                   {s.isActive ? (
                                     <div className="flex flex-col items-end gap-1.5">
-                                      <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/25 text-[9px] font-black uppercase rounded py-0.5 px-1.5">Active</Badge>
+                                      <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[9px] font-bold uppercase rounded py-0.5 px-1.5">Active</Badge>
                                       <Button
                                         onClick={() => handleRevokeSession(s.id)}
                                         variant="ghost"
                                         size="sm"
-                                        className="h-6 text-[10px] font-black uppercase tracking-wider text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:text-red-500 dark:hover:text-red-400 dark:hover:bg-red-500/10 p-1.5 rounded-md flex items-center gap-1 mt-0.5"
+                                        className="h-6 text-[10px] font-bold uppercase tracking-wider text-destructive hover:bg-destructive/10 p-1.5 rounded-md flex items-center gap-1 mt-0.5 cursor-pointer"
                                       >
                                         <Lock className="h-3 w-3" /> Revoke
                                       </Button>
                                     </div>
                                   ) : (
-                                    <Badge className="bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400 text-[9px] font-bold uppercase rounded py-0.5 px-1.5 border-0">Revoked</Badge>
+                                    <Badge className="bg-muted text-muted-foreground text-[9px] font-medium uppercase rounded py-0.5 px-1.5 border-0">Revoked</Badge>
                                   )}
-                                </td>
-                              </tr>
+                                </TableCell>
+                              </TableRow>
                             ))}
-                          </tbody>
-                        </table>
+                          </TableBody>
+                        </Table>
                       </div>
                     </Card>
                   </div>
@@ -821,36 +916,38 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 {/* 3. Activity Timeline */}
                 {detailActiveTab === 'activity' && (
                   <div className="space-y-4 animate-in fade-in duration-200">
-                    <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/60 p-4 space-y-4">
+                    <Card className="rounded-xl border-border bg-card text-card-foreground p-4 space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Activity Type</label>
-                          <select
-                            value={activityTypeFilter}
-                            onChange={(e) => setActivityTypeFilter(e.target.value)}
-                            className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
-                          >
-                            <option value="all">All Activities</option>
-                            <option value="task">Tasks Completed</option>
-                            <option value="project">Projects Joined</option>
-                            <option value="file">Files Uploaded</option>
-                            <option value="status">Status Changes</option>
-                          </select>
+                          <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Activity Type</label>
+                          <Select value={activityTypeFilter} onValueChange={setActivityTypeFilter}>
+                            <SelectTrigger className="w-full h-9 text-xs font-semibold">
+                              <SelectValue placeholder="All Activities" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Activities</SelectItem>
+                              <SelectItem value="task">Tasks Completed</SelectItem>
+                              <SelectItem value="project">Projects Joined</SelectItem>
+                              <SelectItem value="file">Files Uploaded</SelectItem>
+                              <SelectItem value="status">Status Changes</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Date Range</label>
-                          <select
-                            value={activityDatePreset}
-                            onChange={(e) => setActivityDatePreset(e.target.value)}
-                            className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
-                          >
-                            <option value="all">All Time</option>
-                            <option value="24h">Last 24 Hours</option>
-                            <option value="7d">Last 7 Days</option>
-                            <option value="30d">Last 30 Days</option>
-                            <option value="custom">Custom Date Range</option>
-                          </select>
+                          <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Date Range</label>
+                          <Select value={activityDatePreset} onValueChange={setActivityDatePreset}>
+                            <SelectTrigger className="w-full h-9 text-xs font-semibold">
+                              <SelectValue placeholder="All Time" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Time</SelectItem>
+                              <SelectItem value="24h">Last 24 Hours</SelectItem>
+                              <SelectItem value="7d">Last 7 Days</SelectItem>
+                              <SelectItem value="30d">Last 30 Days</SelectItem>
+                              <SelectItem value="custom">Custom Date Range</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
 
@@ -903,7 +1000,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                               <Icon className="h-4 w-4" />
                             </div>
                             
-                            <div className="bg-white dark:bg-[#0c1222]/60 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="bg-card text-card-foreground rounded-xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow">
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                                 <span className="text-xs font-extrabold text-slate-905 dark:text-white capitalize">
                                   {activity.action} <span className="text-orange-650 dark:text-orange-400 font-black">{activity.target}</span>
@@ -923,7 +1020,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                       })}
 
                       {getFilteredActivities().length === 0 && (
-                        <div className="py-8 text-center text-slate-405 dark:text-slate-500 italic text-xs font-bold bg-white dark:bg-[#0c1222]/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 pr-6">
+                        <div className="py-8 text-center text-slate-405 dark:text-slate-500 italic text-xs font-bold bg-muted/20 rounded-xl border border-dashed border-border pr-6">
                           No activities match the selected criteria.
                         </div>
                       )}
@@ -935,7 +1032,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 {detailActiveTab === 'associated' && (
                   <div className="space-y-6 animate-in fade-in duration-200">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm">
+                      <Card className="rounded-xl border-border bg-card text-card-foreground shadow-sm">
                         <CardContent className="p-4 flex items-center gap-3">
                           <div className="h-10 w-10 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
                             <Award className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -949,7 +1046,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                           </div>
                         </CardContent>
                       </Card>
-                      <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]">
+                      <Card className="rounded-xl border-border bg-card text-card-foreground">
                         <CardContent className="p-4 flex items-center gap-3">
                           <div className="h-10 w-10 rounded-lg bg-indigo-50 dark:bg-indigo-505/10 flex items-center justify-center shrink-0">
                             <Clock className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
@@ -968,7 +1065,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     </div>
 
                     {/* Tasks List */}
-                    <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/60 overflow-hidden shadow-sm">
+                    <Card className="rounded-xl border-border bg-card text-card-foreground overflow-hidden shadow-sm">
                       <div className="p-4.5 border-b border-slate-100 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
                         <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
                           <CheckSquare className="h-4 w-4 text-orange-500 shrink-0" /> Assigned Tasks ({getAssignedTasks().length})
@@ -1004,7 +1101,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     </Card>
 
                     {/* Associated Projects */}
-                    <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/60 overflow-hidden shadow-sm">
+                    <Card className="rounded-xl border-border bg-card text-card-foreground overflow-hidden shadow-sm">
                       <div className="p-4.5 border-b border-slate-101 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-900/30">
                         <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
                           <FolderKanban className="h-4 w-4 text-[#5B7CFF] shrink-0" /> Associated Projects ({getAssociatedProjects().length})
@@ -1030,7 +1127,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     </Card>
 
                     {/* Team Memberships */}
-                    <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/60 overflow-hidden shadow-sm">
+                    <Card className="rounded-xl border-border bg-card text-card-foreground overflow-hidden shadow-sm">
                       <div className="p-4.5 border-b border-slate-100 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-900/30">
                         <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
                           <Users className="h-4 w-4 text-emerald-500 shrink-0" /> Department Team Members
@@ -1057,48 +1154,48 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     </Card>
 
                     {/* Timesheet Work Logs */}
-                    <Card className="rounded-xl border-slate-200 dark:border-slate-805 bg-white dark:bg-[#0c1222]/60 overflow-hidden shadow-sm">
-                      <div className="p-4.5 border-b border-slate-101 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-900/30">
-                        <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <Card className="rounded-xl border-border bg-card overflow-hidden shadow-xs">
+                      <div className="p-4 border-b border-border bg-muted/40">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                           <ClipboardList className="h-4 w-4 text-purple-500 shrink-0" /> Recent Work Logs / Timesheet
                         </h3>
                       </div>
                       <CardContent className="p-0 max-h-55 overflow-y-auto overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-xs text-left min-w-125">
-                          <thead className="text-[10px] text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/60 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                            <tr>
-                              <th className="px-4 py-2 font-bold">Date</th>
-                              <th className="px-4 py-2 font-bold">Task & Project</th>
-                              <th className="px-4 py-2 font-bold">Hours</th>
-                              <th className="px-4 py-2 font-bold text-right">Status</th>
-                            </tr>
-                          </thead>
-                          <tbody>
+                        <Table className="w-full text-xs text-left min-w-125">
+                          <TableHeader className="bg-muted/50 border-b border-border">
+                            <TableRow>
+                              <TableHead className="px-4 py-2 font-bold text-[10px] uppercase text-muted-foreground">Date</TableHead>
+                              <TableHead className="px-4 py-2 font-bold text-[10px] uppercase text-muted-foreground">Task & Project</TableHead>
+                              <TableHead className="px-4 py-2 font-bold text-[10px] uppercase text-muted-foreground">Hours</TableHead>
+                              <TableHead className="px-4 py-2 font-bold text-[10px] uppercase text-muted-foreground text-right">Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
                             {getUserWorkLogs().map((log: any, i: number) => (
-                              <tr key={i} className="border-b border-slate-101 dark:border-slate-805 last:border-0 hover:bg-slate-50/40 dark:hover:bg-slate-800/20">
-                                <td className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-350">{log.date}</td>
-                                <td className="px-4 py-3">
-                                  <div className="font-bold text-slate-800 dark:text-slate-202 text-xs">{log.task}</div>
-                                  <div className="text-[9px] text-slate-400 font-semibold mt-0.5">{log.project}</div>
-                                </td>
-                                <td className="px-4 py-3 font-extrabold text-slate-909 dark:text-white">{log.hours} hrs</td>
-                                <td className="px-4 py-3 text-right">
+                              <TableRow key={i} className="border-b border-border/60 last:border-0 hover:bg-muted/50">
+                                <TableCell className="px-4 py-3 font-semibold text-foreground">{log.date}</TableCell>
+                                <TableCell className="px-4 py-3">
+                                  <div className="font-semibold text-foreground text-xs">{log.task}</div>
+                                  <div className="text-[9px] text-muted-foreground font-medium mt-0.5">{log.project}</div>
+                                </TableCell>
+                                <TableCell className="px-4 py-3 font-bold text-foreground">{log.hours} hrs</TableCell>
+                                <TableCell className="px-4 py-3 text-right">
                                   <Badge className={cn(
-                                    "text-[9px] font-black rounded py-0.5 uppercase",
-                                    log.status === 'Approved' ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" :
-                                    log.status === 'Pending' ? "bg-amber-50 text-amber-700 dark:bg-amber-505/10 dark:text-amber-400" :
-                                    "bg-rose-50 text-rose-700 dark:bg-rose-550/10 dark:text-rose-400"
+                                    "text-[9px] font-bold rounded py-0.5 uppercase",
+                                    log.status === 'Approved' ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" :
+                                    log.status === 'Pending' ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" :
+                                    "bg-destructive/10 text-destructive border border-destructive/20"
                                   )}>{log.status}</Badge>
-                                </td>
-                              </tr>
+                                </TableCell>
+                              </TableRow>
                             ))}
                             {getUserWorkLogs().length === 0 && (
-                              <tr>
-                                <td colSpan={4} className="py-6 text-center text-slate-400 dark:text-slate-505 text-xs italic font-bold">No work logs submitted.</td>
-                              </tr>
+                              <TableRow>
+                                <TableCell colSpan={4} className="py-6 text-center text-muted-foreground text-xs italic font-medium">No work logs submitted.</TableCell>
+                              </TableRow>
                             )}
-                          </tbody>
-                        </table>
+                          </TableBody>
+                        </Table>
                       </CardContent>
                     </Card>
                   </div>
@@ -1114,7 +1211,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                       </div>
                     </div>
 
-                    <Card className="rounded-xl border-slate-202 dark:border-slate-808 bg-white dark:bg-[#0c1222]/60 p-4 space-y-3">
+                    <Card className="rounded-xl border-border bg-card text-card-foreground p-4 space-y-3">
                       <div className="space-y-1.5">
                         <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           {editingNoteId ? 'Edit Internal Note' : 'Append New Note'}
@@ -1150,7 +1247,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
 
                     <div className="space-y-4">
                       {internalNotes.map((note) => (
-                        <Card key={note.id} className="rounded-xl border-slate-202 dark:border-slate-808 bg-white dark:bg-[#0c1222]/60 shadow-sm p-4 relative group hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+                        <Card key={note.id} className="rounded-xl border-border bg-card text-card-foreground shadow-sm p-4 relative group hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
                           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2 mb-2.5">
                             <div className="flex items-center gap-1.5">
                               <span className="text-xs font-black text-slate-800 dark:text-white">{note.author}</span>
@@ -1176,7 +1273,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                       ))}
 
                       {internalNotes.length === 0 && (
-                        <div className="py-8 text-center text-slate-400 dark:text-slate-500 italic text-xs font-bold bg-white dark:bg-[#0c1222]/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-805">
+                        <div className="py-8 text-center text-muted-foreground italic text-xs font-bold bg-muted/20 rounded-xl border border-dashed border-border">
                           No internal notes recorded for this user.
                         </div>
                       )}
@@ -1193,15 +1290,15 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                  {!showOnlyRole ? 'Admin Dashboard' : showOnlyRole === 'manager' ? 'Managers' : 'Employees'}
+                <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+                  {!showOnlyRole ? 'Admin Dashboard' : showOnlyRole === 'manager' ? 'Managers Directory' : 'Interns Directory'}
                 </h1>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-sm font-medium text-muted-foreground mt-1">
               {!showOnlyRole 
-                ? 'Overview of organization roles, stats, and activities.'
+                ? 'Overview of organization performance, analytics, and workspace activities.'
                 : showOnlyRole === 'manager' 
                   ? 'Manage manager accounts, departments, and active statuses.' 
-                  : 'Manage employee accounts, roles, and designations.'}
+                  : 'Manage intern and employee accounts, roles, and designations.'}
             </p>
           </div>
           
@@ -1211,7 +1308,7 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 resetForm();
                 setIsCreateOpen(true);
               }}
-              className="bg-orange-600 hover:bg-orange-700 text-white font-bold h-10 px-4 rounded-xl shadow-sm flex items-center gap-2"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-10 px-4 rounded-xl shadow-sm flex items-center gap-2"
             >
               <UserPlus className="w-4 h-4" />
               {showOnlyRole === 'manager' ? 'Create Manager' : showOnlyRole === 'employee' ? 'Create Intern' : 'Add Account'}
@@ -1226,72 +1323,72 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
           <div className="space-y-6">
             {/* Stats Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm animate-in fade-in transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center shrink-0">
                     <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Total Employees</p>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1.5 leading-none">{totalEmployeesCount}</h3>
+                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-wider leading-none">Total Employees</p>
+                    <h3 className="text-xl font-black text-foreground mt-1.5 leading-none">{totalEmployeesCount}</h3>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm animate-in fade-in transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
                     <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Total Interns</p>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1.5 leading-none">{totalInternsCount}</h3>
+                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-wider leading-none">Total Interns</p>
+                    <h3 className="text-xl font-black text-foreground mt-1.5 leading-none">{totalInternsCount}</h3>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay- transition-all hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm animate-in fade-in duration-300 delay- transition-all hover:scale-[1.02] hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-[#5B7CFF]/10 flex items-center justify-center shrink-0">
                     <ShieldCheck className="h-5 w-5 text-[#5B7CFF]" />
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Total Managers</p>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1.5 leading-none">{totalManagersCount}</h3>
+                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-wider leading-none">Total Managers</p>
+                    <h3 className="text-xl font-black text-foreground mt-1.5 leading-none">{totalManagersCount}</h3>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay- transition-all hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm animate-in fade-in duration-300 delay- transition-all hover:scale-[1.02] hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center shrink-0">
                     <FolderKanban className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Total Projects</p>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1.5 leading-none">{totalProjectsCount}</h3>
+                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-wider leading-none">Total Projects</p>
+                    <h3 className="text-xl font-black text-foreground mt-1.5 leading-none">{totalProjectsCount}</h3>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay- transition-all hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm animate-in fade-in duration-300 delay- transition-all hover:scale-[1.02] hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-cyan-50 dark:bg-cyan-500/10 flex items-center justify-center shrink-0">
                     <Activity className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Active Today</p>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1.5 leading-none">{activeUsersCount}</h3>
+                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-wider leading-none">Active Today</p>
+                    <h3 className="text-xl font-black text-foreground mt-1.5 leading-none">{activeUsersCount}</h3>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] shadow-sm animate-in fade-in duration-300 delay- transition-all hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm animate-in fade-in duration-300 delay- transition-all hover:scale-[1.02] hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
                 <CardContent className="p-4 flex flex-col items-start gap-3">
                   <div className="h-9 w-9 rounded-lg bg-teal-50 dark:bg-teal-500/10 flex items-center justify-center shrink-0">
                     <Award className="h-5 w-5 text-teal-600 dark:text-teal-400" />
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">Workspace Productivity</p>
+                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-wider leading-none">Workspace Productivity</p>
                     <h3 className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1.5 leading-none">92%</h3>
                   </div>
                 </CardContent>
@@ -1301,14 +1398,15 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
           </div>
         )}
 
-        {/* CRUD Registry View */}
-        <div className="space-y-6 animate-in fade-in duration-300">
+        {/* CRUD Registry View vs Analytics View */}
+        {showOnlyRole ? (
+          <div className="space-y-6 animate-in fade-in duration-300">
             {/* Filters and Search Toolbar */}
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm p-4">
+            <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-4">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
                 {/* Search Bar */}
                 <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-400 pointer-events-none" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <input
                     type="text"
                     placeholder={showOnlyRole === 'manager' 
@@ -1316,46 +1414,52 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                       : "Search employees by name, email, or ID..."}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-11 pl-10 pr-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/55 transition-all text-sm font-medium"
+                    className="w-full h-11 pl-10 pr-4 rounded-xl border border-input bg-muted/40 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all text-sm font-medium"
                   />
                 </div>
 
                 {/* Filter Dropdowns */}
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex flex-wrap items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-1.5 rounded-xl w-full sm:w-auto">
-                    <Filter className="h-3.5 w-3.5 text-slate-400 ml-1.5" />
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1.5">Filters:</span>
+                  <div className="flex flex-wrap items-center gap-1.5 bg-muted/40 border border-input p-1.5 rounded-xl w-full sm:w-auto">
+                    <Filter className="h-3.5 w-3.5 text-muted-foreground ml-1.5" />
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mr-1.5">Filters:</span>
                     
                     {/* Department Filter */}
-                    <select
-                      value={deptFilter}
-                      onChange={(e) => setDeptFilter(e.target.value)}
-                      className="text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg px-2.5 py-1.5 outline-none cursor-pointer focus:ring-1 focus:ring-orange-500/20"
-                    >
-                      <option value="All">All Departments</option>
-                      {departments.map(d => (
-                        <option key={d} value={d}>{d}</option>
-                      ))}
-                    </select>
+                    <div className="w-[160px]">
+                      <Select value={deptFilter} onValueChange={setDeptFilter}>
+                        <SelectTrigger className="h-8 text-xs font-bold border-input bg-card">
+                          <SelectValue placeholder="All Departments" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="All">All Departments</SelectItem>
+                          {departments.map(d => (
+                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
                     {/* Status Filter */}
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg px-2.5 py-1.5 outline-none cursor-pointer focus:ring-1 focus:ring-orange-500/20"
-                    >
-                      <option value="All">All Statuses</option>
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Deactivated</option>
-                      <option value="Pending">Pending Approval</option>
-                    </select>
+                    <div className="w-[150px]">
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="h-8 text-xs font-bold border-input bg-card">
+                          <SelectValue placeholder="All Statuses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="All">All Statuses</SelectItem>
+                          <SelectItem value="Active">Active</SelectItem>
+                          <SelectItem value="Inactive">Deactivated</SelectItem>
+                          <SelectItem value="Pending">Pending Approval</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   {(searchQuery || deptFilter !== 'All' || statusFilter !== 'All') && (
                     <Button 
                       variant="ghost" 
                       onClick={() => { setSearchQuery(''); setDeptFilter('All'); setStatusFilter('All'); }}
-                      className="text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400"
+                      className="text-xs font-bold hover:bg-muted text-muted-foreground"
                     >
                       Clear Filters
                     </Button>
@@ -1365,13 +1469,13 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
             </Card>
 
             {/* Directory Table Card */}
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden">
-              <CardHeader className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm overflow-hidden">
+              <CardHeader className="p-4 sm:p-6 border-b border-border bg-muted/20 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">
+                  <CardTitle className="text-lg font-bold text-card-foreground">
                     {showOnlyRole === 'manager' ? 'Manager Directory' : 'Interns Directory'}
                   </CardTitle>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Showing {filteredUsers.length} of {usersList.filter(u => u.role === showOnlyRole).length} registered {showOnlyRole === 'manager' ? 'managers' : 'interns'}.
                   </p>
                 </div>
@@ -1381,100 +1485,99 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                     setIsCreateOpen(true);
                   }}
                   size="sm"
-                  className="bg-orange-600 hover:bg-orange-700 text-white font-bold h-9 px-3.5 rounded-xl shadow-sm flex items-center gap-1.5"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-9 px-3.5 rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
                 >
                   <UserPlus className="w-4 h-4" />
                   {showOnlyRole === 'manager' ? 'Add Manager' : 'Add Intern'}
                 </Button>
               </CardHeader>
               <CardContent className="p-0 overflow-x-auto">
-                <table className="w-full min-w-[750px] text-sm text-left">
-                  <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/60 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                    <tr>
-                      <th className="px-6 py-4 font-bold">User / ID</th>
-                      <th className="px-6 py-4 font-bold">Designation & Department</th>
-
-                      <th className="px-6 py-4 font-bold">Phone Number</th>
-                      <th className="px-6 py-4 font-bold">System Role</th>
-                      <th className="px-6 py-4 font-bold">Status</th>
-                      <th className="px-6 py-4 font-bold text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table className="w-full min-w-[750px] text-sm text-left">
+                  <TableHeader className="bg-muted/50 border-b border-border">
+                    <TableRow>
+                      <TableHead className="px-6 py-3.5 font-bold text-xs uppercase text-muted-foreground">User / ID</TableHead>
+                      <TableHead className="px-6 py-3.5 font-bold text-xs uppercase text-muted-foreground">Designation & Department</TableHead>
+                      <TableHead className="px-6 py-3.5 font-bold text-xs uppercase text-muted-foreground">Phone Number</TableHead>
+                      <TableHead className="px-6 py-3.5 font-bold text-xs uppercase text-muted-foreground">System Role</TableHead>
+                      <TableHead className="px-6 py-3.5 font-bold text-xs uppercase text-muted-foreground">Status</TableHead>
+                      <TableHead className="px-6 py-3.5 font-bold text-xs uppercase text-muted-foreground text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {paginatedUsers.map((u, i) => {
                       const isActive = u.isActive !== false;
                       const initials = u.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
                       return (
-                        <tr 
+                        <TableRow 
                           key={i} 
-                          className="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/25 transition-colors cursor-pointer"
+                          className="border-b border-border/60 hover:bg-muted/50 transition-colors cursor-pointer"
                           onClick={(e) => {
                             if ((e.target as HTMLElement).closest('.actions-cell')) return;
                             setSelectedDetailUser(u);
                           }}
                         >
-                          <td className="px-6 py-4">
+                          <TableCell className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className={cn(
-                                "h-9 w-9 rounded-full flex items-center justify-center text-xs font-extrabold border shrink-0 transition-transform hover:scale-105",
+                                "h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold border shrink-0 transition-transform hover:scale-105",
                                 isActive 
-                                  ? "bg-orange-550/10 text-orange-600 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20" 
-                                  : "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-800"
+                                  ? "bg-primary/10 text-primary border-primary/20" 
+                                  : "bg-muted text-muted-foreground border-border"
                               )}>
                                 {initials}
                               </div>
                               <div className="min-w-0">
-                                <div className="font-extrabold text-slate-900 dark:text-white leading-snug truncate">{u.name}</div>
-                                <div className="text-xs text-slate-500 dark:text-slate-400 leading-snug font-medium mt-0.5 truncate">{u.email}</div>
-                                <div className="text-[10px] text-slate-400 font-bold tracking-wider mt-1 font-mono uppercase">{u.empId || 'Pending'}</div>
+                                <div className="font-semibold text-foreground leading-snug truncate">{u.name}</div>
+                                <div className="text-xs text-muted-foreground leading-snug font-medium mt-0.5 truncate">{u.email}</div>
+                                <div className="text-[10px] text-muted-foreground/70 font-semibold tracking-wider mt-1 font-mono uppercase">{u.empId || 'Pending'}</div>
                               </div>
                             </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="font-bold text-slate-850 dark:text-slate-200">{u.designation || 'Specialist'}</div>
-                            <div className="text-xs font-semibold text-slate-500 dark:text-slate-405 mt-0.5 flex items-center">
-                              <Briefcase className="h-3 w-3 mr-1 text-slate-400" /> {u.department || 'Unassigned'}
+                          </TableCell>
+                          <TableCell className="px-6 py-4">
+                            <div className="font-semibold text-foreground">{u.designation || 'Specialist'}</div>
+                            <div className="text-xs font-medium text-muted-foreground mt-0.5 flex items-center">
+                              <Briefcase className="h-3 w-3 mr-1 text-muted-foreground/70" /> {u.department || 'Unassigned'}
                             </div>
-                          </td>
+                          </TableCell>
 
-                          <td className="px-6 py-4 font-medium text-slate-500 dark:text-slate-400">
-                            {u.phoneWa || u.phone ? u.phoneWa || u.phone : <span className="text-xs italic text-slate-400">No phone</span>}
-                          </td>
-                          <td className="px-6 py-4">
+                          <TableCell className="px-6 py-4 font-medium text-muted-foreground">
+                            {u.phoneWa || u.phone ? u.phoneWa || u.phone : <span className="text-xs italic text-muted-foreground/60">No phone</span>}
+                          </TableCell>
+                          <TableCell className="px-6 py-4">
                             <Badge variant="outline" className={cn(
-                              "font-black tracking-wide rounded px-2.5 py-0.5 uppercase text-[10px]",
-                              u.role === 'admin' ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400" :
-                              u.role === 'manager' ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400" :
-                              "border-slate-250 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-350"
+                              "font-bold tracking-wide rounded px-2.5 py-0.5 uppercase text-[10px]",
+                              u.role === 'admin' ? "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400" :
+                              u.role === 'manager' ? "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400" :
+                              "border-border bg-muted text-muted-foreground"
                             )}>
                               {u.role}
                             </Badge>
-                          </td>
-                          <td className="px-6 py-4">
+                          </TableCell>
+                          <TableCell className="px-6 py-4">
                             {u.isApproved === false ? (
-                              <Badge className="bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 font-bold py-0.5 rounded">
+                              <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-semibold py-0.5 rounded">
                                 Pending Approval
                               </Badge>
                             ) : (
                               <Badge className={cn(
-                                "font-bold py-0.5 rounded",
+                                "font-semibold py-0.5 rounded",
                                 isActive 
-                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 hover:bg-emerald-100/50" 
-                                  : "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 hover:bg-rose-100/50"
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" 
+                                  : "bg-destructive/10 text-destructive"
                               )}>
                                 {isActive ? 'Active' : 'Deactivated'}
                               </Badge>
                             )}
-                          </td>
-                          <td className="px-6 py-4 text-right actions-cell">
+                          </TableCell>
+                          <TableCell className="px-6 py-4 text-right actions-cell">
                             <div className="flex items-center justify-end gap-2.5">
                               {u.isApproved === false && (
                                 <Button
                                   onClick={() => handleApproveUser(u)}
                                   variant="outline"
                                   size="icon"
-                                  className="h-8 w-8 rounded-lg border-slate-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 dark:text-emerald-400 dark:border-emerald-950/60 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-300"
+                                  className="h-8 w-8 rounded-lg border-border text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400 cursor-pointer"
                                   title="Approve Account"
                                 >
                                   <CheckCircle2 className="h-3.5 w-3.5" />
@@ -1486,10 +1589,10 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                                 variant="outline"
                                 size="icon"
                                 className={cn(
-                                  "h-8 w-8 rounded-lg border-slate-200",
+                                  "h-8 w-8 rounded-lg border-border cursor-pointer",
                                   isActive
-                                    ? "text-rose-500 hover:bg-rose-50 hover:border-rose-200 dark:text-red-400 dark:border-red-950/60 dark:hover:bg-red-500/10 dark:hover:text-red-300"
-                                    : "text-emerald-500 hover:bg-emerald-50 hover:border-emerald-200 dark:text-emerald-400 dark:border-emerald-950/60 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-300"
+                                    ? "text-destructive hover:bg-destructive/10"
+                                    : "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
                                 )}
                                 title={isActive ? 'Deactivate account' : 'Activate account'}
                               >
@@ -1501,26 +1604,26 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                                   onClick={() => setDeletingUser(u)}
                                   variant="outline"
                                   size="icon"
-                                  className="h-8 w-8 rounded-lg border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200 dark:text-red-400 dark:border-red-950/60 dark:hover:bg-red-500/10 dark:hover:text-red-300"
-                                  title="Delete intern permanently"
+                                  className="h-8 w-8 rounded-lg border-border text-destructive hover:bg-destructive/10 cursor-pointer"
+                                  title="Delete user permanently"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
                               )}
                             </div>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       );
                     })}
                     {paginatedUsers.length === 0 && (
-                      <tr>
-                        <td colSpan={showOnlyRole === 'manager' ? 6 : 7} className="px-6 py-12 text-center text-slate-400 italic font-medium">
+                      <TableRow>
+                        <TableCell colSpan={showOnlyRole === 'manager' ? 6 : 7} className="px-6 py-12 text-center text-muted-foreground italic font-medium">
                           No matching records found.
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     )}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </CardContent>
               
               {filteredUsers.length > 0 && (
@@ -1555,9 +1658,286 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
               )}
             </Card>
           </div>
-        </>
-      )}
-      </div>
+        ) : (
+          /* Graph & Analytics View for Admin Dashboard */
+          <div className="space-y-6 animate-in fade-in duration-300">
+            {/* Charts Row 1: Velocity Area Chart & Department Bar Chart */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Velocity Area Chart */}
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-5 flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                      <TrendingUp className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base font-bold">Team Velocity & Task Output</CardTitle>
+                      <p className="text-xs text-muted-foreground">Weekly completed vs assigned work</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-xs font-semibold border-border">
+                    7 Days
+                  </Badge>
+                </div>
+
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={WEEKLY_VELOCITY_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorAssigned" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.35}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.2)" vertical={false} />
+                      <XAxis dataKey="day" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                      <RechartsTooltip content={<ChartTooltip />} />
+                      <Area type="monotone" dataKey="completed" name="Completed Tasks" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorCompleted)" />
+                      <Area type="monotone" dataKey="assigned" name="Assigned Tasks" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorAssigned)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-border mt-2 text-xs">
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                      <span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> Completed (209)
+                    </span>
+                    <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Assigned (194)
+                    </span>
+                  </div>
+                  <span className="text-emerald-500 font-bold flex items-center gap-1">
+                    <ArrowUpRight className="h-3.5 w-3.5" /> +14.2% output
+                  </span>
+                </div>
+              </Card>
+
+              {/* Department Headcount Bar Chart */}
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-5 flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                      <BarChart2 className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base font-bold">Department Distribution</CardTitle>
+                      <p className="text-xs text-muted-foreground">Headcount across active divisions</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-xs font-semibold border-border">
+                    {departments.length} Departments
+                  </Badge>
+                </div>
+
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={departmentChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.2)" vertical={false} />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <RechartsTooltip content={<ChartTooltip />} />
+                      <Bar dataKey="interns" name="Interns" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="managers" name="Managers" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-border mt-2 text-xs">
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                      <span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> Interns ({totalInternsCount})
+                    </span>
+                    <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                      <span className="h-2.5 w-2.5 rounded-full bg-purple-500" /> Managers ({totalManagersCount})
+                    </span>
+                  </div>
+                  <span className="font-bold text-muted-foreground">
+                    Total: {usersList.length} Accounts
+                  </span>
+                </div>
+              </Card>
+            </div>
+
+            {/* Charts Row 2: Workforce Composition Donut + System Health + Live Activity */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Donut Chart: Role Composition */}
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-9 w-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                        <PieChartIcon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base font-bold">Role Breakdown</CardTitle>
+                        <p className="text-xs text-muted-foreground">Workforce role split</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="h-48 w-full flex items-center justify-center relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <RechartsTooltip content={<ChartTooltip />} />
+                        <Pie
+                          data={rolePieData}
+                          innerRadius={50}
+                          outerRadius={75}
+                          paddingAngle={4}
+                          dataKey="value"
+                        >
+                          {rolePieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-2xl font-black text-foreground">{usersList.length}</span>
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground">Members</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-3 border-t border-border mt-2">
+                  {rolePieData.map((item) => (
+                    <div key={item.name} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="font-medium text-muted-foreground">{item.name}</span>
+                      </div>
+                      <span className="font-bold text-foreground">{item.value} ({usersList.length > 0 ? Math.round((item.value / usersList.length) * 100) : 0}%)</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Health & Efficiency Metrics */}
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-9 w-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                        <Zap className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base font-bold">System Health</CardTitle>
+                        <p className="text-xs text-muted-foreground">Platform performance & SLA</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold">
+                      Optimal
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-4 my-2">
+                    <div>
+                      <div className="flex justify-between text-xs font-bold mb-1.5">
+                        <span className="text-muted-foreground">Task Completion Rate</span>
+                        <span className="text-emerald-500">92.4%</span>
+                      </div>
+                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '92.4%' }} />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-xs font-bold mb-1.5">
+                        <span className="text-muted-foreground">Attendance Reliability</span>
+                        <span className="text-blue-500">96.8%</span>
+                      </div>
+                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full" style={{ width: '96.8%' }} />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-xs font-bold mb-1.5">
+                        <span className="text-muted-foreground">Database Capacity ({adminStats.dbSize})</span>
+                        <span className="text-purple-500">24.5%</span>
+                      </div>
+                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-purple-500 rounded-full" style={{ width: '24.5%' }} />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-xs font-bold mb-1.5">
+                        <span className="text-muted-foreground">Sprint Velocity Index</span>
+                        <span className="text-amber-500">88.0%</span>
+                      </div>
+                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-amber-500 rounded-full" style={{ width: '88%' }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Server Status</span>
+                  <span className="font-bold text-emerald-500 flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> {adminStats.health || 'Healthy'}
+                  </span>
+                </div>
+              </Card>
+
+              {/* Live Activity Feed */}
+              <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-9 w-9 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
+                        <Activity className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base font-bold">Recent Activity</CardTitle>
+                        <p className="text-xs text-muted-foreground">Live event stream</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {activities.slice(0, 4).map((act, i) => (
+                      <div key={act.id || i} className="flex items-start gap-3 p-2.5 rounded-xl bg-muted/40 border border-border/50">
+                        <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                          {act.user ? act.user.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-foreground truncate">{act.title || act.action}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{act.user || 'System'}</p>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">{act.time || 'Recently'}</span>
+                      </div>
+                    ))}
+                    {activities.length === 0 && (
+                      <div className="py-8 text-center text-xs text-muted-foreground">
+                        No recent activity recorded.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-border mt-3">
+                  <a
+                    href="/admin/workspace/activity-logs"
+                    className="text-xs font-bold text-primary hover:underline flex items-center justify-center gap-1"
+                  >
+                    View Complete Audit Logs <ChevronRight className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+      </>
+    )}
+  </div>
 
       {/* CREATE MODAL */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -1599,37 +1979,39 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">System Role</label>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">System Role</label>
                   {showOnlyRole ? (
                     <input
                       type="text"
                       readOnly
                       value={showOnlyRole === 'manager' ? 'Manager' : 'Intern'}
-                      className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm font-semibold text-slate-500 dark:text-slate-400 cursor-not-allowed focus:outline-none"
+                      className="w-full h-10 px-3 rounded-lg border border-border bg-muted/50 text-sm font-semibold text-muted-foreground cursor-not-allowed focus:outline-none"
                     />
                   ) : (
-                    <select
-                      value={formRole}
-                      onChange={(e) => setFormRole(e.target.value as any)}
-                      className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer"
-                    >
-                      <option value="manager">Manager</option>
-                      <option value="intern">Intern / Employee</option>
-                    </select>
+                    <Select value={formRole} onValueChange={(val: any) => setFormRole(val)}>
+                      <SelectTrigger className="w-full h-10 text-sm font-semibold">
+                        <SelectValue placeholder="Select Role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="intern">Intern / Employee</SelectItem>
+                      </SelectContent>
+                    </Select>
                   )}
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Department</label>
-                  <select
-                    value={formDept}
-                    onChange={(e) => setFormDept(e.target.value)}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer"
-                  >
-                    {departments.map(d => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Department</label>
+                  <Select value={formDept} onValueChange={setFormDept}>
+                    <SelectTrigger className="w-full h-10 text-sm font-semibold">
+                      <SelectValue placeholder="Select Department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map(d => (
+                        <SelectItem key={d} value={d}>{d}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1.5">
@@ -1734,53 +2116,56 @@ export default function AdminDashboard({ showOnlyRole }: { showOnlyRole?: 'emplo
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">System Role</label>
-                  <select
-                    value={formRole}
-                    onChange={(e) => setFormRole(e.target.value as any)}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer"
-                  >
-                    <option value="employee">Employee</option>
-                    <option value="manager">Manager</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">System Role</label>
+                  <Select value={formRole} onValueChange={(val: any) => setFormRole(val)}>
+                    <SelectTrigger className="w-full h-10 text-sm font-semibold">
+                      <SelectValue placeholder="Select Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="employee">Employee</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Department</label>
-                  <select
-                    value={formDept}
-                    onChange={(e) => setFormDept(e.target.value)}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer"
-                  >
-                    {departments.map(d => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Department</label>
+                  <Select value={formDept} onValueChange={setFormDept}>
+                    <SelectTrigger className="w-full h-10 text-sm font-semibold">
+                      <SelectValue placeholder="Select Department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map(d => (
+                        <SelectItem key={d} value={d}>{d}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Designation</label>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Designation</label>
                   <input
                     type="text"
                     value={formDesig}
                     onChange={(e) => setFormDesig(e.target.value)}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                    className="w-full h-10 px-3 rounded-lg border border-border bg-card text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
 
                 <div className="space-y-1.5 col-span-2">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Reporting Manager</label>
-                  <select
-                    value={formManager}
-                    onChange={(e) => setFormManager(e.target.value)}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/55 cursor-pointer"
-                  >
-                    <option value="None">None</option>
-                    {activeManagersList.filter(m => m.email.toLowerCase() !== formEmail.toLowerCase()).map(m => (
-                      <option key={m.name} value={m.name}>{m.name}</option>
-                    ))}
-                  </select>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Reporting Manager</label>
+                  <Select value={formManager || "None"} onValueChange={setFormManager}>
+                    <SelectTrigger className="w-full h-10 text-sm font-semibold">
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="None">None</SelectItem>
+                      {activeManagersList.filter(m => m.email.toLowerCase() !== formEmail.toLowerCase()).map(m => (
+                        <SelectItem key={m.name} value={m.name}>{m.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1.5">

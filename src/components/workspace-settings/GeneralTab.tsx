@@ -114,7 +114,7 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
             value={data.companyName || ''} 
             onChange={(e) => updateField('companyName', e.target.value)} 
             placeholder="Acme Corp" 
-            className="rounded-xl bg-slate-50 dark:bg-slate-900/50 w-full sm:w-80"
+            className="rounded-xl bg-muted/40 border-input text-foreground w-full sm:w-80"
           />
         </SettingsRow>
         
@@ -124,7 +124,7 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
             value={data.supportEmail || ''} 
             onChange={(e) => updateField('supportEmail', e.target.value)} 
             placeholder="support@acme.com" 
-            className="rounded-xl bg-slate-50 dark:bg-slate-900/50 w-full sm:w-80"
+            className="rounded-xl bg-muted/40 border-input text-foreground w-full sm:w-80"
           />
         </SettingsRow>
 
@@ -133,7 +133,7 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
             value={data.address || ''} 
             onChange={(e) => updateField('address', e.target.value)} 
             placeholder="123 Innovation Drive, Tech Park" 
-            className="rounded-xl bg-slate-50 dark:bg-slate-900/50 w-full sm:w-80"
+            className="rounded-xl bg-muted/40 border-input text-foreground w-full sm:w-80"
           />
         </SettingsRow>
       </SettingsSection>
@@ -147,7 +147,7 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
             value={data.defaultTimezone || 'Asia/Kolkata'} 
             onValueChange={(val) => updateField('defaultTimezone', val)}
           >
-            <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/50 w-full sm:w-64">
+            <SelectTrigger className="rounded-xl bg-muted/40 border-input text-foreground w-full sm:w-64">
               <SelectValue placeholder="Select Timezone" />
             </SelectTrigger>
             <SelectContent>
@@ -165,7 +165,7 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
             value={data.currency || 'INR'} 
             onValueChange={(val) => updateField('currency', val)}
           >
-            <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/50 w-full sm:w-64">
+            <SelectTrigger className="rounded-xl bg-muted/40 border-input text-foreground w-full sm:w-64">
               <SelectValue placeholder="Select Currency" />
             </SelectTrigger>
             <SelectContent>
@@ -191,7 +191,7 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
               value={isCustomMode ? 'custom' : String(currentHours)} 
               onValueChange={handleSelectChange}
             >
-              <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900/80 w-full sm:w-64 font-semibold text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 shadow-xs">
+              <SelectTrigger className="rounded-xl bg-muted/40 border-input text-foreground w-full sm:w-64 font-semibold shadow-xs">
                 <SelectValue placeholder="Select Limit" />
               </SelectTrigger>
               <SelectContent>
@@ -202,7 +202,7 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
                 <SelectItem value="12">12 Hours</SelectItem>
                 <SelectItem value="13">13 Hours</SelectItem>
                 <SelectItem value="14">14 Hours</SelectItem>
-                <SelectItem value="custom" className="font-semibold text-slate-900 dark:text-white">
+                <SelectItem value="custom" className="font-semibold text-foreground">
                   Custom Hours...
                 </SelectItem>
               </SelectContent>
@@ -210,7 +210,7 @@ export default function GeneralTab({ data, updateField }: { data: any, updateFie
 
             {isCustomMode && (
               <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
-                <div className="relative flex items-center bg-slate-50 dark:bg-slate-900/90 rounded-xl border border-slate-200 dark:border-slate-800 h-10 px-2.5 gap-1 focus-within:ring-2 focus-within:ring-violet-500/50 focus-within:border-violet-500 transition-all shadow-xs">
+                <div className="relative flex items-center bg-muted/40 rounded-xl border border-input h-10 px-2.5 gap-1 focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary transition-all shadow-xs">
                   <input
                     type="number"
                     min={1}

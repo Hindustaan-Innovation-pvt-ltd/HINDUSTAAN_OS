@@ -52,6 +52,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 import { getBrowserCoordinates } from '@/lib/geo';
 
 const employeeNavigation = [
@@ -60,8 +61,6 @@ const employeeNavigation = [
   { name: 'Work Logs', icon: Clock },
   { name: 'Attendance Logs', icon: History },
   { name: 'Leave Management', icon: CalendarRange },
-  { name: 'Projects', icon: FolderKanban },
-  // { name: 'Milestones', icon: Flag },
   { name: 'Settings', icon: Settings },
 ];
 
@@ -70,7 +69,6 @@ const managerNavigation = [
   { name: 'Projects', icon: FolderKanban },
   { name: 'Tasks', icon: CheckSquare },
   { name: 'Gantt Timeline', icon: CalendarDays },
-  { name: 'Progress Tracker', icon: BarChart2 },
   { name: 'Work Logs', icon: Clock },
   { name: 'Attendance Logs', icon: History },
   { name: 'Leave Management', icon: CalendarRange },
@@ -161,6 +159,41 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
   const collapsed = !isMobile && sidebarWidth < 150;
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isCheckedIn, setIsCheckedIn] = useState<boolean | null>(null);
+
+  // Fetch current session status to know if user is already checked in
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const cached = localStorage.getItem(`intern_dashboard_data_${user?.id}`) || localStorage.getItem('intern_dashboard_data') || localStorage.getItem(`manager_dashboard_data_${user?.id}`) || localStorage.getItem('manager_dashboard_data');
+        if (cached) {
+          try {
+            const d = JSON.parse(cached);
+            setIsCheckedIn(!!(d?.isOnline || d?.currentSessionStart) && !d?.isSessionExpired);
+          } catch {}
+        }
+        const res = await api.get('/dashboard');
+        if (res.data?.success) {
+          const d = res.data.data;
+          setIsCheckedIn(!!(d?.isOnline || d?.currentSessionStart) && !d?.isSessionExpired);
+        }
+      } catch {}
+    };
+    checkStatus();
+    window.addEventListener('auth_status_changed', checkStatus);
+    return () => window.removeEventListener('auth_status_changed', checkStatus);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (activeNavigation) {
+      const parentGroup = activeNavigation.find((item: any) => 
+        item.items && item.items.some((sub: any) => currentView === (sub.id || sub.name))
+      );
+      if (parentGroup) {
+        setOpenGroups(prev => ({ ...prev, [parentGroup.name]: true }));
+      }
+    }
+  }, [currentView, activeNavigation]);
 
   const toggleGroup = (groupName: string) => {
     if (collapsed && !isMobile) {
@@ -183,6 +216,8 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
       const res = await api.post(`/auth/${type}`, payload);
       if (res.data?.success) {
         toast.success(res.data.message);
+        // Update local status immediately
+        setIsCheckedIn(type === 'checkin');
         try {
           const uId = user?.id || 'default';
           localStorage.removeItem(`manager_dashboard_data_${uId}`);
@@ -198,9 +233,9 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
   };
 
   return (
-    <div className="flex h-full flex-col bg-white dark:bg-slate-900 overflow-hidden relative">
+    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground overflow-hidden relative">
       {/* Branding Badge */}
-      <div className={cn("flex shrink-0 items-center border-b border-slate-100 dark:border-[#5B7CFF]/20 py-4 relative", collapsed ? "justify-center px-0 h-22.5 flex-col gap-2" : "justify-between px-4 min-h-22.5")}>
+      <div className={cn("flex shrink-0 items-center border-b border-sidebar-border py-4 relative", collapsed ? "justify-center px-0 h-22.5 flex-col gap-2" : "justify-between px-4 min-h-22.5")}>
         <div className="flex items-center group cursor-pointer transition-all duration-300 hover:scale-[1.03]" onClick={() => onNavigate('Dashboard')}>
           {collapsed ? (
             <BrandLogo variant="minimized" />
@@ -214,13 +249,13 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
             onMouseDown={startResizing}
             className="absolute -right-1 top-0 bottom-0 h-screen w-2 cursor-col-resize z-40 flex items-center justify-center group"
           >
-            <div className="h-16 w-1 rounded-full bg-[#5B7CFF]/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="h-16 w-1 rounded-full bg-sidebar-border opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         )}
 
         {isMobile && (
           <button
-            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+            className="text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-6 w-6" />
@@ -229,8 +264,8 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
       </div>
 
       {/* Vertical Navigation Rows */}
-      <div className="flex flex-1 flex-col overflow-y-auto py-6 px-3 custom-scrollbar">
-        <style>{`.custom-scrollbar::-webkit-scrollbar{width:4px;display:none}.custom-scrollbar:hover::-webkit-scrollbar{display:block}.custom-scrollbar::-webkit-scrollbar-thumb{background:rgba(91,124,255,0.3);border-radius:10px}`}</style>
+      <div className="flex flex-1 flex-col overflow-y-auto py-4 px-3 custom-scrollbar">
+        <style>{`.custom-scrollbar::-webkit-scrollbar{width:4px;display:none}.custom-scrollbar:hover::-webkit-scrollbar{display:block}.custom-scrollbar::-webkit-scrollbar-thumb{background:var(--sidebar-border);border-radius:10px}`}</style>
         <nav className="flex-1 space-y-1">
           <TooltipProvider delayDuration={0}>
             {activeNavigation.map((item: any) => {
@@ -250,11 +285,11 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                     }
                   }}
                   className={cn(
-                    "group flex items-center justify-between font-bold rounded-xl transition-all duration-300 py-3 relative w-full cursor-pointer",
-                    collapsed ? "justify-center px-0 h-12 mb-1" : "px-3",
+                    "group flex items-center justify-between font-medium rounded-lg transition-all duration-200 py-2.5 relative w-full cursor-pointer",
+                    collapsed ? "justify-center px-0 h-11 mb-1" : "px-3",
                     isCurrent && !hasSubItems
-                      ? "bg-linear-to-r from-orange-500 to-orange-600 text-white shadow-[0_0_15px_color-mix(in_srgb,var(--color-orange-500)_40%,transparent)]"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-orange-500/10 dark:hover:bg-orange-500/10 hover:text-orange-500 dark:hover:text-orange-500"
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-xs"
+                      : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   )}
                 >
                   <div className="flex items-center overflow-hidden">
@@ -262,7 +297,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                       className={cn(
                         "h-5 w-5 shrink-0 transition-colors duration-200",
                         !collapsed && "mr-3",
-                        isCurrent && !hasSubItems ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-orange-500 dark:group-hover:text-orange-500"
+                        isCurrent && !hasSubItems ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground"
                       )}
                       aria-hidden="true"
                     />
@@ -281,14 +316,14 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                   </div>
 
                   {!collapsed && hasSubItems && (
-                    <ChevronRight className={cn("h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200", isGroupOpen && "rotate-90")} />
+                    <ChevronRight className={cn("h-4 w-4 shrink-0 text-sidebar-foreground/50 transition-transform duration-200", isGroupOpen && "rotate-90")} />
                   )}
 
                   {item.badge && !collapsed && !hasSubItems && (
-                    <Badge className="ml-auto bg-rose-500 hover:bg-rose-600 text-white border-0">{item.badge}</Badge>
+                    <Badge variant="destructive" className="ml-auto">{item.badge}</Badge>
                   )}
                   {item.badge && collapsed && (
-                    <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500" />
+                    <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive" />
                   )}
                 </div>
               );
@@ -298,7 +333,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                   {collapsed ? (
                     <Tooltip>
                       <TooltipTrigger asChild>{NavItemContent}</TooltipTrigger>
-                      <TooltipContent side="right" sideOffset={16} className="bg-slate-900 text-white border-slate-800 font-medium z-50">
+                      <TooltipContent side="right" sideOffset={16} className="bg-popover text-popover-foreground border-border font-medium z-50">
                         {item.name}
                       </TooltipContent>
                     </Tooltip>
@@ -312,7 +347,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden ml-4 pl-4 border-l-2 border-slate-100 dark:border-slate-800 space-y-1 mt-1"
+                        className="overflow-hidden ml-4 pl-4 border-l-2 border-sidebar-border space-y-1 mt-1"
                       >
                         {item.items.map((subItem: any) => {
                           const SubIcon = subItem.icon;
@@ -325,14 +360,14 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                                 if (isMobile) setSidebarOpen(false);
                               }}
                               className={cn(
-                                "flex items-center font-bold rounded-xl transition-all duration-300 py-2.5 px-3 w-full",
+                                "flex items-center font-medium rounded-lg transition-all duration-200 py-2 px-3 w-full text-xs cursor-pointer",
                                 isSubCurrent
-                                  ? "bg-linear-to-r from-orange-500 to-orange-600 text-white shadow-[0_0_10px_color-mix(in_srgb,var(--color-orange-500)_30%,transparent)]"
-                                  : "text-slate-500 dark:text-slate-400 hover:text-orange-500 dark:hover:text-orange-500 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                  ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-xs"
+                                  : "text-sidebar-foreground/70 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"
                               )}
                             >
-                              <SubIcon className={cn("h-4 w-4 mr-3 shrink-0", isSubCurrent ? "text-white" : "text-slate-400 group-hover:text-orange-500")} />
-                              <span className="truncate text-xs whitespace-nowrap overflow-hidden">{subItem.name}</span>
+                              <SubIcon className={cn("h-4 w-4 mr-3 shrink-0", isSubCurrent ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/60")} />
+                              <span className="truncate whitespace-nowrap overflow-hidden">{subItem.name}</span>
                             </button>
                           );
                         })}
@@ -347,12 +382,12 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
       </div>
 
       {/* User Profile Card */}
-      <div className="shrink-0 p-3 mb-2 mt-auto border-t border-slate-100 dark:border-[#5B7CFF]/20 sticky bottom-0 bg-white dark:bg-slate-900 z-10">
+      <div className="shrink-0 p-3 mb-2 mt-auto border-t border-sidebar-border sticky bottom-0 bg-sidebar z-10">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className={cn("w-full flex items-center rounded-xl transition-all hover:bg-slate-100 dark:hover:bg-slate-800/80 outline-none group p-2", collapsed ? "justify-center" : "justify-between")}>
+            <button className={cn("w-full flex items-center rounded-lg transition-all hover:bg-sidebar-accent outline-none group p-2 cursor-pointer", collapsed ? "justify-center" : "justify-between")}>
               <div className="flex items-center text-left">
-                <div className="flex items-center justify-center h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold shrink-0 overflow-hidden border-2 border-white dark:border-slate-800 group-hover:border-[#5B7CFF] transition-colors shadow-sm">
+                <div className="flex items-center justify-center h-10 w-10 rounded-full bg-muted text-muted-foreground font-bold shrink-0 overflow-hidden border-2 border-sidebar-border group-hover:border-primary transition-colors shadow-xs">
                   {avatarUrl ? <img src={avatarUrl} className="h-full w-full object-cover" alt={userName} /> : userInitials}
                 </div>
 
@@ -364,10 +399,10 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                       exit={{ opacity: 0, width: 0 }}
                       className="ml-3 overflow-hidden whitespace-nowrap"
                     >
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                      <p className="text-sm font-semibold text-sidebar-foreground truncate">
                         {userName}
                       </p>
-                      <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 capitalize truncate">
+                      <p className="text-[11px] font-medium text-muted-foreground capitalize truncate">
                         {userRole}
                       </p>
                     </motion.div>
@@ -375,7 +410,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                 </AnimatePresence>
               </div>
               {!collapsed && (
-                <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors shrink-0 ml-2" />
+                <ChevronDown className="h-4 w-4 text-sidebar-foreground/50 group-hover:text-sidebar-foreground transition-colors shrink-0 ml-2" />
               )}
             </button>
           </DropdownMenuTrigger>
@@ -383,7 +418,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
             align={collapsed ? "end" : "center"}
             side="top"
             sideOffset={12}
-            className="w-64 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-700/50 shadow-2xl rounded-[18px] p-2 animate-in fade-in zoom-in-95 duration-200"
+            className="w-64 bg-popover text-popover-foreground border border-border shadow-xl rounded-xl p-1.5 animate-in fade-in zoom-in-95 duration-200"
           >
             {userRole !== 'admin' && onNavigate && (
               <DropdownMenuItem
@@ -391,32 +426,50 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
                   onNavigate('My Profile');
                   if (isMobile) setSidebarOpen(false);
                 }}
-                className="cursor-pointer text-slate-700 dark:text-slate-200 focus:bg-slate-50 dark:focus:bg-slate-800/50 text-sm font-medium rounded-xl flex items-center justify-between py-2.5 transition-colors mb-1"
+                className="cursor-pointer text-popover-foreground focus:bg-accent focus:text-accent-foreground text-sm font-medium rounded-lg flex items-center justify-between py-2.5 transition-colors mb-1"
               >
                 My Profile
-                <User className="h-4 w-4 ml-2 text-slate-400" />
+                <User className="h-4 w-4 ml-2 text-muted-foreground" />
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem
-              onClick={() => handleCheckInOut('checkin')}
-              className="cursor-pointer text-emerald-600 dark:text-emerald-400 focus:bg-emerald-50 dark:focus:bg-emerald-500/10 text-sm font-medium rounded-xl flex items-center justify-between py-2.5 transition-colors mb-1"
-            >
-              Check In
-              <Activity className="h-4 w-4 ml-2" />
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleCheckInOut('checkout')}
-              className="cursor-pointer text-orange-600 dark:text-orange-400 focus:bg-orange-50 dark:focus:bg-orange-500/10 text-sm font-medium rounded-xl flex items-center justify-between py-2.5 transition-colors mb-1"
-            >
-              Check Out
-              <Activity className="h-4 w-4 ml-2" />
-            </DropdownMenuItem>
+            {/* Check In — only shown when NOT checked in */}
+            {isCheckedIn === false && (
+              <DropdownMenuItem
+                onClick={() => handleCheckInOut('checkin')}
+                className="cursor-pointer text-emerald-600 dark:text-emerald-400 focus:bg-emerald-500/10 text-sm font-medium rounded-lg flex items-center justify-between py-2.5 transition-colors mb-1"
+              >
+                Check In
+                <Activity className="h-4 w-4 ml-2" />
+              </DropdownMenuItem>
+            )}
+            {/* Check Out — only shown when checked in */}
+            {isCheckedIn === true && (
+              <DropdownMenuItem
+                onClick={() => handleCheckInOut('checkout')}
+                className="cursor-pointer text-amber-600 dark:text-amber-400 focus:bg-amber-500/10 text-sm font-medium rounded-lg flex items-center justify-between py-2.5 transition-colors mb-1"
+              >
+                Check Out
+                <Activity className="h-4 w-4 ml-2" />
+              </DropdownMenuItem>
+            )}
+            {/* Loading state — show both as disabled if status not yet known */}
+            {isCheckedIn === null && (
+              <>
+                <DropdownMenuItem
+                  onClick={() => handleCheckInOut('checkin')}
+                  className="cursor-pointer text-emerald-600 dark:text-emerald-400 focus:bg-emerald-500/10 text-sm font-medium rounded-lg flex items-center justify-between py-2.5 transition-colors mb-1 opacity-60"
+                >
+                  Check In
+                  <Activity className="h-4 w-4 ml-2" />
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuItem
               onClick={() => {
                 onNavigate('Attendance Logs');
                 if (isMobile) setSidebarOpen(false);
               }}
-              className="cursor-pointer text-violet-600 dark:text-violet-400 focus:bg-violet-50 dark:focus:bg-violet-500/10 text-sm font-medium rounded-xl flex items-center justify-between py-2.5 transition-colors mb-1"
+              className="cursor-pointer text-primary focus:bg-primary/10 text-sm font-medium rounded-lg flex items-center justify-between py-2.5 transition-colors mb-1"
             >
               Attendance Logs
               <History className="h-4 w-4 ml-2" />
@@ -424,7 +477,7 @@ const SidebarContent = ({ isDark, currentView, role, onNavigate, setSidebarOpen,
             {onSignOut && (
               <DropdownMenuItem
                 onClick={onSignOut}
-                className="cursor-pointer text-rose-600 dark:text-rose-400 focus:bg-rose-50 dark:focus:bg-rose-500/10 focus:text-rose-600 dark:focus:text-rose-400 text-sm font-medium rounded-xl flex items-center justify-between py-2.5 transition-colors"
+                className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive text-sm font-medium rounded-lg flex items-center justify-between py-2.5 transition-colors"
               >
                 Logout
                 <LogOut className="h-4 w-4 ml-2" />
@@ -470,8 +523,6 @@ export default function DashboardShell({
       case 'Projects': navigate('/projects'); break;
       case 'Gantt Timeline':
       case 'Timeline': navigate('/timeline'); break;
-      case 'Progress Tracker':
-      case 'Performance': navigate('/performance'); break;
       case 'Milestones': navigate('/milestones'); break;
       case 'Settings':
       case 'Workspace Settings - Appearance': navigate('/settings'); break;
@@ -503,13 +554,14 @@ export default function DashboardShell({
     if (path === '/tasks') return role === 'employee' ? 'My Tasks' : 'Tasks';
     if (path === '/projects') return 'Projects';
     if (path === '/timeline') return 'Gantt Timeline';
-    if (path === '/performance') return 'Progress Tracker';
     if (path === '/milestones') return 'Milestones';
     if (path === '/settings') return 'Settings';
     if (path === '/team') return 'Team Members';
     if (path === '/work-logs') return 'Work Logs';
     if (path === '/attendance-logs' || path === '/attendance') return 'Attendance Logs';
     if (path === '/roles') return 'Roles & Permissions';
+    if (path === '/admin/users/interns') return 'Interns';
+    if (path === '/admin/users/managers') return 'Managers';
     if (path === '/admin/workspace/general') return 'Workspace Settings - General';
     if (path === '/security') return 'Workspace Settings - Security & Access';
     if (path === '/admin/workspace/notifications') return 'System Notifications';
@@ -626,20 +678,20 @@ export default function DashboardShell({
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-950 transition-colors duration-500">
+    <div className="flex h-screen overflow-hidden bg-background text-foreground transition-colors duration-300">
       {/* Left Desktop Sidebar */}
       <motion.div
         initial={false}
         animate={{ width: sidebarWidth }}
         transition={isDragging ? { duration: 0 } : { duration: 0.3, ease: 'easeInOut' }}
-        className="hidden lg:flex inset-y-0 left-0 z-40 flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 shrink-0 relative select-none"
+        className="hidden lg:flex inset-y-0 left-0 z-40 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0 relative select-none"
       >
         <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={handleNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={sidebarWidth} startResizing={startResizing} isMobile={false} toggleSidebar={toggleSidebar} />
 
         {/* Toggle Button (Desktop) - Seamlessly attached outside */}
         <button
           onClick={toggleSidebar}
-          className="absolute -right-7 top-8 z-50 flex h-8 w-7 items-center justify-center rounded-r-md rounded-l-none border border-l-0 border-slate-200 dark:border-slate-700/60 bg-blue-50 dark:bg-[#0c1222] text-blue-600 dark:text-[#5B7CFF] hover:bg-blue-100 dark:hover:bg-[#151e32] shadow-sm cursor-pointer transition-all duration-200"
+          className="absolute -right-7 top-8 z-50 flex h-8 w-7 items-center justify-center rounded-r-md rounded-l-none border border-l-0 border-sidebar-border bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground shadow-xs cursor-pointer transition-all duration-200"
           title={sidebarWidth < 150 ? "Expand Sidebar" : "Shrink Sidebar"}
         >
           {sidebarWidth < 150 ? (
@@ -652,24 +704,22 @@ export default function DashboardShell({
 
       {/* Main Context Body */}
       <div className="flex flex-1 flex-col overflow-x-hidden min-w-0 w-full max-w-full">
-
         {/* Top Sticky Header */}
-        {/* Top Sticky Header */}
-        <header className="sticky top-0 z-30 flex flex-col justify-center border-b border-slate-200 dark:border-[#5B7CFF]/20 bg-white/80 dark:bg-slate-950/80 px-4 shadow-sm backdrop-blur-md sm:px-6 lg:px-8 md:h-16 h-auto py-3 md:py-0">
-
+        <header className="sticky top-0 z-30 flex flex-col justify-center border-b border-border bg-background/80 px-4 shadow-xs backdrop-blur-md sm:px-6 lg:px-8 md:h-16 h-auto py-3 md:py-0">
           <div className="flex items-center justify-between w-full gap-x-4">
             <div className="flex items-center gap-x-4">
               <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <SheetTrigger asChild>
-                  <button
-                    type="button"
-                    className="-m-2.5 p-2.5 text-slate-700 dark:text-slate-200 lg:hidden"
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="lg:hidden text-foreground hover:bg-accent"
                   >
                     <span className="sr-only">Open sidebar</span>
                     <Menu className="h-6 w-6" aria-hidden="true" />
-                  </button>
+                  </Button>
                 </SheetTrigger>
-                <SheetContent side="left" showCloseButton={false} className="p-0 w-72 sm:w-80 border-r border-slate-200 dark:border-[#5B7CFF]/20 flex flex-col">
+                <SheetContent side="left" showCloseButton={false} className="p-0 w-72 sm:w-80 border-r border-sidebar-border bg-sidebar flex flex-col">
                   <SidebarContent isDark={isDark} currentView={currentView} role={role} onNavigate={handleNavigate} setSidebarOpen={setSidebarOpen} activeNavigation={activeNavigation} onSignOut={onSignOut} sidebarWidth={280} startResizing={() => { }} isMobile={true} toggleSidebar={toggleSidebar} />
                 </SheetContent>
               </Sheet>
@@ -681,7 +731,7 @@ export default function DashboardShell({
 
               {/* Greeting Desktop */}
               <div className="hidden lg:flex items-center">
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                <h1 className="text-xl font-bold tracking-tight text-foreground">
                   {getMainModuleName()}
                 </h1>
               </div>
@@ -691,14 +741,14 @@ export default function DashboardShell({
               {/* Desktop Global Search */}
               <div className="relative hidden md:block w-64" onClick={() => setIsSearchOpen(true)}>
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <Search className="h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                  <Search className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 </div>
                 <div
-                  className="flex items-center justify-between h-9 w-full rounded-full border border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/50 pl-10 pr-3 text-sm text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm cursor-text"
+                  className="flex items-center justify-between h-9 w-full rounded-lg border border-input bg-muted/40 pl-10 pr-3 text-sm text-muted-foreground hover:bg-muted/70 transition-all shadow-xs cursor-text"
                 >
                   <span className="truncate">Search workspace...</span>
                   <div className="flex items-center gap-1 shrink-0 ml-2">
-                    <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-1.5 font-mono text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                    <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                       <span className="text-xs">⌘</span>K
                     </kbd>
                   </div>
@@ -706,14 +756,15 @@ export default function DashboardShell({
               </div>
 
               {/* Theme Toggle */}
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={toggleTheme}
-                className="-m-2.5 p-2.5 text-slate-400 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-400 relative transition-colors duration-200 shrink-0"
+                className="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
               >
                 <span className="sr-only">Toggle dark mode</span>
-                {isDark ? <Sun className="h-5 w-5 sm:h-6 sm:w-6" /> : <Moon className="h-5 w-5 sm:h-6 sm:w-6" />}
-              </button>
+                {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
 
               {role === 'admin' ? (
                 <NotificationBell onNavigate={handleNavigate} />
@@ -726,21 +777,21 @@ export default function DashboardShell({
           {/* Mobile Search Input */}
           <div className="mt-3 md:hidden w-full relative" onClick={() => setIsSearchOpen(true)}>
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <Search className="h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+              <Search className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             </div>
-            <div className="flex items-center justify-between h-10 w-full rounded-xl border border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/50 pl-10 pr-3 text-sm text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 transition-all cursor-text shadow-sm">
+            <div className="flex items-center justify-between h-10 w-full rounded-lg border border-input bg-muted/40 pl-10 pr-3 text-sm text-muted-foreground hover:bg-muted/70 transition-all cursor-text shadow-xs">
               <span className="truncate">Search workspace...</span>
             </div>
           </div>
         </header>
 
         {/* Viewport Container */}
-        <main className="flex-1 overflow-y-auto flex flex-col bg-slate-50/50 dark:bg-transparent relative z-0">
+        <main className="flex-1 overflow-y-auto flex flex-col bg-background relative z-0">
           <div className="mx-auto max-w-screen-2xl flex-1 w-full overflow-x-hidden px-4 py-6 md:px-6 lg:px-8">
             <Outlet />
           </div>
           {/* Global Footer */}
-          <footer className="w-full py-4 px-6 mt-auto border-t border-slate-200/60 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-semibold text-slate-400 dark:text-slate-500 bg-white/30 dark:bg-slate-950/30 shrink-0">
+          <footer className="w-full py-4 px-6 mt-auto border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-medium text-muted-foreground bg-card/40 shrink-0">
             <p>Hindustaan Innovations Pvt. Ltd.</p>
             <p>&copy; 2026 Hindustaan Innovation All rights reserved</p>
           </footer>

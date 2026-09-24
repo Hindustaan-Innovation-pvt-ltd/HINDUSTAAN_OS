@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   Mail, CheckCircle2, AlertCircle, Clock, Search, RefreshCw, Eye, Download, 
   FileSpreadsheet, Filter, X, ChevronLeft, ChevronRight, Calendar, AlertTriangle, Sparkles,
@@ -341,11 +342,11 @@ export default function EmailLogsModule() {
 
       {/* Analytics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+        <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Emails Sent</p>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalSent}</h3>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Emails Sent</p>
+              <h3 className="text-2xl font-black text-foreground mt-1">{totalSent}</h3>
             </div>
             <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
               <Mail className="h-5 w-5" />
@@ -353,10 +354,10 @@ export default function EmailLogsModule() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+        <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Failed Emails</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Failed Emails</p>
               <h3 className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">{failedCount}</h3>
             </div>
             <div className="h-10 w-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500">
@@ -365,10 +366,10 @@ export default function EmailLogsModule() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+        <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Queue</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pending Queue</p>
               <h3 className="text-2xl font-black text-amber-500 mt-1">{pendingCount}</h3>
             </div>
             <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
@@ -377,10 +378,10 @@ export default function EmailLogsModule() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
+        <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Success Rate</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Success Rate</p>
               <h3 className="text-2xl font-black text-emerald-500 mt-1">{successRate}%</h3>
             </div>
             <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
@@ -391,7 +392,7 @@ export default function EmailLogsModule() {
       </div>
 
       {/* Filter and Action Toolbar */}
-      <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm p-4">
+      <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm p-4">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
             
@@ -515,28 +516,28 @@ export default function EmailLogsModule() {
       </Card>
 
       {/* Email Logs Table */}
-      <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden">
+      <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-                <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Recipient</th>
-                <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Subject</th>
-                <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Email Type</th>
-                <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Sent By</th>
-                <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Sent Date</th>
-                <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider">Delivery Status</th>
-                <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase tracking-wider text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+          <Table className="w-full min-w-[900px]">
+            <TableHeader>
+              <TableRow className="border-b border-border bg-muted/20">
+                <TableHead className="px-6 py-4 text-xs font-extrabold text-muted-foreground uppercase tracking-wider">Recipient</TableHead>
+                <TableHead className="px-6 py-4 text-xs font-extrabold text-muted-foreground uppercase tracking-wider">Subject</TableHead>
+                <TableHead className="px-6 py-4 text-xs font-extrabold text-muted-foreground uppercase tracking-wider">Email Type</TableHead>
+                <TableHead className="px-6 py-4 text-xs font-extrabold text-muted-foreground uppercase tracking-wider">Status</TableHead>
+                <TableHead className="px-6 py-4 text-xs font-extrabold text-muted-foreground uppercase tracking-wider">Sent By</TableHead>
+                <TableHead className="px-6 py-4 text-xs font-extrabold text-muted-foreground uppercase tracking-wider">Sent Date</TableHead>
+                <TableHead className="px-6 py-4 text-xs font-extrabold text-muted-foreground uppercase tracking-wider">Delivery Status</TableHead>
+                <TableHead className="px-6 py-4 text-xs font-extrabold text-muted-foreground uppercase tracking-wider text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-border/60">
               {filteredLogs.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-sm font-medium text-slate-400 dark:text-slate-500">
+                <TableRow>
+                  <TableCell colSpan={8} className="px-6 py-12 text-center text-sm font-medium text-muted-foreground">
                     No email logs found matching the filter criteria.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredLogs.map((log) => {
                   let statusBadge = (
@@ -553,47 +554,47 @@ export default function EmailLogsModule() {
                   }
 
                   return (
-                    <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-all">
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-sm text-slate-900 dark:text-white leading-tight">{log.recipient}</div>
-                      </td>
-                      <td className="px-6 py-4">
+                    <TableRow key={log.id} className="hover:bg-muted/30 transition-all">
+                      <TableCell className="px-6 py-4">
+                        <div className="font-bold text-sm text-foreground leading-tight">{log.recipient}</div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
                         <div className="flex items-center gap-1.5 max-w-[280px]">
-                          <span className="text-sm font-medium text-slate-600 dark:text-slate-300 truncate" title={log.subject}>
+                          <span className="text-sm font-medium text-muted-foreground truncate" title={log.subject}>
                             {log.subject}
                           </span>
                           {(log.body?.includes('meet.google.com') || log.type?.includes('Meet')) && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 shrink-0" title="Includes Google Meet Room">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 shrink-0" title="Includes Google Meet Room">
                               <Video className="h-3 w-3" /> Meet
                             </span>
                           )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">{log.type}</span>
-                      </td>
-                      <td className="px-6 py-4">
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
+                        <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{log.type}</span>
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
                         {statusBadge}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-xs font-bold text-slate-700 dark:text-slate-300">{log.sentBy}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{log.sentDate}</div>
-                      </td>
-                      <td className="px-6 py-4">
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
+                        <div className="text-xs font-bold text-foreground">{log.sentBy}</div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
+                        <div className="text-xs font-medium text-muted-foreground">{log.sentDate}</div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
                         <div className={`text-xs font-bold ${
                           log.deliveryStatus.includes('Delivered') ? 'text-emerald-500' : 
                           log.status === 'Failed' ? 'text-rose-500' : 'text-amber-500'
                         }`}>{log.deliveryStatus}</div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <Button 
                             onClick={() => setSelectedLog(log)} 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
+                            className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
                             title="View Content"
                           >
                             <Eye className="h-4 w-4" />
@@ -604,7 +605,7 @@ export default function EmailLogsModule() {
                               disabled={retryingId === log.id}
                               variant="ghost" 
                               size="icon" 
-                              className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-rose-500 hover:text-rose-600 dark:hover:text-rose-400"
+                              className="h-8 w-8 rounded-lg hover:bg-muted text-rose-500 hover:text-rose-600"
                               title="Retry Email"
                             >
                               <RefreshCw className={`h-4 w-4 ${retryingId === log.id ? 'animate-spin' : ''}`} />
@@ -614,27 +615,27 @@ export default function EmailLogsModule() {
                             onClick={(e) => handleDeleteLog(log.id, e)} 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 transition-colors"
+                            className="h-8 w-8 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                             title="Delete Email Record"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </Card>
 
       {/* View Email Content Dialog */}
       <Dialog open={selectedLog !== null} onOpenChange={(open) => !open && setSelectedLog(null)}>
         {selectedLog && (
-          <DialogContent className="sm:max-w-[720px] max-h-[85vh] flex flex-col rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] p-6 overflow-hidden">
-            <DialogHeader className="border-b border-slate-100 dark:border-slate-800/60 pb-3 shrink-0">
+          <DialogContent className="sm:max-w-[720px] max-h-[85vh] flex flex-col rounded-2xl border-border bg-card text-card-foreground p-6 overflow-hidden">
+            <DialogHeader className="border-b border-border pb-3 shrink-0">
               <DialogTitle className="text-slate-900 dark:text-white flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <Mail className="h-5 w-5 text-orange-500" /> Dispatched Email Details

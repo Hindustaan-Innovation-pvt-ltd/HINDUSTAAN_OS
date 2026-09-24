@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const mockFAQs: any[] = [];
 
@@ -25,7 +26,7 @@ export default function HelpSupport({ session }: { session?: any }) {
   const role = session?.user?.user_metadata?.role || 'employee';
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden p-4 sm:p-6 lg:p-8 space-y-6 bg-[#F8FAFC] dark:bg-slate-950 min-h-screen animate-in fade-in duration-500">
+    <div className="w-full max-w-full space-y-6 animate-in fade-in duration-300 text-foreground">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
@@ -187,36 +188,36 @@ export default function HelpSupport({ session }: { session?: any }) {
               </Button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px] text-left text-sm whitespace-nowrap">
-                <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
-                  <tr>
-                    <th className="px-6 py-4 font-semibold">Ticket ID</th>
-                    <th className="px-6 py-4 font-semibold">Subject</th>
-                    <th className="px-6 py-4 font-semibold">Status</th>
-                    <th className="px-6 py-4 font-semibold">Priority</th>
-                    <th className="px-6 py-4 font-semibold">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+              <Table className="w-full min-w-[600px]">
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead className="px-6 py-4 font-semibold">Ticket ID</TableHead>
+                    <TableHead className="px-6 py-4 font-semibold">Subject</TableHead>
+                    <TableHead className="px-6 py-4 font-semibold">Status</TableHead>
+                    <TableHead className="px-6 py-4 font-semibold">Priority</TableHead>
+                    <TableHead className="px-6 py-4 font-semibold">Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {mockTickets.map(ticket => (
-                    <tr key={ticket.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{ticket.id}</td>
-                      <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{ticket.subject}</td>
-                      <td className="px-6 py-4">
+                    <TableRow key={ticket.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="px-6 py-4 font-medium text-foreground">{ticket.id}</TableCell>
+                      <TableCell className="px-6 py-4 text-muted-foreground">{ticket.subject}</TableCell>
+                      <TableCell className="px-6 py-4">
                         <Badge className={cn("rounded-full border-none font-bold", 
                           ticket.status === 'Open' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400'
                         )}>{ticket.status}</Badge>
-                      </td>
-                      <td className="px-6 py-4">
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
                         <span className={cn("text-xs font-bold uppercase tracking-wider", 
                           ticket.priority === 'High' ? 'text-rose-500' : 'text-amber-500'
                         )}>{ticket.priority}</span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-500">{ticket.date}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-muted-foreground">{ticket.date}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
         </TabsContent>
@@ -231,34 +232,34 @@ export default function HelpSupport({ session }: { session?: any }) {
               </Button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px] text-left text-sm whitespace-nowrap">
-                <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
-                  <tr>
-                    <th className="px-6 py-4 font-semibold">Bug ID</th>
-                    <th className="px-6 py-4 font-semibold">Title</th>
-                    <th className="px-6 py-4 font-semibold">Module</th>
-                    <th className="px-6 py-4 font-semibold">Status</th>
-                    <th className="px-6 py-4 font-semibold">Severity</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+              <Table className="w-full min-w-[600px]">
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead className="px-6 py-4 font-semibold">Bug ID</TableHead>
+                    <TableHead className="px-6 py-4 font-semibold">Title</TableHead>
+                    <TableHead className="px-6 py-4 font-semibold">Module</TableHead>
+                    <TableHead className="px-6 py-4 font-semibold">Status</TableHead>
+                    <TableHead className="px-6 py-4 font-semibold">Severity</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {mockBugs.map(bug => (
-                    <tr key={bug.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{bug.id}</td>
-                      <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{bug.title}</td>
-                      <td className="px-6 py-4 text-slate-500">{bug.module}</td>
-                      <td className="px-6 py-4">
+                    <TableRow key={bug.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="px-6 py-4 font-medium text-foreground">{bug.id}</TableCell>
+                      <TableCell className="px-6 py-4 text-muted-foreground">{bug.title}</TableCell>
+                      <TableCell className="px-6 py-4 text-muted-foreground">{bug.module}</TableCell>
+                      <TableCell className="px-6 py-4">
                         <Badge className="bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 rounded-full border-none font-bold">
                           {bug.status}
                         </Badge>
-                      </td>
-                      <td className="px-6 py-4">
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
                         <span className="text-xs font-bold uppercase tracking-wider text-rose-600">{bug.severity}</span>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
         </TabsContent>

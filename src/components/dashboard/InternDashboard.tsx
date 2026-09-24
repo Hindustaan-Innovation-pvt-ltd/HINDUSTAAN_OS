@@ -249,12 +249,6 @@ export default function InternDashboard({ }: InternDashboardProps) {
   };
 
   useEffect(() => {
-    fetchInternTasks();
-    fetchLeaves();
-    fetchWorkLogs();
-  }, [currentUserId, currentUserName]);
-
-  useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'work_logs_list' || e.key === 'hindustaan_tasks_list') {
         fetchWorkLogs();
@@ -379,14 +373,15 @@ export default function InternDashboard({ }: InternDashboardProps) {
   };
 
   useEffect(() => {
-    fetchDashboard(true);
-    fetchLeaves();
-    fetchWorkLogs();
-    fetchInternTasks();
+    Promise.all([
+      fetchDashboard(true),
+      fetchLeaves(),
+      fetchWorkLogs(),
+      fetchInternTasks()
+    ]);
 
     const handleAuthStatus = () => {
-      fetchDashboard(true);
-      fetchWorkLogs();
+      Promise.all([fetchDashboard(true), fetchWorkLogs()]);
     };
     window.addEventListener('auth_status_changed', handleAuthStatus);
 
@@ -395,13 +390,15 @@ export default function InternDashboard({ }: InternDashboardProps) {
     };
     window.addEventListener('focus', handleFocus);
 
-    // Poll every 10 seconds for real-time updates
+    // Poll every 15 seconds for real-time updates
     const intervalId = setInterval(() => {
-      fetchDashboard(false);
-      fetchLeaves();
-      fetchWorkLogs();
-      fetchInternTasks();
-    }, 10000);
+      Promise.all([
+        fetchDashboard(false),
+        fetchLeaves(),
+        fetchWorkLogs(),
+        fetchInternTasks()
+      ]);
+    }, 15000);
 
     return () => {
       clearInterval(intervalId);
@@ -717,7 +714,7 @@ export default function InternDashboard({ }: InternDashboardProps) {
   const endDate = new Date(2026, 9, 1);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto space-y-4 md:space-y-5 animate-in fade-in duration-500 min-h-screen">
+    <div className="w-full space-y-5 animate-in fade-in duration-300">
 
       {/* ─── Deadline Warning Banner ─────────────────────────────────────── */}
       {deadlineAlerts.length > 0 && !alertDismissed && (
@@ -842,6 +839,31 @@ export default function InternDashboard({ }: InternDashboardProps) {
                 <History className="h-3.5 w-3.5" />
                 <span>Logs</span>
               </Button>
+
+              {/* Quick Attendance Action: Check In or Check Out */}
+              {dashboardData?.isOnline ? (
+                <Button
+                  size="sm"
+                  onClick={() => handleQuickAttendance('checkout')}
+                  disabled={isAttendanceSubmitting}
+                  className="h-8 px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black text-xs flex items-center gap-1.5 shadow-sm shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
+                  title="Complete work session and check out"
+                >
+                  {isAttendanceSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Activity className="h-3.5 w-3.5 animate-pulse" />}
+                  <span>Check Out</span>
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => handleQuickAttendance('checkin')}
+                  disabled={isAttendanceSubmitting}
+                  className="h-8 px-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer"
+                  title="Verify office location & check in"
+                >
+                  {isAttendanceSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PlayCircle className="h-3.5 w-3.5" />}
+                  <span>Check In</span>
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -1228,24 +1250,25 @@ export default function InternDashboard({ }: InternDashboardProps) {
           </DialogHeader>
           <div className="p-6 space-y-4">
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Select Task / Milestone</label>
+              <label className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Select Task / Milestone</label>
               {upcomingDeadlines.length > 0 ? (
-                <div className="relative">
-                  <select
-                    value={selectedTaskId}
-                    onChange={(e) => setSelectedTaskId(e.target.value)}
-                    className="w-full h-11 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 font-medium text-sm appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled className="text-slate-400 dark:bg-slate-900">Select task...</option>
+                <Select
+                  value={selectedTaskId}
+                  onValueChange={setSelectedTaskId}
+                >
+                  <SelectTrigger className="w-full h-11 text-sm font-medium">
+                    <SelectValue placeholder="Select task..." />
+                  </SelectTrigger>
+                  <SelectContent>
                     {upcomingDeadlines.map((t: any) => (
-                      <option key={t.id} value={t.id} className="dark:bg-slate-900">
+                      <SelectItem key={t.id} value={t.id}>
                         {t.title} (Due: {new Date(t.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
-                      </option>
+                      </SelectItem>
                     ))}
-                  </select>
-                </div>
+                  </SelectContent>
+                </Select>
               ) : (
-                <div className="p-3 text-center text-xs text-rose-500 font-bold bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-100 dark:border-rose-900/30">
+                <div className="p-3 text-center text-xs text-destructive font-bold bg-destructive/10 rounded-xl border border-destructive/20">
                   No pending deadlines found to extend.
                 </div>
               )}

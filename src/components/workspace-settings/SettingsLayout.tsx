@@ -8,8 +8,8 @@ export function SettingsSection({ title, description, children, className }: { t
         <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">{title}</h3>
         {description && <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">{description}</p>}
       </div>
-      <div className="bg-white dark:bg-[#0c1222] rounded-2xl border border-slate-200 dark:border-slate-800/80 overflow-hidden shadow-sm">
-        <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
+      <div className="bg-card text-card-foreground rounded-2xl border border-border overflow-hidden shadow-sm">
+        <div className="divide-y divide-border">
           {children}
         </div>
       </div>

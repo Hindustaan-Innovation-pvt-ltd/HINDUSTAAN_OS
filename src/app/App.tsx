@@ -14,7 +14,6 @@ import Projects from '../features/projects/pages/Projects';
 import Settings from '../features/workspace/pages/Settings';
 import TeamMembers from '../features/team/pages/TeamMembers';
 import GanttTimeline from '../features/projects/pages/GanttTimeline';
-import ProgressTracker from '../features/leaves/pages/ProgressTracker';
 import WorkLogs from '../features/leaves/pages/WorkLogs';
 import Register from '../features/auth/pages/Register';
 import ProfileView from '../features/team/pages/ProfileView';
@@ -101,9 +100,8 @@ function AppRoutes() {
         <Route path="/manager/dashboard" element={role === 'manager' ? <RoleBasedRouter /> : <Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/admin/dashboard" element={role === 'admin' ? <RoleBasedRouter /> : <Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/tasks" element={<TaskBoard />} />
-        <Route path="/projects" element={<Projects />} />
+        <Route path="/projects" element={['manager', 'admin'].includes(role) ? <Projects /> : <Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/timeline" element={<GanttTimeline />} />
-        <Route path="/performance" element={<ProgressTracker />} />
         <Route path="/milestones" element={<Milestones />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/team" element={<TeamMembers />} />

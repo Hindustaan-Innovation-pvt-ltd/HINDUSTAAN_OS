@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
+import type { Project, CreateProjectInput, UpdateProjectInput, ProjectStatus } from '@/types/project';
 
 type ProjectContextType = {
-  projects: any[];
+  projects: Project[];
   loading: boolean;
-  addProject: (projectData: any) => Promise<boolean>;
-  updateProject: (id: string, updateData: any) => Promise<boolean>;
+  addProject: (projectData: CreateProjectInput | any) => Promise<boolean>;
+  updateProject: (id: string, updateData: UpdateProjectInput | any) => Promise<boolean>;
   deleteProject: (id: string, reason?: string) => Promise<boolean>;
   refreshProjects: () => Promise<void>;
   addMilestone: (projectId: string, name: string, dueDate?: string) => Promise<boolean>;
@@ -35,13 +36,37 @@ export const formatToMMDDYYYY = (dateVal: any): string => {
   return `${mm}-${dd}-${yyyy}`;
 };
 
-export function ProjectProvider({ children }: { children: React.ReactNode }) {
-  const [projects, setProjects] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+const CACHE_KEY = 'cached_projects_list';
 
-  const mapBackendProject = (p: any) => {
+const getInitialCachedProjects = (): Project[] => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    // ignore parse error
+  }
+  return [];
+};
+
+export function ProjectProvider({ children }: { children: React.ReactNode }) {
+  const [projects, setProjects] = useState<Project[]>(getInitialCachedProjects);
+  const [loading, setLoading] = useState<boolean>(() => {
+    // If we have cached projects, do NOT block the UI with a full spinner
+    const initial = getInitialCachedProjects();
+    return initial.length === 0;
+  });
+
+  const mapBackendProject = (p: any): Project => {
     const totalTasks = p.tasks?.length || 0;
-    const completedTasks = p.tasks?.filter((t: any) => t.status === 'completed' || t.status === 'done').length || 0;
+    const completedTasks = p.tasks?.filter((t: any) => {
+      const s = (t.status || '').toLowerCase().replace(/[\s_-]+/g, '');
+      return s === 'done' || s === 'completed';
+    }).length || 0;
     const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     
     const colors = [
@@ -56,7 +81,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     }
     const color = colors[sum % colors.length];
 
-    let frontendStatus = 'In Progress';
+    let frontendStatus: ProjectStatus = 'In Progress';
     if (p.status === 'completed' || p.status === 'Done') frontendStatus = 'Completed';
     else if (p.status === 'aborted') frontendStatus = 'Aborted';
     else if (p.status === 'on_hold') frontendStatus = 'On Hold';
@@ -107,20 +132,29 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
                     (t.priority || '').toLowerCase() === 'low' ? 'Low' : 'Medium',
           due_date: t.dueDate ? formatToMMDDYYYY(t.dueDate) : '',
           start_date: t.startDate ? formatToMMDDYYYY(t.startDate) : '',
-          executionDate: t.dueDate ? formatToMMDDYYYY(t.dueDate) : (t.startDate ? formatToMMDDYYYY(t.startDate) : '')
+          executionDate: t.dueDate ? formatToMMDDYYYY(t.dueDate) : (t.startDate ? formatToMMDDYYYY(t.startDate) : ''),
+          subtasks: Array.isArray(t.subtasks)
+            ? t.subtasks
+            : (typeof t.subtasks === 'string' ? (() => { try { return JSON.parse(t.subtasks || '[]'); } catch { return []; } })() : []),
+          delay_reason: t.delayReason || t.delay_reason || ''
         };
       })
     };
   };
 
-  const refreshProjects = async () => {
+  const refreshProjects = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent && projects.length === 0) {
+        setLoading(true);
+      }
       const res = await api.get('/projects');
       if (res.data?.success) {
         const backendProjects = res.data.data || [];
         const mapped = backendProjects.map(mapBackendProject);
         setProjects(mapped);
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify(mapped));
+        } catch (e) {}
       }
     } catch (e) {
       console.error('Failed to fetch projects:', e);
@@ -132,22 +166,24 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const user = getCurrentUser();
     if (user) {
-      refreshProjects();
+      refreshProjects(true);
     } else {
       setLoading(false);
     }
 
     const handleUpdate = () => {
-      refreshProjects();
+      refreshProjects(true);
     };
 
     window.addEventListener('task_created', handleUpdate);
     window.addEventListener('task_updated', handleUpdate);
+    window.addEventListener('task_deleted', handleUpdate);
     window.addEventListener('project_updated', handleUpdate);
 
     return () => {
       window.removeEventListener('task_created', handleUpdate);
       window.removeEventListener('task_updated', handleUpdate);
+      window.removeEventListener('task_deleted', handleUpdate);
       window.removeEventListener('project_updated', handleUpdate);
     };
   }, []);
@@ -158,35 +194,67 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       const managerId = projectData.managerId || currentUser?.id;
       const isUuid = managerId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(managerId);
 
+      // Optimistic UI update: show project immediately in local list
+      const tempId = projectData.id || `temp-${Date.now()}`;
+      const optimisticProject: Project = {
+        id: tempId,
+        name: projectData.name,
+        description: projectData.description || projectData.name,
+        status: 'In Progress',
+        iconColor: projectData.iconColor || 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400',
+        strokeColor: projectData.strokeColor || '#9333ea',
+        manager: currentUser?.name || 'You',
+        managerId: managerId || '',
+        deadline: 'TBD',
+        endDate: '',
+        progress: 0,
+        milestones: [],
+        tasks: (projectData.tasks || []).map((t: any, idx: number) => ({
+          id: `temp-task-${Date.now()}-${idx}`,
+          title: t.title,
+          description: t.description || '',
+          status: 'To Do',
+          assignee: 'Unassigned',
+          assignee_name: 'Unassigned',
+          assignee_id: 'unassigned',
+          assigneeId: 'unassigned',
+          priority: 'Medium',
+          due_date: '',
+          start_date: '',
+          executionDate: ''
+        }))
+      };
+
+      setProjects(prev => [optimisticProject, ...prev]);
+
       // 1. Create project on backend
       const projRes = await api.post('/projects', {
         name: projectData.name,
         description: projectData.description || projectData.name,
         ...(isUuid ? { managerId } : {}),
         startDate: new Date(),
-        endDate: projectData.deadline && projectData.deadline !== 'TBD' ? new Date(projectData.deadline) : undefined,
         status: 'active'
       });
 
       if (projRes.data?.success) {
         const newProjId = projRes.data.data.id;
 
-        // 2. Create milestones or tasks if any are attached
+        // 2. Create tasks in parallel (much faster than sequential loop)
         if (Array.isArray(projectData.tasks) && projectData.tasks.length > 0) {
-          for (const task of projectData.tasks) {
-            await api.post('/tasks', {
-              title: task.title,
-              desc: task.description || '',
-              projectId: newProjId,
-              status: task.status === 'Done' ? 'done' : 
-                      task.status === 'In Progress' ? 'in-progress' :
-                      task.status === 'In Review' ? 'in-review' : 'todo',
-              priority: task.priority ? task.priority.toLowerCase() : 'medium',
-              dueDate: projectData.deadline ? new Date(projectData.deadline) : undefined,
-              assigneeId: task.assigneeId || undefined
-            });
-          }
+          await Promise.all(
+            projectData.tasks.map((task: any) =>
+              api.post('/tasks', {
+                title: task.title,
+                desc: task.description || '',
+                projectId: newProjId,
+                status: 'todo',
+                priority: 'medium',
+                assigneeId: undefined
+              }).catch(err => console.warn('Task creation failed:', err.message))
+            )
+          );
         }
+
         window.dispatchEvent(new CustomEvent('task_created'));
         await refreshProjects();
         return true;
@@ -194,6 +262,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       return false;
     } catch (e) {
       console.error('Failed to create project:', e);
+      await refreshProjects();
       throw e;
     }
   };
@@ -283,15 +352,32 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteProject = async (id: string, reason?: string): Promise<boolean> => {
+    // 1. Optimistic removal: Remove immediately from UI state for 0ms delay
+    setProjects(prev => {
+      const updated = prev.filter(p => p.id !== id);
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
     try {
       const res = await api.delete(`/projects/${id}`, { data: { reason } });
       if (res.data?.success) {
-        await refreshProjects();
+        window.dispatchEvent(new CustomEvent('project_updated'));
+        window.dispatchEvent(new CustomEvent('task_updated'));
+        window.dispatchEvent(new CustomEvent('task_deleted'));
+        // Silent background sync
+        refreshProjects(true);
         return true;
       }
+      // Revert if response was not successful
+      refreshProjects(true);
       return false;
     } catch (e) {
       console.error('Failed to delete project:', e);
+      // Revert state if deletion failed on server
+      refreshProjects(true);
       throw e;
     }
   };

@@ -60,7 +60,7 @@ export function FigjamDialog({ open, onOpenChange }: { open: boolean, onOpenChan
         </DialogHeader>
 
         {/* Mock Canvas Area */}
-        <div className="flex-1 relative bg-[#F5F6F8] dark:bg-[#0F172A] overflow-hidden" 
+        <div className="flex-1 relative bg-[#F5F6F8] dark:bg-background overflow-hidden" 
              style={{ 
                backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)', 
                backgroundSize: '24px 24px' 

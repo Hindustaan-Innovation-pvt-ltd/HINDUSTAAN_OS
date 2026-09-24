@@ -115,8 +115,25 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     const handleAvatarUpdate = () => {
       // Intentionally left blank, we rely on updateUser calls directly or session updates
     };
+
+    const handleAuthLogin = () => {
+      const initial = getInitialUser();
+      if (initial) setUser(initial);
+      fetchUser();
+    };
+
+    const handleAuthLogout = () => {
+      setUser(null);
+    };
+
     window.addEventListener('avatar-updated', handleAvatarUpdate);
-    return () => window.removeEventListener('avatar-updated', handleAvatarUpdate);
+    window.addEventListener('auth-login', handleAuthLogin);
+    window.addEventListener('auth-logout', handleAuthLogout);
+    return () => {
+      window.removeEventListener('avatar-updated', handleAvatarUpdate);
+      window.removeEventListener('auth-login', handleAuthLogin);
+      window.removeEventListener('auth-logout', handleAuthLogout);
+    };
   }, []);
 
   const updateUser = (updates: Partial<UserState>) => {

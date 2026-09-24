@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Calendar, User, Tag, Clock, Target, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -24,7 +25,7 @@ export default function CreateTaskModal({
   const [projectId, setProjectId] = useState('');
   const [priority, setPriority] = useState<'High' | 'Medium' | 'Normal' | 'Low' | ''>('');
   
-  const [assigneeId, setAssigneeId] = useState(currentUser?.role === 'intern' ? currentUser.id : '');
+  const [assigneeId, setAssigneeId] = useState('');
   
   const [startDate, setStartDate] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -35,9 +36,7 @@ export default function CreateTaskModal({
   const isPastDue = dueDate && new Date(dueDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
   const todayStr = new Date().toISOString().split('T')[0];
   
-  const availableMembers = currentUser?.role === 'intern' 
-    ? teamMembers.filter(m => m.id === currentUser.id)
-    : teamMembers;
+  const availableMembers = teamMembers;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +57,7 @@ export default function CreateTaskModal({
     setDescription('');
     setProjectId('');
     setPriority('');
-    setAssigneeId(currentUser?.role === 'intern' ? currentUser.id : '');
+    setAssigneeId('');
     setStartDate('');
     setDueDate('');
     setMilestoneId('');
@@ -95,78 +94,70 @@ export default function CreateTaskModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
-                <Tag className="h-3.5 w-3.5 mr-1.5" /> Project <span className="text-rose-500">*</span>
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center">
+                <Tag className="h-3.5 w-3.5 mr-1.5" /> Project <span className="text-destructive">*</span>
               </label>
-              <select
-                required
+              <Select
                 value={projectId}
-                onChange={e => {
-                  setProjectId(e.target.value);
+                onValueChange={val => {
+                  setProjectId(val);
                   setMilestoneId('');
                 }}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
               >
-                <option value="" disabled>Select Project...</option>
-                {projects.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full h-12 text-sm font-semibold">
+                  <SelectValue placeholder="Select Project..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             <div>
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
-                <Clock className="h-3.5 w-3.5 mr-1.5" /> Priority Level <span className="text-rose-500">*</span>
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center">
+                <Clock className="h-3.5 w-3.5 mr-1.5" /> Priority Level <span className="text-destructive">*</span>
               </label>
-              <select 
-                required
+              <Select 
                 value={priority}
-                onChange={e => setPriority(e.target.value as any)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
+                onValueChange={val => setPriority(val as any)}
               >
-                <option value="" disabled>Select Priority...</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Normal">Normal</option>
-                <option value="Low">Low</option>
-              </select>
+                <SelectTrigger className="w-full h-12 text-sm font-semibold">
+                  <SelectValue placeholder="Select Priority..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Normal">Normal</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center">
                 <User className="h-3.5 w-3.5 mr-1.5" /> Assign To {currentUser?.role === 'manager' && "(Optional)"}
               </label>
-              <select 
-                required={currentUser?.role === 'intern'}
-                value={assigneeId}
-                onChange={e => setAssigneeId(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer"
+              <Select 
+                value={assigneeId || 'unassigned'}
+                onValueChange={val => setAssigneeId(val === 'unassigned' ? '' : val)}
               >
-                {currentUser?.role === 'manager' && (
-                  <option value="">Unassigned</option>
-                )}
-                {availableMembers.map(member => (
-                  <option key={member.id} value={member.id}>{member.name}</option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full h-12 text-sm font-semibold">
+                  <SelectValue placeholder="Select Assignee..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {currentUser?.role === 'manager' && (
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                  )}
+                  {availableMembers.map(member => (
+                    <SelectItem key={member.id} value={member.id}>{member.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* <div>
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">
-                <Target className="h-3.5 w-3.5 mr-1.5" /> Milestone (Optional)
-              </label>
-              <select
-                value={milestoneId}
-                onChange={e => setMilestoneId(e.target.value)}
-                disabled={!projectId}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-semibold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="">No Milestone</option>
-                {availableMilestones.map((m: any) => (
-                  <option key={m.id} value={m.id}>{m.title}</option>
-                ))}
-              </select>
-            </div> */}
+
             
             <div>
               <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center">

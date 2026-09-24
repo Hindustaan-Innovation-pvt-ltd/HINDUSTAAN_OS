@@ -5,6 +5,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getRegisteredUsers, getCurrentUser } from '@/lib/auth';
 import type { User } from '@/lib/auth';
 import { toast } from 'sonner';
@@ -138,13 +139,6 @@ export default function RolesAndPermissions() {
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Compute predefined roles statistics
-  const roleStats = {
-    admin: usersList.filter(u => u.role === 'admin').length,
-    manager: usersList.filter(u => u.role === 'manager').length,
-    intern: usersList.filter(u => u.role === 'employee' || u.role === 'intern').length
-  };
-
   const roles = [
     { 
       name: 'Admin', 
@@ -170,225 +164,233 @@ export default function RolesAndPermissions() {
   ];
 
   return (
-    <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 transition-colors duration-300">
-      <div className="max-w-[1600px] mx-auto space-y-6">
-        
-        {/* Header */}
-        <div className="border-b border-slate-200 dark:border-slate-800 pb-5">
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Roles & Permissions</h1>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Manage user roles and role assignments.</p>
-        </div>
+    <div className="w-full space-y-6 animate-in fade-in duration-300">
+      {/* Header */}
+      <div className="border-b border-border pb-5">
+        <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">Roles & Permissions</h1>
+        <p className="text-sm font-medium text-muted-foreground mt-1">Manage user roles and role assignments.</p>
+      </div>
 
-        {/* Roles List Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {roles.map((r, idx) => (
-            <Card key={idx} className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm relative overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-400 dark:hover:border-slate-700 hover:shadow-md hover:shadow-blue-200/50">
-              <CardContent className="p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0 border", r.color)}>
-                    <r.icon className="h-5 w-5" />
-                  </div>
-                  <Badge variant="secondary" className="font-extrabold px-2.5 py-0.5 text-xs bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                    {r.count} Registered
-                  </Badge>
+      {/* Roles List Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {roles.map((r, idx) => (
+          <Card key={idx} className="rounded-2xl border-border bg-card text-card-foreground shadow-sm relative overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
+            <CardContent className="p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0 border", r.color)}>
+                  <r.icon className="h-5 w-5" />
                 </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-900 dark:text-white">{r.name} Role</h3>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">{r.desc}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                <Badge variant="secondary" className="font-extrabold px-2.5 py-0.5 text-xs bg-muted text-muted-foreground">
+                  {r.count} Registered
+                </Badge>
+              </div>
+              <div>
+                <h3 className="text-base font-black text-foreground">{r.name} Role</h3>
+                <p className="text-xs font-medium text-muted-foreground mt-1.5 leading-relaxed">{r.desc}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          
-          {/* Assign Role Panel */}
-          <div className="lg:col-span-1">
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm">
-              <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-850">
-                <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-900 dark:text-white">
-                  <UserCog className="h-5 w-5 text-orange-500" /> Assign User Role
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <form onSubmit={handleAssignRole} className="space-y-5">
-                  
-                  {/* User Searchable Dropdown */}
-                  <div className="space-y-1.5 relative">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Select User *</label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                      <input
-                        type="text"
-                        placeholder="Search user by name or email..."
-                        value={selectedUser ? selectedUser.name : searchTerm}
-                        onChange={(e) => {
-                          setSearchTerm(e.target.value);
-                          if (selectedUser) {
-                            setSelectedUserId('');
-                          }
-                          setIsDropdownOpen(true);
-                        }}
-                        onFocus={() => setIsDropdownOpen(true)}
-                        className="w-full h-10 pl-9 pr-8 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-                      />
-                      {selectedUser && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedUserId('');
-                            setSearchTerm('');
-                          }}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650"
-                        >
-                          &times;
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Search results dropdown */}
-                    {isDropdownOpen && !selectedUser && (
-                      <div className="absolute z-50 w-full mt-1.5 max-h-60 overflow-y-auto bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl custom-scrollbar">
-                        {filteredSearchUsers.length > 0 ? (
-                          filteredSearchUsers.map(u => (
-                            <div
-                              key={u.id}
-                              onClick={() => {
-                                setSelectedUserId(u.id || '');
-                                setIsDropdownOpen(false);
-                                setNewRole('');
-                              }}
-                              className="px-4 py-2.5 text-xs font-semibold cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 flex items-center justify-between border-b border-slate-100 dark:border-slate-850 last:border-b-0"
-                            >
-                              <div>
-                                <div className="font-extrabold text-slate-900 dark:text-white">{u.name}</div>
-                                <div className="text-[10px] text-slate-400 mt-0.5">{u.email}</div>
-                              </div>
-                              <Badge variant="outline" className="text-[9px] uppercase tracking-wider">
-                                {u.role === 'employee' ? 'intern' : u.role}
-                              </Badge>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="px-4 py-3 text-xs italic text-slate-400 text-center">No users matched.</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Current Role (Read Only) */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Current Role</label>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Assign Role Panel */}
+        <div className="lg:col-span-1">
+          <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm">
+            <CardHeader className="pb-4 border-b border-border">
+              <CardTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
+                <UserCog className="h-5 w-5 text-primary" /> Assign User Role
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={handleAssignRole} className="space-y-5">
+                {/* User Searchable Dropdown */}
+                <div className="space-y-1.5 relative">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Select User *</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                     <input
                       type="text"
-                      readOnly
-                      value={selectedUser ? (selectedUser.role === 'employee' ? 'INTERN' : selectedUser.role.toUpperCase()) : 'No user selected'}
-                      className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm font-bold text-slate-550 dark:text-slate-400 cursor-not-allowed outline-none"
+                      placeholder="Search user by name or email..."
+                      value={selectedUser ? selectedUser.name : searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        if (selectedUser) {
+                          setSelectedUserId('');
+                        }
+                        setIsDropdownOpen(true);
+                      }}
+                      onFocus={() => setIsDropdownOpen(true)}
+                      className="w-full h-10 pl-9 pr-8 rounded-xl border border-input bg-card text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
-                  </div>
-
-                  {/* New Role (Dropdown) */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">New Role *</label>
-                    <select
-                      disabled={!selectedUserId}
-                      value={newRole}
-                      onChange={(e) => setNewRole(e.target.value)}
-                      className={cn(
-                        "w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer",
-                        !selectedUserId && "opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900/50"
-                      )}
-                    >
-                      <option value="">-- Choose New Role --</option>
-                      <option value="Manager">Manager</option>
-                      <option value="Intern">Intern</option>
-                    </select>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-3 pt-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleCancel}
-                      className="flex-1 h-10 rounded-xl border-slate-250 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-900"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={!selectedUserId || !newRole}
-                      className="flex-1 h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Assign Role
-                    </Button>
-                  </div>
-
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Role History panel */}
-          <div className="lg:col-span-2">
-            <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222]/50 shadow-sm overflow-hidden">
-              <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/30">
-                <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-900 dark:text-white">
-                  <History className="h-5 w-5 text-orange-500" /> Role Assignment History
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0 overflow-x-auto">
-                <table className="w-full min-w-[650px] text-sm text-left">
-                  <thead className="text-xs text-slate-500 uppercase bg-slate-50/80 dark:bg-slate-900/50 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                    <tr>
-                      <th className="px-6 py-4 font-bold">User</th>
-                      <th className="px-6 py-4 font-bold">Previous Role</th>
-                      <th className="px-6 py-4 font-bold">New Role</th>
-                      <th className="px-6 py-4 font-bold">Changed By</th>
-                      <th className="px-6 py-4 font-bold text-right">Date & Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historyList.map((h, i) => (
-                      <tr key={h.id} className="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="font-extrabold text-slate-900 dark:text-white">{h.userName}</div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{h.userEmail}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Badge variant="outline" className="uppercase font-bold text-[9px] border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                            {h.prevRole === 'employee' ? 'intern' : h.prevRole}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Badge className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 uppercase font-bold text-[9px]">
-                            {h.newRole === 'employee' ? 'intern' : h.newRole}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">
-                          {h.changedBy}
-                        </td>
-                        <td className="px-6 py-4 text-right text-slate-500 text-xs">
-                          {new Date(h.timestamp).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                    {historyList.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-slate-450 italic font-medium">
-                          No role assignment logs in system history logs.
-                        </td>
-                      </tr>
+                    {selectedUser && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedUserId('');
+                          setSearchTerm('');
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground hover:text-foreground"
+                      >
+                        ✕
+                      </button>
                     )}
-                  </tbody>
-                </table>
-              </CardContent>
-            </Card>
-          </div>
+                  </div>
 
+                  {/* Dropdown Options */}
+                  {isDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1.5 max-h-60 overflow-y-auto bg-card border border-border rounded-xl shadow-xl custom-scrollbar">
+                      {filteredSearchUsers.map(user => (
+                        <div
+                          key={user.id}
+                          onClick={() => {
+                            setSelectedUserId(user.id || '');
+                            setSearchTerm('');
+                            setIsDropdownOpen(false);
+                          }}
+                          className={cn(
+                            "p-3 cursor-pointer hover:bg-muted/50 transition-colors border-b border-border/50 last:border-0 flex items-center justify-between",
+                            selectedUserId === user.id ? "bg-muted/60" : ""
+                          )}
+                        >
+                          <div>
+                            <p className="text-xs font-bold text-foreground">{user.name}</p>
+                            <p className="text-[10px] text-muted-foreground font-medium">{user.email}</p>
+                          </div>
+                          <Badge variant="outline" className="text-[9px] uppercase font-bold border-border text-muted-foreground">
+                            {user.role === 'employee' ? 'intern' : user.role}
+                          </Badge>
+                        </div>
+                      ))}
+                      {filteredSearchUsers.length === 0 && (
+                        <div className="p-4 text-center text-xs text-muted-foreground font-semibold">
+                          No users found matching "{searchTerm}"
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Role Selector Buttons */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Assign New Role *</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['Admin', 'Manager', 'Intern'].map(roleOption => {
+                      const isSelected = newRole.toLowerCase() === roleOption.toLowerCase();
+                      return (
+                        <button
+                          key={roleOption}
+                          type="button"
+                          onClick={() => setNewRole(roleOption.toLowerCase())}
+                          className={cn(
+                            "py-2.5 rounded-xl border text-xs font-bold transition-all text-center flex flex-col items-center justify-center gap-1",
+                            isSelected 
+                              ? "bg-primary text-primary-foreground border-primary shadow-xs" 
+                              : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                          )}
+                        >
+                          {roleOption}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Selected User Overview Card */}
+                {selectedUser && (
+                  <div className="p-3.5 bg-muted/30 border border-border rounded-xl space-y-2 text-xs animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground font-semibold">Current Assigned Role:</span>
+                      <Badge variant="outline" className="uppercase font-bold text-[10px] border-border text-foreground">
+                        {selectedUser.role === 'employee' ? 'intern' : selectedUser.role}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground font-semibold">Department:</span>
+                      <span className="font-bold text-foreground">{selectedUser.department || 'General'}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-3 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancel}
+                    className="flex-1 h-10 rounded-xl border-border text-foreground font-bold hover:bg-muted"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={!selectedUserId || !newRole}
+                    className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Assign Role
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         </div>
 
+        {/* Role History panel */}
+        <div className="lg:col-span-2">
+          <Card className="rounded-2xl border-border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <CardHeader className="pb-4 border-b border-border bg-muted/20">
+              <CardTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
+                <History className="h-5 w-5 text-primary" /> Role Assignment History
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table className="w-full min-w-[650px] text-sm text-left">
+                <TableHeader className="bg-muted/50 border-b border-border">
+                  <TableRow>
+                    <TableHead className="px-6 py-4 font-bold text-xs uppercase text-muted-foreground">User</TableHead>
+                    <TableHead className="px-6 py-4 font-bold text-xs uppercase text-muted-foreground">Previous Role</TableHead>
+                    <TableHead className="px-6 py-4 font-bold text-xs uppercase text-muted-foreground">New Role</TableHead>
+                    <TableHead className="px-6 py-4 font-bold text-xs uppercase text-muted-foreground">Changed By</TableHead>
+                    <TableHead className="px-6 py-4 font-bold text-xs uppercase text-muted-foreground text-right">Date & Time</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {historyList.map((h) => (
+                    <TableRow key={h.id} className="border-b border-border/60 hover:bg-muted/40 transition-colors">
+                      <TableCell className="px-6 py-4">
+                        <div className="font-extrabold text-foreground">{h.userName}</div>
+                        <div className="text-xs text-muted-foreground font-medium mt-0.5">{h.userEmail}</div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
+                        <Badge variant="outline" className="uppercase font-bold text-[9px] border-border text-muted-foreground">
+                          {h.prevRole === 'employee' ? 'intern' : h.prevRole}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
+                        <Badge className="bg-primary/10 text-primary border border-primary/20 uppercase font-bold text-[9px]">
+                          {h.newRole === 'employee' ? 'intern' : h.newRole}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 font-semibold text-foreground">
+                        {h.changedBy}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-right text-muted-foreground text-xs">
+                        {new Date(h.timestamp).toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {historyList.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="px-6 py-12 text-center text-muted-foreground italic font-medium">
+                        No role assignment logs in system history logs.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

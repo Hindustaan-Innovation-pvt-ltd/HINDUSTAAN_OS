@@ -1,15 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, KeyRound, ArrowRight, Loader2, Compass, Sun, Moon, Eye, EyeOff, CheckSquare, Users, TrendingUp, Sparkles } from 'lucide-react';
+import { 
+  Mail, 
+  KeyRound, 
+  ArrowRight, 
+  Loader2, 
+  Sun, 
+  Moon, 
+  Eye, 
+  EyeOff, 
+  CheckSquare, 
+  Users, 
+  TrendingUp, 
+  Sparkles,
+  ShieldCheck,
+  Lock,
+  CheckCircle2
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
-import { Button } from '@/components/ui/button';
-import { loginUser, getRegisteredUsers, initializeAuth } from '@/lib/auth';
+import { loginUser, initializeAuth } from '@/lib/auth';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 
 export default function Login({
@@ -19,28 +28,27 @@ export default function Login({
   defaultRole = 'manager',
   isAdminLogin = false
 }: {
-  onMockLogin?: (role: string, email?: string) => void,
-  defaultEmail?: string,
-  defaultName?: string,
-  defaultRole?: string,
-  isAdminLogin?: boolean
+  onMockLogin?: (role: string, email?: string) => void;
+  defaultEmail?: string;
+  defaultName?: string;
+  defaultRole?: string;
+  isAdminLogin?: boolean;
 }) {
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-
-  // OTP State
-  const [showOTPDialog, setShowOTPDialog] = useState(false);
-  const [otpValue, setOtpValue] = useState('');
-  const [otpState, setOtpState] = useState<{ code: string; expiresAt: number } | null>(null);
-  const [otpError, setOtpError] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [countdown, setCountdown] = useState(300);
-
-  const [isDark, setIsDark] = useState(true);
+  // Dark/Light Theme state
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark') || 
+             window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return true;
+  });
 
   useEffect(() => {
     initializeAuth();
@@ -54,56 +62,42 @@ export default function Login({
     }
   }, [isDark]);
 
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (showOTPDialog && otpState) {
-      interval = setInterval(() => {
-        const remaining = Math.max(0, Math.floor((otpState.expiresAt - Date.now()) / 1000));
-        setCountdown(remaining);
-        if (remaining === 0) clearInterval(interval);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [showOTPDialog, otpState]);
-
-  const validateUser = () => {
-    return {
-      email: email,
-      role: 'employee',
-      name: 'User'
-    };
-  };
-
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim() || !password) {
+      toast.error('Required Fields', { description: 'Please enter both your work email and password.' });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      console.log("Data is sending to backend successfully");
-      const user = await loginUser(email, password, true);
+      const user = await loginUser(email.trim(), password, rememberMe);
       if (!user) {
-        toast.error('Authentication Error', { description: 'Login failed. Please check your credentials.' });
+        toast.error('Authentication Failed', { description: 'Invalid email or password. Please verify your credentials.' });
         setLoading(false);
         return;
       }
 
-      toast.success('Access granted.', { description: `Welcome back, ${user.name}!` });
+      toast.success('Access Granted', { description: `Welcome back, ${user.name || 'User'}!` });
+
+      localStorage.setItem('role', user.role);
+      window.dispatchEvent(new Event('auth-login'));
 
       if (onMockLogin) {
         onMockLogin(user.role, email);
       } else {
-        if (user.role === 'admin') {
-          window.location.href = '/admin/dashboard';
-        } else if (user.role === 'manager') {
-          window.location.href = '/manager/dashboard';
-        } else {
-          window.location.href = '/dashboard';
-        }
+        const dest = user.role === 'admin' 
+          ? '/admin/dashboard' 
+          : user.role === 'manager' 
+            ? '/manager/dashboard' 
+            : '/dashboard';
+        window.location.href = dest;
       }
     } catch (err: any) {
       if (err.message && err.message.includes('User not found')) {
         toast.error('Account Not Found', {
-          description: 'No matching account exists with this email. Please contact your manager or administrator.',
+          description: 'No registered workspace account exists with this email address.',
         });
       } else {
         toast.error('Authentication Error', { description: err.message || 'Login failed.' });
@@ -113,333 +107,288 @@ export default function Login({
     }
   };
 
-  const sendOTP = async (targetEmail: string) => {
-    if (isAdminLogin || targetEmail.toLowerCase().includes('admin')) {
-      toast.error('Restricted', { description: 'Administrator accounts strictly require password authentication against the live database.' });
-      return false;
-    }
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API
-
-      const user = validateUser();
-      if (!user) return false;
-
-      // Generate 6-digit OTP
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = Date.now() + 5 * 60 * 1000;
-
-      setOtpState({ code, expiresAt });
-      setCountdown(300);
-
-      console.log(`[MOCK EMAIL] OTP for ${targetEmail}: ${code}`);
-      return true;
-    } catch (err: any) {
-      toast.error('Error', { description: err.message || 'Failed to send OTP.' });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOTPRequest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const success = await sendOTP(email);
-    if (success) {
-      setOtpValue('');
-      setOtpError(false);
-      setShowOTPDialog(true);
-    }
-  };
-
-  const handleResend = async () => {
-    const success = await sendOTP(email);
-    if (success) {
-      setOtpValue('');
-      setOtpError(false);
-      toast.success('New OTP Sent', { description: 'Check your email for the new verification code.' });
-    }
-  };
-
-  const verifyOTP = async (targetEmail: string, inputOtp: string) => {
-    setVerifying(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API
-
-      if (!otpState) return false;
-
-      if (Date.now() > otpState.expiresAt) {
-        toast.error('OTP Expired', { description: 'Please request a new verification code.' });
-        return false;
-      }
-
-      if (inputOtp !== otpState.code) {
-        toast.error('Invalid OTP', { description: 'The verification code you entered is incorrect.' });
-        setOtpError(true);
-        setTimeout(() => setOtpError(false), 600); // reset shake animation
-        return false;
-      }
-
-      return true;
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  const handleVerify = async () => {
-    if (otpValue.length !== 6) return;
-
-    const success = await verifyOTP(email, otpValue);
-
-    if (success) {
-      try {
-        const user = await loginUser(email, undefined, true); // OTP login, no password needed
-        if (user) {
-          toast.success('Verification Successful', { description: 'Welcome back!' });
-          setShowOTPDialog(false);
-          if (onMockLogin) {
-            onMockLogin(user.role, email);
-          } else {
-            window.location.href = '/';
-          }
-        }
-      } catch (err: any) {
-        toast.error('Authentication Error', { description: err.message || 'OTP verification login failed.' });
-      }
-    }
-  };
-
   return (
-    <div className="relative flex min-h-screen lg:h-screen lg:max-h-screen w-full items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-500 font-sans">
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-x-hidden bg-slate-50 dark:bg-[#07090e] text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans selection:bg-orange-500 selection:text-white">
 
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px]"></div>
+      {/* Atmospheric Ambient Lighting & Mesh Grids */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        {/* Subtle grid lines */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_70%_70%_at_50%_40%,#000_60%,transparent_100%)]" />
+        
+        {/* Soft Radial Ambient Glows - Sleek Saffron & Midnight Cyan */}
+        <div className="absolute -top-[25%] -left-[10%] w-[55vw] h-[55vw] max-w-[800px] max-h-[800px] rounded-full bg-gradient-to-br from-orange-500/15 via-amber-500/10 to-transparent dark:from-orange-600/15 dark:via-amber-500/5 dark:to-transparent blur-[120px]" />
+        <div className="absolute -bottom-[20%] -right-[10%] w-[60vw] h-[60vw] max-w-[850px] max-h-[850px] rounded-full bg-gradient-to-tl from-cyan-600/15 via-blue-600/10 to-transparent dark:from-cyan-500/10 dark:via-indigo-600/10 dark:to-transparent blur-[140px]" />
+      </div>
 
-      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-orange-500/20 dark:bg-orange-600/20 blur-[120px] pointer-events-none transition-colors duration-500"></div>
-      <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] rounded-full bg-green-500/20 dark:bg-green-600/10 blur-[120px] pointer-events-none transition-colors duration-500"></div>
-
-      <button
-        onClick={() => setIsDark(!isDark)}
-        className="absolute top-6 right-6 p-2.5 rounded-full bg-white/50 dark:bg-slate-800/50 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-slate-300 hover:scale-110 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 z-50 shadow-sm"
-        aria-label="Toggle Dark Mode"
-      >
-        {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-      </button>
-
-      <div className="relative z-10 flex w-full min-h-screen lg:h-screen lg:min-h-0 lg:max-h-screen lg:overflow-hidden">
-
-        {/* Left Section - Branding (Hidden on Mobile) */}
-        <div className="hidden lg:flex flex-col justify-center w-[45%] xl:w-[50%] p-12 xl:p-24 border-r border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-sm z-10">
-          <div className="max-w-xl">
-            <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6">
-              Welcome to <span className="text-transparent bg-clip-text bg-linear-to-r from-orange-500 to-green-600">Hindustaan Innovation</span>
-            </h1>
-
-            <p className="text-lg text-slate-600 dark:text-slate-400 mb-12 max-w-md font-medium leading-relaxed">
-              The complete workspace solution to streamline your team's workflow and boost productivity.
-            </p>
-
-            <div className="space-y-6">
-              {[
-                { icon: <CheckSquare className="h-6 w-6 text-orange-500" />, text: "Manage Projects & Tasks" },
-                { icon: <Users className="h-6 w-6 text-green-500" />, text: "Collaborate with Teams" },
-                { icon: <TrendingUp className="h-6 w-6 text-blue-500" />, text: "Track Progress & Analytics" },
-                { icon: <Sparkles className="h-6 w-6 text-indigo-500" />, text: "Increase Daily Productivity" }
-              ].map((feature, i) => (
-                <div key={i} className="flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4" style={{ animationDelay: `${i * 150}ms`, animationFillMode: 'both' }}>
-                  <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800">
-                    {feature.icon}
-                  </div>
-                  <span className="text-base font-semibold text-slate-700 dark:text-slate-300">{feature.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* Top Bar Floating Controls */}
+      <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-4 sm:px-10">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            Systems Operational
+          </span>
         </div>
 
-        {/* Right Section - Login Form */}
-        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-4 xl:p-12 w-full lg:w-[55%] xl:w-[50%] z-10 lg:h-screen lg:overflow-hidden">
-          <div className="w-full max-w-md">
-            <div className="rounded-3xl border border-white/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 p-6 sm:p-8 lg:p-5 lg:py-4 xl:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500">
+        {/* Theme Toggle Button */}
+        <button
+          onClick={() => setIsDark(!isDark)}
+          className="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-sm hover:shadow transition-all duration-200 text-xs font-medium cursor-pointer"
+          aria-label="Toggle visual theme"
+        >
+          {isDark ? (
+            <>
+              <Sun className="h-3.5 w-3.5 text-amber-400 group-hover:rotate-45 transition-transform duration-300" />
+              <span>Light Mode</span>
+            </>
+          ) : (
+            <>
+              <Moon className="h-3.5 w-3.5 text-indigo-500 group-hover:-rotate-12 transition-transform duration-300" />
+              <span>Dark Mode</span>
+            </>
+          )}
+        </button>
+      </header>
 
-              <div className="flex items-center justify-center mb-5 lg:mb-3">
-                <BrandLogo 
-                  variant="auth-horizontal" 
-                  subtitle="Internal Workspace Portal" 
-                  className="hover:scale-[1.02] transition-all duration-300"
-                />
+      {/* Main Container */}
+      <main className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-10 min-h-screen flex items-center">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+
+          {/* Left Column: Brand Showcase & Enterprise Value Props */}
+          <div className="hidden lg:flex lg:col-span-6 xl:col-span-7 flex-col justify-center pr-4">
+            {/* Enterprise Tag */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full w-fit bg-orange-500/10 dark:bg-orange-500/15 border border-orange-500/25 text-orange-600 dark:text-orange-400 text-xs font-bold tracking-wide uppercase mb-6">
+              <ShieldCheck className="h-3.5 w-3.5 text-orange-500" />
+              Enterprise Workspace OS
+            </div>
+
+            {/* Main Headline */}
+            <h1 className="text-4xl xl:text-5xl font-black tracking-tight leading-[1.15] text-slate-900 dark:text-white mb-5">
+              Powering modern teams with{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 dark:from-orange-400 dark:via-amber-400 dark:to-orange-500">
+                seamless execution.
+              </span>
+            </h1>
+
+            <p className="text-base xl:text-lg text-slate-600 dark:text-slate-400 font-normal leading-relaxed mb-8 max-w-xl">
+              Hindustaan Innovations OS connects task governance, biometric attendance, milestone roadmaps, and intelligent team insights into one unified portal.
+            </p>
+
+            {/* Feature Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 max-w-2xl">
+              <div className="p-4 rounded-2xl bg-white/60 dark:bg-slate-900/50 border border-slate-200/80 dark:border-white/[0.07] backdrop-blur-md shadow-xs hover:border-orange-500/30 transition-all duration-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-orange-500/10 text-orange-500">
+                    <CheckSquare className="h-4 w-4" />
+                  </div>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">Sprint & Task Governance</h2>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                  High-level Gantt timelines, active deadlines, and real-time execution cards.
+                </p>
               </div>
 
-              <form className="space-y-4 lg:space-y-3" onSubmit={handlePasswordLogin}>
-                <div className="space-y-3 lg:space-y-2">
+              <div className="p-4 rounded-2xl bg-white/60 dark:bg-slate-900/50 border border-slate-200/80 dark:border-white/[0.07] backdrop-blur-md shadow-xs hover:border-cyan-500/30 transition-all duration-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-cyan-500/10 text-cyan-500">
+                    <Users className="h-4 w-4" />
+                  </div>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">Workforce Management</h2>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                  Real-time punch logs, leave approvals, and employee directory syncing.
+                </p>
+              </div>
 
-                  <div>
-                    <label htmlFor="email-address" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-0.5">
-                      Email Address
+              <div className="p-4 rounded-2xl bg-white/60 dark:bg-slate-900/50 border border-slate-200/80 dark:border-white/[0.07] backdrop-blur-md shadow-xs hover:border-emerald-500/30 transition-all duration-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-500">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">Executive Analytics</h2>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                  Organizational velocity, milestone delivery charts, and exportable reports.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-white/60 dark:bg-slate-900/50 border border-slate-200/80 dark:border-white/[0.07] backdrop-blur-md shadow-xs hover:border-purple-500/30 transition-all duration-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-purple-500/10 text-purple-500">
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">Smart Automation</h2>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                  Automated notifications, email templating, and role-based workflows.
+                </p>
+              </div>
+            </div>
+
+            {/* Micro Live Status Pulse Preview */}
+            <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                Single Sign-On Enforced
+              </span>
+              <span className="h-3 w-px bg-slate-300 dark:bg-slate-800" />
+              <span className="flex items-center gap-1.5">
+                <Lock className="h-3.5 w-3.5 text-slate-400" />
+                TLS 1.3 256-Bit Encrypted
+              </span>
+              <span className="h-3 w-px bg-slate-300 dark:bg-slate-800" />
+              <span>Hindustaan Innovations Pvt. Ltd.</span>
+            </div>
+          </div>
+
+          {/* Right Column: Authentication Form Card */}
+          <div className="col-span-1 lg:col-span-6 xl:col-span-5 flex justify-center w-full">
+            <div className="w-full max-w-md">
+              {/* Glassmorphic Card Container */}
+              <div className="relative rounded-3xl bg-white/80 dark:bg-[#0c101a]/90 backdrop-blur-2xl border border-slate-200/90 dark:border-white/[0.09] p-7 sm:p-9 shadow-2xl shadow-slate-950/10 dark:shadow-slate-950/70 transition-all duration-300">
+                
+                {/* Subtle Card Accent Highlight Ring */}
+                <div className="pointer-events-none absolute -top-px left-8 right-8 h-px bg-gradient-to-r from-transparent via-orange-500/40 dark:via-orange-400/30 to-transparent" />
+
+                {/* Brand Logo & Header */}
+                <div className="flex flex-col items-center text-center mb-6">
+                  <div className="mb-3">
+                    <BrandLogo 
+                      variant="auth-horizontal" 
+                      subtitle="Internal Operations Portal" 
+                      className="hover:scale-[1.01] transition-transform duration-200"
+                    />
+                  </div>
+
+                  {isAdminLogin ? (
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      Administrative Gateway
+                    </div>
+                  ) : (
+                    <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+                      Enter your organizational credentials to continue
+                    </p>
+                  )}
+                </div>
+
+                {/* Password Login Form */}
+                <form onSubmit={handlePasswordLogin} className="space-y-4">
+                  {/* Work Email */}
+                  <div className="space-y-1.5 text-left">
+                    <label 
+                      htmlFor="email" 
+                      className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300"
+                    >
+                      Corporate Email
                     </label>
                     <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
                         <Mail className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                       </div>
                       <input
-                        id="email-address"
-                        name="email"
+                        id="email"
                         type="email"
-                        autoComplete="email"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 lg:py-1.5 pl-11 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
                         placeholder="name@hindustaan.in"
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/60 py-2.5 pl-10 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-orange-500 dark:focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-500/15 transition-all duration-200"
                       />
                     </div>
                   </div>
 
-                  <div className="transition-all duration-300 ease-in-out animate-in fade-in zoom-in-95">
-                    <label htmlFor="password" className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-0.5">
-                      Password
-                    </label>
-                    <div className="relative z-10">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                  {/* Password */}
+                  <div className="space-y-1.5 text-left">
+                    <div className="flex items-center justify-between">
+                      <label 
+                        htmlFor="password" 
+                        className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300"
+                      >
+                        Password
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => toast.info('Password Reset', { description: 'Please contact your workspace manager or administrator to reset your account password.' })}
+                        className="text-xs font-semibold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors cursor-pointer"
+                      >
+                        Forgot?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
                         <KeyRound className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                       </div>
                       <input
                         id="password"
-                        name="password"
                         type={showPassword ? 'text' : 'password'}
-                        autoComplete="current-password"
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="pointer-events-auto block w-full rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 py-2.5 lg:py-1.5 pl-11 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/10 dark:focus:ring-orange-500/20 transition-all duration-200"
-                        placeholder="••••••••"
+                        placeholder="••••••••••••"
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/60 py-2.5 pl-10 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-orange-500 dark:focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-500/15 transition-all duration-200"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 cursor-pointer z-20"
+                        className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
                       >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center justify-end pt-0.5 pb-1">
-                  <button
-                    type="button"
-                    onClick={() => toast.success('Password reset link sent to your email.')}
-                    className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors uppercase tracking-wider"
-                  >
-                    Forgot Password?
-                  </button>
-                </div>
+                  {/* Remember me option */}
+                  <div className="flex items-center justify-between pt-1">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="h-4 w-4 rounded-sm border-slate-300 dark:border-slate-700 text-orange-600 focus:ring-orange-500/20 focus:ring-2 bg-slate-100 dark:bg-slate-800 cursor-pointer"
+                      />
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        Remember this device for 30 days
+                      </span>
+                    </label>
+                  </div>
 
-                <div>
+                  {/* Submit Button */}
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group relative flex w-full justify-center items-center space-x-2 rounded-xl bg-linear-to-r from-orange-500 to-green-600 px-4 py-2.5 lg:py-2 text-sm font-bold text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-green-700 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:opacity-70 disabled:hover:scale-100 transition-all duration-200 ease-out"
+                    className="group relative w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:via-amber-600 hover:to-orange-700 text-white font-bold text-sm py-2.5 px-4 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/35 hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-orange-500/20 disabled:opacity-60 disabled:pointer-events-none transition-all duration-200 cursor-pointer"
                   >
                     {loading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Verifying Identity...</span>
+                      </>
                     ) : (
                       <>
-                        <span>Secure Log In</span>
-                        <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                        <span>Sign In to Workspace</span>
+                        <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
                       </>
                     )}
                   </button>
-                </div>
+                </form>
 
-                <div className="text-center pt-3 pb-1">
-                  <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">
-                    Accounts are managed by workspace administration.
+                {/* Footer Security Note */}
+                <div className="mt-6 pt-5 border-t border-slate-200/80 dark:border-slate-800/80 text-center">
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                    Strict organizational portal • All sessions are encrypted & audited
                   </p>
                 </div>
-              </form>
+
+              </div>
             </div>
           </div>
+
         </div>
-      </div>
-
-      {/* OTP Verification Modal */}
-      <Dialog open={showOTPDialog} onOpenChange={(open) => !verifying && setShowOTPDialog(open)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Verify Your Email</DialogTitle>
-            <DialogDescription>
-              We've sent a 6-digit verification code to your registered email address.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center justify-center space-y-6 py-4">
-            <div className={cn("transition-transform", otpError && "animate-shake")}>
-              <InputOTP
-                maxLength={6}
-                value={otpValue}
-                onChange={setOtpValue}
-                disabled={verifying || countdown === 0}
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
-
-            <div className="flex w-full flex-col items-center gap-2">
-              <Progress value={(countdown / 300) * 100} className="h-2 w-full" />
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')} remaining
-              </span>
-            </div>
-
-            {countdown === 0 && (
-              <Alert variant="destructive">
-                <AlertTitle>OTP Expired</AlertTitle>
-                <AlertDescription>Please request a new verification code.</AlertDescription>
-              </Alert>
-            )}
-          </div>
-          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowOTPDialog(false)}
-              disabled={verifying}
-              className="border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-white"
-            >
-              Change Email
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleResend}
-              disabled={loading || verifying}
-              className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700"
-            >
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Resend OTP
-            </Button>
-            <Button
-              type="button"
-              onClick={handleVerify}
-              disabled={otpValue.length !== 6 || verifying || countdown === 0}
-              className="bg-orange-600 hover:bg-orange-700 text-white"
-            >
-              {verifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Verify
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </main>
 
     </div>
   );
