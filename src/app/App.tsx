@@ -31,6 +31,8 @@ import ActivityLogsModule from '@/components/workspace-settings/ActivityLogsModu
 import SecuritySettings from '../features/workspace/pages/SecuritySettings';
 import Subscriptions from '../features/workspace/pages/Subscriptions';
 import AttendanceLogs from '../features/attendance/pages/AttendanceLogs';
+import LeadsDashboard from '../features/leads/pages/LeadsDashboard';
+import MyAssignedLeads from '../features/leads/pages/MyAssignedLeads';
 
 import { ThemeProvider } from '@/context/ThemeContext';
 import { ProjectProvider } from '@/context/ProjectContext';
@@ -99,6 +101,8 @@ function AppRoutes() {
         <Route path="/employee/dashboard" element={['employee', 'intern'].includes(role) ? <RoleBasedRouter /> : <Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/manager/dashboard" element={role === 'manager' ? <RoleBasedRouter /> : <Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/admin/dashboard" element={role === 'admin' ? <RoleBasedRouter /> : <Navigate to={`/${role}/dashboard`} replace />} />
+        <Route path="/leads" element={['manager', 'admin'].includes(role) ? <LeadsDashboard /> : <Navigate to={`/${role}/dashboard`} replace />} />
+        <Route path="/my-leads" element={<MyAssignedLeads />} />
         <Route path="/tasks" element={<TaskBoard />} />
         <Route path="/projects" element={['manager', 'admin'].includes(role) ? <Projects /> : <Navigate to={`/${role}/dashboard`} replace />} />
         <Route path="/timeline" element={<GanttTimeline />} />
