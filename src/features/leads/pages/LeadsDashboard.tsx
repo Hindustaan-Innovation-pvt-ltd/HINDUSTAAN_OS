@@ -26,6 +26,7 @@ import {
   UserCheck,
   ArrowRightLeft,
   Download,
+  Printer,
   ExternalLink,
   MessageSquare,
   FileText,
@@ -42,7 +43,18 @@ import {
   ChevronDown,
   ChevronUp,
   Calendar,
+  Trash2,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import type { Lead, LeadStatsOverview, LeadCallStatus, ScanBatchOption } from '../types/lead.types';
@@ -52,6 +64,7 @@ import { LeadDossierModal } from '../components/LeadDossierModal';
 import { TriggerScanModal } from '../components/TriggerScanModal';
 import { ScanLogsModal } from '../components/ScanLogsModal';
 import { getEffectiveLocation } from '../utils/locationEngine';
+import { exportLeadsToPDF } from '../utils/leadPdfExport';
 
 const STATUS_TABS: { id: string; label: string }[] = [
   { id: 'all', label: 'All Leads' },
@@ -87,6 +100,15 @@ export default function LeadsDashboard() {
   const [scanModalOpen, setScanModalOpen] = useState<boolean>(false);
   const [scanLogsOpen, setScanLogsOpen] = useState<boolean>(false);
 
+  // Delete State
+  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  const [batchToDelete, setBatchToDelete] = useState<{ id: string; query: string; count: number } | null>(null);
+  const [deleteBatchDialogOpen, setDeleteBatchDialogOpen] = useState<boolean>(false);
+  const [isDeletingBatch, setIsDeletingBatch] = useState<boolean>(false);
+
   useEffect(() => {
     fetchStats();
   }, []);
@@ -94,6 +116,50 @@ export default function LeadsDashboard() {
   useEffect(() => {
     fetchLeads();
   }, [search, activeTab, employeeFilter, industryFilter, hasPhoneOnly]);
+
+  const [isBackgroundScanning, setIsBackgroundScanning] = useState<boolean>(false);
+  const wasRunningRef = React.useRef<boolean>(false);
+
+  // Monitor background scans quietly without disrupting current table view
+  useEffect(() => {
+    const checkActiveScans = async () => {
+      try {
+        const res = await api.get('/leads/scan/logs');
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          const hasRunning = res.data.data.some((l: any) => l.status === 'running');
+          setIsBackgroundScanning(hasRunning);
+
+          // Only when a running scan transitions to completed, refresh table & stats once
+          if (wasRunningRef.current && !hasRunning) {
+            fetchLeads();
+            fetchStats();
+          }
+          wasRunningRef.current = hasRunning;
+        }
+      } catch (err) {
+        // silent catch
+      }
+    };
+
+    checkActiveScans();
+    const interval = setInterval(checkActiveScans, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleScanComplete = React.useCallback(() => {
+    setActiveTab('all');
+    setSelectedBatchId('all');
+    setEmployeeFilter('');
+    setIndustryFilter('all');
+    setSearch('');
+    fetchStats();
+    fetchLeads({
+      activeTab: 'all',
+      search: '',
+      employeeFilter: '',
+      industryFilter: 'all',
+    });
+  }, []);
 
   const fetchStats = async () => {
     try {
@@ -292,6 +358,75 @@ export default function LeadsDashboard() {
     fetchStats();
   };
 
+  const handleConfirmDeleteLead = (lead: Lead) => {
+    setLeadToDelete(lead);
+    setDeleteDialogOpen(true);
+  };
+
+  const executeDeleteLead = async () => {
+    if (!leadToDelete) return;
+    try {
+      setIsDeleting(true);
+      const res = await api.delete(`/leads/${leadToDelete.id}`);
+      if (res.data?.success) {
+        toast.success(`Deleted lead: ${leadToDelete.companyName}`);
+        setLeads((prev) => prev.filter((l) => l.id !== leadToDelete.id));
+        fetchStats();
+      } else {
+        toast.error(res.data?.message || 'Failed to delete lead');
+      }
+    } catch (err: any) {
+      console.error('Failed to delete lead:', err);
+      toast.error(err.response?.data?.message || 'Failed to delete lead');
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+      setLeadToDelete(null);
+    }
+  };
+
+  const handleConfirmDeleteBatch = (group: { batch: { id: string; query: string; [key: string]: any }; leads: Lead[] }) => {
+    setBatchToDelete({
+      id: group.batch.id,
+      query: group.batch.query,
+      count: group.leads.length,
+    });
+    setDeleteBatchDialogOpen(true);
+  };
+
+  const executeDeleteBatch = async () => {
+    if (!batchToDelete) return;
+    try {
+      setIsDeletingBatch(true);
+      const targetLeadIds = leads
+        .filter((l) => (l.scanBatch?.id || 'initial') === batchToDelete.id)
+        .map((l) => l.id);
+
+      if (targetLeadIds.length > 0) {
+        const res = await api.post('/leads/bulk-delete', { leadIds: targetLeadIds });
+        if (res.data?.success) {
+          toast.success(`Deleted ${res.data.count} leads from batch: ${batchToDelete.query}`);
+          setLeads((prev) => prev.filter((l) => !targetLeadIds.includes(l.id)));
+          fetchStats();
+        }
+      }
+      if (batchToDelete.id !== 'initial') {
+        try {
+          await api.delete(`/leads/scan/logs/${batchToDelete.id}`);
+        } catch (e) {
+          // ignore
+        }
+      }
+    } catch (err: any) {
+      console.error('Failed to delete batch:', err);
+      toast.error(err.response?.data?.message || 'Failed to delete batch');
+    } finally {
+      setIsDeletingBatch(false);
+      setDeleteBatchDialogOpen(false);
+      setBatchToDelete(null);
+    }
+  };
+
   const exportCSV = () => {
     const targetLeads = filteredLeads.length > 0 ? filteredLeads : leads;
     if (targetLeads.length === 0) {
@@ -340,6 +475,55 @@ export default function LeadsDashboard() {
     toast.success('Leads exported as CSV');
   };
 
+  const handleExportPDF = (mode: 'print' | 'download' = 'print', batchId?: string) => {
+    let targetLeads = filteredLeads.length > 0 ? filteredLeads : leads;
+    let customTitle = 'Commercial Lead Intelligence Report';
+    let customSubtitle: string | undefined;
+
+    if (batchId && batchId !== 'all') {
+      targetLeads = leads.filter((l) => (l.scanBatch?.id || 'initial') === batchId);
+      const batchObj = availableBatches.find((b) => b.id === batchId);
+      if (batchObj) {
+        customTitle = `Batch Leads: ${batchObj.shortTitle}`;
+        customSubtitle = `Scan: ${batchObj.query} • ${targetLeads.length} leads`;
+      }
+    }
+
+    if (targetLeads.length === 0) {
+      toast.error('No leads available to print/export');
+      return;
+    }
+
+    const filterParts: string[] = [];
+    if (activeTab !== 'all') {
+      const t = STATUS_TABS.find((st) => st.id === activeTab);
+      if (t) filterParts.push(`Status: ${t.label}`);
+    }
+    if (selectedBatchId !== 'all') {
+      const b = availableBatches.find((item) => item.id === selectedBatchId);
+      if (b) filterParts.push(`Batch: ${b.shortTitle}`);
+    }
+    if (industryFilter !== 'all') filterParts.push(`Industry: ${industryFilter}`);
+    if (hasPhoneOnly) filterParts.push('Phone Listed Only');
+    if (search.trim()) filterParts.push(`Search: "${search.trim()}"`);
+    if (employeeFilter) filterParts.push('Filtered by Assigned Rep');
+
+    const res = exportLeadsToPDF({
+      leads: targetLeads,
+      title: customTitle,
+      subtitle: customSubtitle,
+      filterDescription: filterParts.length > 0 ? filterParts.join(' | ') : undefined,
+      mode,
+      filename: `hindustaan_leads_${new Date().toISOString().slice(0, 10)}.pdf`,
+    });
+
+    if (res.success) {
+      if (res.message) toast.success(res.message);
+    } else {
+      toast.error(res.message || 'Failed to generate PDF');
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
       {/* Top Header */}
@@ -359,6 +543,43 @@ export default function LeadsDashboard() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Print / Export PDF Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 text-xs border-primary/40 hover:bg-primary/5 text-foreground font-medium shadow-2xs"
+              >
+                <Printer className="w-3.5 h-3.5 text-primary" />
+                Print / PDF
+                <ChevronDown className="w-3 h-3 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-card border-border shadow-lg">
+              <DropdownMenuItem
+                onClick={() => handleExportPDF('print')}
+                className="gap-2.5 text-xs py-2 cursor-pointer"
+              >
+                <Printer className="w-4 h-4 text-primary shrink-0" />
+                <div>
+                  <p className="font-semibold text-foreground">Print Leads (PDF)</p>
+                  <p className="text-[10px] text-muted-foreground">Opens browser print preview</p>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleExportPDF('download')}
+                className="gap-2.5 text-xs py-2 cursor-pointer"
+              >
+                <Download className="w-4 h-4 text-emerald-500 shrink-0" />
+                <div>
+                  <p className="font-semibold text-foreground">Download PDF Report</p>
+                  <p className="text-[10px] text-muted-foreground">Saves landscape A4 file</p>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button
             variant="outline"
             size="sm"
@@ -402,6 +623,27 @@ export default function LeadsDashboard() {
           </Button>
         </div>
       </div>
+
+      {/* In-Flight Background Scan Notification Banner */}
+      {isBackgroundScanning && (
+        <div className="px-4 py-2.5 rounded-xl bg-primary/10 border border-primary/25 text-xs text-primary flex items-center justify-between gap-3 flex-wrap animate-in fade-in duration-300 shadow-2xs">
+          <div className="flex items-center gap-2.5 font-medium">
+            <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
+            <span>
+              <strong>AI Lead Discovery is running in the background:</strong> Your CRM leads list will auto-update as soon as verified businesses are discovered.
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setScanLogsOpen(true)}
+            className="h-7 text-[11px] px-2.5 gap-1.5 border-primary/30 text-primary hover:bg-primary/15 font-semibold"
+          >
+            <History className="w-3.5 h-3.5" />
+            View Live Scan Logs
+          </Button>
+        </div>
+      )}
 
       {/* KPI Tracking Stats & Employee Filter Bar */}
       <LeadTrackingStats
@@ -600,11 +842,34 @@ export default function LeadsDashboard() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleExportPDF('print', group.batch.id)}
+                          className="h-7 px-2 text-[11px] gap-1 text-primary border-primary/30 hover:bg-primary/10 shadow-2xs font-medium cursor-pointer"
+                          title="Print this batch's leads to PDF"
+                        >
+                          <Printer className="w-3 h-3" />
+                          <span className="hidden sm:inline">Print Batch</span>
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleConfirmDeleteBatch(group)}
+                          className="h-7 px-2 text-[11px] gap-1 text-destructive border-destructive/30 hover:bg-destructive/10 shadow-2xs font-medium cursor-pointer"
+                          title={`Delete all ${group.leads.length} leads in this batch`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span className="hidden sm:inline">Delete Batch</span>
+                        </Button>
+
                         <Button
                           variant="ghost"
                           size="sm"
                           className="h-7 w-7 p-0 text-muted-foreground"
+                          onClick={() => toggleBatchCollapse(group.batch.id)}
                         >
                           {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                         </Button>
@@ -797,6 +1062,16 @@ export default function LeadsDashboard() {
                                         className="h-7 text-[11px] px-2 text-muted-foreground hover:text-foreground"
                                       >
                                         <FileText className="w-3 h-3" />
+                                      </Button>
+
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleConfirmDeleteLead(lead)}
+                                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                                        title={`Delete ${lead.companyName}`}
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
                                       </Button>
                                     </div>
                                   </td>
@@ -1006,6 +1281,16 @@ export default function LeadsDashboard() {
                             >
                               <FileText className="w-3 h-3" />
                             </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleConfirmDeleteLead(lead)}
+                              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                              title={`Delete ${lead.companyName}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -1038,20 +1323,7 @@ export default function LeadsDashboard() {
       <TriggerScanModal
         open={scanModalOpen}
         onOpenChange={setScanModalOpen}
-        onScanComplete={() => {
-          setActiveTab('all');
-          setLocationFilter('all');
-          setEmployeeFilter('');
-          setIndustryFilter('all');
-          setSearch('');
-          fetchStats();
-          fetchLeads({
-            activeTab: 'all',
-            search: '',
-            employeeFilter: '',
-            industryFilter: 'all',
-          });
-        }}
+        onScanComplete={handleScanComplete}
       />
 
       {/* AI Lead Generation Scan Request Logs & Audits */}
@@ -1063,6 +1335,77 @@ export default function LeadsDashboard() {
           fetchLeads();
         }}
       />
+
+      {/* Delete Single Lead Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="rounded-2xl max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-destructive" />
+              Delete Lead?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
+              Are you sure you want to delete lead <strong className="text-foreground">{leadToDelete?.companyName}</strong>?
+              This will permanently remove the lead record and all associated logs from your CRM database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel disabled={isDeleting} className="text-xs h-9">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={executeDeleteLead}
+              disabled={isDeleting}
+              className="text-xs h-9 bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold gap-1.5 cursor-pointer"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Lead'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Batch Confirmation Dialog */}
+      <AlertDialog open={deleteBatchDialogOpen} onOpenChange={setDeleteBatchDialogOpen}>
+        <AlertDialogContent className="rounded-2xl max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-destructive" />
+              Delete Entire Batch?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
+              Are you sure you want to delete all <strong className="text-foreground">{batchToDelete?.count} leads</strong> from batch{' '}
+              <strong className="text-foreground">&ldquo;{batchToDelete?.query}&rdquo;</strong>?
+              This will permanently delete all leads in this batch from your CRM.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel disabled={isDeletingBatch} className="text-xs h-9">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={executeDeleteBatch}
+              disabled={isDeletingBatch}
+              className="text-xs h-9 bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold gap-1.5 cursor-pointer"
+            >
+              {isDeletingBatch ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Deleting Batch...
+                </>
+              ) : (
+                'Delete All in Batch'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

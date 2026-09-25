@@ -22,6 +22,11 @@ export interface SectorOption {
   value: string;
   label: string;
   baseQuery: string;
+  category?: string;
+  description?: string;
+  examples?: string;
+  badge?: string;
+  iconName?: string;
 }
 
 export const GEOGRAPHIC_DATA: CountryOption[] = [
@@ -502,18 +507,126 @@ export const GEOGRAPHIC_DATA: CountryOption[] = [
 ];
 
 export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
-  { value: 'education', label: 'Colleges & Coaching Institutes', baseQuery: 'engineering management colleges coaching institutes' },
-  { value: 'schools', label: 'Schools & Educational Academies', baseQuery: 'CBSE ICSE international schools academies' },
-  { value: 'healthcare', label: 'Hospitals, Clinics & Diagnostic Labs', baseQuery: 'multispeciality hospitals private clinics diagnostic imaging center' },
-  { value: 'steel', label: 'Steel, Iron & Sponge Power Plants', baseQuery: 'steel rolling mills sponge iron ferro alloys manufacturing' },
-  { value: 'logistics', label: 'Logistics, Transport & Supply Chain', baseQuery: 'logistics transport services fleet movers warehouse' },
-  { value: 'industrial', label: 'Industrial & Heavy Manufacturing', baseQuery: 'industrial manufacturing engineering plant fabrication unit' },
-  { value: 'realestate', label: 'Real Estate Builders & Infra Developers', baseQuery: 'builders real estate developers commercial projects contractors' },
-  { value: 'retail_auto', label: 'Automobile Dealers & Large Retail Showrooms', baseQuery: 'automobile dealers car bike showroom retail jewelry chains' },
-  { value: 'agro_food', label: 'Rice Mills, Food & Agro Processing', baseQuery: 'rice mills agro processing food products dal mill cold storage' },
-  { value: 'tech_it', label: 'IT Companies & Digital Tech Agencies', baseQuery: 'IT software companies web development digital marketing agency' },
-  { value: 'solar', label: 'Solar & Clean Energy Installers', baseQuery: 'solar power rooftop installations EPC contractors renewable energy' },
-  { value: 'hospitality', label: 'Hotels, Resorts & Banquet Venues', baseQuery: 'hotels luxury resorts banquet halls convention center' },
+  {
+    value: 'education',
+    label: 'Colleges & Coaching Institutes',
+    category: 'Education & Health',
+    description: 'Engineering, Medical, Degree & Polytechnic Colleges, IIT-JEE, NEET & UPSC Coaching Centres',
+    examples: 'Engineering Colleges, Degree Colleges, Civil Services & NEET Academies',
+    badge: 'High Priority',
+    iconName: 'GraduationCap',
+    baseQuery: 'engineering management colleges coaching institutes',
+  },
+  {
+    value: 'schools',
+    label: 'Schools & Educational Academies',
+    category: 'Education & Health',
+    description: 'CBSE, ICSE, Convent, Day-Boarding Schools, Preschools & Sports/Music Academies',
+    examples: 'Private High Schools, Play Schools, Boarding Academies, Training Institutes',
+    badge: 'Local Turf',
+    iconName: 'School',
+    baseQuery: 'CBSE ICSE international schools academies',
+  },
+  {
+    value: 'healthcare',
+    label: 'Hospitals, Clinics & Diagnostic Labs',
+    category: 'Education & Health',
+    description: 'Multispeciality Hospitals, Nursing Homes, Pathology Labs, Imaging & Dental Clinics',
+    examples: 'Private Hospitals, Eye Clinics, Pathology Centers, Diagnostic Sonography',
+    badge: 'Essential',
+    iconName: 'HeartPulse',
+    baseQuery: 'multispeciality hospitals private clinics diagnostic imaging center',
+  },
+  {
+    value: 'steel',
+    label: 'Steel, Iron & Sponge Power Plants',
+    category: 'Industry & Infra',
+    description: 'Sponge Iron Plants, Induction Furnaces, Rolling Mills, TMT Bars & Ferro Alloys',
+    examples: 'Rolling Mills, Ferro Alloys, TMT Steel Bars, Foundry & Casting Smelters',
+    badge: 'High Ticket B2B',
+    iconName: 'Factory',
+    baseQuery: 'steel rolling mills sponge iron ferro alloys manufacturing',
+  },
+  {
+    value: 'logistics',
+    label: 'Logistics, Transport & Supply Chain',
+    category: 'Industry & Infra',
+    description: 'Interstate Fleet Transporters, Packers & Movers, Logistics Parks & Cold Storage',
+    examples: 'Transport Nagar Operators, Fleet Trucking, Movers, Commercial Warehouses',
+    badge: 'High Volume',
+    iconName: 'Truck',
+    baseQuery: 'logistics transport services fleet movers warehouse',
+  },
+  {
+    value: 'industrial',
+    label: 'Industrial & Heavy Manufacturing',
+    category: 'Industry & Infra',
+    description: 'Machinery Fabricators, Boiler Units, Electrical Panels, Foundry & Industrial Tooling',
+    examples: 'Heavy Fabrication, Industrial Equipment, Pre-Engineered Buildings, Machining',
+    badge: 'Manufacturing',
+    iconName: 'Wrench',
+    baseQuery: 'industrial manufacturing engineering plant fabrication unit',
+  },
+  {
+    value: 'realestate',
+    label: 'Real Estate Builders & Infra Developers',
+    category: 'Industry & Infra',
+    description: 'Residential Township Developers, Commercial Complexes, Civil Contractors & Colony Projects',
+    examples: 'RERA Registered Builders, Plotting Developers, Construction Firms, Complex Developers',
+    badge: 'High Value',
+    iconName: 'Building2',
+    baseQuery: 'builders real estate developers commercial projects contractors',
+  },
+  {
+    value: 'retail_auto',
+    label: 'Automobile Dealers & Retail Showrooms',
+    category: 'Retail & Trade',
+    description: 'Car & 2-Wheeler Dealerships, Commercial Trucks, Jewelry Showrooms & Large Retail Stores',
+    examples: 'Car Showrooms, Two-Wheeler Agencies, Tractor Hubs, Jewelry Megastores',
+    badge: 'Commercial',
+    iconName: 'Car',
+    baseQuery: 'automobile dealers car bike showroom retail jewelry chains',
+  },
+  {
+    value: 'agro_food',
+    label: 'Rice Mills, Food & Agro Processing',
+    category: 'Retail & Trade',
+    description: 'Modern Rice Mills, Flour/Poha Processors, Dal Mills, Edible Oils, Seeds & Agro Traders',
+    examples: 'Paddy Shellers, Sortex Rice Mills, Food Product Manufacturers, Grain Wholesalers',
+    badge: 'Agro Hub',
+    iconName: 'Wheat',
+    baseQuery: 'rice mills agro processing food products dal mill cold storage',
+  },
+  {
+    value: 'tech_it',
+    label: 'IT Companies & Digital Tech Agencies',
+    category: 'Tech & Energy',
+    description: 'Software Development Firms, Web/App Agencies, Digital Marketing & IT Solution Providers',
+    examples: 'Custom Software Companies, Creative Web Studios, IT Networking & ERP Firms',
+    badge: 'Tech & IT',
+    iconName: 'Laptop',
+    baseQuery: 'IT software companies web development digital marketing agency',
+  },
+  {
+    value: 'solar',
+    label: 'Solar & Clean Energy Installers',
+    category: 'Tech & Energy',
+    description: 'Rooftop Solar EPC Contractors, Inverter Distributors, Commercial Solar Plants & Renewable Energy',
+    examples: 'Rooftop Solar Installers, Commercial Solar EPC, Solar Pump Suppliers',
+    badge: 'Fast Growing',
+    iconName: 'SunMedium',
+    baseQuery: 'solar power rooftop installations EPC contractors renewable energy',
+  },
+  {
+    value: 'hospitality',
+    label: 'Hotels, Resorts & Banquet Venues',
+    category: 'Retail & Trade',
+    description: 'Business Hotels, Wedding Lawns, Resorts, Banquet Halls & Event Convention Centres',
+    examples: '3/4 Star Hotels, Highway Resorts, Marriage Gardens, Event Venues',
+    badge: 'Hospitality',
+    iconName: 'Hotel',
+    baseQuery: 'hotels luxury resorts banquet halls convention center',
+  },
 ];
 
 export const FOREIGN_SECTOR_OPTIONS: SectorOption[] = [

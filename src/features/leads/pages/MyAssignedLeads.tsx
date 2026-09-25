@@ -4,6 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Phone,
   MessageSquare,
   Search,
@@ -18,11 +24,15 @@ import {
   PhoneCall,
   CheckCircle2,
   Globe,
+  Printer,
+  Download,
+  ChevronDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import type { Lead, LeadCallStatus } from '../types/lead.types';
 import { LeadDossierModal } from '../components/LeadDossierModal';
+import { exportLeadsToPDF } from '../utils/leadPdfExport';
 
 const STATUS_TABS: { id: string; label: string }[] = [
   { id: 'all', label: 'All My Leads' },
@@ -78,6 +88,35 @@ export default function MyAssignedLeads() {
   const pendingCallsCount = leads.filter((l) => l.callStatus === 'not_called').length;
   const meetingsCount = leads.filter((l) => l.callStatus === 'meeting_scheduled').length;
 
+  const handleExportPDF = (mode: 'print' | 'download' = 'print') => {
+    if (leads.length === 0) {
+      toast.error('No assigned leads to export or print.');
+      return;
+    }
+
+    const filterParts: string[] = [];
+    if (activeTab !== 'all') {
+      const t = STATUS_TABS.find((st) => st.id === activeTab);
+      if (t) filterParts.push(`Status: ${t.label}`);
+    }
+    if (search.trim()) filterParts.push(`Search: "${search.trim()}"`);
+
+    const res = exportLeadsToPDF({
+      leads,
+      title: 'My Assigned Commercial Leads',
+      subtitle: `Assigned Outreach List • Total: ${leads.length} leads`,
+      filterDescription: filterParts.length > 0 ? filterParts.join(' | ') : undefined,
+      mode,
+      filename: `my_assigned_leads_${new Date().toISOString().slice(0, 10)}.pdf`,
+    });
+
+    if (res.success) {
+      if (res.message) toast.success(res.message);
+    } else {
+      toast.error(res.message || 'Failed to generate PDF');
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">
       {/* Top Banner */}
@@ -98,8 +137,8 @@ export default function MyAssignedLeads() {
           </div>
         </div>
 
-        {/* Quick stats pills */}
-        <div className="flex items-center gap-3">
+        {/* Quick stats pills & Print Button */}
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="px-3 py-1.5 rounded-xl bg-muted/40 border border-border flex items-center gap-2 text-xs">
             <span className="text-muted-foreground">Total Assigned:</span>
             <span className="font-bold text-foreground">{leads.length}</span>
@@ -112,6 +151,42 @@ export default function MyAssignedLeads() {
             <span className="text-emerald-600 dark:text-emerald-400 font-medium">Meetings:</span>
             <span className="font-bold text-emerald-600 dark:text-emerald-400">{meetingsCount}</span>
           </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 text-xs border-primary/40 hover:bg-primary/5 text-foreground font-medium shadow-2xs h-8"
+              >
+                <Printer className="w-3.5 h-3.5 text-primary" />
+                Print / PDF
+                <ChevronDown className="w-3 h-3 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-card border-border shadow-lg">
+              <DropdownMenuItem
+                onClick={() => handleExportPDF('print')}
+                className="gap-2.5 text-xs py-2 cursor-pointer"
+              >
+                <Printer className="w-4 h-4 text-primary shrink-0" />
+                <div>
+                  <p className="font-semibold text-foreground">Print Leads (PDF)</p>
+                  <p className="text-[10px] text-muted-foreground">Opens print preview dialog</p>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleExportPDF('download')}
+                className="gap-2.5 text-xs py-2 cursor-pointer"
+              >
+                <Download className="w-4 h-4 text-emerald-500 shrink-0" />
+                <div>
+                  <p className="font-semibold text-foreground">Download PDF Report</p>
+                  <p className="text-[10px] text-muted-foreground">Saves landscape A4 file</p>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
