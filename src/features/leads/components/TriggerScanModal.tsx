@@ -40,9 +40,11 @@ import api from '@/lib/api';
 import {
   GEOGRAPHIC_DATA,
   LOCAL_SECTOR_OPTIONS,
+  searchAllLocations,
   type StateOption,
   type CityOption,
   type SectorOption,
+  type LocationSearchResult,
 } from '../utils/locationEngine';
 
 interface TriggerScanModalProps {
@@ -69,6 +71,23 @@ export const TriggerScanModal: React.FC<TriggerScanModalProps> = ({
   // 1. Location State (State -> District)
   const [selectedState, setSelectedState] = useState<string>('CG');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('bhilai_durg');
+
+  // Quick Smart Search State
+  const [locationSearchQuery, setLocationSearchQuery] = useState<string>('');
+  const [isLocationSearchFocused, setIsLocationSearchFocused] = useState<boolean>(false);
+
+  // Search Results
+  const locationSearchResults = React.useMemo(() => {
+    return searchAllLocations(locationSearchQuery);
+  }, [locationSearchQuery]);
+
+  const handleSelectSearchResult = (result: LocationSearchResult) => {
+    setSelectedState(result.stateCode);
+    setSelectedDistrict(result.cityValue);
+    setLocationSearchQuery('');
+    setIsLocationSearchFocused(false);
+    toast.success(`📍 Target set to ${result.cityLabel.split('(')[0].trim()}, ${result.stateLabel.split('(')[0].trim()}`);
+  };
 
   // 2. Industry / Field State
   const [selectedSector, setSelectedSector] = useState<string>('education');
@@ -279,19 +298,84 @@ export const TriggerScanModal: React.FC<TriggerScanModalProps> = ({
 
         {/* Modal Body */}
         <div className="px-6 py-4 space-y-4 text-xs max-h-[72vh] overflow-y-auto custom-scrollbar">
-          {/* 1. Location Selection (State -> District / All India) */}
+          {/* 1. Location Selection (Smart Search + State & District Dropdowns) */}
           <div className="p-4 rounded-xl bg-muted/30 border border-border/60 space-y-3">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-sm text-foreground flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-primary" />
-                Step 1: Select Location (State & District)
+                Step 1: Select Location (Search City or Pick State & District)
               </span>
               <span className="text-[11px] font-medium text-muted-foreground">
                 {isAllIndia ? 'National Coverage' : `${currentState.cities?.length || 0} Districts in State`}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Smart Search Bar */}
+            <div className="relative">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Type any City, District, or State (e.g. Raipur, Pune, Indore, Bilaspur)..."
+                  value={locationSearchQuery}
+                  onChange={(e) => {
+                    setLocationSearchQuery(e.target.value);
+                    setIsLocationSearchFocused(true);
+                  }}
+                  onFocus={() => setIsLocationSearchFocused(true)}
+                  disabled={isScanning}
+                  className="pl-9 pr-8 h-9 text-xs bg-background border-border/80 rounded-lg focus-visible:ring-primary"
+                />
+                {locationSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLocationSearchQuery('');
+                      setIsLocationSearchFocused(false);
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs font-bold p-1"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Autocomplete Suggestions Dropdown */}
+              {isLocationSearchFocused && locationSearchQuery.trim().length > 0 && (
+                <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg max-h-56 overflow-y-auto divide-y divide-border/40 text-xs">
+                  {locationSearchResults.length === 0 ? (
+                    <div className="p-3 text-center text-muted-foreground text-[11px]">
+                      No matching cities or districts found for "{locationSearchQuery}".
+                    </div>
+                  ) : (
+                    locationSearchResults.map((res) => (
+                      <button
+                        key={`${res.stateCode}-${res.cityValue}`}
+                        type="button"
+                        onClick={() => handleSelectSearchResult(res)}
+                        className="w-full px-3 py-2 text-left hover:bg-accent/70 flex items-center justify-between gap-2 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <div>
+                            <span className="font-semibold text-foreground">
+                              {res.cityLabel}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground ml-1.5 font-normal">
+                              ({res.stateLabel})
+                            </span>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 uppercase tracking-wider shrink-0">
+                          {res.matchType}
+                        </Badge>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               {/* State Select */}
               <div>
                 <label className="text-[11px] font-semibold text-muted-foreground block mb-1.5">
@@ -314,7 +398,7 @@ export const TriggerScanModal: React.FC<TriggerScanModalProps> = ({
               {/* District Select */}
               <div>
                 <label className="text-[11px] font-semibold text-muted-foreground block mb-1.5">
-                  2. Select District / Region
+                  2. Select District / Region ({currentState.label.split('(')[0].trim()})
                 </label>
                 <Select
                   value={selectedDistrict}

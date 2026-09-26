@@ -1040,7 +1040,7 @@ export default function LeadsDashboard() {
         onOpenChange={setScanModalOpen}
         onScanComplete={() => {
           setActiveTab('all');
-          setLocationFilter('all');
+          setSelectedBatchId('all');
           setEmployeeFilter('');
           setIndustryFilter('all');
           setSearch('');
