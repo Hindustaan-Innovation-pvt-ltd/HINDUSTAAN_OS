@@ -198,6 +198,7 @@ export default function LeadsDashboard() {
       if (activeEmp) params.assignedToId = activeEmp;
       if (activeInd !== 'all') params.industry = activeInd;
       if (activePhone) params.hasPhone = 'true';
+      params.limit = 1000;
 
       const res = await api.get('/leads', { params });
       if (res.data?.success) {
@@ -1335,10 +1336,7 @@ export default function LeadsDashboard() {
       <ScanLogsModal
         open={scanLogsOpen}
         onOpenChange={setScanLogsOpen}
-        onLogsUpdated={() => {
-          fetchStats();
-          fetchLeads();
-        }}
+        onLogsUpdated={handleScanComplete}
       />
 
       {/* Delete Single Lead Confirmation Dialog */}
