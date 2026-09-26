@@ -58,6 +58,11 @@ export const ScanLogsModal: React.FC<ScanLogsModalProps> = ({
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+  const onLogsUpdatedRef = React.useRef(onLogsUpdated);
+
+  useEffect(() => {
+    onLogsUpdatedRef.current = onLogsUpdated;
+  }, [onLogsUpdated]);
 
   const fetchLogs = useCallback(async (quiet = false) => {
     try {
@@ -68,7 +73,6 @@ export const ScanLogsModal: React.FC<ScanLogsModalProps> = ({
         if (res.data.summary) {
           setSummary(res.data.summary);
         }
-        if (onLogsUpdated) onLogsUpdated();
       }
     } catch (err: any) {
       console.error('Failed to load scan logs:', err);
@@ -76,7 +80,7 @@ export const ScanLogsModal: React.FC<ScanLogsModalProps> = ({
     } finally {
       if (!quiet) setLoading(false);
     }
-  }, [onLogsUpdated]);
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -84,18 +88,17 @@ export const ScanLogsModal: React.FC<ScanLogsModalProps> = ({
     }
   }, [open, fetchLogs]);
 
-  // Auto-poll if any scan is running
+  // Auto-poll quietly if any scan is running while modal is open
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
+    if (!open) return;
     const hasRunning = logs.some((l) => l.status === 'running');
-    if (open && hasRunning) {
-      interval = setInterval(() => {
-        fetchLogs(true);
-      }, 4000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    if (!hasRunning) return;
+
+    const interval = setInterval(() => {
+      fetchLogs(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [open, logs, fetchLogs]);
 
   const handleDeleteLog = async (id: string, e: React.MouseEvent) => {
@@ -106,6 +109,7 @@ export const ScanLogsModal: React.FC<ScanLogsModalProps> = ({
         toast.success('Scan log removed');
         setLogs((prev) => prev.filter((l) => l.id !== id));
         fetchLogs(true);
+        if (onLogsUpdatedRef.current) onLogsUpdatedRef.current();
       }
     } catch (err: any) {
       toast.error('Failed to delete scan log');
