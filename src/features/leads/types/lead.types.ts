@@ -36,12 +36,17 @@ export interface ClientNeeds {
   current_pain_points_and_gaps?: string[];
   recommended_solution?: string;
   hardware_needs?: string;
+  hardware_or_documentation_needs?: string;
   calling_talking_points?: string[];
+  cold_pitch?: string;
+  pitch?: string;
+  core_business_model?: string;
 }
 
 export interface Lead {
   id: number;
   companyName: string;
+  coldPitch?: string | null;
   websiteUrl?: string | null;
   googleMapsUrl?: string | null;
   domain?: string | null;

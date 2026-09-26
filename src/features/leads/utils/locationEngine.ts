@@ -508,6 +508,26 @@ export const GEOGRAPHIC_DATA: CountryOption[] = [
 
 export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
   {
+    value: 'cab_taxi',
+    label: 'Cab Services, Taxi & Car Rentals',
+    category: 'Business Services',
+    description: 'Local Taxi Stands, Outstation Cab Operators, Airport Transfers, Car Rental Fleets & Tour Travels',
+    examples: 'Outstation Cabs, Airport Taxi Service, 24x7 Cab Hire, Self-Drive Rentals, Tour & Travel Fleets',
+    badge: 'High Demand',
+    iconName: 'CarTaxiFront',
+    baseQuery: 'taxi services tour travels car rental',
+  },
+  {
+    value: 'ca_finance',
+    label: 'Chartered Accountants & Tax Consultants',
+    category: 'Finance & Legal',
+    description: 'CA Firms, Income Tax Practitioners, GST Consultants, Audit & Corporate Advisory',
+    examples: 'Chartered Accountants, Tax Consultants, GST Practitioners, Auditing & Accounting Firms',
+    badge: 'High Trust B2B',
+    iconName: 'Calculator',
+    baseQuery: 'chartered accountants tax consultants GST audit firms',
+  },
+  {
     value: 'education',
     label: 'Colleges & Coaching Institutes',
     category: 'Education & Health',

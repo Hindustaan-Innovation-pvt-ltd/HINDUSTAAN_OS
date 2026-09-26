@@ -48,9 +48,13 @@ import {
   Laptop,
   SunMedium,
   Hotel,
+  Calculator,
+  CarTaxiFront,
 } from 'lucide-react';
 
 const SECTOR_ICON_MAP: Record<string, React.ElementType> = {
+  Calculator,
+  CarTaxiFront,
   GraduationCap,
   School,
   HeartPulse,
@@ -66,6 +70,20 @@ const SECTOR_ICON_MAP: Record<string, React.ElementType> = {
 };
 
 const SECTOR_COLOR_MAP: Record<string, { bg: string; text: string; border: string; activeBorder: string; badge: string }> = {
+  cab_taxi: {
+    bg: 'bg-amber-500/10 dark:bg-amber-500/20',
+    text: 'text-amber-600 dark:text-amber-400',
+    border: 'border-amber-500/20',
+    activeBorder: 'border-amber-500',
+    badge: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+  },
+  ca_finance: {
+    bg: 'bg-cyan-500/10 dark:bg-cyan-500/20',
+    text: 'text-cyan-700 dark:text-cyan-400',
+    border: 'border-cyan-500/20',
+    activeBorder: 'border-cyan-500',
+    badge: 'bg-cyan-500/15 text-cyan-800 dark:text-cyan-300',
+  },
   education: {
     bg: 'bg-indigo-500/10 dark:bg-indigo-500/20',
     text: 'text-indigo-600 dark:text-indigo-400',
@@ -153,14 +171,18 @@ const SECTOR_COLOR_MAP: Record<string, { bg: string; text: string; border: strin
 };
 
 const SECTOR_CATEGORIES = [
-  { id: 'all', label: 'All Sectors (12)' },
-  { id: 'Industry & Infra', label: 'Industry & Infra (4)' },
-  { id: 'Education & Health', label: 'Education & Health (3)' },
-  { id: 'Retail & Trade', label: 'Retail & Trade (3)' },
-  { id: 'Tech & Energy', label: 'Tech & Energy (2)' },
+  { id: 'all', label: 'All Sectors' },
+  { id: 'Business Services', label: 'Business & Cab Services' },
+  { id: 'Finance & Legal', label: 'Finance & Legal (CA)' },
+  { id: 'Industry & Infra', label: 'Industry & Infra' },
+  { id: 'Education & Health', label: 'Education & Health' },
+  { id: 'Retail & Trade', label: 'Retail & Trade' },
+  { id: 'Tech & Energy', label: 'Tech & Energy' },
 ];
 
 const CUSTOM_SECTOR_SUGGESTIONS = [
+  '🚕 Outstation Cabs & Taxi Services',
+  '⚖️ Chartered Accountants & Tax Consultants',
   '🌾 Rice & Dal Mills',
   '☀️ Rooftop Solar EPC',
   '🦷 Dental Clinics',
@@ -168,7 +190,6 @@ const CUSTOM_SECTOR_SUGGESTIONS = [
   '🚚 Goods Transporters',
   '🏨 Banquet & Lawns',
   '💍 Jewelry Showrooms',
-  '⚖️ Chartered Accountants',
 ];
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -241,6 +262,7 @@ export const TriggerScanModal: React.FC<TriggerScanModalProps> = ({
   // 4. Strict Filtering & Digital Presence (Zero-Website vs Existing Websites)
   const [strictMode, setStrictMode] = useState<boolean>(true);
   const [onlyNoWebsite, setOnlyNoWebsite] = useState<boolean>(true);
+  const [autoExpandRelated, setAutoExpandRelated] = useState<boolean>(true);
   const [scanSource, setScanSource] = useState<'maps' | 'web' | 'chamber_pdf'>('maps');
 
   // 5. Scanner In-flight State
@@ -516,6 +538,8 @@ export const TriggerScanModal: React.FC<TriggerScanModalProps> = ({
         district: isAllIndia ? 'All' : (isAllDistricts ? 'All' : effectiveDistrictLabel),
         country: 'India',
         sector: sectorLabel,
+        category: sectorObj?.category || 'General',
+        fallback_to_related: autoExpandRelated,
         is_all_india: isAllIndia,
         strict_mode: strictMode,
         only_no_website: onlyNoWebsite,
@@ -915,6 +939,9 @@ export const TriggerScanModal: React.FC<TriggerScanModalProps> = ({
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
                   {SECTOR_CATEGORIES.map((cat) => {
                     const isActive = sectorCategoryFilter === cat.id;
+                    const count = cat.id === 'all'
+                      ? LOCAL_SECTOR_OPTIONS.length
+                      : LOCAL_SECTOR_OPTIONS.filter((s) => s.category === cat.id).length;
                     return (
                       <button
                         key={cat.id}
@@ -926,7 +953,7 @@ export const TriggerScanModal: React.FC<TriggerScanModalProps> = ({
                             : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                         }`}
                       >
-                        {cat.label}
+                        {cat.label} ({count})
                       </button>
                     );
                   })}
@@ -1193,6 +1220,41 @@ export const TriggerScanModal: React.FC<TriggerScanModalProps> = ({
                 </p>
               </button>
             </div>
+          </div>
+
+          {/* Related Sector Fallback (Auto-expand to sister sectors if target count is not fulfilled) */}
+          <div className="p-3.5 rounded-xl bg-muted/30 border border-border/60 flex items-center justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <div className="p-1.5 rounded-lg bg-primary/10 text-primary mt-0.5">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-foreground">
+                    Auto-Expand to Related Sectors
+                  </span>
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30">
+                    Recommended
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Agar selected sector ({sectorLabel}) me target leads kam padti hain, to AI automatically related sister sectors ({sectorObj?.category || 'Allied'}) se leads fetch karega.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAutoExpandRelated(!autoExpandRelated)}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                autoExpandRelated ? 'bg-primary' : 'bg-muted-foreground/30'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  autoExpandRelated ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
           </div>
 
           {/* 5. Terminal Query Preview */}

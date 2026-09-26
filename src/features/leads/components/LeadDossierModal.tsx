@@ -35,6 +35,9 @@ import {
   Printer,
   Download,
   ChevronDown,
+  MessageSquareQuote,
+  AlertTriangle,
+  Lightbulb,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -73,6 +76,7 @@ export const LeadDossierModal: React.FC<LeadDossierModalProps> = ({
   onLeadUpdated,
 }) => {
   const [copiedPhone, setCopiedPhone] = useState(false);
+  const [copiedPitch, setCopiedPitch] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<LeadCallStatus>('not_called');
   const [savingNotes, setSavingNotes] = useState(false);
@@ -92,6 +96,27 @@ export const LeadDossierModal: React.FC<LeadDossierModalProps> = ({
     toast.success('Phone number copied to clipboard');
     setTimeout(() => setCopiedPhone(false), 2000);
   };
+
+  const handleCopyPitch = (pitch: string) => {
+    navigator.clipboard.writeText(pitch);
+    setCopiedPitch(true);
+    toast.success('Opening pitch copied to clipboard');
+    setTimeout(() => setCopiedPitch(false), 2000);
+  };
+
+  const coldPitch =
+    lead.clientNeeds?.cold_pitch ||
+    lead.clientNeeds?.pitch ||
+    lead.coldPitch ||
+    (lead.clientNeeds?.calling_talking_points && lead.clientNeeds.calling_talking_points.length > 0
+      ? lead.clientNeeds.calling_talking_points[0]
+      : null);
+
+  const talkingPoints = lead.clientNeeds?.calling_talking_points || [];
+  const painPoints = lead.clientNeeds?.current_pain_points_and_gaps || lead.clientNeeds?.pain_points || [];
+  const recommendedSolution = lead.recommendedSolution || lead.clientNeeds?.recommended_solution;
+  const businessSummary = lead.businessSummary || lead.clientNeeds?.core_business_model;
+  const hardwareNeeds = lead.clientNeeds?.hardware_needs || lead.clientNeeds?.hardware_or_documentation_needs;
 
   const handleSaveCallStatus = async () => {
     try {
@@ -310,37 +335,118 @@ export const LeadDossierModal: React.FC<LeadDossierModalProps> = ({
             </div>
           </div>
 
-          {/* AI Talking Points & Recommended Pitch */}
+          {/* AI Sales Intelligence & Dossier Data */}
           <div className="space-y-4">
-            <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5 mb-2">
-                <Sparkles className="w-4 h-4" />
-                Recommended Solution to Pitch
-              </h4>
-              <p className="text-xs text-foreground leading-relaxed">
-                {lead.recommendedSolution ||
-                  lead.clientNeeds?.recommended_solution ||
-                  'Custom ERP / CRM workflow automation, WhatsApp commerce integration, and AI-enabled client self-service portal tailored to their business sector.'}
-              </p>
-            </div>
+            {/* 1. Recommended Phone Opening Script (Hindi Pitch) */}
+            {coldPitch && (
+              <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 via-primary/5 to-background border border-amber-500/30 shadow-xs relative overflow-hidden">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                    <MessageSquareQuote className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    Recommended Phone Opening (Hindi Pitch)
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCopyPitch(coldPitch)}
+                    className="h-7 px-2.5 text-[11px] gap-1.5 bg-background/80 hover:bg-background border-amber-500/30"
+                  >
+                    {copiedPitch ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        <span className="text-emerald-600 font-semibold">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy Pitch</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <div className="bg-background/80 p-3 rounded-lg border border-border/60">
+                  <p className="text-xs sm:text-sm font-semibold text-foreground leading-relaxed italic">
+                    "{coldPitch}"
+                  </p>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1.5 ml-1">
+                  💡 Speak this opening script immediately after greeting the decision maker.
+                </p>
+              </div>
+            )}
 
-            {/* Pain points */}
-            {lead.clientNeeds?.pain_points && lead.clientNeeds.pain_points.length > 0 && (
-              <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                  Identified Gaps & Pain Points
+            {/* 2. Key Talking Points & Conversation Angles */}
+            {talkingPoints && talkingPoints.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                  <Target className="w-4 h-4 text-primary" />
+                  Key Conversation Angles & Talking Points
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {lead.clientNeeds.pain_points.map((point: string, idx: number) => (
+                <div className="space-y-2">
+                  {talkingPoints.map((point: string, idx: number) => (
                     <div
                       key={idx}
-                      className="p-2.5 rounded-lg bg-muted/30 border border-border/60 text-xs flex items-start gap-2"
+                      className="p-3 rounded-lg bg-card border border-border/80 text-xs flex items-start gap-2.5 shadow-xs hover:border-primary/40 transition-colors"
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
-                      <span>{point}</span>
+                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary font-bold text-[11px] flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {idx + 1}
+                      </span>
+                      <p className="text-foreground leading-relaxed font-medium">
+                        {point}
+                      </p>
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* 3. Recommended Solution Blueprint */}
+            <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-1.5">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4" />
+                Recommended Solution Blueprint
+              </h4>
+              <p className="text-xs text-foreground font-medium leading-relaxed">
+                {recommendedSolution ||
+                  'Custom ERP / CRM workflow automation, WhatsApp commerce integration, and AI-enabled client self-service portal tailored to their business sector.'}
+              </p>
+              {hardwareNeeds && (
+                <div className="pt-2 border-t border-primary/10 mt-2 text-[11px] text-muted-foreground flex items-start gap-1.5">
+                  <span className="font-semibold text-foreground">Hardware / Integrations:</span>
+                  <span>{hardwareNeeds}</span>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Identified Gaps & Pain Points */}
+            {painPoints && painPoints.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4" />
+                  Identified Operational Gaps & Bottlenecks
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {painPoints.map((point: string, idx: number) => (
+                    <div
+                      key={idx}
+                      className="p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/20 text-xs flex items-start gap-2 text-foreground"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
+                      <span className="leading-snug">{point}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 5. Business Operations & Context */}
+            {businessSummary && (
+              <div className="p-3 rounded-lg bg-muted/20 border border-border/60 text-xs text-muted-foreground space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1">
+                  <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                  Business Model & Operations
+                </span>
+                <p className="leading-relaxed text-foreground/90">{businessSummary}</p>
               </div>
             )}
           </div>

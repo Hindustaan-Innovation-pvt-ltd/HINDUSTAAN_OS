@@ -61,7 +61,7 @@ export function exportLeadsToPDF({
     const bannerHeight = 24;
 
     // Top Header Banner
-    doc.setFillColor(15, 23, 42); // slate-900 deep obsidian
+    doc.setFillColor(255, 161, 74); // #ffa14a corporate orange
     doc.roundedRect(margin, margin, pageWidth - margin * 2, bannerHeight, 2, 2, 'F');
 
     // Company Logo (placed in front of company name)
@@ -82,13 +82,13 @@ export function exportLeadsToPDF({
     // Report Subtitle / Type
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
-    doc.setTextColor(251, 191, 36); // amber-400 gold accent
+    doc.setTextColor(15, 23, 42); // deep dark slate for high contrast on orange
     doc.text(title.toUpperCase(), textStartX, margin + 14);
 
     // Metadata line
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
-    doc.setTextColor(203, 213, 225); // slate-300
+    doc.setTextColor(30, 41, 59); // slate-800
 
     const nowFormatted = new Date().toLocaleString('en-IN', {
       day: '2-digit',
@@ -104,7 +104,7 @@ export function exportLeadsToPDF({
 
     if (filterDescription) {
       doc.setFontSize(7.5);
-      doc.setTextColor(251, 191, 36); // amber-400
+      doc.setTextColor(15, 23, 42); // deep dark slate
       doc.text(`Active Filters: ${filterDescription}`, pageWidth - margin - 6, margin + 19.5, {
         align: 'right',
       });
@@ -188,7 +188,7 @@ export function exportLeadsToPDF({
         lineWidth: 0.15,
       },
       headStyles: {
-        fillColor: [30, 41, 59], // slate-800
+        fillColor: [21, 128, 61], // corporate green (#15803d)
         textColor: [255, 255, 255],
         fontStyle: 'bold',
         fontSize: 8,
@@ -318,7 +318,7 @@ export function exportSingleLeadDossierPDF(
     const bannerHeight = 30;
 
     // Header Card
-    doc.setFillColor(15, 23, 42); // slate-900 deep obsidian
+    doc.setFillColor(255, 161, 74); // #ffa14a corporate orange
     doc.roundedRect(margin, margin, pageWidth - margin * 2, bannerHeight, 2, 2, 'F');
 
     // Logo in front of company name
@@ -333,19 +333,19 @@ export function exportSingleLeadDossierPDF(
     // Company Name: Hindustaan Innovations Private Limited
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10.5);
-    doc.setTextColor(203, 213, 225); // slate-300
+    doc.setTextColor(255, 255, 255);
     doc.text('HINDUSTAAAN INNOVATIONS PRIVATE LIMITED', textStartX, margin + 7.5);
 
     // Target Lead Company Name
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(15);
-    doc.setTextColor(255, 255, 255);
+    doc.setTextColor(15, 23, 42); // deep dark slate for high contrast on orange
     doc.text(lead.companyName || 'Commercial Lead', textStartX, margin + 14.5);
 
     // Subtitle
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
-    doc.setTextColor(251, 191, 36); // amber-400
+    doc.setTextColor(30, 41, 59);
     const effectiveLoc = getEffectiveLocation(lead) || lead.city || 'India';
     const sector = lead.industrySector || 'Commercial Enterprise';
     doc.text(`${sector}  •  ${effectiveLoc}`, textStartX, margin + 20.5);
@@ -353,12 +353,12 @@ export function exportSingleLeadDossierPDF(
     // Score in top-right
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
-    doc.setTextColor(251, 191, 36); // amber-400
+    doc.setTextColor(15, 23, 42);
     doc.text(`Score: ${Math.round(lead.leadScore || 0)}/100`, pageWidth - margin - 6, margin + 11, {
       align: 'right',
     });
     doc.setFontSize(8);
-    doc.setTextColor(226, 232, 240);
+    doc.setTextColor(30, 41, 59);
     doc.text(formatCallStatus(lead.callStatus), pageWidth - margin - 6, margin + 18, {
       align: 'right',
     });
@@ -380,7 +380,7 @@ export function exportSingleLeadDossierPDF(
       theme: 'grid',
       margin: { left: margin, right: margin },
       styles: { fontSize: 8.5, cellPadding: 2.2, textColor: [30, 41, 59] },
-      headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255], fontStyle: 'bold' },
+      headStyles: { fillColor: [21, 128, 61], textColor: [255, 255, 255], fontStyle: 'bold' },
       columnStyles: {
         0: { fontStyle: 'bold', cellWidth: 38, fillColor: [241, 245, 249] },
         1: { cellWidth: 53 },
@@ -394,12 +394,32 @@ export function exportSingleLeadDossierPDF(
     // AI Commercial Intelligence & Gaps
     const painPoints = lead.clientNeeds?.pain_points || lead.clientNeeds?.current_pain_points_and_gaps || [];
     const recommendedSolution = lead.recommendedSolution || lead.clientNeeds?.recommended_solution || 'Custom Enterprise Workflow & Automation Solutions';
+    const coldPitch =
+      lead.clientNeeds?.cold_pitch ||
+      lead.clientNeeds?.pitch ||
+      lead.coldPitch ||
+      (lead.clientNeeds?.calling_talking_points && lead.clientNeeds.calling_talking_points.length > 0
+        ? lead.clientNeeds.calling_talking_points[0]
+        : null);
+    const talkingPoints = lead.clientNeeds?.calling_talking_points || [];
 
     const intelRows: string[][] = [
-      ['Business Summary', lead.businessSummary || 'Commercial business entity identified through AI scanning.'],
-      ['Detected Pain Points', painPoints.length > 0 ? painPoints.map((p) => `• ${p}`).join('\n') : 'Operations scalability, manual tracking, client discovery.'],
-      ['Recommended Pitch', recommendedSolution],
+      ['Business Summary', lead.businessSummary || lead.clientNeeds?.core_business_model || 'Commercial business entity identified through AI scanning.'],
     ];
+
+    if (coldPitch) {
+      intelRows.push(['Phone Opening Pitch', coldPitch]);
+    }
+
+    if (talkingPoints.length > 0) {
+      intelRows.push(['Key Talking Points', talkingPoints.map((tp, idx) => `${idx + 1}. ${tp}`).join('\n')]);
+    }
+
+    intelRows.push([
+      'Detected Pain Points',
+      painPoints.length > 0 ? painPoints.map((p) => `• ${p}`).join('\n') : 'Operations scalability, manual tracking, client discovery.',
+    ]);
+    intelRows.push(['Recommended Solution', recommendedSolution]);
 
     autoTable(doc, {
       startY: currentY,
@@ -408,7 +428,7 @@ export function exportSingleLeadDossierPDF(
       theme: 'grid',
       margin: { left: margin, right: margin },
       styles: { fontSize: 8.5, cellPadding: 2.5, textColor: [30, 41, 59] },
-      headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255], fontStyle: 'bold' },
+      headStyles: { fillColor: [21, 128, 61], textColor: [255, 255, 255], fontStyle: 'bold' },
       columnStyles: {
         0: { fontStyle: 'bold', cellWidth: 42, fillColor: [241, 245, 249] },
         1: { cellWidth: 140 },
@@ -432,7 +452,7 @@ export function exportSingleLeadDossierPDF(
       theme: 'grid',
       margin: { left: margin, right: margin },
       styles: { fontSize: 8.5, cellPadding: 2.5, textColor: [30, 41, 59] },
-      headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255], fontStyle: 'bold' },
+      headStyles: { fillColor: [21, 128, 61], textColor: [255, 255, 255], fontStyle: 'bold' },
       columnStyles: {
         0: { fontStyle: 'bold', cellWidth: 42, fillColor: [241, 245, 249] },
         1: { cellWidth: 140 },

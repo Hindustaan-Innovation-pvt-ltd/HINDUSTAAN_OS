@@ -775,7 +775,10 @@ export default function LeadsDashboard() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Industries</SelectItem>
+                <SelectItem value="Cab & Taxi Services">Cab & Taxi Services</SelectItem>
+                <SelectItem value="Chartered Accountants & Tax">Chartered Accountants & Tax</SelectItem>
                 <SelectItem value="Steel & Heavy Manufacturing">Steel & Heavy Manufacturing</SelectItem>
+                <SelectItem value="Logistics & Transport">Logistics & Transport</SelectItem>
                 <SelectItem value="Solar & Renewable Energy">Solar & Renewable</SelectItem>
                 <SelectItem value="Healthcare & Hospitals">Healthcare</SelectItem>
                 <SelectItem value="Mining & Minerals">Mining & Minerals</SelectItem>
