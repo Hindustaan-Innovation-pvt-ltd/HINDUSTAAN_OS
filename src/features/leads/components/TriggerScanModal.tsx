@@ -268,6 +268,7 @@ export const TriggerScanModal: React.FC<TriggerScanModalProps> = ({
   };
 
   // 2. Industry / Field State
+  const SECTORS_DEFAULT_WITH_WEBSITE = React.useMemo(() => new Set(['healthcare', 'education', 'schools', 'tech_it']), []);
   const [selectedSector, setSelectedSector] = useState<string>('education');
   const [sectorCategoryFilter, setSectorCategoryFilter] = useState<string>('all');
   const [isCustomSector, setIsCustomSector] = useState<boolean>(false);
@@ -280,7 +281,7 @@ export const TriggerScanModal: React.FC<TriggerScanModalProps> = ({
 
   // 4. Strict Filtering & Digital Presence (Zero-Website vs Existing Websites)
   const [strictMode, setStrictMode] = useState<boolean>(true);
-  const [onlyNoWebsite, setOnlyNoWebsite] = useState<boolean>(true);
+  const [onlyNoWebsite, setOnlyNoWebsite] = useState<boolean>(false); // False by default for education/schools/healthcare
   const [autoExpandRelated, setAutoExpandRelated] = useState<boolean>(true);
   const [scanSource, setScanSource] = useState<'maps' | 'web' | 'chamber_pdf'>('maps');
 
@@ -998,7 +999,14 @@ export const TriggerScanModal: React.FC<TriggerScanModalProps> = ({
                         key={sec.value}
                         type="button"
                         disabled={isScanning}
-                        onClick={() => setSelectedSector(sec.value)}
+                        onClick={() => {
+                          setSelectedSector(sec.value);
+                          if (SECTORS_DEFAULT_WITH_WEBSITE.has(sec.value)) {
+                            setOnlyNoWebsite(false);
+                          } else {
+                            setOnlyNoWebsite(true);
+                          }
+                        }}
                         className={`p-3 rounded-xl border text-left transition-all duration-150 flex flex-col justify-between gap-2.5 cursor-pointer group relative ${
                           isSelected
                             ? 'border-primary bg-primary/[0.08] dark:bg-primary/[0.14] ring-2 ring-primary/40 shadow-xs'

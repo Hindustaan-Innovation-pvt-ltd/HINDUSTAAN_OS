@@ -525,7 +525,7 @@ export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
     examples: 'Outstation Cabs, Airport Taxi Service, 24x7 Cab Hire, Self-Drive Rentals, Tour & Travel Fleets',
     badge: 'High Demand',
     iconName: 'CarTaxiFront',
-    baseQuery: 'taxi services tour travels car rental',
+    baseQuery: 'taxi services',
   },
   {
     value: 'ca_finance',
@@ -535,7 +535,7 @@ export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
     examples: 'Chartered Accountants, Tax Consultants, GST Practitioners, Auditing & Accounting Firms',
     badge: 'High Trust B2B',
     iconName: 'Calculator',
-    baseQuery: 'chartered accountants tax consultants GST audit firms',
+    baseQuery: 'chartered accountants',
   },
   {
     value: 'education',
@@ -545,7 +545,7 @@ export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
     examples: 'Engineering Colleges, Degree Colleges, Civil Services & NEET Academies',
     badge: 'High Priority',
     iconName: 'GraduationCap',
-    baseQuery: 'engineering management colleges coaching institutes',
+    baseQuery: 'coaching institutes',
   },
   {
     value: 'schools',
@@ -555,7 +555,7 @@ export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
     examples: 'Private High Schools, Play Schools, Boarding Academies, Training Institutes',
     badge: 'Local Turf',
     iconName: 'School',
-    baseQuery: 'CBSE ICSE international schools academies',
+    baseQuery: 'schools',
   },
   {
     value: 'healthcare',
@@ -565,7 +565,7 @@ export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
     examples: 'Private Hospitals, Eye Clinics, Pathology Centers, Diagnostic Sonography',
     badge: 'Essential',
     iconName: 'HeartPulse',
-    baseQuery: 'multispeciality hospitals private clinics diagnostic imaging center',
+    baseQuery: 'hospitals',
   },
   {
     value: 'steel',
@@ -575,7 +575,7 @@ export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
     examples: 'Rolling Mills, Ferro Alloys, TMT Steel Bars, Foundry & Casting Smelters',
     badge: 'High Ticket B2B',
     iconName: 'Factory',
-    baseQuery: 'steel rolling mills sponge iron ferro alloys manufacturing',
+    baseQuery: 'steel plants',
   },
   {
     value: 'logistics',
@@ -585,7 +585,7 @@ export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
     examples: 'Transport Nagar Operators, Fleet Trucking, Movers, Commercial Warehouses',
     badge: 'High Volume',
     iconName: 'Truck',
-    baseQuery: 'logistics transport services fleet movers warehouse',
+    baseQuery: 'transporters',
   },
   {
     value: 'industrial',
@@ -595,7 +595,7 @@ export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
     examples: 'Heavy Fabrication, Industrial Equipment, Pre-Engineered Buildings, Machining',
     badge: 'Manufacturing',
     iconName: 'Wrench',
-    baseQuery: 'industrial manufacturing engineering plant fabrication unit',
+    baseQuery: 'industrial fabrication',
   },
   {
     value: 'realestate',
@@ -605,7 +605,7 @@ export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
     examples: 'RERA Registered Builders, Plotting Developers, Construction Firms, Complex Developers',
     badge: 'High Value',
     iconName: 'Building2',
-    baseQuery: 'builders real estate developers commercial projects contractors',
+    baseQuery: 'builders',
   },
   {
     value: 'retail_auto',
@@ -615,7 +615,7 @@ export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
     examples: 'Car Showrooms, Two-Wheeler Agencies, Tractor Hubs, Jewelry Megastores',
     badge: 'Commercial',
     iconName: 'Car',
-    baseQuery: 'automobile dealers car bike showroom retail jewelry chains',
+    baseQuery: 'car showrooms',
   },
   {
     value: 'agro_food',
@@ -625,7 +625,7 @@ export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
     examples: 'Paddy Shellers, Sortex Rice Mills, Food Product Manufacturers, Grain Wholesalers',
     badge: 'Agro Hub',
     iconName: 'Wheat',
-    baseQuery: 'rice mills agro processing food products dal mill cold storage',
+    baseQuery: 'rice mills',
   },
   {
     value: 'tech_it',
@@ -635,7 +635,7 @@ export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
     examples: 'Custom Software Companies, Creative Web Studios, IT Networking & ERP Firms',
     badge: 'Tech & IT',
     iconName: 'Laptop',
-    baseQuery: 'IT software companies web development digital marketing agency',
+    baseQuery: 'software companies',
   },
   {
     value: 'solar',
@@ -645,7 +645,7 @@ export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
     examples: 'Rooftop Solar Installers, Commercial Solar EPC, Solar Pump Suppliers',
     badge: 'Fast Growing',
     iconName: 'SunMedium',
-    baseQuery: 'solar power rooftop installations EPC contractors renewable energy',
+    baseQuery: 'solar companies',
   },
   {
     value: 'hospitality',
@@ -655,7 +655,7 @@ export const LOCAL_SECTOR_OPTIONS: SectorOption[] = [
     examples: '3/4 Star Hotels, Highway Resorts, Marriage Gardens, Event Venues',
     badge: 'Hospitality',
     iconName: 'Hotel',
-    baseQuery: 'hotels luxury resorts banquet halls convention center',
+    baseQuery: 'hotels',
   },
 ];
 

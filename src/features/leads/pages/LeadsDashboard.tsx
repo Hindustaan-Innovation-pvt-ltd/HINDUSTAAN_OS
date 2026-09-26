@@ -132,7 +132,7 @@ export default function LeadsDashboard() {
           // Only when a running scan transitions to completed, refresh table & stats once
           if (wasRunningRef.current && !hasRunning) {
             fetchLeads();
-            fetchStats();
+            fetchStats(true);
           }
           wasRunningRef.current = hasRunning;
         }
@@ -152,7 +152,7 @@ export default function LeadsDashboard() {
     setEmployeeFilter('');
     setIndustryFilter('all');
     setSearch('');
-    fetchStats();
+    fetchStats(true);
     fetchLeads({
       activeTab: 'all',
       search: '',
@@ -161,9 +161,11 @@ export default function LeadsDashboard() {
     });
   }, []);
 
-  const fetchStats = async () => {
+  const fetchStats = async (isBackground = false) => {
     try {
-      setLoadingStats(true);
+      if (!isBackground && !stats) {
+        setLoadingStats(true);
+      }
       const res = await api.get('/leads/stats/overview');
       if (res.data?.success) {
         setStats(res.data.data);

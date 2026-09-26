@@ -26,7 +26,7 @@ export const LeadTrackingStats: React.FC<LeadTrackingStatsProps> = ({
   onFilterEmployee,
   selectedEmployeeFilter,
 }) => {
-  if (loading || !stats) {
+  if (!stats && loading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[1, 2, 3, 4].map((i) => (
@@ -35,6 +35,8 @@ export const LeadTrackingStats: React.FC<LeadTrackingStatsProps> = ({
       </div>
     );
   }
+
+  if (!stats) return null;
 
   const {
     totalLeads = 0,

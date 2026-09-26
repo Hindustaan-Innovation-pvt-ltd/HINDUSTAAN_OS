@@ -19,20 +19,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        // AI Lead Engine FastAPI Backend (port 8000)
-        '/api/leads': {
-          target: env.VITE_LEAD_ENGINE_URL || 'http://127.0.0.1:8000',
-          changeOrigin: true,
-        },
-        '/api/scan': {
-          target: env.VITE_LEAD_ENGINE_URL || 'http://127.0.0.1:8000',
-          changeOrigin: true,
-        },
-        '/api/opportunities': {
-          target: env.VITE_LEAD_ENGINE_URL || 'http://127.0.0.1:8000',
-          changeOrigin: true,
-        },
-        // Node.js Main Backend (port 3000)
+        // Node.js Main Backend (port 3000) handles CRM, Auth, Leads & proxies to Python AI Engine
         '/api': {
           target: proxyTarget,
           changeOrigin: true,
