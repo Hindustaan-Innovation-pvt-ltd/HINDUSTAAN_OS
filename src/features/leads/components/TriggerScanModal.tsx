@@ -196,9 +196,11 @@ import api from '@/lib/api';
 import {
   GEOGRAPHIC_DATA,
   LOCAL_SECTOR_OPTIONS,
+  searchAllLocations,
   type StateOption,
   type CityOption,
   type SectorOption,
+  type LocationSearchResult,
 } from '../utils/locationEngine';
 
 interface TriggerScanModalProps {
@@ -247,6 +249,23 @@ export const TriggerScanModal: React.FC<TriggerScanModalProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Quick Smart Search State
+  const [locationSearchQuery, setLocationSearchQuery] = useState<string>('');
+  const [isLocationSearchFocused, setIsLocationSearchFocused] = useState<boolean>(false);
+
+  // Search Results
+  const locationSearchResults = React.useMemo(() => {
+    return searchAllLocations(locationSearchQuery);
+  }, [locationSearchQuery]);
+
+  const handleSelectSearchResult = (result: LocationSearchResult) => {
+    setSelectedState(result.stateCode);
+    setSelectedDistrict(result.cityValue);
+    setLocationSearchQuery('');
+    setIsLocationSearchFocused(false);
+    toast.success(`📍 Target set to ${result.cityLabel.split('(')[0].trim()}, ${result.stateLabel.split('(')[0].trim()}`);
+  };
 
   // 2. Industry / Field State
   const [selectedSector, setSelectedSector] = useState<string>('education');
@@ -617,7 +636,7 @@ export const TriggerScanModal: React.FC<TriggerScanModalProps> = ({
             <div className="flex items-center justify-between">
               <span className="font-semibold text-sm text-foreground flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-primary" />
-                Step 1: Select Location (State & District)
+                Step 1: Select Location (Search City or Pick State & District)
               </span>
               <span className="text-[11px] font-medium text-muted-foreground">
                 {isAllIndia ? 'National Coverage' : `${availableDistricts.length} Districts Available`}

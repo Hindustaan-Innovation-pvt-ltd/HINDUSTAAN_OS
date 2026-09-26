@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { cn } from "cn"
+import { cn } from "@/lib/utils"
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
-import { RiCheckLine, RiArrowRightSLine } from "@remixicon/react"
+import { Check, ChevronRight } from "lucide-react"
 
 function DropdownMenu({
   ...props
@@ -105,8 +105,7 @@ function DropdownMenuCheckboxItem({
         data-slot="dropdown-menu-checkbox-item-indicator"
       >
         <DropdownMenuPrimitive.ItemIndicator>
-          <RiCheckLine
-          />
+          <Check className="size-4" />
         </DropdownMenuPrimitive.ItemIndicator>
       </span>
       {children}
@@ -148,8 +147,7 @@ function DropdownMenuRadioItem({
         data-slot="dropdown-menu-radio-item-indicator"
       >
         <DropdownMenuPrimitive.ItemIndicator>
-          <RiCheckLine
-          />
+          <Check className="size-4" />
         </DropdownMenuPrimitive.ItemIndicator>
       </span>
       {children}
@@ -231,7 +229,7 @@ function DropdownMenuSubTrigger({
       {...props}
     >
       {children}
-      <RiArrowRightSLine className="ml-auto" />
+      <ChevronRight className="ml-auto" />
     </DropdownMenuPrimitive.SubTrigger>
   )
 }

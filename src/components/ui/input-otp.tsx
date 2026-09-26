@@ -1,7 +1,7 @@
 import * as React from "react"
-import { cn } from "cn"
+import { cn } from "@/lib/utils"
 import { OTPInput, OTPInputContext } from "input-otp"
-import { RiSubtractLine } from "@remixicon/react"
+import { Minus } from "lucide-react"
 
 function InputOTP({
   className,
@@ -75,8 +75,7 @@ function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
       role="separator"
       {...props}
     >
-      <RiSubtractLine
-      />
+      <Minus />
     </div>
   )
 }

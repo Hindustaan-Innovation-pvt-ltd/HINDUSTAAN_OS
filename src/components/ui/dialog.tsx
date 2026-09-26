@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { Button } from "@/components/ui/button"
-import { RiCloseLine } from "@remixicon/react"
+import { X } from "lucide-react"
 
 function Dialog({
   ...props
@@ -72,8 +72,7 @@ function DialogContent({
               className="absolute top-2 right-2"
               size="icon-sm"
             >
-              <RiCloseLine
-              />
+              <X className="size-4" />
               <span className="sr-only">Close</span>
             </Button>
           </DialogPrimitive.Close>

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Accordion as AccordionPrimitive } from "radix-ui"
-import { RiArrowDownSLine } from "@remixicon/react"
+import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function Accordion({
@@ -40,7 +40,7 @@ function AccordionTrigger({
         {...props}
       >
         {children}
-        <RiArrowDownSLine className="text-muted-foreground pointer-events-none size-4 shrink-0 translate-y-0.5 transition-transform duration-200" />
+        <ChevronDown className="text-muted-foreground pointer-events-none size-4 shrink-0 translate-y-0.5 transition-transform duration-200" />
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
   )

@@ -29,6 +29,16 @@ export interface SectorOption {
   iconName?: string;
 }
 
+export interface LocationSearchResult {
+  countryCode: string;
+  stateCode: string;
+  stateLabel: string;
+  cityValue: string;
+  cityLabel: string;
+  queryKeyword: string;
+  matchType: 'city' | 'district' | 'state';
+}
+
 export const GEOGRAPHIC_DATA: CountryOption[] = [
   {
     value: 'IN',
@@ -762,4 +772,69 @@ export function isLeadInLocation(lead: any, loc: string): boolean {
     return !isAnyCG;
   }
   return check([loc.toLowerCase()]);
+}
+
+/**
+ * Global fast search across all states, districts and cities.
+ * Matches keywords like "Raipur", "Pune", "Indore", "Bhilai", etc.
+ */
+export function searchAllLocations(query: string): LocationSearchResult[] {
+  if (!query || !query.trim()) return [];
+  const q = query.trim().toLowerCase();
+  const results: LocationSearchResult[] = [];
+
+  for (const country of GEOGRAPHIC_DATA) {
+    for (const state of country.states) {
+      const stateNameClean = state.label.split('(')[0].trim();
+      const stateMatches =
+        state.label.toLowerCase().includes(q) ||
+        state.value.toLowerCase().includes(q) ||
+        stateNameClean.toLowerCase().includes(q);
+
+      for (const city of state.cities) {
+        const cityNameClean = city.label.split('(')[0].trim();
+        const cityMatches =
+          city.label.toLowerCase().includes(q) ||
+          city.value.toLowerCase().includes(q) ||
+          cityNameClean.toLowerCase().includes(q) ||
+          city.queryKeyword.toLowerCase().includes(q);
+
+        if (cityMatches) {
+          results.push({
+            countryCode: country.value,
+            stateCode: state.value,
+            stateLabel: state.label,
+            cityValue: city.value,
+            cityLabel: city.label,
+            queryKeyword: city.queryKeyword,
+            matchType: 'city',
+          });
+        } else if (stateMatches && !city.value.startsWith('all_')) {
+          results.push({
+            countryCode: country.value,
+            stateCode: state.value,
+            stateLabel: state.label,
+            cityValue: city.value,
+            cityLabel: city.label,
+            queryKeyword: city.queryKeyword,
+            matchType: 'state',
+          });
+        }
+      }
+    }
+  }
+
+  // Deduplicate and prioritize exact city name matches first
+  const seen = new Set<string>();
+  const deduplicated: LocationSearchResult[] = [];
+
+  for (const r of results) {
+    const key = `${r.stateCode}-${r.cityValue}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduplicated.push(r);
+    }
+  }
+
+  return deduplicated.slice(0, 15);
 }

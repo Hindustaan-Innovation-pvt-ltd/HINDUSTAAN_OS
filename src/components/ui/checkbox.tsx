@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { cn } from "cn"
+import { cn } from "@/lib/utils"
 import { Checkbox as CheckboxPrimitive } from "radix-ui"
-import { RiCheckLine } from "@remixicon/react"
+import { Check } from "lucide-react"
 
 function Checkbox({
   className,
@@ -22,8 +22,7 @@ function Checkbox({
         data-slot="checkbox-indicator"
         className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
       >
-        <RiCheckLine
-        />
+        <Check className="size-3.5" />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   )
