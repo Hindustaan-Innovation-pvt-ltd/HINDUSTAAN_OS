@@ -424,12 +424,14 @@ export const ScanLogsModal: React.FC<ScanLogsModalProps> = ({
                       Fetched:{' '}
                       <span
                         className={`font-bold ${
-                          log.leadsFound > 0
+                          log.status === 'running'
+                            ? 'text-blue-600 dark:text-blue-400 animate-pulse'
+                            : log.leadsFound > 0
                             ? 'text-emerald-600 dark:text-emerald-400'
                             : 'text-amber-600 dark:text-amber-400'
                         }`}
                       >
-                        {log.leadsFound} Leads
+                        {log.status === 'running' ? 'In Progress...' : `${log.leadsFound} Leads`}
                       </span>
                     </div>
                   </div>
